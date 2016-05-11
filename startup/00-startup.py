@@ -39,10 +39,15 @@ configured_logbook_func = partial(generic_logbook_func, logbooks=LOGBOOKS)
 
 from bluesky.callbacks.olog import logbook_cb_factory
 cb = logbook_cb_factory(configured_logbook_func)
-RE.subscribe('start', cb)
+# RE.subscribe('start', cb)
 
 logbook = simple_olog_client  # this is for ophyd.commands.get_logbook
 
 # Turn off "noisy" debugging.
 loop = asyncio.get_event_loop()
 loop.set_debug(False)
+
+# Import matplotlib and put it in interactive mode.
+import matplotlib.pyplot as plt
+plt.ion()
+

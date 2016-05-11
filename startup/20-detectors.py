@@ -6,7 +6,7 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
 from ophyd.areadetector.base import ADComponent as ADCpt, EpicsSignalWithRBV
 from ophyd import DeviceStatus, set_and_wait
 import filestore.api as fs
-
+#fs.api.register_handler('PIZZABOX_FILE', PizzaBoxHandler, overwrite=True)
 
 class BPM(ProsilicaDetector, SingleTrigger):
     image = Cpt(ImagePlugin, 'image1:')
@@ -36,20 +36,6 @@ for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2]:
 tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',name='tc_mask2_4')
 tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',name='tc_mask2_3')
 
-# Trying to get data from pizzabox
-#pb1_enc1 = EpicsSignal('XF:08IDA-CT{Enc01:1}Cnt:Pos-I', name = 'pb1_enc1')
-#pb1_enc2 = EpicsSignal('XF:08IDA-CT{Enc01:2}Cnt:Pos-I', name = 'pb1_enc2')
-#pb1_enc3 = EpicsSignal('XF:08IDA-CT{Enc01:3}Cnt:Pos-I', name = 'pb1_enc3')
-#pb1_enc4 = EpicsSignal('XF:08IDA-CT{Enc01:4}Cnt:Pos-I', name = 'pb1_enc4')
-#pb1_sec = EpicsSignal('XF:08IDA-CT{Enc01}T:sec-I', name = 'pb1_sec')
-
-#testArray = [tc_mask2_4, tc_mask2_3, pb1_enc1, pb1_enc2, pb1_enc3, pb1_enc4, pb1_sec]
-
-#pb1_enc1_sec_arr = EpicsSignal('XF:08IDA-CT{Enc01:1}T:sec_Bin_', name = 'pb1_enc1_sec_arr')
-#pb1_enc1_nsec_arr = EpicsSignal('XF:08IDA-CT{Enc01:1}T:nsec_Bin_', name = 'pb1_enc1_nsec_arr')
-#pb1_enc1_pos_arr = EpicsSignal('XF:08IDA-CT{Enc01:1}Cnt:Pos_Bin_', name = 'pb1_enc1_pos_arr')
-
-
 class Encoder(Device):
     """This class defines components but does not implement actual reading.
 
@@ -62,6 +48,8 @@ class Encoder(Device):
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     # The '$' in the PV allows us to write 40 chars instead of 20.
     filepath = Cpt(EpicsSignal, '}ID:File.VAL$', string=True)
+
+    reset_counts = Cpt(EpicsSignal, '}Rst-Cmd')
 
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
@@ -174,6 +162,7 @@ class EncoderParser(Encoder):
         # in the text file.
         now = ttime.time()
         for line in open(self._full_path, 'r'):
+            # Note file spec is '{seconds} {nanoseconds} {encoder pos} {line counter} {?}'
             parsed_line = [int(column) for column in line.split()]
             data = {self.name: parsed_line}
             yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
@@ -216,10 +205,13 @@ class PizzaBoxFS(Device):
         # Now collect the data accumulated by all encoders.
         for attr_name in ['enc1', 'enc2', 'enc3', 'enc4']:
             yield from getattr(self, attr_name).collect()
+
  
 
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')
 pb2 = PizzaBoxFS('XF:08IDA-CT{Enc02', name = 'pb2')
+pb5 = PizzaBoxFS('XF:08IDA-CT{Enc05', name = 'pb5')
+pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 
 
 import numpy as np
