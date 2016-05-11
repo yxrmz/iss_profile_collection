@@ -108,6 +108,7 @@ class EncoderFS(Encoder):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
+        ttime.sleep(1)  # wait for file to be written by pizza box
         with open(self._full_path, 'r') as f:
             linecount = len(list(f))
         for line_num in range(linecount):
