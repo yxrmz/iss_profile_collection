@@ -1,4 +1,5 @@
 from bluesky.plans import Count
 
 
-RE(Count([fm]), LiveTable([fm]))
+uid, = RE(Count([fm]), LiveTable([fm]))
+db[uid]
