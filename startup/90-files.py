@@ -103,7 +103,18 @@ def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', yl
 # plt.ylabel('Pitch (rad)')
 # plt.grid(True)
 
-def plot_pitch(yu_file, ydo_file, ydi_file, color = 'b'): #(ydi_file, ydo_file, yu_file)
+def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True):
+    print('Plotting Array(s)...')
+    np_arrays = []
+    for x in range(len(files)):
+        exec('array' + str(x) + ' = []', locals())
+        exec('parse_file(files[' + str(x) + '], array' + str(x) + ')', globals(), locals())
+        exec('np_array' + str(x) + ' = np.array(array' + str(x) + ')', globals(), locals())
+        np_arrays.append(locals()['np_array' + str(x)])
+    plot_arrays(np_arrays, colors, xlabel, ylabel, grid)
+
+
+def plot_pitch(yu_file, ydo_file, ydi_file, color = 'b', set_to_0s = True): #(ydi_file, ydo_file, yu_file)
     print('Plotting Pitch...')
     array_ydi, array_ydo, array_yu = [], [], []
     parse_file(ydi_file, array_ydi)
@@ -119,12 +130,13 @@ def plot_pitch(yu_file, ydo_file, ydi_file, color = 'b'): #(ydi_file, ydo_file, 
     for x in range(len(pitch)):
         pitch[x, 2] = (math.atan(pitch[x, 2]/1.020)) # USING 1,0195 BECAUSE IT MADE THE GRAPHS GOOD LOOKING :)
     pitch[:, 2] = pitch[:, 2] * 1e6
-    pitch[:,0] = pitch[:,0] - pitch[0,0] # Setting first timestamp position to 0 seconds
-    pitch[:,1] = pitch[:,1] - pitch[0,1] # Setting first timestamp position to 0 seconds
+    if set_to_0s:
+        pitch[:,0] = pitch[:,0] - pitch[0,0] # Setting first timestamp position to 0 seconds
+        pitch[:,1] = pitch[:,1] - pitch[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([pitch], [color], ylabel='Pitch (urad)')
 
 
-def plot_roll(ydo_file, ydi_file, color = 'r'):
+def plot_roll(ydo_file, ydi_file, color = 'r', set_to_0s = True):
     print('Plotting Roll...')
     array_ydi, array_ydo, array_yu = [], [], []
     parse_file(ydi_file, array_ydi)
@@ -138,11 +150,12 @@ def plot_roll(ydo_file, ydi_file, color = 'r'):
     for x in range(len(roll)):
         roll[x, 2] = (math.atan(roll[x, 2]/0.4))
     roll[:, 2] = roll[:, 2] * 1e6 
-    roll[:,0] = roll[:,0] - roll[0,0] # Setting first timestamp position to 0 seconds
-    roll[:,1] = roll[:,1] - roll[0,1] # Setting first timestamp position to 0 seconds
+    if set_to_0s:
+        roll[:,0] = roll[:,0] - roll[0,0] # Setting first timestamp position to 0 seconds
+        roll[:,1] = roll[:,1] - roll[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([roll], ['r'], ylabel='Roll (urad)')
 
-def plot_y(yu_file, ydo_file, ydi_file, color = 'g'):
+def plot_y(yu_file, ydo_file, ydi_file, color = 'g', set_to_0s = True):
     print('Plotting Y...')
     array_ydi, array_ydo, array_yu = [], [], []
     parse_file(ydi_file, array_ydi)
@@ -156,8 +169,9 @@ def plot_y(yu_file, ydo_file, ydi_file, color = 'g'):
     mean_y[:,1] = test_yu_interp[:,1]
     mean_y = mean_y.astype(float)
     mean_y[:,2] = -mean_y[:,2] * 1e-5
-    mean_y[:,0] = mean_y[:,0] - mean_y[0,0] # Setting first timestamp position to 0 seconds
-    mean_y[:,1] = mean_y[:,1] - mean_y[0,1] # Setting first timestamp position to 0 seconds
+    if set_to_0s:
+        mean_y[:,0] = mean_y[:,0] - mean_y[0,0] # Setting first timestamp position to 0 seconds
+        mean_y[:,1] = mean_y[:,1] - mean_y[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([mean_y], [color], ylabel='Y (mm)')
 
 def plot_adc(adc_file, color = 'r'):
