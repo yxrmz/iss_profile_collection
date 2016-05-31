@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import math
 
+# Parse file and return a list in 'array_out'
 def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/'):
     with open(file_path + str(file_name)) as f:
-        #print('/GPFS/xf08id/pizza_box_data/' + str(file_name))
         len_of_line = len(next(f).split())
         if len_of_line == 5:
             f.seek(0)    
@@ -35,15 +35,8 @@ def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/')
                 array_out.append([int(current_line[0]), int(current_line[1]), current_line[3], int(current_line[2])])
 
 
-# Usage: bigger_array = interpolate(bigger_array, smaller_array)
-#def interpolate(bigger_array, smaller_array):
-#    array_interp = np.copy(smaller_array)
-#    array_interp2 = np.copy(bigger_array)
-#    array_interp[:,2] = np.interp(array_interp[:,0] + array_interp[:,1]*1e-9, array_interp2[:,0] + array_interp2[:,1]*1e-9, array_interp2[:,2])
-#    return array_interp
-
-
-
+# Interpolate arrays to have the same timestamp. array3 is optional.
+# return two or three interpolated arrays (return array_return, array_return2, array_return3)
 def interpolate(array1, array2, array3 = []):
     array_interp = np.copy(array1)
     array_interp2 = np.copy(array2)
@@ -77,9 +70,11 @@ def interpolate(array1, array2, array3 = []):
 
 
 # Calc mean between two arrays (Y):
+# return an array
 def mean_array(test, test3):
     return ((np.array(test) + np.array(test3))/2)
  
+# Plot [np.array] arrays. 'arrays' is a list of arrays.
 def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True):
     index = 0
     for x in arrays:
@@ -89,20 +84,8 @@ def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', yl
     plt.ylabel(ylabel)
     plt.grid(grid)
 
-# yu_yd = test_yu
-# yu_yd[:,2] = test_yu[:,2] - test_yd[:,2]
-# yu_yd = yu_yd.astype(float)
-# yu_yd[:,2] = yu_yd[:,2] * 1e-8
 
-# pitch = yu_yd
-# for x in range(len(yu_yd)):
-#     pitch[x, 2] = (math.atan(yu_yd[x, 2]))
-# 
-# plt.plot(pitch[:,0] + pitch[:,1]*1e-9, pitch[:,2], 'r')
-# plt.xlabel('Time Stamp (s)')
-# plt.ylabel('Pitch (rad)')
-# plt.grid(True)
-
+# Plot graphs getting the data directly from the files. 'files' is a list of file names.
 def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True):
     print('Plotting Array(s)...')
     np_arrays = []
@@ -114,6 +97,7 @@ def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp 
     plot_arrays(np_arrays, colors, xlabel, ylabel, grid)
 
 
+# Plot pitch graph passing the files names as arguments (yu_file, ydo_file and ydi_file)
 def plot_pitch(yu_file, ydo_file, ydi_file, color = 'b', set_to_0s = True): #(ydi_file, ydo_file, yu_file)
     print('Plotting Pitch...')
     array_ydi, array_ydo, array_yu = [], [], []
@@ -136,6 +120,7 @@ def plot_pitch(yu_file, ydo_file, ydi_file, color = 'b', set_to_0s = True): #(yd
     plot_arrays([pitch], [color], ylabel='Pitch (urad)')
 
 
+# Plot roll graph passing the files names as arguments (ydo_file and ydi_file)
 def plot_roll(ydo_file, ydi_file, color = 'r', set_to_0s = True):
     print('Plotting Roll...')
     array_ydi, array_ydo, array_yu = [], [], []
@@ -155,6 +140,8 @@ def plot_roll(ydo_file, ydi_file, color = 'r', set_to_0s = True):
         roll[:,1] = roll[:,1] - roll[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([roll], ['r'], ylabel='Roll (urad)')
 
+
+# Plot y graph passing the files names as arguments (yu_file, ydo_file and ydi_file)
 def plot_y(yu_file, ydo_file, ydi_file, color = 'g', set_to_0s = True):
     print('Plotting Y...')
     array_ydi, array_ydo, array_yu = [], [], []
@@ -174,11 +161,12 @@ def plot_y(yu_file, ydo_file, ydi_file, color = 'g', set_to_0s = True):
         mean_y[:,1] = mean_y[:,1] - mean_y[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([mean_y], [color], ylabel='Y (mm)')
 
+
+# Plot adc graph from analog pizzabox input file passing the file name as argument (adc_file)
 def plot_adc(adc_file, color = 'r'):
     print('Plotting ADC...')
     array_adc = []
     parse_file(adc_file, array_adc)
     test_adc = np.array(array_adc)
     plot_arrays([test_adc], [color], ylabel='ADC (V)')
-
 
