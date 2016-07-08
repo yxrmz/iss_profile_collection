@@ -1,7 +1,9 @@
+from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import math
+import csv
 
 # Parse file and return a list in 'array_out'
 def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/'):
@@ -33,21 +35,32 @@ def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/')
                     current_line[3] -= 0x40000
                 current_line[3] = float(current_line[3]) * 7.62939453125e-05
                 array_out.append([int(current_line[0]), int(current_line[1]), current_line[3], int(current_line[2])])
+        #numpy.savetxt("/home/istavitski/test.csv", np.array(array_out), delimiter=" ")
 
 
 # Interpolate arrays to have the same timestamp. array3 is optional.
-# return two or three interpolated arrays (return array_return, array_return2, array_return3)
-def interpolate(array1, array2, array3 = []):
+# Setting the option 'trunc' to True will make the output arrays have the length of the smallest input array. 
+# returns two or three interpolated arrays (return array_return, array_return2, array_return3)
+def interpolate(array1, array2, array3 = [], trunc = False, interval = 0.0001):
     array_interp = np.copy(array1)
     array_interp2 = np.copy(array2)
     array_interp3 = np.copy(array3)
-    if(len(array3)):
-        min_timestamp = np.array([array1[0,0] + array1[0,1] * 1e-9, array2[0,0] + array2[0,1] * 1e-9, array3[0,0] + array3[0,1] * 1e-9]).min()
-        max_timestamp = np.array([array1[len(array1)-1,0] + array1[len(array1)-1,1] * 1e-9, array2[len(array2)-1,0] + array2[len(array2)-1,1] * 1e-9, array3[len(array3)-1,0] + array3[len(array3)-1,1] * 1e-9]).max()
+    if(trunc):
+        if(len(array3)):
+            min_timestamp = np.array([array1[0,0] + array1[0,1] * 1e-9, array2[0,0] + array2[0,1] * 1e-9, array3[0,0] + array3[0,1] * 1e-9]).max()
+            max_timestamp = np.array([array1[len(array1)-1,0] + array1[len(array1)-1,1] * 1e-9, array2[len(array2)-1,0] + array2[len(array2)-1,1] * 1e-9, array3[len(array3)-1,0] + array3[len(array3)-1,1] * 1e-9]).min()
+        else:
+            min_timestamp = np.array([array1[0,0] + array1[0,1] * 1e-9, array2[0,0] + array2[0,1] * 1e-9]).max()
+            max_timestamp = np.array([array1[len(array1)-1,0] + array1[len(array1)-1,1] * 1e-9, array2[len(array2)-1,0] + array2[len(array2)-1,1] * 1e-9]).min()
     else:
-        min_timestamp = np.array([array1[0,0] + array1[0,1] * 1e-9, array2[0,0] + array2[0,1] * 1e-9]).min()
-        max_timestamp = np.array([array1[len(array1)-1,0] + array1[len(array1)-1,1] * 1e-9, array2[len(array2)-1,0] + array2[len(array2)-1,1] * 1e-9]).max()
-    timestamps = np.arange(min_timestamp, max_timestamp, 0.0001)
+        if(len(array3)):
+            min_timestamp = np.array([array1[0,0] + array1[0,1] * 1e-9, array2[0,0] + array2[0,1] * 1e-9, array3[0,0] + array3[0,1] * 1e-9]).min()
+            max_timestamp = np.array([array1[len(array1)-1,0] + array1[len(array1)-1,1] * 1e-9, array2[len(array2)-1,0] + array2[len(array2)-1,1] * 1e-9, array3[len(array3)-1,0] + array3[len(array3)-1,1] * 1e-9]).max()
+        else:
+            min_timestamp = np.array([array1[0,0] + array1[0,1] * 1e-9, array2[0,0] + array2[0,1] * 1e-9]).min()
+            max_timestamp = np.array([array1[len(array1)-1,0] + array1[len(array1)-1,1] * 1e-9, array2[len(array2)-1,0] + array2[len(array2)-1,1] * 1e-9]).max()
+    
+    timestamps = np.arange(min_timestamp, max_timestamp, interval)
     timestamps_sec = np.copy(timestamps)
     timestamps_nano = np.copy(timestamps)
     for i in range(len(timestamps)):
@@ -69,32 +82,64 @@ def interpolate(array1, array2, array3 = []):
         return array_return, array_return2
 
 
+
 # Calc mean between two arrays (Y):
-# return an array
+# returns an array
 def mean_array(test, test3):
     return ((np.array(test) + np.array(test3))/2)
  
 # Plot [np.array] arrays. 'arrays' is a list of arrays.
-def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True):
+def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, xy_plot=False):
     index = 0
-    for x in arrays:
-        plt.plot(x[:,0] + x[:,1] * 1e-9, x[:,2], colors[index])
-        index += 1
+    if(xy_plot):
+        plt.plot(arrays[0][:,2], arrays[1][:,2], colors[index])
+    else:
+        for x in arrays:
+            plt.plot(x[:,0] + x[:,1] * 1e-9, x[:,2], colors[index])
+            index += 1
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(grid)
 
 
 # Plot graphs getting the data directly from the files. 'files' is a list of file names.
-def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True):
+def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, interpolate=True, trunc=False, xy_plot=False):
     print('Plotting Array(s)...')
     np_arrays = []
     for x in range(len(files)):
         exec('array' + str(x) + ' = []', locals())
         exec('parse_file(files[' + str(x) + '], array' + str(x) + ')', globals(), locals())
         exec('np_array' + str(x) + ' = np.array(array' + str(x) + ')', globals(), locals())
+        if(interpolate and x > 0):
+            if(trunc):
+                locals()['np_array' + str(x-1)], locals()['np_array' + str(x)] = globals()['interpolate'](locals()['np_array' + str(x-1)], locals()['np_array' + str(x)], trunc=True)
+            else:
+                locals()['np_array' + str(x-1)], locals()['np_array' + str(x)] = globals()['interpolate'](locals()['np_array' + str(x-1)], locals()['np_array' + str(x)])
+            np_arrays.pop()
+            np_arrays.append(locals()['np_array' + str(x-1)])
         np_arrays.append(locals()['np_array' + str(x)])
-    plot_arrays(np_arrays, colors, xlabel, ylabel, grid)
+    plot_arrays(np_arrays, colors, xlabel, ylabel, grid, xy_plot=xy_plot)
+
+def plot_volt_energy(files, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', ylabel='V', grid=True):
+    print('Plotting V x Energy...')
+    np_arrays = []
+    for x in range(len(files)):
+        exec('array' + str(x) + ' = []', locals())
+        exec('parse_file(files[' + str(x) + '], array' + str(x) + ')', globals(), locals())
+        exec('np_array' + str(x) + ' = np.array(array' + str(x) + ')', globals(), locals())
+        if(x > 0):
+            locals()['np_array' + str(x-1)], locals()['np_array' + str(x)] = globals()['interpolate'](locals()['np_array' + str(x-1)], locals()['np_array' + str(x)], trunc=True)
+            np_arrays.pop()
+            np_arrays.append(locals()['np_array' + str(x-1)])
+        elif (x == 0):
+            for i in range(len(locals()['np_array' + str(x)])):
+                locals()['np_array' + str(x)][i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(locals()['np_array' + str(x)][i, 2]/360000)))
+            #locals()['np_array' + str(x)] = locals()['np_array' + str(x)].astype(float)
+            #locals()['np_array' + str(x)][:, 2] = locals()['np_array' + str(x)][:, 2]/360000
+            #locals()['np_array' + str(x)][:, 2] = math.radians(locals()['np_array' + str(x)][:, 2])
+            #locals()['np_array' + str(x)][:, 2] = 12400 / (2 * 3.1356 * math.sin(math.radians(locals()['np_array' + str(x)][:, 2]/360000)))
+        np_arrays.append(locals()['np_array' + str(x)])
+    plot_arrays(np_arrays, colors, xlabel, ylabel, grid, xy_plot=True)
 
 
 # Plot pitch graph passing the files names as arguments (yu_file, ydo_file and ydi_file)
@@ -163,10 +208,14 @@ def plot_y(yu_file, ydo_file, ydi_file, color = 'g', set_to_0s = True):
 
 
 # Plot adc graph from analog pizzabox input file passing the file name as argument (adc_file)
-def plot_adc(adc_file, color = 'r'):
+def plot_adc(adc_file, color = 'r', set_to_0s = True):
     print('Plotting ADC...')
     array_adc = []
     parse_file(adc_file, array_adc)
     test_adc = np.array(array_adc)
+    if set_to_0s:
+        test_adc[:,0] = test_adc[:,0] - test_adc[0,0] # Setting first timestamp position to 0 seconds
+        test_adc[:,1] = test_adc[:,1] - test_adc[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([test_adc], [color], ylabel='ADC (V)')
+
 

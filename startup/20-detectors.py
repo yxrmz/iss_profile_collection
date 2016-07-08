@@ -12,6 +12,7 @@ import filestore.api as fs
 class BPM(ProsilicaDetector, SingleTrigger):
     image = Cpt(ImagePlugin, 'image1:')
     stats1 = Cpt(StatsPlugin, 'Stats1:')
+    stats2 = Cpt(StatsPlugin, 'Stats2:')
     # Dan Allan guessed about the nature of these signals. Fix them if you need them.
     ins = Cpt(EpicsSignal, 'Cmd:In-Cmd')
     ret = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
@@ -24,6 +25,10 @@ class BPM(ProsilicaDetector, SingleTrigger):
 
     def retract(self):
         self.ret.put(1)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage_sigs.clear()  # default stage sigs do not apply
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
@@ -53,6 +58,7 @@ class Encoder(Device):
     filter_dy = Cpt(EpicsSignal, '}Fltr:dY-SP')
     filter_dt = Cpt(EpicsSignal, '}Fltr:dT-SP')
     reset_counts = Cpt(EpicsSignal, '}Rst-Cmd')
+    scan_read = False
 
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
@@ -71,17 +77,32 @@ class EncoderFS(Encoder):
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
-        print(self.name, 'stage')
-        DIRECTORY = '/GPFS/xf08id/pizza_box_data'
-        filename = str(uuid.uuid4())[:8]
-        full_path = os.path.join(DIRECTORY, filename)
-        if len(full_path) > 40:
-            raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
+
+        if self.scan_read: # Bruno's test
+            print(self.name, 'stage')
+            DIRECTORY = '/GPFS/xf08id/pizza_box_data'
+            filename = str(uuid.uuid4())[:8]
+            full_path = os.path.join(DIRECTORY, filename)
+            if len(full_path) > 40:
+                raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
-        self.filepath.put(full_path)
-        self.resource_uid = fs.insert_resource('PIZZABOX_FILE', full_path)
-        self._full_path = full_path  # stash for future reference
+            self.filepath.put(full_path)
+            self.resource_uid = fs.insert_resource('PIZZABOX_FILE', full_path)
+            self._full_path = full_path  # stash for future reference
+
+            self._ready_to_collect = True # Bruno's test
+            set_and_wait(self.ignore_sel, 0) # Part of Bruno's test
+
         super().stage()
+
+# Bruno's test:
+    def unstage(self):
+        "set the device to the previous state"
+        if self.scan_read:
+            print(self.name, 'unstage')
+            self._ready_to_collect = False
+            set_and_wait(self.ignore_sel, 1)
+        super().unstage()
 
     def kickoff(self):
         print('kickoff', self.name)
@@ -188,6 +209,8 @@ class Adc(Device):
     #pos_array = Cpt(EpicsSignal, '}Cnt:Pos_Bin_')
     index_array = Cpt(EpicsSignal, '}Cnt:Index_Bin_')
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
+    sample_rate = Cpt(EpicsSignal, '}F:Sample-SP')
+    volt_I = Cpt(EpicsSignal, '}V-I')
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
     enable_rb = Cpt(EpicsSignal, '}Ena-RB')    
@@ -197,6 +220,7 @@ class Adc(Device):
         self._ready_to_collect = False
         if self.connected:
             self.enable_sel.put(0)
+            self.sample_rate.put(5000) # Is 5000 * 10ns a good sample rate?
 
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
@@ -213,7 +237,19 @@ class AdcFS(Adc):
         self.filepath.put(full_path)
         self.resource_uid = fs.insert_resource('PIZZABOX_FILE', full_path)
         self._full_path = full_path  # stash for future reference
+
+        self._ready_to_collect = True # Bruno's test
+        set_and_wait(self.enable_sel, 1) # Part os Bruno's test
+
         super().stage()
+
+# Bruno's test:
+    def unstage(self):
+        "set the device to the previous state"
+        print(self.name, 'unstage')
+        self._ready_to_collect = False
+        set_and_wait(self.enable_sel, 0)
+        super().unstage()
 
     def kickoff(self):
         print('kickoff', self.name)
@@ -310,4 +346,3 @@ class PizzaBoxHandler:
         
 
 
-testArray = [tc_mask2_4, tc_mask2_3, pb1.enc1.pos_I, pb1.enc2.pos_I, pb1.enc3.pos_I, pb1.enc4.pos_I, pb1.ts_sec]

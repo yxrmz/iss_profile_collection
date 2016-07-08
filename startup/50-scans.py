@@ -43,6 +43,12 @@ def pb_scan(signal, motor, init_pos, final_pos, count):
     elif (motor.name[len(motor.name) - 1 : len(motor.name)] == 'y') and (len(signal) == 3):
         plot_y(signal[0].filepath.value[len(signal[0].filepath.value) - 8 : len(signal[0].filepath.value)], signal[1].filepath.value[len(signal[1].filepath.value) - 8 : len(signal[1].filepath.value)], signal[2].filepath.value[len(signal[2].filepath.value) - 8 : len(signal[2].filepath.value)])
 
+def relative_bpm_scan(detectors, motor, relative_init_pos, relative_end_pos, steps):
+    #test_scan = relative_scan([bpm_cm], cm2.pitch, -0.14, 0.14, 5)
+    plan = relative_scan(detectors, motor, relative_init_pos, relative_end_pos, steps)
+    RE(plan, [LiveTable(x.name for x in detectors), LivePlot(detectors[0].stats1.total.name, 'hhm_theta')])
+    table = get_table(db[-1])
+    print(table)
 
 # DEMO WITH DAN:
 def pizza_test():

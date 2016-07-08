@@ -69,6 +69,24 @@ class HHM_Energy(PseudoPositioner):
     def forward(self, pseudo_pos):
         '''Run a forward (pseudo -> real) calculation'''
         pseudo_theta=energy2theta(pseudo_pos.energy)
+        return self.RealPosition(actual_theta=-pseudo_theta, y=self.y.read()['hhm_en_y']['value'])
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        '''Run an inverse (real -> pseudo) calculation'''
+        return self.PseudoPosition(energy=-real_pos.actual_theta)
+
+
+class HHM_Energy_FE(PseudoPositioner):
+    # do not set values to actual theta!
+    actual_theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
+    energy = Cpt(PseudoSingle, '')
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        '''Run a forward (pseudo -> real) calculation'''
+        pseudo_theta=energy2theta(pseudo_pos.energy)
         return self.RealPosition(actual_theta=-pseudo_theta,
                                  y=fix_exit_trig_formula(-pseudo_theta))
 
