@@ -1,4 +1,5 @@
-from ophyd import (EpicsMotor, Device, Component as Cpt, PseudoPositioner, PseudoSingle)
+from ophyd import (EpicsMotor, Device, Component as Cpt, PseudoPositioner, PseudoSingle,
+                   EpicsSignal)
 from ophyd.pseudopos import (pseudo_position_argument,
                              real_position_argument)
 import numpy as np

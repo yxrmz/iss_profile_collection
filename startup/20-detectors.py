@@ -1,4 +1,5 @@
 import uuid
+from collections import namedtuple
 import os
 import time as ttime
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
