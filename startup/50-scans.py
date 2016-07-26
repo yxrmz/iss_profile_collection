@@ -22,14 +22,17 @@ def ct_ave(signal, num, delay):
     for x in range(len(signal)):	
         print("Mean (" + signal[x].name +  ") =", table[signal[x].name].mean())
 
-#def ct_ave(signal, num, delay):
-#    plan=Count([signal], num, delay)
-#    plan.subs=[LiveTable([signal.name])]
-#    RE(plan)
-#    last_run = db[-1]
-#    table = get_table(last_run)
+def testScan():
+    xia1.erase_start.put(1)
+    RE(relative_scan([hhm.pitch, bpm_fm.stats1, xia1], hhm.pitch, -5, 5, 10), [LiveTable([hhm.pitch, bpm_fm.stats1, xia1])], elis_tag='test')
+    #RE(count([xia1], num=5), LiveTable([xia1]))
+    xia1.stop.put(1)
 
-#    print("Mean (" + signal.name +  ") =", table[signal.name].mean())
+# Get last table:
+    #table = db.get_table(db[-1])
+# Get last read of graph3:
+    #table['xia1_graph3'][len(table['xia1_graph3'])]
+
 
 def pb_scan(signal, motor, init_pos, final_pos, count):
     scanning_plan = DeltaScanPlan([], motor, init_pos, final_pos, count)

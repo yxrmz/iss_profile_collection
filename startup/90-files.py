@@ -89,13 +89,13 @@ def mean_array(test, test3):
     return ((np.array(test) + np.array(test3))/2)
  
 # Plot [np.array] arrays. 'arrays' is a list of arrays.
-def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, xy_plot=False):
+def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, xy_plot=False, ycolumn=2, xcolumn=2):
     index = 0
     if(xy_plot):
-        plt.plot(arrays[0][:,2], arrays[1][:,2], colors[index])
+        plt.plot(arrays[0][:,xcolumn], arrays[1][:,ycolumn], colors[index])
     else:
         for x in arrays:
-            plt.plot(x[:,0] + x[:,1] * 1e-9, x[:,2], colors[index])
+            plt.plot(x[:,0] + x[:,1] * 1e-9, x[:,ycolumn], colors[index])
             index += 1
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -134,10 +134,6 @@ def plot_volt_energy(files, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', y
         elif (x == 0):
             for i in range(len(locals()['np_array' + str(x)])):
                 locals()['np_array' + str(x)][i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(locals()['np_array' + str(x)][i, 2]/360000)))
-            #locals()['np_array' + str(x)] = locals()['np_array' + str(x)].astype(float)
-            #locals()['np_array' + str(x)][:, 2] = locals()['np_array' + str(x)][:, 2]/360000
-            #locals()['np_array' + str(x)][:, 2] = math.radians(locals()['np_array' + str(x)][:, 2])
-            #locals()['np_array' + str(x)][:, 2] = 12400 / (2 * 3.1356 * math.sin(math.radians(locals()['np_array' + str(x)][:, 2]/360000)))
         np_arrays.append(locals()['np_array' + str(x)])
     plot_arrays(np_arrays, colors, xlabel, ylabel, grid, xy_plot=True)
 
@@ -217,5 +213,29 @@ def plot_adc(adc_file, color = 'r', set_to_0s = True):
         test_adc[:,0] = test_adc[:,0] - test_adc[0,0] # Setting first timestamp position to 0 seconds
         test_adc[:,1] = test_adc[:,1] - test_adc[0,1] # Setting first timestamp position to 0 seconds
     plot_arrays([test_adc], [color], ylabel='ADC (V)')
+
+# Plot adc graph from analog pizzabox input file passing the file name as argument (adc_file)
+def plot_hhm_deg(enc_file, color = 'r', set_to_0s = True):
+    print('Plotting HHM Deg...')
+    array_enc = []
+    parse_file(enc_file, array_enc)
+    test_enc = np.array(array_enc)
+    test_enc = test_enc.astype(float)
+    test_enc[:,2] = test_enc[:,2] / 360000
+    if set_to_0s:
+        test_enc[:,0] = test_enc[:,0] - test_enc[0,0] # Setting first timestamp position to 0 seconds
+        test_enc[:,1] = test_enc[:,1] - test_enc[0,1] # Setting first timestamp position to 0 seconds
+    plot_arrays([test_enc], [color], ylabel='Theta (deg)')
+
+# Plot DI graph from pizzabox input file passing the file name as argument (di_file)
+def plot_di(di_file, color = 'r', set_to_0s = True):
+    print('Plotting DI...')
+    array_di = []
+    parse_file(di_file, array_di)
+    test_di = np.array(array_di)
+    if set_to_0s:
+        test_di[:,0] = test_di[:,0] - test_di[0,0] # Setting first timestamp position to 0 seconds
+        test_di[:,1] = test_di[:,1] - test_di[0,1] # Setting first timestamp position to 0 seconds
+    plot_arrays([test_di], [color], ylabel='ADC (V)', ycolumn=4)
 
 

@@ -36,17 +36,33 @@ def energy2theta(energy):
 
 class HHM(Device):
     "high heat load monochrometer"
-    pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
-    roll = Cpt(EpicsMotor, '-Ax:R}Mtr')
-    theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
-    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
-    theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')  # degrees
+    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
+    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
+    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
+    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
+    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')  # degrees
+
+  # The following are related to trajectory motion
+    lut_number = Cpt(EpicsSignal, 'MC:06}LUT-Set')
+    lut_number_rbv = Cpt(EpicsSignal, 'MC:06}LUT-Read')
+    lut_start_transfer = Cpt(EpicsSignal, 'MC:06}TransferLUT')
+    lut_transfering = Cpt(EpicsSignal, 'MC:06}TransferLUT-Read')
+    traj_mode = Cpt(EpicsSignal, 'MC:06}TrajFlag1-Set')
+    traj_mode_rbv = Cpt(EpicsSignal, 'MC:06}TrajFlag1-Read')
+    enable_ty = Cpt(EpicsSignal, 'MC:06}TrajFlag2-Set')
+    enable_ty_rbv = Cpt(EpicsSignal, 'MC:06}TrajFlag2-Read')
+    cycle_limit = Cpt(EpicsSignal, 'MC:06}TrajRows-Set')
+    cycle_limit_rbv = Cpt(EpicsSignal, 'MC:06}TrajRows-Read')
+
+    prepare_trajectory = Cpt(EpicsSignal, 'MC:06}PrepareTraj')
+    start_trajectory = Cpt(EpicsSignal, 'MC:06}StartTraj')
+    stop_trajectory = Cpt(EpicsSignal, 'MC:06}StopTraj')
 
 class HHM_FixedExit(PseudoPositioner):
     # do not set values to actual theta!
-    actual_theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
+    actual_theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
     theta = Cpt(PseudoSingle, '')
-    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -61,9 +77,9 @@ class HHM_FixedExit(PseudoPositioner):
 
 class HHM_Energy(PseudoPositioner):
     # do not set values to actual theta!
-    actual_theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
+    actual_theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
     energy = Cpt(PseudoSingle, '')
-    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -79,9 +95,9 @@ class HHM_Energy(PseudoPositioner):
 
 class HHM_Energy_FE(PseudoPositioner):
     # do not set values to actual theta!
-    actual_theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
+    actual_theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
     energy = Cpt(PseudoSingle, '')
-    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -96,9 +112,9 @@ class HHM_Energy_FE(PseudoPositioner):
         return self.PseudoPosition(energy=-real_pos.actual_theta)
 
 
-hhm_fe = HHM_FixedExit('XF:08IDA-OP{Mono:HHM', name='fixed_exit', read_attrs=['theta', 'y'])
-hhm_en = HHM_Energy('XF:08IDA-OP{Mono:HHM', name='hhm_en', read_attrs=['energy','y'])
-hhm = HHM('XF:08IDA-OP{Mono:HHM', name='hhm')
+hhm_fe = HHM_FixedExit('XF:08IDA-OP{', name='fixed_exit', read_attrs=['theta', 'y'])
+hhm_en = HHM_Energy('XF:08IDA-OP{', name='hhm_en', read_attrs=['energy','y'])
+hhm = HHM('XF:08IDA-OP{', name='hhm')
 
   
 
