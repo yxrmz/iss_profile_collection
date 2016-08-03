@@ -54,10 +54,14 @@ class HHM(Device):
     enable_ty_rbv = Cpt(EpicsSignal, 'MC:06}TrajFlag2-Read')
     cycle_limit = Cpt(EpicsSignal, 'MC:06}TrajRows-Set')
     cycle_limit_rbv = Cpt(EpicsSignal, 'MC:06}TrajRows-Read')
+    enable_loop = Cpt(EpicsSignal, 'MC:06}TrajLoopFlag-Set')
+    enable_loop_rbv = Cpt(EpicsSignal, 'MC:06}TrajLoopFlag')
 
     prepare_trajectory = Cpt(EpicsSignal, 'MC:06}PrepareTraj')
+    trajectory_ready = Cpt(EpicsSignal, 'MC:06}TrajInitPlc-Read')
     start_trajectory = Cpt(EpicsSignal, 'MC:06}StartTraj')
     stop_trajectory = Cpt(EpicsSignal, 'MC:06}StopTraj')
+
 
 class HHM_FixedExit(PseudoPositioner):
     # do not set values to actual theta!

@@ -3,7 +3,8 @@ from collections import namedtuple
 import os
 import time as ttime
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
-                   EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin)
+                   EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
+                   DeviceStatus)
 from ophyd.areadetector.base import ADComponent as ADCpt, EpicsSignalWithRBV
 from ophyd import DeviceStatus, set_and_wait
 from bluesky.examples import NullStatus
@@ -45,54 +46,6 @@ for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2]:
 tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',name='tc_mask2_4')
 tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',name='tc_mask2_3')
 
-class XIA(Device):
-    graph1 = 		Cpt(EpicsSignal, ':mca1.VAL')
-    graph2 = 		Cpt(EpicsSignal, ':mca2.VAL')
-    graph3 = 		Cpt(EpicsSignal, ':mca3.VAL')
-    graph4 = 		Cpt(EpicsSignal, ':mca4.VAL')
-    mode = 		Cpt(EpicsSignal, ':PresetMode')
-    collect_mode = 	Cpt(EpicsSignal, ':CollectMode')
-    start = 		Cpt(EpicsSignal, ':StartAll')
-    stop = 		Cpt(EpicsSignal, ':StopAll')
-    erase_start =	Cpt(EpicsSignal, ':EraseStart')
-    erase = 		Cpt(EpicsSignal, ':EraseAll')
-
-#    def stage(self):
-#        "Set the filename and record it in a 'resource' document in the filestore database."
-#        print(self.name, 'stage')
-#        super().stage()
-#
-    def kickoff(self):
-        print('kickoff', self.name)
-        self._ready_to_collect = True
-        "Start getting data."
-        
-        set_and_wait(self.mode, 1)
-        set_and_wait(self.start, 1)
-#
-#        # Return a 'status object' that immediately reports we are 'done' ---
-#        # ready to collect at any time.
-#        return NullStatus()
-#
-#    def complete(self):
-#        if not self._ready_to_collect:
-#            raise RuntimeError("must called kickoff() method before calling complete()")
-#        # Stop adding new data to the file.
-#        set_and_wait(self.stop, 1)
-#        return NullStatus()
-#
-#    def collect(self):
-#        """
-#        Record a 'datum' document in the filestore database for each encoder.
-#
-#        Return a dictionary with references to these documents.
-#        """
-#        print('collect', self.name)
-#        self._ready_to_collect = False
-
-
-xia1 = XIA('dxpXMAP', name='xia1')
-xia1.read_attrs = ['graph1', 'graph2', 'graph3', 'graph4']
 
 class Encoder(Device):
     """This class defines components but does not implement actual reading.
@@ -148,7 +101,6 @@ class EncoderFS(Encoder):
 
         super().stage()
 
-
     def kickoff(self):
         print('kickoff', self.name)
         self._ready_to_collect = True
@@ -161,6 +113,7 @@ class EncoderFS(Encoder):
         return NullStatus()
 
     def complete(self):
+        print('complete', self.name, '| filepath', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -196,7 +149,7 @@ class EncoderFS(Encoder):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
+                     {'filename': self._full_path, 'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
                       'dtype': 'array'}}}
 
 
@@ -248,7 +201,6 @@ class DIFS(DigitalInput):
 
         super().stage()
 
-
     def kickoff(self):
         print('kickoff', self.name)
         self._ready_to_collect = True
@@ -261,6 +213,7 @@ class DIFS(DigitalInput):
         return NullStatus()
 
     def complete(self):
+        print('complete', self.name, '| filepath', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -296,7 +249,7 @@ class DIFS(DigitalInput):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
+                     {'filename': self._full_path, 'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
                       'dtype': 'array'}}}
 
 class PizzaBoxFS(Device):
@@ -336,7 +289,7 @@ class PizzaBoxFS(Device):
 
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')
 pb2 = PizzaBoxFS('XF:08IDA-CT{Enc02', name = 'pb2')
-pb4 = PizzaBoxFS('XF:08IDA-CT{Enc04', name = 'pb4') #PB inside hutch B (for now)
+#pb4 = PizzaBoxFS('XF:08IDA-CT{Enc04', name = 'pb4') #PB inside hutch B (for now)
 pb5 = PizzaBoxFS('XF:08IDA-CT{Enc05', name = 'pb5')
 pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
@@ -352,17 +305,26 @@ class Adc(Device):
     index_array = Cpt(EpicsSignal, '}Cnt:Index_Bin_')
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     sample_rate = Cpt(EpicsSignal, '}F:Sample-SP')
-    volt_I = Cpt(EpicsSignal, '}V-I')
+    sample_rate_rbv = Cpt(EpicsSignal, '}F:Sample-I_')
+    enable_averaging = Cpt(EpicsSignal, '}Avrg-Sel')
+    enable_averaging_rbv = Cpt(EpicsSignal, '}Avrg-Sts')
+    averaging_points = Cpt(EpicsSignal, '}Avrg-SP')
+    averaging_points_rbv = Cpt(EpicsSignal, '}GP-ADC:Reg0-RB_')
+    volt_array = Cpt(EpicsSignal, '}V-I')
+    volt = Cpt(EpicsSignal, '}E-I')
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
-    enable_rb = Cpt(EpicsSignal, '}Ena-RB')    
+    enable_rb = Cpt(EpicsSignal, '}Ena-Sts')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
-            self.enable_sel.put(0)
-            self.sample_rate.put(5000) # Is 5000 * 10ns a good sample rate?
+            self.enable_sel.put(1)
+            self.sample_rate.put(275) # Is 275 * 10ns a good sample rate?
+            self.enable_averaging.put(1)
+            self.averaging_points.put("64")
+
 
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
@@ -389,23 +351,23 @@ class AdcFS(Adc):
 
         super().stage()
 
-
     def kickoff(self):
         print('kickoff', self.name)
         self._ready_to_collect = True
         "Start writing data into the file."
 
-        set_and_wait(self.enable_sel, 1)
+        set_and_wait(self.enable_sel, 0)
 
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
         return NullStatus()
 
     def complete(self):
+        print('complete', self.name, '| filepath', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
-        set_and_wait(self.enable_sel, 0)
+        set_and_wait(self.enable_sel, 1)
         return NullStatus()
     
     def collect(self):
@@ -438,7 +400,7 @@ class AdcFS(Adc):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [5,],
+                     {'filename': self._full_path, 'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [5,],
                       'dtype': 'array'}}}
 
 
@@ -446,6 +408,8 @@ class PizzaBoxAnalogFS(Device):
     internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
 
     adc1 = Cpt(AdcFS, 'GP-ADC:1')
+    adc6 = Cpt(AdcFS, 'GP-ADC:6')
+    adc7 = Cpt(AdcFS, 'GP-ADC:7')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -469,7 +433,8 @@ class PizzaBoxAnalogFS(Device):
             yield from getattr(self, attr_name).collect()
 
 
-pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1')
+#pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1')
+pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{', name = 'pba2')
 
 import numpy as np
 

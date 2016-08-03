@@ -11,4 +11,11 @@ generic_logbook_func = simple_olog_client.log
 configured_logbook_func = partial(generic_logbook_func, logbooks=LOGBOOKS)
 
 cb = logbook_cb_factory(configured_logbook_func)
+
+#DICT_OF_TEMPLATES = {'relative_scan': "BLAH",
+#                     'execute_trajectory': "BLERG"}
+
+#cb = logbook_cb_factory(configured_logbook_func,
+#                        desc_template=CUSTOM_DEFAULT_TEMPLATE,
+#                        desc_dispatch=DICT_OF_TEMPLATES)
 RE.subscribe('start', cb)

@@ -5,6 +5,12 @@ import pexpect
 from pexpect import pxssh
 from ftplib import FTP
 
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
 def query_yes_no(question, default="yes"):
     """Ask a yes/no question via input() and return their answer.
 
@@ -40,6 +46,10 @@ def query_yes_no(question, default="yes"):
 
 def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS/xf08id/pizza_box_data/', new_file_path = '10', ip = '10.8.2.86'):
     
+    # Get number of lines in file
+    file_size = file_len(orig_file_path + orig_file_name)
+    print('Number of lines in file:', file_size)
+
     # Create ftp connection with default credential
     ftp = FTP(ip)
     ftp.login()
@@ -70,13 +80,12 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
         if file_name == new_file_name:
             file_exists = 1
     if file_exists == 1:
-        ftp.delete(new_file_name)
-        #if query_yes_no('First file "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
-        #    ftp.delete(new_file_name)
-        #else:
-        #    print('File already exists, try other name or directory.')
-        #    ftp.close()
-        #    return False
+        if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
+            ftp.delete(new_file_name)
+        else:
+            print('File already exists, try other name or directory.')
+            ftp.close()
+            return False
 
     ftp_file_path = '/var/ftp/usrflash/lut/' + new_file_path + '/' + new_file_name 
     # Open file and transfer to the power pmac
@@ -89,53 +98,53 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
             sleep(0.001)
             ftp.close()
 
-    s.prompt(timeout=4)
-    s.sendline('cd /opt/ppmac/usrflash/lut/')
-    s.prompt(timeout=4)
-    s.prompt(timeout=4)
-    s.sendline('ls -l')
-    s.prompt(timeout=4)
-    lsresult = s.before.splitlines()
-    lsresult.pop(0)
-    lsresult.pop(0)
-    dir_exists = 0
-    for x in range(0, len(lsresult)):
-        lsresult[x] = str(lsresult[x])[50:len(str(lsresult[x]))-1]
-        if lsresult[x] == new_file_path:
-            dir_exists = 1
-    if not dir_exists:
-        s.sendline('mkdir ' + new_file_path)
-        s.prompt(timeout=4)
+#    s.prompt(timeout=4)
+#    s.sendline('cd /opt/ppmac/usrflash/lut/')
+#    s.prompt(timeout=4)
+#    s.prompt(timeout=4)
+#    s.sendline('ls -l')
+#    s.prompt(timeout=4)
+#    lsresult = s.before.splitlines()
+#    lsresult.pop(0)
+#    lsresult.pop(0)
+#    dir_exists = 0
+#    for x in range(0, len(lsresult)):
+#        lsresult[x] = str(lsresult[x])[50:len(str(lsresult[x]))-1]
+#        if lsresult[x] == new_file_path:
+#            dir_exists = 1
+#    if not dir_exists:
+#        s.sendline('mkdir ' + new_file_path)
+#        s.prompt(timeout=4)
 
-    s.sendline('cd ' + new_file_path)
-    s.prompt(timeout=10)
-    s.sendline('ls -l')
-    sleep(0.5)
-    s.prompt(timeout=10)
-    lsresult = s.before.splitlines()
-    lsresult.pop(0)
-    lsresult.pop(0)
-    file_exists = 0
+#    s.sendline('cd ' + new_file_path)
+#    s.prompt(timeout=10)
+#    s.sendline('ls -l')
+#    sleep(0.5)
+#    s.prompt(timeout=10)
+#    lsresult = s.before.splitlines()
+#    lsresult.pop(0)
+#    lsresult.pop(0)
+#    file_exists = 0
 #    print(lsresult)
-    for x in range(0, len(lsresult)):
-        lsresult[x] = str(lsresult[x])[str(lsresult[x]).index(":") + 4 : len(str(lsresult[x])) - 1]
+#    for x in range(0, len(lsresult)):
+#        lsresult[x] = str(lsresult[x])[str(lsresult[x]).index(":") + 4 : len(str(lsresult[x])) - 1]
 #        print(lsresult[x])
-        if lsresult[x] == new_file_name:
-            file_exists = 1
-    if file_exists == 1:
-        if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
+#        if lsresult[x] == new_file_name:
+#            file_exists = 1
+#    if file_exists == 1:
+#        if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
             #print('uai')
-            #s.sendline('rm ' + new_file_name)
-            sleep(0.1)
-        else:
-            print('File already exists, try other name or directory.')
-            ftp.close()
-            return False
+#            #s.sendline('rm ' + new_file_name)
+#            sleep(0.1)
+#        else:
+#            print('File already exists, try other name or directory.')
+#            ftp.close()
+#            return False
             
-    sleep(0.2)
+#    sleep(0.2)
     #print('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + new_file_path)
-    s.sendline('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + new_file_path)
-    s.prompt(timeout=10)
+#    s.sendline('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + new_file_path)
+#    s.prompt(timeout=10)
     #print(s.before)
 
     print('File sent successfully')
