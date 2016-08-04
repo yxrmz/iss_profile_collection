@@ -354,7 +354,7 @@ def plot_ion_energy_db(uid, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', y
     for i in range(len(test_encoder)):
         #test_encoder[i, 2] = (test_encoder[i, 2]/360000)
         #test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
-        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.13)))
+        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.134)))
     test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
     np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
     np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")

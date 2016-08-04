@@ -22,7 +22,7 @@ def get_ion_energy_arrays(uid, filepath='/GPFS/xf08id/pizza_box_data/'):
 	test_encoder = test_encoder.astype(float)
 	for i in range(len(test_encoder)):
 		#test_encoder[i, 2] = (test_encoder[i, 2]/360000)
-		test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
+		test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.134)))
 	test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
 	np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
 	np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
@@ -33,15 +33,17 @@ def get_ion_energy_arrays(uid, filepath='/GPFS/xf08id/pizza_box_data/'):
 	return test_encoder[:,2], result_ion[:,2], encoder_file, ion_file, ion_file2
 
 
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/snapshots/'):
+def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 	print('Plotting Ion Chambers x Energy and generating log...')
 	array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
 	stop_timestamp = db[uuid]['stop']['time']
 
+	plt.clf()
 	plt.plot(array_x, array_y)
 	plt.show()
-	fn = log_path + comment + '.png'
+	fn = log_path + 'snapshots/' + comment + '.png'
 	plt.savefig(fn)
+	fn = './snapshots/' + comment + '.png'
 
 	uid = db[uuid]['start']['uid']
 	time_stamp=('<p> Scan complete:  ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%d/%m/%Y    %H:%M:%S')) + '</p>')
@@ -57,7 +59,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/snapshots/'):
 
 	for indx,line in enumerate(lines):
 		if indx is 1:
-			text_file_new.write('<p> ' + comment + ' </p>\n')
+			text_file_new.write('<header><h2> ' + comment + ' </h2></header>\n')
 			text_file_new.write(uuid + '\n')
 			text_file_new.write(files + '\n')
 			text_file_new.write(time_stamp + '\n')
