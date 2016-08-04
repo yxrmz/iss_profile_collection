@@ -270,34 +270,35 @@ def plot_ion_chambers(ion_file, ion_file2, color = 'r', set_to_0s = False, ycolu
 # plot_hhm_deg('en_fdecac', color='b',set_to_0s=False)
 
 def plot_ion_energy(ion_file, ion_file2, encoder_file, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', ylabel='log(ion1 / ion2)', grid=True, set_to_0s=False, filepath='/GPFS/xf08id/pizza_box_data/'):
-    array_ion = []
-    array_ion2 = []
-    array_encoder = []
-    parse_file(ion_file, array_ion)
-    parse_file(ion_file2, array_ion2)
-    parse_file(encoder_file, array_encoder)
-    test_ion = np.array(array_ion)
-    test_ion2 = np.array(array_ion2)
-    test_encoder = np.array(array_encoder)
-    test_encoder = test_encoder.astype(float)
-    for i in range(len(test_encoder)):
-        #test_encoder[i, 2] = (test_encoder[i, 2]/360000)
-        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
-    test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
-    np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-    np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-    np.savetxt(filepath + encoder_file + '-interp.txt', test_encoder, fmt='%09i %09i %f %i %i', delimiter=" ")
+	array_ion = []
+	array_ion2 = []
+	array_encoder = []
+	parse_file(ion_file, array_ion)
+	parse_file(ion_file2, array_ion2)
+	parse_file(encoder_file, array_encoder)
+	test_ion = np.array(array_ion)
+	test_ion2 = np.array(array_ion2)
+	test_encoder = np.array(array_encoder)
+	test_encoder = test_encoder.astype(float)
+	for i in range(len(test_encoder)):
+		#test_encoder[i, 2] = (test_encoder[i, 2]/360000)
+		#test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
+		test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000))-0.13))
+	test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
+	np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
+	np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
+	np.savetxt(filepath + encoder_file + '-interp.txt', test_encoder, fmt='%09i %09i %f %i %i', delimiter=" ")
 
-    result_ion = test_ion
-    result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+	result_ion = test_ion
+	result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
 
-    if set_to_0s:
-        result_ion[:,0] = result_ion[:,0] - result_ion[0,0] # Setting first timestamp position to 0 seconds
-        result_ion[:,1] = result_ion[:,1] - result_ion[0,1] # Setting first timestamp position to 0 seconds
-        test_encoder[:,0] = test_encoder[:,0] - test_encoder[0,0]
-        test_encoder[:,1] = test_encoder[:,1] - test_encoder[0,1]
+	if set_to_0s:
+		result_ion[:,0] = result_ion[:,0] - result_ion[0,0] # Setting first timestamp position to 0 seconds
+		result_ion[:,1] = result_ion[:,1] - result_ion[0,1] # Setting first timestamp position to 0 seconds
+		test_encoder[:,0] = test_encoder[:,0] - test_encoder[0,0]
+		test_encoder[:,1] = test_encoder[:,1] - test_encoder[0,1]
 
-    plot_arrays([test_encoder, result_ion], colors, xlabel, ylabel, grid, xy_plot=True)
+	plot_arrays([test_encoder, result_ion], colors, xlabel, ylabel, grid, xy_plot=True)
 
 # Parse file and write a new file with adc values in V
 def parse_adc(in_filename, in_filepath = '/GPFS/xf08id/pizza_box_data/', out_filename = '', out_filepath = '/home/istavitski/parsed_adc_files/'):
@@ -352,7 +353,8 @@ def plot_ion_energy_db(uid, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', y
     test_encoder = test_encoder.astype(float)
     for i in range(len(test_encoder)):
         #test_encoder[i, 2] = (test_encoder[i, 2]/360000)
-        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
+        #test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
+        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.13)))
     test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
     np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
     np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")

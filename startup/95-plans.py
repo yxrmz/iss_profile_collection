@@ -120,7 +120,7 @@ def write_file(comment, filenames, uid, file_path = '/GPFS/xf08id/pizza_box_data
         for i in range(len(filenames)):
             f.write('file ' + i + ': ' + filenames[i] + '\n')
 
-def execute_trajectory(comment='', prepare_traj=True, **metadata):
+def execute_trajectory(comment='', prepare_traj=False, **metadata):
     flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_trajectory', 'comment': comment}
@@ -135,7 +135,7 @@ def execute_trajectory(comment='', prepare_traj=True, **metadata):
         ttime.sleep(3)
         while (hhm.theta.moving == True):
             ttime.sleep(.1)
-        write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
+        #write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
 
         yield from bp.close_run()
 
@@ -150,7 +150,7 @@ def execute_trajectory(comment='', prepare_traj=True, **metadata):
     for flyer in flyers:
         yield from bp.unstage(flyer)
 
-def execute_loop_trajectory(comment='', prepare_traj=True, **metadata):
+def execute_loop_trajectory(comment='', prepare_traj=False, **metadata):
 
     flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     def inner():
@@ -165,7 +165,7 @@ def execute_loop_trajectory(comment='', prepare_traj=True, **metadata):
         ttime.sleep(2)
         while (hhm.theta.moving == True or hhm.enable_loop_rbv.value == 1):
             ttime.sleep(.1)
-        write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
+        #write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
 
         yield from bp.close_run()
 
@@ -234,7 +234,9 @@ def run_trajectory(comment=''):
     return [comment, adc_path1, adc_path2, encoder_path]
 
 
-
+#def tr(comment='')	
+#    RE(execute_trajectory(comment))
+#    plot_ion_energy_db(-1)
 
 
 
