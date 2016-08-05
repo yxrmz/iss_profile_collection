@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import os
+import time as ttime
 import pexpect
 from pexpect import pxssh
 from ftplib import FTP
@@ -149,5 +150,50 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
 
     print('File sent successfully')
     return True
+
+
+def transfer_lut(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
+
+	class Reader:
+		def __init__(self):
+			self.rows = 0
+		def __call__(self,s):
+			self.rows += 1
+
+	hhm.lut_number.put(lut_number)
+
+	ttime.sleep(0.2)
+	while (hhm.lut_number_rbv.value != lut_number):
+		ttime.sleep(.1)
+
+	hhm.lut_start_transfer.put("1")	
+	while (hhm.lut_transfering.value == 0):
+		ttime.sleep(.1)
+	while (hhm.lut_transfering.value == 1):
+		ttime.sleep(.1)
+
+	ftp = FTP(ip)
+	ftp.login()
+	ftp.cwd('/usrflash/lut/' + str(lut_number))
+
+	file_list = ftp.nlst()
+	file_exists = 0
+	for file_name in file_list:
+		if file_name == filename:
+			file_exists = 1
+	if file_exists == 0:
+		print('File not found. :(\nAre you sure this is the correct lut number?')
+	else:
+		r = Reader()
+		ftp.retrlines('RETR ' + filename, r)
+		hhm.cycle_limit.put(r.rows)
+		while (hhm.cycle_limit_rbv.value != r.rows):
+			ttime.sleep(.1)
+		print('Transfer completed!\nNew lut number: ' + str(lut_number) + '\nNumber of points: ' + str(r.rows))
+		
+
+
+
+
 
 

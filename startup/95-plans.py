@@ -108,11 +108,13 @@ def hhm_pitch_scan(detectors, start, stop, num, comment='', **metadata):
     yield from plan
 
 
-def prep_trajectory(delay=1):
-    hhm.prepare_trajectory.put("1")
-    ttime.sleep(delay)
-    while (hhm.trajectory_ready == True):
-        ttime.sleep(.1)
+def prep_trajectory(delay = 1):
+	hhm.prepare_trajectory.put("1")
+	while (hhm.trajectory_ready.value == 0):
+		ttime.sleep(.1)
+	while (hhm.trajectory_ready.value == 1):
+		ttime.sleep(.1)
+	ttime.sleep(delay)
 
 def write_file(comment, filenames, uid, file_path = '/GPFS/xf08id/pizza_box_data/'):
     with open(file_path + str(comment), access_mode='w') as f:
@@ -232,12 +234,5 @@ def run_trajectory(comment=''):
     adc_path2 = pba2.adc6.filepath.value[len(pba2.adc6.filepath.value)-9 : len(pba2.adc6.filepath.value)]
 
     return [comment, adc_path1, adc_path2, encoder_path]
-
-
-#def tr(comment='')	
-#    RE(execute_trajectory(comment))
-#    plot_ion_energy_db(-1)
-
-
 
 

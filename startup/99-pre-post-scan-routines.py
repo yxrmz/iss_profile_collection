@@ -33,6 +33,13 @@ def get_ion_energy_arrays(uid, filepath='/GPFS/xf08id/pizza_box_data/'):
 	return test_encoder[:,2], result_ion[:,2], encoder_file, ion_file, ion_file2
 
 
+#<p><b> Files: </b></p>
+#<ul>
+#  <li>en_b4a51e</li>
+#  <li>an_b0363d</li>
+#  <li>an_71491d</li>
+#</ul>  
+
 def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 	print('Plotting Ion Chambers x Energy and generating log...')
 	array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
@@ -41,14 +48,21 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 	plt.clf()
 	plt.plot(array_x, array_y)
 	plt.show()
-	fn = log_path + 'snapshots/' + comment + '.png'
+	file_path = 'snapshots/' + comment + '.png'
+	fn = log_path + file_path
+	repeat = 1
+	while(os.path.isfile(fn)):
+		repeat += 1
+		file_path = 'snapshots/' + comment + '-' + str(repeat) + '.png'
+		fn = log_path + file_path
 	plt.savefig(fn)
-	fn = './snapshots/' + comment + '.png'
+	fn = './' + file_path
 
 	uid = db[uuid]['start']['uid']
-	time_stamp=('<p> Scan complete:  ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%d/%m/%Y    %H:%M:%S')) + '</p>')
-	uuid=('<p> Scan ID: '+ uid)
-	files= ('<p> Files: '+ encoder_file + '    |    ' + ion_file + '    |    ' + ion_file2 + '</p>')
+	time_stamp=('<p><b> Scan complete: </b> ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%d/%m/%Y    %H:%M:%S')) + '</p>')
+	uuid=('<p><b> Scan ID: </b>'+ uid)
+	#files= ('<p><b> Files: </b>'+ encoder_file + '    |    ' + ion_file + '    |    ' + ion_file2 + '</p>')
+	files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>ADC 6 file: </b>' + ion_file2 + '</li>\n  <li><b>ADC 7 file: </b>' + ion_file + '</li>\n</ul>')
 	image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
 
 	text_file = open(log_path + 'log.html', "r")
@@ -61,9 +75,10 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 		if indx is 1:
 			text_file_new.write('<header><h2> ' + comment + ' </h2></header>\n')
 			text_file_new.write(uuid + '\n')
+			text_file_new.write('<p><b> Files: </b></p>' + '\n')
 			text_file_new.write(files + '\n')
 			text_file_new.write(time_stamp + '\n')
 			text_file_new.write(image + '\n')
-			text_file_new.write('<hr>' + '\n')
-			text_file_new.write('<p> </p>' + '\n')
+			text_file_new.write('<hr>' + '\n\n')
+			#text_file_new.write('<p> </p>' + '\n')
 		text_file_new.write(line)
