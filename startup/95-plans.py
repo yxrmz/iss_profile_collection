@@ -122,7 +122,7 @@ def write_file(comment, filenames, uid, file_path = '/GPFS/xf08id/pizza_box_data
         for i in range(len(filenames)):
             f.write('file ' + i + ': ' + filenames[i] + '\n')
 
-def execute_trajectory(comment='', prepare_traj=False, **metadata):
+def execute_trajectory(comment='', **metadata):
     flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_trajectory', 'comment': comment}
@@ -130,8 +130,6 @@ def execute_trajectory(comment='', prepare_traj=False, **metadata):
         yield from bp.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        if (prepare_traj == True):
-            prep_trajectory()
         hhm.enable_loop.put("0")
         hhm.start_trajectory.put("1")
         ttime.sleep(3)
@@ -152,7 +150,7 @@ def execute_trajectory(comment='', prepare_traj=False, **metadata):
     for flyer in flyers:
         yield from bp.unstage(flyer)
 
-def execute_loop_trajectory(comment='', prepare_traj=False, **metadata):
+def execute_loop_trajectory(comment='', **metadata):
 
     flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     def inner():
@@ -161,8 +159,6 @@ def execute_loop_trajectory(comment='', prepare_traj=False, **metadata):
         yield from bp.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        if (prepare_traj == True):
-            prep_trajectory()
         hhm.enable_loop.put("1")
         ttime.sleep(2)
         while (hhm.theta.moving == True or hhm.enable_loop_rbv.value == 1):

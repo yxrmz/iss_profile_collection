@@ -109,7 +109,7 @@ def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', yl
 
 
 # Plot graphs getting the data directly from the files. 'files' is a list of file names.
-def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, interpolate=True, trunc=False, xy_plot=False):
+def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, interpolate=True, trunc=False, xy_plot=False, set_to_0s = False):
     print('Plotting Array(s)...')
     np_arrays = []
     for x in range(len(files)):
@@ -124,6 +124,9 @@ def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp 
             np_arrays.pop()
             np_arrays.append(locals()['np_array' + str(x-1)])
         np_arrays.append(locals()['np_array' + str(x)])
+    if(set_to_0s):
+        for x in range(len(np_arrays)):
+            np_arrays[x][:,0] = np_arrays[x][:,0] - np_arrays[x][0,0]
     plot_arrays(np_arrays, colors, xlabel, ylabel, grid, xy_plot=xy_plot)
 
 def plot_volt_energy(files, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', ylabel='V', grid=True):
