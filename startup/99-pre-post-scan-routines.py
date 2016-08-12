@@ -94,6 +94,11 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 	files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>ADC 6 file: </b>' + ion_file2 + '</li>\n  <li><b>ADC 7 file: </b>' + ion_file + '</li>\n</ul>')
 	image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
 
+	if(not os.path.isfile(log_path + 'log.html')):
+		create_file = open(log_path + 'log.html', "w")
+		create_file.write('<html> <body>\n</body> </html>')
+		create_file.close()
+
 	text_file = open(log_path + 'log.html', "r")
 	lines = text_file.readlines()
 	text_file.close()
@@ -111,3 +116,29 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 			text_file_new.write('<hr>' + '\n\n')
 			#text_file_new.write('<p> </p>' + '\n')
 		text_file_new.write(line)
+
+def tune_mono_pitch(scan_range, step):
+	aver=pba2.adc7.averaging_points.get()
+	pba2.adc7.averaging_points.put(10)
+	RE(hhm_pitch_scan([pba2.adc7],-scan_range/2, scan_range/2, int(round(scan_range/step)), ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+	last_table = db.get_table(db[-1])
+	min_index = np.argmin(last_table['pba2_adc7_volt'])
+	hhm.pitch.move(last_table['hhm_pitch'][min_index])
+	print(hhm.pitch.position)
+	pba2.adc7.averaging_points.put(aver)
+
+def tune_mono_y(scan_range, step):
+	aver=pba2.adc7.averaging_points.get()
+	pba2.adc7.averaging_points.put(10)
+	RE(hhm_y_scan([pba2.adc7],-scan_range/2, scan_range/2, int(round(scan_range/step)), ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
+	last_table = db.get_table(db[-1])
+	min_index = np.argmin(last_table['pba2_adc7_volt'])
+	hhm.y.move(last_table['hhm_y'][min_index])
+	print(hhm.y.position)
+	pba2.adc7.averaging_points.put(aver)
+
+
+
+
+
+

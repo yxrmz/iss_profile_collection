@@ -93,12 +93,30 @@ def hhm_pitch_scan(detectors, start, stop, num, comment='', **metadata):
     """
     Example
     -------
-    >>> RE(hhm_pitch_scan([pba2.adc6.volt, pba2.adc7.volt], -1, 1, 5, 'test'), LiveTable([hhm.pitch, pba2.adc6.volt, pba2.adc7.volt]))
+    >>> RE(hhm_pitch_scan([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
     """
 
     flyers = detectors #[pba2.adc6, pba2.adc7]
     # Start with a step scan.
     plan = bp.relative_scan(flyers, hhm.pitch, start, stop, num, md={'comment': comment})
+    plan = bp.fly_during_wrapper(plan, flyers)
+
+    #for flyer in flyers:
+    #    yield from bp.stage(flyer)
+
+    plan = bp.pchain(plan)
+    yield from plan
+
+def hhm_y_scan(detectors, start, stop, num, comment='', **metadata):
+    """
+    Example
+    -------
+    >>> RE(hhm_y_scan([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+    """
+
+    flyers = detectors
+    # Start with a step scan.
+    plan = bp.relative_scan(flyers, hhm.y, start, stop, num, md={'comment': comment})
     plan = bp.fly_during_wrapper(plan, flyers)
 
     #for flyer in flyers:
@@ -133,8 +151,14 @@ def execute_trajectory(comment='', **metadata):
         hhm.enable_loop.put("0")
         hhm.start_trajectory.put("1")
         ttime.sleep(3)
-        while (hhm.theta.moving == True):
+        finished = 0
+        while (hhm.theta.moving == True or finished == 0):
+            finished = 0
             ttime.sleep(.1)
+            if (hhm.theta.moving == False):
+                ttime.sleep(.5)
+                finished = 1
+
         #write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
 
         yield from bp.close_run()
