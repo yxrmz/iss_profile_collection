@@ -109,7 +109,7 @@ def plot_arrays(arrays, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', yl
 
 
 # Plot graphs getting the data directly from the files. 'files' is a list of file names.
-def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, interpolate=True, trunc=False, xy_plot=False):
+def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp (s)', ylabel='', grid=True, interpolate=True, trunc=False, xy_plot=False, set_to_0s = False):
     print('Plotting Array(s)...')
     np_arrays = []
     for x in range(len(files)):
@@ -124,6 +124,9 @@ def plot_array_from_file(files, colors=['b', 'g', 'r', 'y'], xlabel='Time Stamp 
             np_arrays.pop()
             np_arrays.append(locals()['np_array' + str(x-1)])
         np_arrays.append(locals()['np_array' + str(x)])
+    if(set_to_0s):
+        for x in range(len(np_arrays)):
+            np_arrays[x][:,0] = np_arrays[x][:,0] - np_arrays[x][0,0]
     plot_arrays(np_arrays, colors, xlabel, ylabel, grid, xy_plot=xy_plot)
 
 def plot_volt_energy(files, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', ylabel='V', grid=True):
@@ -354,7 +357,7 @@ def plot_ion_energy_db(uid, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', y
     for i in range(len(test_encoder)):
         #test_encoder[i, 2] = (test_encoder[i, 2]/360000)
         #test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
-        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.13)))
+        test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.134)))
     test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
     np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
     np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")

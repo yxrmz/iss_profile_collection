@@ -93,7 +93,7 @@ def hhm_pitch_scan(detectors, start, stop, num, comment='', **metadata):
     """
     Example
     -------
-    >>> RE(hhm_pitch_scan([pba2.adc6.volt, pba2.adc7.volt], -1, 1, 5, 'test'), LiveTable([hhm.pitch, pba2.adc6.volt, pba2.adc7.volt]))
+    >>> RE(hhm_pitch_scan([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
     """
 
     flyers = detectors #[pba2.adc6, pba2.adc7]
@@ -107,12 +107,32 @@ def hhm_pitch_scan(detectors, start, stop, num, comment='', **metadata):
     plan = bp.pchain(plan)
     yield from plan
 
+def hhm_y_scan(detectors, start, stop, num, comment='', **metadata):
+    """
+    Example
+    -------
+    >>> RE(hhm_y_scan([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+    """
 
-def prep_trajectory(delay=1):
-    hhm.prepare_trajectory.put("1")
-    ttime.sleep(delay)
-    while (hhm.trajectory_ready == True):
-        ttime.sleep(.1)
+    flyers = detectors
+    # Start with a step scan.
+    plan = bp.relative_scan(flyers, hhm.y, start, stop, num, md={'comment': comment})
+    plan = bp.fly_during_wrapper(plan, flyers)
+
+    #for flyer in flyers:
+    #    yield from bp.stage(flyer)
+
+    plan = bp.pchain(plan)
+    yield from plan
+
+
+def prep_trajectory(delay = 1):
+	hhm.prepare_trajectory.put("1")
+	while (hhm.trajectory_ready.value == 0):
+		ttime.sleep(.1)
+	while (hhm.trajectory_ready.value == 1):
+		ttime.sleep(.1)
+	ttime.sleep(delay)
 
 def write_file(comment, filenames, uid, file_path = '/GPFS/xf08id/pizza_box_data/'):
     with open(file_path + str(comment), access_mode='w') as f:
@@ -120,7 +140,7 @@ def write_file(comment, filenames, uid, file_path = '/GPFS/xf08id/pizza_box_data
         for i in range(len(filenames)):
             f.write('file ' + i + ': ' + filenames[i] + '\n')
 
-def execute_trajectory(comment='', prepare_traj=False, **metadata):
+def execute_trajectory(comment='', **metadata):
     flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_trajectory', 'comment': comment}
@@ -128,13 +148,17 @@ def execute_trajectory(comment='', prepare_traj=False, **metadata):
         yield from bp.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        if (prepare_traj == True):
-            prep_trajectory()
         hhm.enable_loop.put("0")
         hhm.start_trajectory.put("1")
         ttime.sleep(3)
-        while (hhm.theta.moving == True):
+        finished = 0
+        while (hhm.theta.moving == True or finished == 0):
+            finished = 0
             ttime.sleep(.1)
+            if (hhm.theta.moving == False):
+                ttime.sleep(.5)
+                finished = 1
+
         #write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
 
         yield from bp.close_run()
@@ -150,7 +174,7 @@ def execute_trajectory(comment='', prepare_traj=False, **metadata):
     for flyer in flyers:
         yield from bp.unstage(flyer)
 
-def execute_loop_trajectory(comment='', prepare_traj=False, **metadata):
+def execute_loop_trajectory(comment='', **metadata):
 
     flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     def inner():
@@ -159,8 +183,6 @@ def execute_loop_trajectory(comment='', prepare_traj=False, **metadata):
         yield from bp.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        if (prepare_traj == True):
-            prep_trajectory()
         hhm.enable_loop.put("1")
         ttime.sleep(2)
         while (hhm.theta.moving == True or hhm.enable_loop_rbv.value == 1):
@@ -232,12 +254,5 @@ def run_trajectory(comment=''):
     adc_path2 = pba2.adc6.filepath.value[len(pba2.adc6.filepath.value)-9 : len(pba2.adc6.filepath.value)]
 
     return [comment, adc_path1, adc_path2, encoder_path]
-
-
-#def tr(comment='')	
-#    RE(execute_trajectory(comment))
-#    plot_ion_energy_db(-1)
-
-
 
 

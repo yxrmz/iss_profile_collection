@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import time
 
-def get_ion_energy_arrays(uid, filepath='/GPFS/xf08id/pizza_box_data/'):
+def get_ion_energy_arrays(uid, comment, filepath='/GPFS/xf08id/pizza_box_data/'):
 	run = db[uid]
 	ion_file = run['descriptors'][0]['data_keys']['pba2_adc7']['filename']
 	ion_file2 = run['descriptors'][1]['data_keys']['pba2_adc6']['filename']
@@ -22,32 +22,82 @@ def get_ion_energy_arrays(uid, filepath='/GPFS/xf08id/pizza_box_data/'):
 	test_encoder = test_encoder.astype(float)
 	for i in range(len(test_encoder)):
 		#test_encoder[i, 2] = (test_encoder[i, 2]/360000)
-		test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians(test_encoder[i, 2]/360000)))
+		test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.134)))
 	test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
-	np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-	np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-	np.savetxt(filepath + encoder_file + '-interp.txt', test_encoder, fmt='%09i %09i %f %i %i', delimiter=" ")
+	#np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
+	#np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
+	#np.savetxt(filepath + encoder_file + '-interp.txt', test_encoder, fmt='%09i %09i %f %i %i', delimiter=" ")
 
+	create_user_folder(uid, comment, test_encoder, encoder_file, test_ion, ion_file, test_ion2, ion_file2)
+	#result_ion = test_ion
+	#result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+	return test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2
+	#return test_encoder[:,2], result_ion[:,2], encoder_file, ion_file, ion_file2
+
+
+#<p><b> Files: </b></p>
+#<ul>
+#  <li>en_b4a51e</li>
+#  <li>an_b0363d</li>
+#  <li>an_71491d</li>
+#</ul>  
+
+def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, ion_file, ion_array2, ion_file2, path='/GPFS/xf08id/User Data/'):
+	print('Creating directory...')
+
+
+	repeat = 1
+	comment2 = comment
+	while(os.path.exists(path + comment2)):
+		repeat += 1
+		comment2 = comment + '-' + str(repeat)
+
+	os.makedirs(path + comment2)
+
+	np.savetxt(path + comment2 + '/' + ion_file + '-adc7-interp.txt', ion_array1, fmt='%09i %09i %.6f %i %i', delimiter=" ")
+	np.savetxt(path + comment2 + '/' + ion_file2 + '-adc6-interp.txt', ion_array2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
+	np.savetxt(path + comment2 + '/' + encoder_file + '-enc1-interp.txt', encoder_array, fmt='%09i %09i %f %i %i', delimiter=" ")
+	
+
+def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
+	print('Plotting Ion Chambers x Energy and generating log...')
+	test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid, comment)
+	#array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
+
+	#print(test_ion[:,2], test_ion2[:,2])
 	result_ion = test_ion
 	result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
-	return test_encoder[:,2], result_ion[:,2], encoder_file, ion_file, ion_file2
+	array_x = test_encoder[:,2]
+	array_y = result_ion[:,2]
 
-
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/snapshots/'):
-	print('Plotting Ion Chambers x Energy and generating log...')
-	array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
 	stop_timestamp = db[uuid]['stop']['time']
 
+	plt.clf()
+	#plt.plot(array_x)
+	#plt.plot(array_y)
 	plt.plot(array_x, array_y)
 	plt.show()
-	fn = log_path + comment + '.png'
+	file_path = 'snapshots/' + comment + '.png'
+	fn = log_path + file_path
+	repeat = 1
+	while(os.path.isfile(fn)):
+		repeat += 1
+		file_path = 'snapshots/' + comment + '-' + str(repeat) + '.png'
+		fn = log_path + file_path
 	plt.savefig(fn)
+	fn = './' + file_path
 
 	uid = db[uuid]['start']['uid']
-	time_stamp=('<p> Scan complete:  ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%d/%m/%Y    %H:%M:%S')) + '</p>')
-	uuid=('<p> Scan ID: '+ uid)
-	files= ('<p> Files: '+ encoder_file + '    |    ' + ion_file + '    |    ' + ion_file2 + '</p>')
+	time_stamp=('<p><b> Scan complete: </b> ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%m/%d/%Y    %H:%M:%S')) + '</p>')
+	uuid=('<p><b> Scan ID: </b>'+ uid)
+	#files= ('<p><b> Files: </b>'+ encoder_file + '    |    ' + ion_file + '    |    ' + ion_file2 + '</p>')
+	files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>ADC 6 file: </b>' + ion_file2 + '</li>\n  <li><b>ADC 7 file: </b>' + ion_file + '</li>\n</ul>')
 	image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
+
+	if(not os.path.isfile(log_path + 'log.html')):
+		create_file = open(log_path + 'log.html', "w")
+		create_file.write('<html> <body>\n</body> </html>')
+		create_file.close()
 
 	text_file = open(log_path + 'log.html', "r")
 	lines = text_file.readlines()
@@ -57,11 +107,41 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/snapshots/'):
 
 	for indx,line in enumerate(lines):
 		if indx is 1:
-			text_file_new.write('<p> ' + comment + ' </p>\n')
+			text_file_new.write('<header><h2> ' + comment + ' </h2></header>\n')
 			text_file_new.write(uuid + '\n')
+			text_file_new.write('<p><b> Files: </b></p>' + '\n')
 			text_file_new.write(files + '\n')
 			text_file_new.write(time_stamp + '\n')
 			text_file_new.write(image + '\n')
-			text_file_new.write('<hr>' + '\n')
-			text_file_new.write('<p> </p>' + '\n')
+			text_file_new.write('<hr>' + '\n\n')
+			#text_file_new.write('<p> </p>' + '\n')
 		text_file_new.write(line)
+
+def tune_mono_pitch(scan_range, step):
+	aver=pba2.adc7.averaging_points.get()
+	pba2.adc7.averaging_points.put(10)
+	RE(hhm_pitch_scan([pba2.adc7],-scan_range/2, scan_range/2, int(round(scan_range/step)), ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+	last_table = db.get_table(db[-1])
+	min_index = np.argmin(last_table['pba2_adc7_volt'])
+	hhm.pitch.move(last_table['hhm_pitch'][min_index])
+	print(hhm.pitch.position)
+	pba2.adc7.averaging_points.put(aver)
+	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+	
+
+def tune_mono_y(scan_range, step):
+	aver=pba2.adc7.averaging_points.get()
+	pba2.adc7.averaging_points.put(10)
+	RE(hhm_y_scan([pba2.adc7],-scan_range/2, scan_range/2, int(round(scan_range/step)), ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
+	last_table = db.get_table(db[-1])
+	min_index = np.argmin(last_table['pba2_adc7_volt'])
+	hhm.y.move(last_table['hhm_y'][min_index])
+	print(hhm.y.position)
+	pba2.adc7.averaging_points.put(aver)
+	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+
+
+
+
+
+
