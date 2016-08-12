@@ -126,6 +126,8 @@ def tune_mono_pitch(scan_range, step):
 	hhm.pitch.move(last_table['hhm_pitch'][min_index])
 	print(hhm.pitch.position)
 	pba2.adc7.averaging_points.put(aver)
+	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+	
 
 def tune_mono_y(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()
@@ -136,6 +138,7 @@ def tune_mono_y(scan_range, step):
 	hhm.y.move(last_table['hhm_y'][min_index])
 	print(hhm.y.position)
 	pba2.adc7.averaging_points.put(aver)
+	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 
 
 
