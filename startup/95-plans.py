@@ -21,7 +21,7 @@ def repeater(count, plan, *args, **kwargs):
         yield from plan(*args, **kwargs)
 
 
-def energy_scan(start, stop, num, comment='', **metadata):
+def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comment='', **metadata):
     """
     Example
     -------
@@ -32,7 +32,6 @@ def energy_scan(start, stop, num, comment='', **metadata):
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
-    flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
     # Start with a step scan.
     plan = bp.scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'comment': comment})
     # Wrap it in a fly scan with the Pizza Box.
@@ -49,6 +48,32 @@ def energy_scan(start, stop, num, comment='', **metadata):
     #                 bp.unstage(pb9.enc1), bp.unstage(pba2.adc6), bp.unstage(pba2.adc7))
     yield from plan
 
+def hhm_theta_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comment='', **metadata):
+    """
+    Example
+    -------
+    >>> RE(hhm_theta_scan(-0.1, 0.1, 2, [pb4.di, xia]))
+    """
+    def inner():
+        md = {'plan_args': {}, 'plan_name': 'step scan', 'comment': comment}
+        md.update(**metadata)
+        yield from bp.open_run(md=md)
+
+    # Start with a step scan.
+    plan = bp.relative_scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'comment': comment})
+    # Wrap it in a fly scan with the Pizza Box.
+    plan = bp.fly_during_wrapper(plan, flyers)
+    # Working around a bug in fly_during_wrapper, stage and unstage the pizza box manually.
+
+    for flyer in flyers:
+        yield from bp.stage(flyer)
+    yield from bp.stage(hhm)
+
+    plan = bp.pchain(plan)
+    #plan = bp.pchain(bp.stage(pb9.enc1), bp.stage(pba2.adc6), bp.stage(pba2.adc7),
+    #                 plan,
+    #                 bp.unstage(pb9.enc1), bp.unstage(pba2.adc6), bp.unstage(pba2.adc7))
+    yield from plan
 
 def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
     """

@@ -22,6 +22,11 @@ class XIA(Device):
     pix_per_buf_set =	Cpt(EpicsSignal, ':PixelsPerBuffer')
     pix_per_buf_rb =	Cpt(EpicsSignal, ':PixelsPerBuffer_RBV')
 
+	#def start_scan(self):
+    #    self.erase_start.put(1)
+    #    pb4.do0_enable.put(1) # Workaround
+    #    return self._status
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs[self.mode] = 'Real time'
@@ -39,6 +44,7 @@ class XIA(Device):
     def trigger(self):
         self._status = DeviceStatus(self)
         self.erase_start.put(1)
+        pb4.do0_enable.put(1) # Workaround
         return self._status
 
     def _acquiring_changed(self, value=None, old_value=None, **kwargs):
@@ -48,6 +54,7 @@ class XIA(Device):
             return
         if (old_value == 1) and (value == 0):
             # 'acquiring' has flipped from 'Acquiring' to 'Done'.
+            pb4.do0_enable.put(0) # Workaround
             self._status._finished()
             
 

@@ -334,7 +334,7 @@ def parse_adc(in_filename, in_filepath = '/GPFS/xf08id/pizza_box_data/', out_fil
 
 
 # Plot log(ion1/ion2) x energy getting data from the scan defined by uid.
-def plot_ion_energy_db(uid, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', ylabel='log(ion1 / ion2)', grid=True, set_to_0s=False, filepath='/GPFS/xf08id/pizza_box_data/'):
+def plot_ion_energy_db(uid, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', ylabel='log(ion1 / ion2)', grid=True, set_to_0s=False, filepath='/GPFS/xf08id/pizza_box_data/', log=True):
     print('Plotting Ion Chambers x Energy...')
     
     run = db[uid]
@@ -364,7 +364,10 @@ def plot_ion_energy_db(uid, colors=['b', 'g', 'r', 'y'], xlabel='Energy (eV)', y
     np.savetxt(filepath + encoder_file + '-interp.txt', test_encoder, fmt='%09i %09i %f %i %i', delimiter=" ")
 
     result_ion = test_ion
-    result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+    if(log == True):
+        result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+    else:
+        result_ion[:,2] = (test_ion2[:,2] / test_ion[:,2])
 
     if set_to_0s:
         result_ion[:,0] = result_ion[:,0] - result_ion[0,0] # Setting first timestamp position to 0 seconds

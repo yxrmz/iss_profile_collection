@@ -59,14 +59,17 @@ def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, i
 	np.savetxt(path + comment2 + '/' + encoder_file + '-enc1-interp.txt', encoder_array, fmt='%09i %09i %f %i %i', delimiter=" ")
 	
 
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
+def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', log=True):
 	print('Plotting Ion Chambers x Energy and generating log...')
 	test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid, comment)
 	#array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
 
 	#print(test_ion[:,2], test_ion2[:,2])
 	result_ion = test_ion
-	result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+	if(log == True):
+		result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+	else:
+		result_ion[:,2] = (test_ion2[:,2] / test_ion[:,2])
 	array_x = test_encoder[:,2]
 	array_y = result_ion[:,2]
 
@@ -140,8 +143,8 @@ def tune_mono_y(scan_range, step):
 	pba2.adc7.averaging_points.put(aver)
 	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 
-
-
-
+def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
+	arrays = db.get_table(db[uuid])[graph]
+	np.savetxt('/GPFS/xf08id/Sandbox/' + comment, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
 
 
