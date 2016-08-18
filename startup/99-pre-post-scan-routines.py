@@ -45,6 +45,9 @@ def get_ion_energy_arrays(uid, comment, filepath='/GPFS/xf08id/pizza_box_data/')
 def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, ion_file, ion_array2, ion_file2, path='/GPFS/xf08id/User Data/'):
 	print('Creating directory...')
 
+	path = path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['SAF'] + '/'
+	if(not os.path.exists(path)):
+		os.makedirs(path)
 
 	repeat = 1
 	comment2 = comment
@@ -59,22 +62,30 @@ def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, i
 	np.savetxt(path + comment2 + '/' + encoder_file + '-enc1-interp.txt', encoder_array, fmt='%09i %09i %f %i %i', delimiter=" ")
 	
 
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
+def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', log=True):
 	print('Plotting Ion Chambers x Energy and generating log...')
 	test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid, comment)
 	#array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
 
-	#print(test_ion[:,2], test_ion2[:,2])
+	log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['SAF'] + '/'
+	if(not os.path.exists(log_path)):
+		os.makedirs(log_path)
+
 	result_ion = test_ion
-	result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+	if(log == True):
+		result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
+	else:
+		result_ion[:,2] = (test_ion2[:,2] / test_ion[:,2])
 	array_x = test_encoder[:,2]
 	array_y = result_ion[:,2]
 
 	stop_timestamp = db[uuid]['stop']['time']
 
+	snapshots_path = log_path + 'snapshots/'
+	if(not os.path.exists(snapshots_path)):
+		os.makedirs(snapshots_path)
+
 	plt.clf()
-	#plt.plot(array_x)
-	#plt.plot(array_y)
 	plt.plot(array_x, array_y)
 	plt.show()
 	file_path = 'snapshots/' + comment + '.png'
@@ -120,7 +131,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/'):
 def tune_mono_pitch(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
-	RE(hhm_pitch_scan([pba2.adc7],-scan_range/2, scan_range/2, int(round(scan_range/step)), ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+	num_points = int(round(scan_range/step))
+	RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
 	last_table = db.get_table(db[-1])
 	min_index = np.argmin(last_table['pba2_adc7_volt'])
 	hhm.pitch.move(last_table['hhm_pitch'][min_index])
@@ -128,11 +140,26 @@ def tune_mono_pitch(scan_range, step):
 	pba2.adc7.averaging_points.put(aver)
 	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 	
+#	over = 0
+#	while(not over):
+#		RE(hhm_relative_scan([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+#		last_table = db.get_table(db[-1])
+#		min_index = np.argmin(last_table['pba2_adc7_volt'])
+#		hhm.pitch.move(last_table['hhm_pitch'][min_index])
+#		print(hhm.pitch.position)
+#		pba2.adc7.averaging_points.put(aver)
+#		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+#		if (num_points >= 10):
+#			if ((min_index > 0.3 * num_points) and (min_index < 0.7 * num_points)):
+#		else:
+#			over = 1
+	
 
 def tune_mono_y(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
-	RE(hhm_y_scan([pba2.adc7],-scan_range/2, scan_range/2, int(round(scan_range/step)), ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
+	num_points = int(round(scan_range/step))
+	RE(tune([pba2.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
 	last_table = db.get_table(db[-1])
 	min_index = np.argmin(last_table['pba2_adc7_volt'])
 	hhm.y.move(last_table['hhm_y'][min_index])
@@ -140,8 +167,8 @@ def tune_mono_y(scan_range, step):
 	pba2.adc7.averaging_points.put(aver)
 	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 
-
-
-
+def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
+	arrays = db.get_table(db[uuid])[graph]
+	np.savetxt('/GPFS/xf08id/Sandbox/' + comment, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
 
 

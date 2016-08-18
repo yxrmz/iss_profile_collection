@@ -257,6 +257,12 @@ class PizzaBoxFS(Device):
     internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
     # internal_ts_rb = Cpt(EpicsSignal, '}T:Internal-RB')
 
+    do0_enable = Cpt(EpicsSignal, '-DO:0}Ena-Cmd')
+    do0_period_sp = Cpt(EpicsSignal, '-DO:0}Period-SP')
+    do0_unit_sel = Cpt(EpicsSignal, '-DO:0}Unit-Sel')
+    do0_dutycycle_sp = Cpt(EpicsSignal, '-DO:0}DutyCycle-SP')
+    do0_default_pol = Cpt(EpicsSignal, '-DO:0}Dflt-Sel')
+
     enc1 = Cpt(EncoderFS, ':1')
     enc2 = Cpt(EncoderFS, ':2')
     enc3 = Cpt(EncoderFS, ':3')
@@ -289,7 +295,8 @@ class PizzaBoxFS(Device):
 
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')
 pb2 = PizzaBoxFS('XF:08IDA-CT{Enc02', name = 'pb2')
-#pb4 = PizzaBoxFS('XF:08IDA-CT{Enc04', name = 'pb4') #PB inside hutch B (for now)
+pb4 = PizzaBoxFS('XF:08IDA-CT{Enc04', name = 'pb4') #PB inside hutch B (for now)
+#pbb1 = PizzaBoxFS('XF:08IDB-CT{Enc01', name = 'pbb1')#PB inside hutch B (for now)
 pb5 = PizzaBoxFS('XF:08IDA-CT{Enc05', name = 'pb5')
 pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
@@ -407,9 +414,9 @@ class AdcFS(Adc):
 class PizzaBoxAnalogFS(Device):
     internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
 
-    adc1 = Cpt(AdcFS, 'GP-ADC:1')
-    adc6 = Cpt(AdcFS, 'GP-ADC:6')
-    adc7 = Cpt(AdcFS, 'GP-ADC:7')
+    adc1 = Cpt(AdcFS, 'ADC:1')
+    adc6 = Cpt(AdcFS, 'ADC:6')
+    adc7 = Cpt(AdcFS, 'ADC:7')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -434,7 +441,8 @@ class PizzaBoxAnalogFS(Device):
 
 
 #pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1')
-pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{', name = 'pba2')
+pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
+pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
 
 import numpy as np
 

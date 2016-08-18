@@ -121,8 +121,18 @@ hhm_fe = HHM_FixedExit('XF:08IDA-OP{', name='fixed_exit', read_attrs=['theta', '
 hhm_en = HHM_Energy('XF:08IDA-OP{', name='hhm_en', read_attrs=['energy','y'])
 hhm = HHM('XF:08IDA-OP{', name='hhm')
 
-  
+
+class HRM(Device):
+    "high heat load monochrometer"
+    yu = Cpt(EpicsMotor, 'Mir:HRM:YU}Mtr')
+    yd1 = Cpt(EpicsMotor, 'Mir:HRM:YD1}Mtr')
+    yd2 = Cpt(EpicsMotor, 'Mir:HRM:YD2}Mtr')
+    mir_pitch = Cpt(EpicsMotor, 'Mir:HRM:P}Mtr')
+    hor_translation = Cpt(EpicsMotor, 'Mir:HRM:H}Mtr')
+
+    pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
+    y = Cpt(EpicsMotor, 'Mir:HRM:TY}Mtr')
 
 
-
+hrm = HRM('XF:08IDB-OP{', name='hrm')
 
