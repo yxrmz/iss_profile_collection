@@ -45,7 +45,7 @@ def get_ion_energy_arrays(uid, comment, filepath='/GPFS/xf08id/pizza_box_data/')
 def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, ion_file, ion_array2, ion_file2, path='/GPFS/xf08id/User Data/'):
 	print('Creating directory...')
 
-	path = path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['SAF'] + '/'
+	path = path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
 	if(not os.path.exists(path)):
 		os.makedirs(path)
 
@@ -67,7 +67,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', log=True):
 	test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid, comment)
 	#array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
 
-	log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['SAF'] + '/'
+	log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
 	if(not os.path.exists(log_path)):
 		os.makedirs(log_path)
 
