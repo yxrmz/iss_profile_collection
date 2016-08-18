@@ -1,31 +1,39 @@
-from ophyd import (Component as Cpt, EpicsSignal, EpicsSignalRO, DeviceStatus)
-
+import time as ttime
 
 class XIA(Device):
-    graph1 = 		Cpt(EpicsSignal, ':mca1.VAL')
-    graph2 = 		Cpt(EpicsSignal, ':mca2.VAL')
-    graph3 = 		Cpt(EpicsSignal, ':mca3.VAL')
-    graph4 = 		Cpt(EpicsSignal, ':mca4.VAL')
-    mode = 		Cpt(EpicsSignal, ':PresetMode')
-    collect_mode = 	Cpt(EpicsSignal, ':CollectMode')
-    start = 		Cpt(EpicsSignal, ':StartAll')
-    stop = 		Cpt(EpicsSignal, ':StopAll')
-    erase_start =	Cpt(EpicsSignal, ':EraseStart')
-    erase = 		Cpt(EpicsSignal, ':EraseAll')
+    graph1 =         Cpt(EpicsSignal, ':mca1.VAL')
+    graph2 =         Cpt(EpicsSignal, ':mca2.VAL')
+    graph3 =         Cpt(EpicsSignal, ':mca3.VAL')
+    graph4 =         Cpt(EpicsSignal, ':mca4.VAL')
+    mode =         Cpt(EpicsSignal, ':PresetMode')
+    collect_mode =     Cpt(EpicsSignal, ':CollectMode')
+    start =         Cpt(EpicsSignal, ':StartAll')
+    stop =         Cpt(EpicsSignal, ':StopAll')
+    erase_start =    Cpt(EpicsSignal, ':EraseStart')
+    erase =         Cpt(EpicsSignal, ':EraseAll')
     acquiring =         Cpt(EpicsSignalRO, ':Acquiring')
 
-    capt_start_stop =	Cpt(EpicsSignal, ':netCDF1:Capture')
-    pixels_per_run = 	Cpt(EpicsSignal, ':PixelsPerRun')
-    current_pixel = 	Cpt(EpicsSignal, ':dxp1:CurrentPixel')
-    next_pixel =   	Cpt(EpicsSignal, ':NextPixel') 
-    pix_per_buf_auto =	Cpt(EpicsSignal, ':AutoPixelsPerBuffer')
-    pix_per_buf_set =	Cpt(EpicsSignal, ':PixelsPerBuffer')
-    pix_per_buf_rb =	Cpt(EpicsSignal, ':PixelsPerBuffer_RBV')
+    capt_start_stop =    Cpt(EpicsSignal, ':netCDF1:Capture')
+    pixels_per_run =     Cpt(EpicsSignal, ':PixelsPerRun')
+    current_pixel =     Cpt(EpicsSignal, ':dxp1:CurrentPixel')
+    next_pixel =       Cpt(EpicsSignal, ':NextPixel')
+    pix_per_buf_auto =    Cpt(EpicsSignal, ':AutoPixelsPerBuffer')
+    pix_per_buf_set =    Cpt(EpicsSignal, ':PixelsPerBuffer')
+    pix_per_buf_rb =    Cpt(EpicsSignal, ':PixelsPerBuffer_RBV')
 
-	#def start_scan(self):
-    #    self.erase_start.put(1)
-    #    pb4.do0_enable.put(1) # Workaround
-    #    return self._status
+    def start_mapping_scan(self):
+        self.collect_mode.put('MCA mapping')
+        self.capt_start_stop.put(1)
+        self.erase_start.put(1)
+        ttime.sleep(1)
+        pb4.do0_enable.put(1) # Workaround
+        return self._status
+
+    def stop_scan(self):
+        pb4.do0_enable.put(0) # Workaround
+        ttime.sleep(1)
+        self.stop.put(1)
+        self.capt_start_stop.put(0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,7 +64,7 @@ class XIA(Device):
             # 'acquiring' has flipped from 'Acquiring' to 'Done'.
             pb4.do0_enable.put(0) # Workaround
             self._status._finished()
-            
+           
 
 xia1 = XIA('dxpXMAP', name='xia1')
 xia1.read_attrs = ['graph1', 'graph2', 'graph3', 'graph4']

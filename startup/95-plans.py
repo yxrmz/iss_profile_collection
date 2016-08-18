@@ -114,34 +114,16 @@ def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
 
 
 
-def hhm_pitch_scan(detectors, start, stop, num, comment='', **metadata):
+def tune(detectors, motor, start, stop, num, comment='', **metadata):
     """
     Example
     -------
-    >>> RE(hhm_pitch_scan([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+    >>> RE(tune([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
     """
 
     flyers = detectors #[pba2.adc6, pba2.adc7]
     # Start with a step scan.
-    plan = bp.relative_scan(flyers, hhm.pitch, start, stop, num, md={'comment': comment})
-    plan = bp.fly_during_wrapper(plan, flyers)
-
-    #for flyer in flyers:
-    #    yield from bp.stage(flyer)
-
-    plan = bp.pchain(plan)
-    yield from plan
-
-def hhm_y_scan(detectors, start, stop, num, comment='', **metadata):
-    """
-    Example
-    -------
-    >>> RE(hhm_y_scan([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
-    """
-
-    flyers = detectors
-    # Start with a step scan.
-    plan = bp.relative_scan(flyers, hhm.y, start, stop, num, md={'comment': comment})
+    plan = bp.relative_scan(flyers, motor, start, stop, num, md={'comment': comment})
     plan = bp.fly_during_wrapper(plan, flyers)
 
     #for flyer in flyers:
@@ -198,6 +180,46 @@ def execute_trajectory(comment='', **metadata):
     yield from bp.unstage(hhm)
     for flyer in flyers:
         yield from bp.unstage(flyer)
+
+def execute_xia_trajectory(comment='', **metadata):
+    flyers = [pb9.enc1, pb4.di]
+    def inner():
+        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory', 'comment': comment}
+        md.update(**metadata)
+        yield from bp.open_run(md=md)
+
+        # TODO Replace this with actual status object logic.
+       
+        xia1.start_mapping_scan()
+        hhm.enable_loop.put("0")
+        hhm.start_trajectory.put("1")
+        ttime.sleep(3)
+        finished = 0
+        while (hhm.theta.moving == True or finished == 0):
+            finished = 0
+            ttime.sleep(.1)
+            if (hhm.theta.moving == False):
+                ttime.sleep(.5)
+                finished = 1
+
+        xia1.stop_scan()
+        #write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
+
+        yield from bp.close_run()
+
+
+    for flyer in flyers:
+        yield from bp.stage(flyer)
+    yield from bp.stage(hhm)
+    #yield from bp.stage(xia1)
+
+    yield from bp.fly_during_wrapper(inner(), flyers)
+
+    #yield from bp.unstage(xia1)
+    yield from bp.unstage(hhm)
+    for flyer in flyers:
+        yield from bp.unstage(flyer)
+
 
 def execute_loop_trajectory(comment='', **metadata):
 

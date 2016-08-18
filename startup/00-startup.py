@@ -6,7 +6,6 @@ setup_ophyd()
 # If this is removed, data is not saved to metadatastore.
 import metadatastore.commands
 from bluesky.global_state import gs
-gs.RE.subscribe_lossless('all', metadatastore.commands.insert)
 
 # At the end of every run, verify that files were saved and
 # print a confirmation message.
@@ -31,8 +30,15 @@ from bluesky.spec_api import *
 from bluesky.global_state import gs, abort, stop, resume
 from databroker import (DataBroker as db, get_events, get_images,
                         get_table, get_fields, restream, process)
+# import metadataclient.mds as mdc
+# db.mds = mdc.MDS({'host': 'xf08id-ca1.cs.nsls2.local', 'port': 7601,
+#		    'timezone': 'US/Eastern'})
+gs.RE.subscribe_lossless('all', db.mds.insert)
+
+
 from time import sleep
 import numpy as np
+from bluesky.plan_tools import print_summary
 
 RE = gs.RE  # convenience alias
 

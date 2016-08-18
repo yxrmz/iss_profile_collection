@@ -5,6 +5,7 @@ import matplotlib.dates as md
 import math
 import csv
 import databroker as data
+import datamuxer
 
 # Parse file and return a list in 'array_out'
 def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/'):
