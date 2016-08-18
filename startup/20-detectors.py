@@ -328,9 +328,9 @@ class Adc(Device):
         self._ready_to_collect = False
         if self.connected:
             self.enable_sel.put(1)
-            self.sample_rate.put(275) # Is 275 * 10ns a good sample rate?
+            #self.sample_rate.put(275) # Is 275 * 10ns a good sample rate?
             self.enable_averaging.put(1)
-            self.averaging_points.put("64")
+            #self.averaging_points.put("64")
 
 
 class AdcFS(Adc):

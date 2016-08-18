@@ -140,19 +140,20 @@ def tune_mono_pitch(scan_range, step):
 	pba2.adc7.averaging_points.put(aver)
 	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 	
-#	over = 0
-#	while(not over):
-#		RE(hhm_relative_scan([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
-#		last_table = db.get_table(db[-1])
-#		min_index = np.argmin(last_table['pba2_adc7_volt'])
-#		hhm.pitch.move(last_table['hhm_pitch'][min_index])
-#		print(hhm.pitch.position)
-#		pba2.adc7.averaging_points.put(aver)
-#		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
-#		if (num_points >= 10):
-#			if ((min_index > 0.3 * num_points) and (min_index < 0.7 * num_points)):
-#		else:
-#			over = 1
+	over = 0
+	while(not over):
+		RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+		last_table = db.get_table(db[-1])
+		min_index = np.argmin(last_table['pba2_adc7_volt'])
+		hhm.pitch.move(last_table['hhm_pitch'][min_index])
+		print(hhm.pitch.position)
+		pba2.adc7.averaging_points.put(aver)
+		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+		if (num_points >= 10):
+			if ((min_index > 0.25 * num_points) and (min_index < 0.57 * num_points)):
+				over = 1
+		else:
+			over = 1
 	
 
 def tune_mono_y(scan_range, step):
@@ -166,9 +167,38 @@ def tune_mono_y(scan_range, step):
 	print(hhm.y.position)
 	pba2.adc7.averaging_points.put(aver)
 	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+	over = 0
+
+	while(not over):
+		RE(tune([pba2.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
+		last_table = db.get_table(db[-1])
+		min_index = np.argmin(last_table['pba2_adc7_volt'])
+		hhm.y.move(last_table['hhm_y'][min_index])
+		print(hhm.y.position)
+		pba2.adc7.averaging_points.put(aver)
+		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+		if (num_points >= 10):
+			if ((min_index > 0.25 * num_points) and (min_index < 0.75 * num_points)):
+				over = 1
+		else:
+			over = 1
 
 def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
 	arrays = db.get_table(db[uuid])[graph]
 	np.savetxt('/GPFS/xf08id/Sandbox/' + comment, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
+
+def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=13000, step=100):
+	table = []
+	for energy in range(start_energy, stop_energy + 1, step):
+		motor.move(energy)
+		tune_mono_pitch(1, 0.04)
+		tune_mono_y(0.5, 0.025)
+		table.append([energy, hhm.pitch.read()['hhm_pitch']['value'], hhm.y.read()['hhm_y']['value']])
+
+	return table
+
+
+
+
 
 

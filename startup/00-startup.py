@@ -7,6 +7,10 @@ setup_ophyd()
 import metadatastore.commands
 from bluesky.global_state import gs
 
+RE = gs.RE  # convenience alias
+from historydict import HistoryDict
+RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db') #/home/istavitski/.config/bluesky/bluesky_history.db
+
 # At the end of every run, verify that files were saved and
 # print a confirmation message.
 from bluesky.callbacks.broker import verify_files_saved, post_run
@@ -40,7 +44,6 @@ from time import sleep
 import numpy as np
 from bluesky.plan_tools import print_summary
 
-RE = gs.RE  # convenience alias
 
 # Uncomment the following lines to turn on verbose messages for debugging.
 # import logging
