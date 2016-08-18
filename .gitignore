@@ -1,3 +1,7 @@
 history.sqlite
 static
 *.swp
+*~
+startup/tags
+startup/
+db/*
