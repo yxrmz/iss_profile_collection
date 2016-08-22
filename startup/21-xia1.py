@@ -23,6 +23,7 @@ class XIA(Device):
 
     def start_mapping_scan(self):
         self.collect_mode.put('MCA mapping')
+        ttime.sleep(0.25)
         self.capt_start_stop.put(1)
         self.erase_start.put(1)
         ttime.sleep(1)
@@ -33,6 +34,7 @@ class XIA(Device):
         pb4.do0_enable.put(0) # Workaround
         ttime.sleep(1)
         self.stop.put(1)
+        ttime.sleep(0.5)
         self.capt_start_stop.put(0)
 
     def __init__(self, *args, **kwargs):

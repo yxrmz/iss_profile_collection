@@ -182,7 +182,7 @@ def execute_trajectory(comment='', **metadata):
         yield from bp.unstage(flyer)
 
 def execute_xia_trajectory(comment='', **metadata):
-    flyers = [pb9.enc1, pb4.di]
+    flyers = [pb9.enc1, pba2.adc7, pb4.di]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory', 'comment': comment}
         md.update(**metadata)

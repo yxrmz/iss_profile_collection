@@ -33,4 +33,4 @@ def tscanxia(comment, prepare_traj=True, log_sel=True):
 	if (prepare_traj == True):
 		prep_trajectory()
 	RE(execute_xia_trajectory(comment))
-	write_html_log(-1, comment, log=log_sel)
+	#write_html_log(-1, comment, log=log_sel)

@@ -2,6 +2,9 @@
 from ophyd import setup_ophyd
 setup_ophyd()
 
+import sys
+sys.path.insert(0, './.ipython/') # To be able to import files from .ipython directory
+
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
 import metadatastore.commands

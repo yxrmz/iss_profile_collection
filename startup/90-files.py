@@ -6,16 +6,22 @@ import math
 import csv
 import databroker as data
 import datamuxer
+import xasdata
+
+xas_data_abs = xasdata.XASdataAbs()
+xas_flu = xasdata.XASdataFlu()
 
 # Parse file and return a list in 'array_out'
 def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/'):
-    type = 'none'
+    typ = 'none'
     with open(file_path + str(file_name)) as f:
         len_of_line = len(next(f).split())
         if len_of_line == 5:
             f.seek(0)    
             ts, tn, enc, count, digital = [int(x) for x in next(f).split()] # read first line
-            type = 'encoder'
+            typ = 'encoder'
+            if file_name[0:3] == 'di_':
+                typ = 'digital'
         elif len_of_line == 4:
             f.seek(0)
             first_line = [x for x in next(f).split()]
@@ -23,16 +29,20 @@ def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/')
             tn = int(first_line[1])
             count = int(first_line[2])
             adc = int(first_line[3], 0)
-            type = 'adc'
+            typ = 'adc'
         if "clear" in dir(array_out):
             array_out += []
             array_out.clear()
         else:
             print('Your array should be a list, just define it: my_array = []')
             return
+        it = 0
         for line in f: # read rest of lines
             if(len_of_line == 5):
                 array_out.append([int(x) for x in line.split()])
+                #print(array_out, it)
+                if typ == 'digital':
+                    array_out[it][2] = array_out[it][4]
             elif(len_of_line == 4):
                 current_line = line.split()
                 current_line[3] = int(current_line[3],0) >> 8
@@ -40,6 +50,7 @@ def parse_file(file_name, array_out, file_path = '/GPFS/xf08id/pizza_box_data/')
                     current_line[3] -= 0x40000
                 current_line[3] = float(current_line[3]) * 7.62939453125e-05
                 array_out.append([int(current_line[0]), int(current_line[1]), current_line[3], int(current_line[2])])
+            it += 1
         #if type == 'adc':
         #    np.savetxt(file_path + file_name + '.txt', np.array(array_out), fmt='%i %09i %.6f %i', delimiter=" ")
         #numpy.savetxt("/home/istavitski/test.csv", np.array(array_out), delimiter=" ")
