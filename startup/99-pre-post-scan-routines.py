@@ -2,47 +2,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import time
 
-def get_ion_energy_arrays(uid, comment, filepath='/GPFS/xf08id/pizza_box_data/'):
-	run = db[uid]
-	ion_file = run['descriptors'][0]['data_keys']['pba2_adc7']['filename']
-	ion_file2 = run['descriptors'][1]['data_keys']['pba2_adc6']['filename']
-	encoder_file = run['descriptors'][2]['data_keys']['pb9_enc1']['filename']
-	ion_file = ion_file[len(ion_file)-9:len(ion_file)]
-	ion_file2 = ion_file2[len(ion_file2)-9:len(ion_file2)]
-	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
-	array_ion = []
-	array_ion2 = []
-	array_encoder = []
-	parse_file(ion_file, array_ion)
-	parse_file(ion_file2, array_ion2)
-	parse_file(encoder_file, array_encoder)
-	test_ion = np.array(array_ion)
-	test_ion2 = np.array(array_ion2)
-	test_encoder = np.array(array_encoder)
-	test_encoder = test_encoder.astype(float)
-	for i in range(len(test_encoder)):
-		#test_encoder[i, 2] = (test_encoder[i, 2]/360000)
-		test_encoder[i, 2] = -12400 / (2 * 3.1356 * math.sin(math.radians((test_encoder[i, 2]/360000)+0.134)))
-	test_ion, test_ion2, test_encoder = interpolate(test_ion, test_ion2, test_encoder, trunc=True)
-	#np.savetxt(filepath + ion_file + '-interp.txt', test_ion, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-	#np.savetxt(filepath + ion_file2 + '-interp.txt', test_ion2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-	#np.savetxt(filepath + encoder_file + '-interp.txt', test_encoder, fmt='%09i %09i %f %i %i', delimiter=" ")
 
-	create_user_folder(uid, comment, test_encoder, encoder_file, test_ion, ion_file, test_ion2, ion_file2)
-	#result_ion = test_ion
-	#result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
-	return test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2
-	#return test_encoder[:,2], result_ion[:,2], encoder_file, ion_file, ion_file2
-
-
-#<p><b> Files: </b></p>
-#<ul>
-#  <li>en_b4a51e</li>
-#  <li>an_b0363d</li>
-#  <li>an_71491d</li>
-#</ul>  
-
-def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, ion_file, ion_array2, ion_file2, path='/GPFS/xf08id/User Data/'):
+def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 	print('Creating directory...')
 
 	path = path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
@@ -57,37 +18,43 @@ def create_user_folder(uuid, comment, encoder_array, encoder_file, ion_array1, i
 
 	os.makedirs(path + comment2)
 
-	np.savetxt(path + comment2 + '/' + ion_file + '-adc7-interp.txt', ion_array1, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-	np.savetxt(path + comment2 + '/' + ion_file2 + '-adc6-interp.txt', ion_array2, fmt='%09i %09i %.6f %i %i', delimiter=" ")
-	np.savetxt(path + comment2 + '/' + encoder_file + '-enc1-interp.txt', encoder_array, fmt='%09i %09i %f %i %i', delimiter=" ")
+	parser.export_trace(comment, filepath = path + comment2 + '/')
+	#np.savetxt(path + comment2 + '/' + parser.i0_file + '-adc7-interp.txt', parser.i0_interp, fmt='%17.6f %f', delimiter=" ") #%17.6f %8.2f %f %f
+	#np.savetxt(path + comment2 + '/' + parser.it_file + '-adc6-interp.txt', parser.it_interp, fmt='%17.6f %f', delimiter=" ")
+	#np.savetxt(path + comment2 + '/' + parser.encoder_file + '-enc1-interp.txt', parser.energy_interp, fmt='%17.6f %8.2f', delimiter=" ")
 	
 
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', log=True):
+def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', absorp=True):
 	print('Plotting Ion Chambers x Energy and generating log...')
-	test_ion, test_ion2, test_encoder, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid, comment)
-	#array_x, array_y, encoder_file, ion_file, ion_file2 = get_ion_energy_arrays(uuid)
+
+	if(absorp):
+		parser = xas_abs
+		load_abs_parser(uuid)
+	else:
+		parser = xas_flu
+		load_flu_parser(uuid)
+
+	encoder_file = parser.encoder_file
+	ion_file = parser.i0_file
+	ion_file2 = parser.it_file
+
+	create_user_folder(uuid, comment, parser)
 
 	log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
 	if(not os.path.exists(log_path)):
 		os.makedirs(log_path)
 
-	result_ion = test_ion
-	if(log == True):
-		result_ion[:,2] = np.log(test_ion[:,2] / test_ion2[:,2])
-	else:
-		result_ion[:,2] = (test_ion2[:,2] / test_ion[:,2])
-	array_x = test_encoder[:,2]
-	array_y = result_ion[:,2]
+	plt.clf()
+	parser.plot()
+	plt.show()
 
+	start_timestamp = db[uuid]['start']['time']
 	stop_timestamp = db[uuid]['stop']['time']
 
 	snapshots_path = log_path + 'snapshots/'
 	if(not os.path.exists(snapshots_path)):
 		os.makedirs(snapshots_path)
 
-	plt.clf()
-	plt.plot(array_x, array_y)
-	plt.show()
 	file_path = 'snapshots/' + comment + '.png'
 	fn = log_path + file_path
 	repeat = 1
@@ -99,9 +66,10 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', log=True):
 	fn = './' + file_path
 
 	uid = db[uuid]['start']['uid']
+	time_stamp_start=('<p><b> Scan start: </b> ' + str(datetime.fromtimestamp(start_timestamp).strftime('%m/%d/%Y    %H:%M:%S')) + '</p>')
 	time_stamp=('<p><b> Scan complete: </b> ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%m/%d/%Y    %H:%M:%S')) + '</p>')
+	time_total=('<p><b> Total time: </b> ' + str(datetime.fromtimestamp(stop_timestamp - start_timestamp).strftime('%M:%S')) + '</p>')
 	uuid=('<p><b> Scan ID: </b>'+ uid)
-	#files= ('<p><b> Files: </b>'+ encoder_file + '    |    ' + ion_file + '    |    ' + ion_file2 + '</p>')
 	files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>ADC 6 file: </b>' + ion_file2 + '</li>\n  <li><b>ADC 7 file: </b>' + ion_file + '</li>\n</ul>')
 	image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
 
@@ -122,7 +90,9 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', log=True):
 			text_file_new.write(uuid + '\n')
 			text_file_new.write('<p><b> Files: </b></p>' + '\n')
 			text_file_new.write(files + '\n')
+			text_file_new.write(time_stamp_start + '\n')
 			text_file_new.write(time_stamp + '\n')
+			text_file_new.write(time_total + '\n')
 			text_file_new.write(image + '\n')
 			text_file_new.write('<hr>' + '\n\n')
 			#text_file_new.write('<p> </p>' + '\n')

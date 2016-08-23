@@ -80,13 +80,13 @@ def trajectory_load(orig_file_name, new_file_name = 'hhm.txt', orig_file_path = 
     for file_name in file_list:
         if file_name == new_file_name:
             file_exists = 1
-    if file_exists == 1:
-        if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
-            ftp.delete(new_file_name)
-        else:
-            print('File already exists, try other name or directory.')
-            ftp.close()
-            return False
+    #if file_exists == 1:
+    #    if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
+    #        ftp.delete(new_file_name)
+    #    else:
+    #        print('File already exists, try other name or directory.')
+    #        ftp.close()
+    #        return False
 
     ftp_file_path = '/var/ftp/usrflash/lut/' + str(new_file_path) + '/' + new_file_name 
     # Open file and transfer to the power pmac
