@@ -68,7 +68,7 @@ class XASdataAbs(XASdata):
 		max_timestamp = np.array([self.i0[len(self.i0)-1,0], self.it[len(self.it)-1,0], self.encoder[len(self.encoder)-1,0]]).min()
 		interval = self.i0[1,0] - self.i0[0,0]
 		#interval = 0.001
-		timestamps = np.arange(min_timestamp, max_timestampXAS, interval)
+		timestamps = np.arange(min_timestamp, max_timestamp, interval)
 		self.i0_interp = np.array([timestamps, np.interp(timestamps, self.i0[:,0], self.i0[:,1])]).transpose()
 		self.it_interp = np.array([timestamps, np.interp(timestamps, self.it[:,0], self.it[:,1])]).transpose()
 		self.energy_interp = np.array([timestamps, np.interp(timestamps, self.energy[:,0], self.energy[:,1])]).transpose()
