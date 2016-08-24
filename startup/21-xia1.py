@@ -27,11 +27,11 @@ class XIA(Device):
         self.capt_start_stop.put(1)
         self.erase_start.put(1)
         ttime.sleep(1)
-        pb4.do0_enable.put(1) # Workaround
+        pb4.do0.enable.put(1) # Workaround
         return self._status
 
     def stop_scan(self):
-        pb4.do0_enable.put(0) # Workaround
+        pb4.do0.enable.put(0) # Workaround
         ttime.sleep(1)
         self.stop.put(1)
         ttime.sleep(0.5)
@@ -54,7 +54,7 @@ class XIA(Device):
     def trigger(self):
         self._status = DeviceStatus(self)
         self.erase_start.put(1)
-        pb4.do0_enable.put(1) # Workaround
+        pb4.do0.enable.put(1) # Workaround
         return self._status
 
     def _acquiring_changed(self, value=None, old_value=None, **kwargs):
@@ -64,7 +64,7 @@ class XIA(Device):
             return
         if (old_value == 1) and (value == 0):
             # 'acquiring' has flipped from 'Acquiring' to 'Done'.
-            pb4.do0_enable.put(0) # Workaround
+            pb4.do0.enable.put(0) # Workaround
             self._status._finished()
            
 

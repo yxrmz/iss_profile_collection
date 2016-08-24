@@ -120,11 +120,11 @@ def tune_mono_pitch(scan_range, step):
 		pba2.adc7.averaging_points.put(aver)
 		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 		if (num_points >= 10):
-			if ((min_index > 0.25 * num_points) and (min_index < 0.57 * num_points)):
+			if ((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)):
 				over = 1
 		else:
 			over = 1
-	
+
 
 def tune_mono_y(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()
@@ -148,7 +148,7 @@ def tune_mono_y(scan_range, step):
 		pba2.adc7.averaging_points.put(aver)
 		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 		if (num_points >= 10):
-			if ((min_index > 0.25 * num_points) and (min_index < 0.75 * num_points)):
+			if ((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)):
 				over = 1
 		else:
 			over = 1

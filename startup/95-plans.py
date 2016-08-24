@@ -123,7 +123,7 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 
     flyers = detectors #[pba2.adc6, pba2.adc7]
     # Start with a step scan.
-    plan = bp.relative_scan(flyers, motor, start, stop, num, md={'comment': comment})
+    plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'comment': comment})
     plan = bp.fly_during_wrapper(plan, flyers)
 
     #for flyer in flyers:
