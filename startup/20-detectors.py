@@ -269,13 +269,6 @@ class DIFS(DigitalInput):
 class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
     internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
-    # internal_ts_rb = Cpt(EpicsSignal, '}T:Internal-RB')
-
-    #do0_enable = Cpt(EpicsSignal, '-DO:0}Ena-Cmd')
-    #do0_period_sp = Cpt(EpicsSignal, '-DO:0}Period-SP')
-    #do0_unit_sel = Cpt(EpicsSignal, '-DO:0}Unit-Sel')
-    #do0_dutycycle_sp = Cpt(EpicsSignal, '-DO:0}DutyCycle-SP')
-    #do0_default_pol = Cpt(EpicsSignal, '-DO:0}Dflt-Sel')
 
     enc1 = Cpt(EncoderFS, ':1')
     enc2 = Cpt(EncoderFS, ':2')
@@ -286,9 +279,6 @@ class PizzaBoxFS(Device):
     do1 = Cpt(DigitalOutput, '-DO:1')
     do2 = Cpt(DigitalOutput, '-DO:2')
     do3 = Cpt(DigitalOutput, '-DO:3')
-
-#XF:08IDA-CT{Enc04-DO:0}DutyCycle-SP
-#XF:08IDA-CT{Enc04:DI}ID:File
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
