@@ -102,22 +102,14 @@ def tune_mono_pitch(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
 	num_points = int(round(scan_range/step))
-	RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
-	last_table = db.get_table(db[-1])
-	min_index = np.argmin(last_table['pba2_adc7_volt'])
-	hhm.pitch.move(last_table['hhm_pitch'][min_index])
-	print(hhm.pitch.position)
-	pba2.adc7.averaging_points.put(aver)
-	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
-	
 	over = 0
+
 	while(not over):
 		RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
 		last_table = db.get_table(db[-1])
 		min_index = np.argmin(last_table['pba2_adc7_volt'])
 		hhm.pitch.move(last_table['hhm_pitch'][min_index])
 		print(hhm.pitch.position)
-		pba2.adc7.averaging_points.put(aver)
 		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 		if (num_points >= 10):
 			if ((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)):
@@ -125,18 +117,13 @@ def tune_mono_pitch(scan_range, step):
 		else:
 			over = 1
 
+	pba2.adc7.averaging_points.put(aver)
+
 
 def tune_mono_y(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
 	num_points = int(round(scan_range/step))
-	RE(tune([pba2.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
-	last_table = db.get_table(db[-1])
-	min_index = np.argmin(last_table['pba2_adc7_volt'])
-	hhm.y.move(last_table['hhm_y'][min_index])
-	print(hhm.y.position)
-	pba2.adc7.averaging_points.put(aver)
-	os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 	over = 0
 
 	while(not over):
@@ -145,13 +132,15 @@ def tune_mono_y(scan_range, step):
 		min_index = np.argmin(last_table['pba2_adc7_volt'])
 		hhm.y.move(last_table['hhm_y'][min_index])
 		print(hhm.y.position)
-		pba2.adc7.averaging_points.put(aver)
 		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 		if (num_points >= 10):
 			if ((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)):
 				over = 1
 		else:
 			over = 1
+
+	pba2.adc7.averaging_points.put(aver)
+
 
 def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
 	arrays = db.get_table(db[uuid])[graph]
