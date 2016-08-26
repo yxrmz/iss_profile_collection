@@ -261,50 +261,5 @@ def test_steps(comment=''):
 	plan = bp.pchain(plan)
 	yield from plan
 
-def run_trajectory(comment=''):
-	#xia1.stage()
-	#pb4.di.stage()
-	pb9.enc1.stage()
-	pba2.adc6.stage()
-	pba2.adc7.stage()
-
-	#pb4.di.kickoff()
-	pb9.enc1.kickoff()
-	pba2.adc6.kickoff()
-	pba2.adc7.kickoff()
-
-	#hhm.prepare_trajectory.put(1)
-	#ttime.sleep(.25)
-	#while (hhm.trajectory_ready.read()['hhm_trajectory_ready']['value'] == 1):
-	#	ttime.sleep(.1)
-	ttime.sleep(.25)
-	hhm.start_trajectory.put("1")
-	ttime.sleep(2)
-
-	while (hhm.theta.moving == True):
-		ttime.sleep(.1)
-
-
-	#pb4.di.complete()
-	pb9.enc1.complete()
-	pba2.adc6.complete()
-	pba2.adc7.complete()
-
-	#pb4.di.collect()
-	pb9.enc1.collect()
-	pba2.adc6.collect()
-	pba2.adc7.collect()
-
-	#xia1.unstage()
-	#pb4.di.unstage()
-	pb9.enc1.unstage()
-	pba2.adc6.unstage()
-	pba2.adc7.unstage()
-	
-	encoder_path = pb9.enc1.filepath.value[len(pb9.enc1.filepath.value)-9 : len(pb9.enc1.filepath.value)]
-	adc_path1 = pba2.adc7.filepath.value[len(pba2.adc7.filepath.value)-9 : len(pba2.adc7.filepath.value)]
-	adc_path2 = pba2.adc6.filepath.value[len(pba2.adc6.filepath.value)-9 : len(pba2.adc6.filepath.value)]
-
-	return [comment, adc_path1, adc_path2, encoder_path]
 
 
