@@ -153,6 +153,20 @@ class EncoderFS(Encoder):
                       'dtype': 'array'}}}
 
 
+class DigitalOutput(Device):
+    """ DigitalOutput """
+    enable = Cpt(EpicsSignal, '}Ena-Cmd')
+    period_sp = Cpt(EpicsSignal, '}Period-SP')
+    unit_sel = Cpt(EpicsSignal, '}Unit-Sel')
+    dutycycle_sp = Cpt(EpicsSignal, '}DutyCycle-SP')
+    default_pol = Cpt(EpicsSignal, '}Dflt-Sel')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._ready_to_collect = False
+        if self.connected:
+            self.enable.put(0)
+
 class DigitalInput(Device):
     """This class defines components but does not implement actual reading.
 
@@ -255,19 +269,16 @@ class DIFS(DigitalInput):
 class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
     internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
-    # internal_ts_rb = Cpt(EpicsSignal, '}T:Internal-RB')
-
-    do0_enable = Cpt(EpicsSignal, '-DO:0}Ena-Cmd')
-    do0_period_sp = Cpt(EpicsSignal, '-DO:0}Period-SP')
-    do0_unit_sel = Cpt(EpicsSignal, '-DO:0}Unit-Sel')
-    do0_dutycycle_sp = Cpt(EpicsSignal, '-DO:0}DutyCycle-SP')
-    do0_default_pol = Cpt(EpicsSignal, '-DO:0}Dflt-Sel')
 
     enc1 = Cpt(EncoderFS, ':1')
     enc2 = Cpt(EncoderFS, ':2')
     enc3 = Cpt(EncoderFS, ':3')
     enc4 = Cpt(EncoderFS, ':4')
     di = Cpt(DIFS, ':DI')
+    do0 = Cpt(DigitalOutput, '-DO:0')
+    do1 = Cpt(DigitalOutput, '-DO:1')
+    do2 = Cpt(DigitalOutput, '-DO:2')
+    do3 = Cpt(DigitalOutput, '-DO:3')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -328,9 +339,9 @@ class Adc(Device):
         self._ready_to_collect = False
         if self.connected:
             self.enable_sel.put(1)
-            self.sample_rate.put(275) # Is 275 * 10ns a good sample rate?
+            #self.sample_rate.put(275) # Is 275 * 10ns a good sample rate?
             self.enable_averaging.put(1)
-            self.averaging_points.put("64")
+            #self.averaging_points.put("64")
 
 
 class AdcFS(Adc):

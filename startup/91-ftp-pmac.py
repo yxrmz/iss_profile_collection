@@ -45,7 +45,7 @@ def query_yes_no(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 
-def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS/xf08id/pizza_box_data/', new_file_path = '10', ip = '10.8.2.86'):
+def trajectory_load(orig_file_name, new_file_name = 'hhm.txt', orig_file_path = '/GPFS/xf08id/trajectory/', new_file_path = 10, ip = '10.8.2.86'):
     
     # Get number of lines in file
     file_size = file_len(orig_file_path + orig_file_name)
@@ -58,21 +58,21 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
     s.login (ip, 'root', 'deltatau')
 
     # Check if the directory exists in '/usrflash/lut/. If it does not, create it.'
-    if new_file_path != '':
+    if str(new_file_path) != '':
         ftp.cwd('/usrflash/lut/')
         dir_list = ftp.nlst()
         dir_exists = 0
         for dir_name in dir_list:
-            if dir_name == new_file_path:
+            if dir_name == str(new_file_path):
                 dir_exists = 1
         if not dir_exists:
-            print('mkdir:', '/usrflash/lut/' + new_file_path)
-            ftp.mkd('/usrflash/lut/' + new_file_path)
-            s.sendline ('chown ftp:root /var/ftp/usrflash/lut/' + new_file_path)
-            s.sendline ('chmod a+wrx /var/ftp/usrflash/lut/' + new_file_path)
+            print('mkdir:', '/usrflash/lut/' + str(new_file_path))
+            ftp.mkd('/usrflash/lut/' + str(new_file_path))
+            s.sendline ('chown ftp:root /var/ftp/usrflash/lut/' + str(new_file_path))
+            s.sendline ('chmod a+wrx /var/ftp/usrflash/lut/' + str(new_file_path))
 
     # Check if the file already exists in the controller 
-    ftp.cwd('/usrflash/lut/' + new_file_path + '/')
+    ftp.cwd('/usrflash/lut/' + str(new_file_path) + '/')
     file_list = ftp.nlst()
     file_exists = 0
     if new_file_name == '':
@@ -80,22 +80,22 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
     for file_name in file_list:
         if file_name == new_file_name:
             file_exists = 1
-    if file_exists == 1:
-        if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
-            ftp.delete(new_file_name)
-        else:
-            print('File already exists, try other name or directory.')
-            ftp.close()
-            return False
+    #if file_exists == 1:
+    #    if query_yes_no('File "' + new_file_name +'" already exists in the controller. Would you like to replace it?'):
+    #        ftp.delete(new_file_name)
+    #    else:
+    #        print('File already exists, try other name or directory.')
+    #        ftp.close()
+    #        return False
 
-    ftp_file_path = '/var/ftp/usrflash/lut/' + new_file_path + '/' + new_file_name 
+    ftp_file_path = '/var/ftp/usrflash/lut/' + str(new_file_path) + '/' + new_file_name 
     # Open file and transfer to the power pmac
     f = open(orig_file_path + str(orig_file_name), 'rb')
     if(f.readable()):
-        result = ftp.storbinary('STOR ' + '/usrflash/lut/' + new_file_path + '/' + new_file_name, f)
+        result = ftp.storbinary('STOR ' + '/usrflash/lut/' + str(new_file_path) + '/' + new_file_name, f)
         if(result == '226 File receive OK.'):
-            s.sendline ('chown ftp:root /var/ftp/usrflash/lut/' + new_file_path + '/' + new_file_name)
-            s.sendline ('chmod a+wrx /var/ftp/usrflash/lut/' + new_file_path + '/' + new_file_name)
+            s.sendline ('chown ftp:root /var/ftp/usrflash/lut/' + str(new_file_path) + '/' + new_file_name)
+            s.sendline ('chmod a+wrx /var/ftp/usrflash/lut/' + str(new_file_path) + '/' + new_file_name)
             sleep(0.001)
             ftp.close()
 
@@ -111,13 +111,13 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
 #    dir_exists = 0
 #    for x in range(0, len(lsresult)):
 #        lsresult[x] = str(lsresult[x])[50:len(str(lsresult[x]))-1]
-#        if lsresult[x] == new_file_path:
+#        if lsresult[x] == str(new_file_path):
 #            dir_exists = 1
 #    if not dir_exists:
-#        s.sendline('mkdir ' + new_file_path)
+#        s.sendline('mkdir ' + str(new_file_path))
 #        s.prompt(timeout=4)
 
-#    s.sendline('cd ' + new_file_path)
+#    s.sendline('cd ' + str(new_file_path))
 #    s.prompt(timeout=10)
 #    s.sendline('ls -l')
 #    sleep(0.5)
@@ -143,8 +143,8 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
 #            return False
             
 #    sleep(0.2)
-    #print('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + new_file_path)
-#    s.sendline('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + new_file_path)
+    #print('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + str(new_file_path))
+#    s.sendline('cp ' + ftp_file_path + ' /opt/ppmac/usrflash/lut/' + str(new_file_path))
 #    s.prompt(timeout=10)
     #print(s.before)
 
@@ -152,7 +152,7 @@ def send_motion_file(orig_file_name, new_file_name = '', orig_file_path = '/GPFS
     return True
 
 
-def transfer_lut(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
+def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 
 	class Reader:
 		def __init__(self):
