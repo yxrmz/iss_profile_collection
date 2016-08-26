@@ -150,14 +150,11 @@ def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=1300
 	table = []
 	for energy in range(start_energy, stop_energy + 1, step):
 		motor.move(energy)
-		tune_mono_pitch(1, 0.04)
+		time.sleep(0.5)
+		tune_mono_pitch(2, 0.1)
 		tune_mono_y(0.5, 0.025)
 		table.append([energy, hhm.pitch.read()['hhm_pitch']['value'], hhm.y.read()['hhm_y']['value']])
 
 	return table
-
-
-
-
 
 
