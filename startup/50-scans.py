@@ -28,11 +28,6 @@ def testScan():
     #RE(count([xia1], num=5), LiveTable([xia1]))
     xia1.stop.put(1)
 
-# Get last table:
-    #table = db.get_table(db[-1])
-# Get last read of graph3:
-    #table['xia1_graph3'][len(table['xia1_graph3'])]
-
 
 def pb_scan(signal, motor, init_pos, final_pos, count):
     scanning_plan = DeltaScanPlan([], motor, init_pos, final_pos, count)
