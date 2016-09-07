@@ -18,10 +18,12 @@ class Shutter():
 			self.state = 'open'
 		
 	def open(self):
+		print('Opening shutter...')
 		pb4.do3.default_pol.put(0)
 		self.state = 'open'
 		
 	def close(self):
+		print('Closing shutter...')
 		pb4.do3.default_pol.put(1)
 		self.state = 'closed'
 
