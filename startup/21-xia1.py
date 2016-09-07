@@ -1,25 +1,25 @@
 import time as ttime
 
 class XIA(Device):
-    graph1 =         Cpt(EpicsSignal, ':mca1.VAL')
-    graph2 =         Cpt(EpicsSignal, ':mca2.VAL')
-    graph3 =         Cpt(EpicsSignal, ':mca3.VAL')
-    graph4 =         Cpt(EpicsSignal, ':mca4.VAL')
-    mode =         Cpt(EpicsSignal, ':PresetMode')
-    collect_mode =     Cpt(EpicsSignal, ':CollectMode')
-    start =         Cpt(EpicsSignal, ':StartAll')
-    stop =         Cpt(EpicsSignal, ':StopAll')
-    erase_start =    Cpt(EpicsSignal, ':EraseStart')
-    erase =         Cpt(EpicsSignal, ':EraseAll')
-    acquiring =         Cpt(EpicsSignalRO, ':Acquiring')
+    graph1 =         Cpt(EpicsSignal, 'mca1.VAL')
+    graph2 =         Cpt(EpicsSignal, 'mca2.VAL')
+    graph3 =         Cpt(EpicsSignal, 'mca3.VAL')
+    graph4 =         Cpt(EpicsSignal, 'mca4.VAL')
+    mode =         Cpt(EpicsSignal, 'PresetMode')
+    collect_mode =     Cpt(EpicsSignal, 'CollectMode')
+    start =         Cpt(EpicsSignal, 'StartAll')
+    stop =         Cpt(EpicsSignal, 'StopAll')
+    erase_start =    Cpt(EpicsSignal, 'EraseStart')
+    erase =         Cpt(EpicsSignal, 'EraseAll')
+    acquiring =         Cpt(EpicsSignalRO, 'Acquiring')
 
-    capt_start_stop =    Cpt(EpicsSignal, ':netCDF1:Capture')
-    pixels_per_run =     Cpt(EpicsSignal, ':PixelsPerRun')
-    current_pixel =     Cpt(EpicsSignal, ':dxp1:CurrentPixel')
-    next_pixel =       Cpt(EpicsSignal, ':NextPixel')
-    pix_per_buf_auto =    Cpt(EpicsSignal, ':AutoPixelsPerBuffer')
-    pix_per_buf_set =    Cpt(EpicsSignal, ':PixelsPerBuffer')
-    pix_per_buf_rb =    Cpt(EpicsSignal, ':PixelsPerBuffer_RBV')
+    capt_start_stop =    Cpt(EpicsSignal, 'netCDF1:Capture')
+    pixels_per_run =     Cpt(EpicsSignal, 'PixelsPerRun')
+    current_pixel =     Cpt(EpicsSignal, 'dxp1:CurrentPixel')
+    next_pixel =       Cpt(EpicsSignal, 'NextPixel')
+    pix_per_buf_auto =    Cpt(EpicsSignal, 'AutoPixelsPerBuffer')
+    pix_per_buf_set =    Cpt(EpicsSignal, 'PixelsPerBuffer')
+    pix_per_buf_rb =    Cpt(EpicsSignal, 'PixelsPerBuffer_RBV')
 
     def start_mapping_scan(self):
         self.collect_mode.put('MCA mapping')
@@ -68,5 +68,5 @@ class XIA(Device):
             self._status._finished()
            
 
-xia1 = XIA('dxpXMAP', name='xia1')
+xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1') #XIA('dxpXMAP:', name='xia1')
 xia1.read_attrs = ['graph1', 'graph2', 'graph3', 'graph4']
