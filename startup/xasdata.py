@@ -1,6 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import os
+from bluesky.global_state import gs
+RE = gs.RE  # convenience alias
+from historydict import HistoryDict
+RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db')
 
 class XASdata:
 	def __init__(self, **kwargs):
@@ -82,7 +87,20 @@ class XASdataAbs(XASdata):
 		plt.grid(True)
 
 	def export_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/'):
-		np.savetxt(filepath + filename + '-interp.txt', np.array([self.energy_interp[:,0], self.energy_interp[:,1], self.i0_interp[:,1], self.it_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', delimiter=" ", header ='Timestamp (s)   En. (eV) 	i0 (V)	  it(V)')
+		fn = filepath + filename + '-interp.txt'
+		repeat = 1
+		while(os.path.isfile(fn)):
+			repeat += 1
+			fn = filepath + filename + '-' + str(repeat) + '-interp.txt'
+		np.savetxt(fn, np.array([self.energy_interp[:,0], self.energy_interp[:,1], 
+					self.i0_interp[:,1], self.it_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
+					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)', comments = 
+					'# Year: ' + RE.md['year'] + 
+					'\n# Cycle: ' + RE.md['cycle'] +
+					'\n# SAF: ' + RE.md['SAF'] + 
+					'\n# PI: ' + RE.md['PI'] + 
+					'\n# PROPOSAL: ' + RE.md['PROPOSAL'] +
+					'\n# Scan ID: ' + str(RE.md['scan_id']) + '\n#\n# ')
 
 class XASdataFlu(XASdata):
 	def __init__(self, *args, **kwargs):
@@ -133,7 +151,20 @@ class XASdataFlu(XASdata):
 		plt.grid(True)
 
 	def export_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/'):
-		np.savetxt(filepath + filename + '-interp.txt', np.array([self.energy_interp[:,0], self.energy_interp[:,1], self.i0_interp[:,1], self.iflu_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', delimiter=" ", header ='Timestamp (s)   En. (eV) 	i0 (V)	  if(V)')
+		fn = filepath + filename + '-interp.txt'
+		repeat = 1
+		while(os.path.isfile(fn)):
+			repeat += 1
+			fn = filepath + filename + '-' + str(repeat) + '-interp.txt'
+		np.savetxt(fn, np.array([self.energy_interp[:,0], self.energy_interp[:,1], 
+					self.i0_interp[:,1], self.iflu_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
+					delimiter=" ", header ='Timestamp (s)   En. (eV) 	i0 (V)	  if(V)', comments = 
+					'# Year: ' + RE.md['year'] + 
+					'\n# Cycle: ' + RE.md['cycle'] +
+					'\n# SAF: ' + RE.md['SAF'] + 
+					'\n# PI: ' + RE.md['PI'] + 
+					'\n# PROPOSAL: ' + RE.md['PROPOSAL'] +
+					'\n# Scan ID: ' + str(RE.md['scan_id']) + '\n#\n# ')
 
 	def export_trig_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/'):
 		np.savetxt(filepath + filename + '-interp.txt', self.energy_interp[:,1], fmt='%f', delimiter=" ")

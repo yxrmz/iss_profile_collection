@@ -10,18 +10,17 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 	if(not os.path.exists(path)):
 		os.makedirs(path)
 
-	repeat = 1
-	comment2 = comment
-	while(os.path.exists(path + comment2)):
-		repeat += 1
-		comment2 = comment + '-' + str(repeat)
+#	repeat = 1
+#	comment2 = comment
+#	while(os.path.exists(path + comment2)):
+#		repeat += 1
+#		comment2 = comment + '-' + str(repeat)
 
-	os.makedirs(path + comment2)
+#	os.makedirs(path + comment2)
 
-	parser.export_trace(comment, filepath = path + comment2 + '/')
-	#np.savetxt(path + comment2 + '/' + parser.i0_file + '-adc7-interp.txt', parser.i0_interp, fmt='%17.6f %f', delimiter=" ") #%17.6f %8.2f %f %f
-	#np.savetxt(path + comment2 + '/' + parser.it_file + '-adc6-interp.txt', parser.it_interp, fmt='%17.6f %f', delimiter=" ")
-	#np.savetxt(path + comment2 + '/' + parser.encoder_file + '-enc1-interp.txt', parser.energy_interp, fmt='%17.6f %8.2f', delimiter=" ")
+#	parser.export_trace(comment, filepath = path + comment2 + '/')
+
+	parser.export_trace(comment, filepath = path)
 	
 
 def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', absorp=True):
