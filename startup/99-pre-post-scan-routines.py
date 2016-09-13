@@ -20,7 +20,7 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 
 #	parser.export_trace(comment, filepath = path + comment2 + '/')
 
-	parser.export_trace(comment, filepath = path)
+	parser.export_trace(comment, filepath = path, uid = uuid)
 	
 
 def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', absorp=True):

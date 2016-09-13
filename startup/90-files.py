@@ -73,7 +73,7 @@ def plot_abs_files(ion_file, ion_file2, encoder_file, color='r'):
 # arg3 (optional) = out_filepath = file path of the new file (default = '/GPFS/xf08id/Sandbox/')
 def export_abs_traces(uid, out_filename, out_filepath = '/GPFS/xf08id/Sandbox/'):
 	load_abs_parser(uid)
-	xas_abs.export_trace(out_filename, out_filepath)
+	xas_abs.export_trace(out_filename, out_filepath, uid = uid)
 
 
 ########## plot_abs_db ##########

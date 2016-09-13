@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import math
 import os
 from bluesky.global_state import gs
-RE = gs.RE  # convenience alias
-from historydict import HistoryDict
-RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db')
+from databroker import (DataBroker as db, get_events, get_images,
+                        get_table, get_fields, restream, process)
+from datetime import datetime
 
 class XASdata:
 	def __init__(self, **kwargs):
@@ -86,21 +86,24 @@ class XASdataAbs(XASdata):
 		plt.ylabel('log(i0 / it)')
 		plt.grid(True)
 
-	def export_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/'):
-		fn = filepath + filename + '-interp.txt'
+	def export_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/', uid = ''):
+		suffix = '.txt'
+		fn = filepath + filename + suffix
 		repeat = 1
 		while(os.path.isfile(fn)):
 			repeat += 1
-			fn = filepath + filename + '-' + str(repeat) + '-interp.txt'
+			fn = filepath + filename + '-' + str(repeat) + suffix
+		if(not uid):
+			pi, proposal, saf, comment, year, cycle, scan_id, real_uid, start_time, stop_time = '', '', '', '', '', '', '', '', '', ''
+		else:
+			pi, proposal, saf, comment, year, cycle, scan_id, real_uid, start_time, stop_time = db[uid]['start']['PI'], db[uid]['start']['PROPOSAL'], db[uid]['start']['SAF'], db[uid]['start']['comment'], db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['scan_id'], db[uid]['start']['uid'], db[uid]['start']['time'], db[uid]['stop']['time']
+			human_start_time = str(datetime.fromtimestamp(start_time).strftime('%m/%d/%Y  %H:%M:%S'))
+			human_stop_time = str(datetime.fromtimestamp(stop_time).strftime(' %m/%d/%Y  %H:%M:%S'))
+			human_duration = str(datetime.fromtimestamp(stop_time - start_time).strftime('%M:%S'))
+		
 		np.savetxt(fn, np.array([self.energy_interp[:,0], self.energy_interp[:,1], 
 					self.i0_interp[:,1], self.it_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
-					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)', comments = 
-					'# Year: ' + RE.md['year'] + 
-					'\n# Cycle: ' + RE.md['cycle'] +
-					'\n# SAF: ' + RE.md['SAF'] + 
-					'\n# PI: ' + RE.md['PI'] + 
-					'\n# PROPOSAL: ' + RE.md['PROPOSAL'] +
-					'\n# Scan ID: ' + str(RE.md['scan_id']) + '\n#\n# ')
+					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)', comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, human_start_time, human_stop_time, human_duration))
 
 class XASdataFlu(XASdata):
 	def __init__(self, *args, **kwargs):
@@ -150,21 +153,24 @@ class XASdataFlu(XASdata):
 		plt.ylabel('(iflu / i0)')
 		plt.grid(True)
 
-	def export_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/'):
-		fn = filepath + filename + '-interp.txt'
+	def export_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/', uid = ''):
+		suffix = '.txt'
+		fn = filepath + filename + suffix
 		repeat = 1
 		while(os.path.isfile(fn)):
 			repeat += 1
-			fn = filepath + filename + '-' + str(repeat) + '-interp.txt'
+			fn = filepath + filename + '-' + str(repeat) + suffix
+		if(not uid):
+			pi, proposal, saf, comment, year, cycle, scan_id, real_uid, start_time, stop_time = '', '', '', '', '', '', '', '', '', ''
+		else:
+			pi, proposal, saf, comment, year, cycle, scan_id, real_uid, start_time, stop_time = db[uid]['start']['PI'], db[uid]['start']['PROPOSAL'], db[uid]['start']['SAF'], db[uid]['start']['comment'], db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['scan_id'], db[uid]['start']['uid'], db[uid]['start']['time'], db[uid]['stop']['time']
+			human_start_time = str(datetime.fromtimestamp(start_time).strftime('%m/%d/%Y  %H:%M:%S'))
+			human_stop_time = str(datetime.fromtimestamp(stop_time).strftime(' %m/%d/%Y  %H:%M:%S'))
+			human_duration = str(datetime.fromtimestamp(stop_time - start_time).strftime('%M:%S'))
+
 		np.savetxt(fn, np.array([self.energy_interp[:,0], self.energy_interp[:,1], 
-					self.i0_interp[:,1], self.iflu_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
-					delimiter=" ", header ='Timestamp (s)   En. (eV) 	i0 (V)	  if(V)', comments = 
-					'# Year: ' + RE.md['year'] + 
-					'\n# Cycle: ' + RE.md['cycle'] +
-					'\n# SAF: ' + RE.md['SAF'] + 
-					'\n# PI: ' + RE.md['PI'] + 
-					'\n# PROPOSAL: ' + RE.md['PROPOSAL'] +
-					'\n# Scan ID: ' + str(RE.md['scan_id']) + '\n#\n# ')
+					self.i0_interp[:,1], self.it_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
+					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)', comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, human_start_time, human_stop_time, human_duration))
 
 	def export_trig_trace(self, filename, filepath = '/GPFS/xf08id/Sandbox/'):
-		np.savetxt(filepath + filename + '-interp.txt', self.energy_interp[:,1], fmt='%f', delimiter=" ")
+		np.savetxt(filepath + filename + suffix, self.energy_interp[:,1], fmt='%f', delimiter=" ")
