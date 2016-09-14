@@ -53,8 +53,8 @@ def trajectory_load(orig_file_name, new_file_path, new_file_name = 'hhm.txt', or
         if(result == '226 File receive OK.'):
             s.sendline ('chown ftp:root /var/ftp/usrflash/lut/{}/{}'.format(new_file_path, new_file_name))
             s.sendline ('chmod a+wrx /var/ftp/usrflash/lut/{}/{}'.format(new_file_path, new_file_name))
-            s.sendline ('echo {} > /var/ftp/usrflash/lut/{}/hhm-size.txt'.format(file_size, new_file_path))
-            sleep(0.001)
+            s.sendline ('echo "{}\n{}" > /var/ftp/usrflash/lut/{}/hhm-size.txt'.format(file_size, orig_file_name, new_file_path))
+            sleep(0.01)
             ftp.close()
 
     print('File sent successfully')
@@ -93,12 +93,17 @@ def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 	if file_exists == 0:
 		print('File not found. :(\nAre you sure \'{}\' is the correct lut number?'.format(lut_number))
 	else:
-		size = []
+		info = []
 		def handle_binary(more_data):
-			size.append(more_data)
+			info.append(more_data)
 
 		resp = ftp.retrlines('RETR hhm-size.txt', callback=handle_binary)
-		size = int(size[0])
+		if(len(info) == 2):
+			size = int(info[0])
+			name = info[1]
+		else:
+			print('Could not find the size and name info in the controller. Please, try sending the trajectory file again using trajectory_load(...)')	
+			return False
 		#print(data)
 		#r = Reader()
 		#ftp.retrlines('RETR ' + filename, r)
@@ -109,8 +114,31 @@ def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 			hhm.cycle_limit.put(size)
 			while (hhm.cycle_limit_rbv.value != size):
 				ttime.sleep(.01)
-			print('Transfer completed!\nNew lut number: {}\nNumber of points: {}'.format(lut_number, size))
+			print('Transfer completed!\nNew lut number: {}\nTrajectory name: {}\nNumber of points: {}'.format(lut_number, name, size))
 			return True
+
+def trajectory_read_info(ip = '10.8.2.86'):
+	ftp = FTP(ip)
+	ftp.login()
+	ftp.cwd('/usrflash/lut/')
+	print('\nThe trajectories found in the controller (ip: {}) are:'.format(ip))
+
+	def handle_binary(more_data):
+		info.append(more_data)
+
+	for i in range(1, 10):
+		ftp.cwd('/usrflash/lut/{}'.format(i))
+
+		info = []
+		
+		resp = ftp.retrlines('RETR hhm-size.txt', callback=handle_binary)
+		if(len(info) == 2):
+			size = int(info[0])
+			name = info[1]
+			print('{}: {:<24} (Size: {})'.format(i, name, size))
+		else:
+			print('{}: Could not find the size and name info'.format(i))	
+
 
 
 
