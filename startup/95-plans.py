@@ -3,24 +3,6 @@ import bluesky.plans as bp
 import time as ttime
 
 
-def fly_testing(flyers):
-	def inner():
-		yield from open_run()
-		# maybe?
-		# yield from upload_to_controller
-		#st = yield from start_the_controller()
-		#yield from wait_for(st)
-		yield from sleep(50)
-		yield from close_run()
-		
-	yield from fly_during_wrapper(inner(), flyers)
-
-
-def repeater(count, plan, *args, **kwargs):
-	for j in range(count):
-		yield from plan(*args, **kwargs)
-
-
 def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comment='', **metadata):
 	"""
 	Example
@@ -43,37 +25,9 @@ def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comme
 	yield from bp.stage(hhm)
 
 	plan = bp.pchain(plan)
-	#plan = bp.pchain(bp.stage(pb9.enc1), bp.stage(pba2.adc6), bp.stage(pba2.adc7),
-	#				 plan,
-	#				 bp.unstage(pb9.enc1), bp.unstage(pba2.adc6), bp.unstage(pba2.adc7))
+
 	yield from plan
 
-def hhm_theta_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comment='', **metadata):
-	"""
-	Example
-	-------
-	>>> RE(hhm_theta_scan(-0.1, 0.1, 2, [pb4.di, xia]))
-	"""
-	def inner():
-		md = {'plan_args': {}, 'plan_name': 'step scan', 'comment': comment}
-		md.update(**metadata)
-		yield from bp.open_run(md=md)
-
-	# Start with a step scan.
-	plan = bp.relative_scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'comment': comment})
-	# Wrap it in a fly scan with the Pizza Box.
-	plan = bp.fly_during_wrapper(plan, flyers)
-	# Working around a bug in fly_during_wrapper, stage and unstage the pizza box manually.
-
-	for flyer in flyers:
-		yield from bp.stage(flyer)
-	yield from bp.stage(hhm)
-
-	plan = bp.pchain(plan)
-	#plan = bp.pchain(bp.stage(pb9.enc1), bp.stage(pba2.adc6), bp.stage(pba2.adc7),
-	#				 plan,
-	#				 bp.unstage(pb9.enc1), bp.unstage(pba2.adc6), bp.unstage(pba2.adc7))
-	yield from plan
 
 def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
 	"""
@@ -97,7 +51,6 @@ def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
 			ttime.sleep(2)
 			while (hhm_en.energy.moving == True):
 				ttime.sleep(.1)
-		#write_file(comment, [flyers[0].filepath.value, flyers[1].filepath.value, flyers[2].filepath.value] , '')
 
 		yield from bp.close_run()
 
@@ -121,13 +74,10 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 	>>> RE(tune([pba2.adc7],-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
 	"""
 
-	flyers = detectors #[pba2.adc6, pba2.adc7]
-	# Start with a step scan.
+	flyers = detectors 
+
 	plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'comment': comment})
 	plan = bp.fly_during_wrapper(plan, flyers)
-
-	#for flyer in flyers:
-	#	yield from bp.stage(flyer)
 
 	plan = bp.pchain(plan)
 	yield from plan
@@ -141,11 +91,6 @@ def prep_trajectory(delay = 1):
 		ttime.sleep(.1)
 	ttime.sleep(delay)
 
-def write_file(comment, filenames, uid, file_path = '/GPFS/xf08id/pizza_box_data/'):
-	with open(file_path + str(comment), access_mode='w') as f:
-		f.write('uid: ' + uid + '\n')
-		for i in range(len(filenames)):
-			f.write('file ' + i + ': ' + filenames[i] + '\n')
 
 def execute_trajectory(comment='', **metadata):
 	flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
@@ -182,6 +127,7 @@ def execute_trajectory(comment='', **metadata):
 	yield from bp.unstage(hhm)
 	for flyer in flyers:
 		yield from bp.unstage(flyer)
+
 
 def execute_xia_trajectory(comment='', **metadata):
 	flyers = [pb9.enc1, pba2.adc7, pb4.di]
@@ -253,13 +199,6 @@ def execute_loop_trajectory(comment='', **metadata):
 	yield from bp.unstage(hhm)
 	for flyer in flyers:
 		yield from bp.unstage(flyer)
-
-def test_steps(comment=''):
-	flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
-	plan = bp.relative_scan([hhm.theta, pb9.enc1, pba2.adc6, pba2.adc7], hhm.theta, -0.1, 0.1, 5)
-	plan = bp.fly_during_wrapper(plan, flyers)
-	plan = bp.pchain(plan)
-	yield from plan
 
 
 
