@@ -10,16 +10,6 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 	if(not os.path.exists(path)):
 		os.makedirs(path)
 
-#	repeat = 1
-#	comment2 = comment
-#	while(os.path.exists(path + comment2)):
-#		repeat += 1
-#		comment2 = comment + '-' + str(repeat)
-
-#	os.makedirs(path + comment2)
-
-#	parser.export_trace(comment, filepath = path + comment2 + '/')
-
 	parser.export_trace(comment, filepath = path, uid = uuid)
 	
 
@@ -144,6 +134,7 @@ def tune_mono_y(scan_range, step):
 def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
 	arrays = db.get_table(db[uuid])[graph]
 	np.savetxt('/GPFS/xf08id/Sandbox/' + comment, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
+
 
 def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=13000, step=100):
 	table = []
