@@ -121,7 +121,8 @@ def trajectory_read_info(ip = '10.8.2.86'):
 	ftp = FTP(ip)
 	ftp.login()
 	ftp.cwd('/usrflash/lut/')
-	print('\nThe trajectories found in the controller (ip: {}) are:'.format(ip))
+	print('-'*62)
+	print('The trajectories found in the controller (ip: {}) are:'.format(ip))
 
 	def handle_binary(more_data):
 		info.append(more_data)
@@ -138,6 +139,8 @@ def trajectory_read_info(ip = '10.8.2.86'):
 			print('{}: {:<24} (Size: {})'.format(i, name, size))
 		else:
 			print('{}: Could not find the size and name info'.format(i))	
+
+	print('-'*62)
 
 
 
