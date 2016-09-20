@@ -343,11 +343,3 @@ def plot_di(di_file, color = 'ro', set_to_0s = False):
 
 
 
-
-# fig = plt.figure()
-# plot_ion_chambers('an_28b23e', 'an_ac0ff0')
-# ax = fig.add_subplot(111)
-# ax2 = ax.twinx()
-# plot_hhm_deg('en_fdecac', color='b',set_to_0s=False)
-
-
