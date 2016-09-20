@@ -6,6 +6,7 @@ import pexpect
 from pexpect import pxssh
 from ftplib import FTP
 
+# Function used to count the number of lines in a file
 def file_len(fname):
     with open(fname) as f:
         for i, l in enumerate(f):
@@ -13,6 +14,13 @@ def file_len(fname):
     return i + 1
 
 
+########## trajectory_load ##########
+# Transfer the trajectory file to the motor controller
+# arg1 = orig_file_name 			-> Filename of the trajectory: E.g.: 'traj_Cu_fast.txt'
+# arg2 = new_file_path  			-> LUT number where the new trajectory file will be stored
+# arg3 (optional) = new_file_name 	-> New name that will be used as filename in the controller. Currently, it MUST be 'hhm.txt'
+# arg4 (optional) = orig_file_path 	-> Path to look for the file that will be transfered. Default = '/GPFS/xf08id/trajectory/'
+# arg5 (optional) = ip 				-> IP of the controller that will receive the file. Default = '10.8.2.86'
 def trajectory_load(orig_file_name, new_file_path, new_file_name = 'hhm.txt', orig_file_path = '/GPFS/xf08id/trajectory/', ip = '10.8.2.86'):
    
     # Check if new_file_path is between the possible values
@@ -61,13 +69,13 @@ def trajectory_load(orig_file_name, new_file_path, new_file_name = 'hhm.txt', or
     return True
 
 
+########## trajectory_init ##########
+# Transfer the trajectory from the flash to the ram memory in the controller
+# It must be called everytime you decide to use a different trajectory
+# arg1 = lut_number				-> lookup table number of the trajectory that will be used - must be a number between 1 and 9
+# arg2 (optional) = ip			-> IP of the controller that will receive the file. Default = '10.8.2.86'
+# arg3 (optional) = filename	-> Filename of the trajectory file in the controller. Currently, it MUST be 'hhm.txt'
 def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
-
-	#class Reader:
-	#	def __init__(self):
-	#		self.rows = 0
-	#	def __call__(self,s):
-	#		self.rows += 1
 
 	hhm.lut_number.put(lut_number)
 
@@ -104,9 +112,7 @@ def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 		else:
 			print('Could not find the size and name info in the controller. Please, try sending the trajectory file again using trajectory_load(...)')	
 			return False
-		#print(data)
-		#r = Reader()
-		#ftp.retrlines('RETR ' + filename, r)
+
 		if(size == 0):
 			print('Size seems to be equal to 0. Please, try sending the trajectory file again using trajectory_load(...)')
 			return False
@@ -117,6 +123,9 @@ def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 			print('Transfer completed!\nNew lut number: {}\nTrajectory name: {}\nNumber of points: {}'.format(lut_number, name, size))
 			return True
 
+########## trajectory_read_info ##########
+# Function that prints info about the trajectories currently stored in the controller
+# arg1 (optional) = ip	-> IP of the controller. Default = '10.8.2.86'
 def trajectory_read_info(ip = '10.8.2.86'):
 	ftp = FTP(ip)
 	ftp.login()
