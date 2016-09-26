@@ -104,9 +104,10 @@ def execute_trajectory(comment='', **metadata):
 		shutter.open()
 		hhm.enable_loop.put("0")
 		hhm.start_trajectory.put("1")
-		ttime.sleep(3)
+		while(hhm.trajectory_running.value == 0):
+			ttime.sleep(.1)
 		finished = 0
-		while (hhm.theta.moving == True or finished == 0):
+		while (hhm.trajectory_running.value == 1 or finished == 0):
 			finished = 0
 			ttime.sleep(.1)
 			if (hhm.theta.moving == False):
@@ -142,9 +143,10 @@ def execute_xia_trajectory(comment='', **metadata):
 		xia1.start_mapping_scan()
 		hhm.enable_loop.put("0")
 		hhm.start_trajectory.put("1")
-		ttime.sleep(3)
+		while(hhm.trajectory_running.value == 0):
+			ttime.sleep(.1)
 		finished = 0
-		while (hhm.theta.moving == True or finished == 0):
+		while (hhm.trajectory_running.value == 1 or finished == 0):
 			finished = 0
 			ttime.sleep(.1)
 			if (hhm.theta.moving == False):
