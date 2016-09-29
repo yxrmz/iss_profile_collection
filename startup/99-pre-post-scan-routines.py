@@ -13,7 +13,7 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 	parser.export_trace(comment, filepath = path, uid = uuid)
 	
 
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', absorp=True):
+def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', absorp=True):
 	print('Plotting Ion Chambers x Energy and generating log...')
 
 	if(absorp):
@@ -29,7 +29,13 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/log/', absorp=Tru
 
 	create_user_folder(uuid, comment, parser)
 
+    # Creating folder /GPFS/xf08id/User Data/[year].[cycle].[proposal]/ if it doesn't exist
 	log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
+	if(not os.path.exists(log_path)):
+		os.makedirs(log_path)
+
+    # Creating folder /GPFS/xf08id/User Data/[year].[cycle].[proposal]/log if it doesn't exist
+	log_path = log_path + 'log/'
 	if(not os.path.exists(log_path)):
 		os.makedirs(log_path)
 
