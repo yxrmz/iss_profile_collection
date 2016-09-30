@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from datetime import datetime
+from subprocess import call
 import time
 
 
@@ -9,6 +10,8 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 	path = path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
 	if(not os.path.exists(path)):
 		os.makedirs(path)
+		call(['setfacl', '-m', 'g:iss-staff:rwx', path])
+		call(['chmod', '770', path])
 
 	parser.export_trace(comment, filepath = path, uid = uuid)
 	
