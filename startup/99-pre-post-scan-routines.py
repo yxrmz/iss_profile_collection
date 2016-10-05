@@ -13,7 +13,7 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 		call(['setfacl', '-m', 'g:iss-staff:rwx', path])
 		call(['chmod', '770', path])
 
-	parser.export_trace(comment, filepath = path, uid = uuid)
+	return parser.export_trace(comment, filepath = path, uid = uuid)
 	
 
 def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', absorp=True):
@@ -30,7 +30,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 	ion_file = parser.i0_file
 	ion_file2 = parser.it_file
 
-	create_user_folder(uuid, comment, parser)
+	interp_filename = create_user_folder(uuid, comment, parser)
 
     # Creating folder /GPFS/xf08id/User Data/[year].[cycle].[proposal]/ if it doesn't exist
 	log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
@@ -61,6 +61,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 		file_path = 'snapshots/' + comment + '-' + str(repeat) + '.png'
 		fn = log_path + file_path
 	plt.savefig(fn)
+	plt.close()
 	fn = './' + file_path
 
 	uid = db[uuid]['start']['uid']
@@ -95,6 +96,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 			text_file_new.write('<hr>' + '\n\n')
 			#text_file_new.write('<p> </p>' + '\n')
 		text_file_new.write(line)
+
+	return uid, interp_filename
 
 def tune_mono_pitch(scan_range, step):
 	aver=pba2.adc7.averaging_points.get()

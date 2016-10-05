@@ -104,6 +104,7 @@ class XASdataAbs(XASdata):
 		np.savetxt(fn, np.array([self.energy_interp[:,0], self.energy_interp[:,1], 
 					self.i0_interp[:,1], self.it_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
 					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)', comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, human_start_time, human_stop_time, human_duration))
+		return fn
 
 class XASdataFlu(XASdata):
 	def __init__(self, *args, **kwargs):
