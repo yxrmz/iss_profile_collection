@@ -42,9 +42,9 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 	if(not os.path.exists(log_path)):
 		os.makedirs(log_path)
 
-	plt.clf()
-	parser.plot()
-	plt.show()
+	#plt.clf()
+	#parser.plot()
+	#plt.show()
 
 	start_timestamp = db[uuid]['start']['time']
 	stop_timestamp = db[uuid]['stop']['time']
@@ -60,8 +60,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 		repeat += 1
 		file_path = 'snapshots/' + comment + '-' + str(repeat) + '.png'
 		fn = log_path + file_path
-	plt.savefig(fn)
-	plt.close()
+	#plt.savefig(fn)
+	#plt.close()
 	fn = './' + file_path
 
 	uid = db[uuid]['start']['uid']

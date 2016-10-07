@@ -54,6 +54,12 @@ register_builtin_handlers(db.fs)
 # gs.RE.subscribe_lossless('all', db.mds.insert)
 gs.RE.subscribe('all', mds.insert)
 
+
+def ensure_proposal_id(md):
+    if 'proposal_id' not in md:
+        raise ValueError("You forgot the proposal_id.")
+
+
 from time import sleep
 import numpy as np
 from bluesky.plan_tools import print_summary
@@ -66,3 +72,6 @@ from bluesky.plan_tools import print_summary
 # Set up default metadata.
 gs.RE.md['group'] = 'iss'
 gs.RE.md['beamline_id'] = 'ISS'
+gs.RE.md['proposal_id'] = None
+gs.RE.md_validator = ensure_proposal_id
+
