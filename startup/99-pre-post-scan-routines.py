@@ -99,14 +99,14 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 
 	return uid, interp_filename
 
-def tune_mono_pitch(scan_range, step):
+def tune_mono_pitch(scan_range, step, fig = None):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
 	num_points = int(round(scan_range/step))
 	over = 0
 
 	while(not over):
-		RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+		RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch', fig=fig))
 		last_table = db.get_table(db[-1])
 		min_index = np.argmin(last_table['pba2_adc7_volt'])
 		hhm.pitch.move(last_table['hhm_pitch'][min_index])
@@ -121,14 +121,14 @@ def tune_mono_pitch(scan_range, step):
 	pba2.adc7.averaging_points.put(aver)
 
 
-def tune_mono_y(scan_range, step):
+def tune_mono_y(scan_range, step, fig = None):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
 	num_points = int(round(scan_range/step))
 	over = 0
 
 	while(not over):
-		RE(tune([pba2.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_y'))
+		RE(tune([pba2.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_y', fig=fig))
 		last_table = db.get_table(db[-1])
 		min_index = np.argmin(last_table['pba2_adc7_volt'])
 		hhm.y.move(last_table['hhm_y'][min_index])
