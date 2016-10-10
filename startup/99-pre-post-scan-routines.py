@@ -99,7 +99,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 
 	return uid, interp_filename
 
-def tune_mono_pitch(scan_range, step, fig = None):
+def tune_mono_pitch(scan_range, step, retries = 0, fig = None):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
 	num_points = int(round(scan_range/step))
@@ -113,15 +113,17 @@ def tune_mono_pitch(scan_range, step, fig = None):
 		print(hhm.pitch.position)
 		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 		if (num_points >= 10):
-			if ((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)):
+			if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
 				over = 1
+			if retries > 1:
+				retries -= 1
 		else:
 			over = 1
 
 	pba2.adc7.averaging_points.put(aver)
 
 
-def tune_mono_y(scan_range, step, fig = None):
+def tune_mono_y(scan_range, step, retries = 0, fig = None):
 	aver=pba2.adc7.averaging_points.get()
 	pba2.adc7.averaging_points.put(10)
 	num_points = int(round(scan_range/step))
@@ -135,8 +137,10 @@ def tune_mono_y(scan_range, step, fig = None):
 		print(hhm.y.position)
 		os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
 		if (num_points >= 10):
-			if ((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)):
+			if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
 				over = 1
+			if retries > 1:
+				retries -= 1
 		else:
 			over = 1
 
