@@ -1,6 +1,7 @@
 import bluesky as bs
 import bluesky.plans as bp
 import time as ttime
+import PyQt4.QtCore
 
 
 def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comment='', **metadata):
@@ -109,9 +110,9 @@ def execute_trajectory(comment='', **metadata):
 		finished = 0
 		while (hhm.trajectory_running.value == 1 or finished == 0):
 			finished = 0
-			ttime.sleep(.1)
-			if (hhm.theta.moving == False):
-				ttime.sleep(.5)
+			ttime.sleep(.05)
+			if (hhm.trajectory_running.value == 0):
+				ttime.sleep(.05)
 				finished = 1
 
 		shutter.close()
@@ -149,7 +150,7 @@ def execute_xia_trajectory(comment='', **metadata):
 		while (hhm.trajectory_running.value == 1 or finished == 0):
 			finished = 0
 			ttime.sleep(.1)
-			if (hhm.theta.moving == False):
+			if (hhm.trajectory_running.value == 0):
 				ttime.sleep(.5)
 				finished = 1
 
