@@ -8,7 +8,7 @@ import sys
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
 # import metadatastore.commands
-from metadatastore.mds import MDS
+# from metadatastore.mds import MDS
 from databroker import Broker
 from databroker.core import register_builtin_handlers
 from filestore.fs import FileStore
@@ -41,15 +41,18 @@ from bluesky.spec_api import *
 from bluesky.global_state import gs, abort, stop, resume
 # from databroker import (DataBroker as db, get_events, get_images,
 #                         get_table, get_fields, restream, process)
-# import metadataclient.mds as mdc
-# db.mds = mdc.MDS({'host': 'xf08id-ca1.cs.nsls2.local', 'port': 7601,
-#		    'timezone': 'US/Eastern'})
+import metadataclient.mds as mdc
 
+# mds = MDS({'host':'xf08id-ca1.cs.nsls2.local', 
+#	   'database': 'datastore', 'port': 27017, 'timezone': 'US/Eastern'}, auth=False)
 
-mds = MDS({'host':'xf08id-ca1.cs.nsls2.local', 
-	   'database': 'datastore', 'port': 27017, 'timezone': 'US/Eastern'}, auth=False)
+db = Broker(mdc, FileStore({'host':'xf08id-ca1.cs.nsls2.local', 'port': 27017, 'database':'filestore'}))
 
-db = Broker(mds, FileStore({'host':'xf08id-ca1.cs.nsls2.local', 'port': 27017, 'database':'filestore'}))
+db.mds = mdc.MDS({'host': 'xf08id-ca1.cs.nsls2.local', 'port': 7770,
+		  'timezone': 'US/Eastern'})
+mds = db.mds
+
+print(mds.config)
 register_builtin_handlers(db.fs)
 # gs.RE.subscribe_lossless('all', db.mds.insert)
 gs.RE.subscribe('all', mds.insert)
