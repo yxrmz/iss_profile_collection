@@ -149,7 +149,7 @@ class EncoderFS(Encoder):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
+                     {'filename': self._full_path, 'source': 'pizzabox-enc-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
                       'dtype': 'array'}}}
 
 
@@ -263,7 +263,7 @@ class DIFS(DigitalInput):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
+                     {'filename': self._full_path, 'source': 'pizzabox-di-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
                       'dtype': 'array'}}}
 
 class PizzaBoxFS(Device):
@@ -418,7 +418,7 @@ class AdcFS(Adc):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 'source': 'pizzabox-file', 'external': 'FILESTORE:', 'shape': [5,],
+                     {'filename': self._full_path, 'source': 'pizzabox-adc-file', 'external': 'FILESTORE:', 'shape': [5,],
                       'dtype': 'array'}}}
 
 

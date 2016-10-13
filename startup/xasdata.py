@@ -14,6 +14,7 @@ class XASdata:
 		self.encoder_file = ''
 		self.i0_file = ''
 		self.it_file = ''
+		self.ir_file = ''
 
 	def loadADCtrace(self, filename = '', filepath = '/GPFS/xf08id/pizza_box_data/'):
 		array_out=[]
@@ -51,22 +52,25 @@ class XASdataAbs(XASdata):
 		#super(XASdata, self).__init__()
 		self.i0 = np.array([])
 		self.it = np.array([])
+		self.ir = np.array([])
 
-	def process(self, encoder_trace = '', i0trace = '', ittrace = ''):
-		self.load(encoder_trace, i0trace, ittrace)
+	def process(self, encoder_trace = '', i0trace = '', ittrace = '', irtrace = ''):
+		self.load(encoder_trace, i0trace, ittrace, irtrace)
 		self.interpolate()
 		self.plot()
 
-	def load(self, encoder_trace = '', i0trace = '', ittrace = ''):
+	def load(self, encoder_trace = '', i0trace = '', ittrace = '', irtrace = ''):
 		self.encoder_file = encoder_trace
 		self.i0_file = i0trace
 		self.it_file = ittrace
+		self.ir_file = irtrace
 		self.encoder = self.loadENCtrace(encoder_trace)
 		self.energy = self.encoder
 		for i in range(len(self.encoder)):
 			self.energy[i, 1] = -12400 / (2 * 3.1356 * math.sin(math.radians((self.encoder[i, 1]/360000)+0.134)))
 		self.i0 = self.loadADCtrace(i0trace)
 		self.it = self.loadADCtrace(ittrace)
+		self.ir = self.loadADCtrace(irtrace)    
 
 	def interpolate(self):
 		min_timestamp = np.array([self.i0[0,0], self.it[0,0], self.encoder[0,0]]).max()
@@ -76,6 +80,7 @@ class XASdataAbs(XASdata):
 		timestamps = np.arange(min_timestamp, max_timestamp, interval)
 		self.i0_interp = np.array([timestamps, np.interp(timestamps, self.i0[:,0], self.i0[:,1])]).transpose()
 		self.it_interp = np.array([timestamps, np.interp(timestamps, self.it[:,0], self.it[:,1])]).transpose()
+		self.ir_interp = np.array([timestamps, np.interp(timestamps, self.ir[:,0], self.ir[:,1])]).transpose()
 		self.energy_interp = np.array([timestamps, np.interp(timestamps, self.energy[:,0], self.energy[:,1])]).transpose()
 
 	def plot(self, color='r'):
@@ -102,8 +107,8 @@ class XASdataAbs(XASdata):
 			human_duration = str(datetime.fromtimestamp(stop_time - start_time).strftime('%M:%S'))
 		
 		np.savetxt(fn, np.array([self.energy_interp[:,0], self.energy_interp[:,1], 
-					self.i0_interp[:,1], self.it_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f', 
-					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)', comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, human_start_time, human_stop_time, human_duration))
+					self.i0_interp[:,1], self.it_interp[:,1], self.ir_interp[:,1]]).transpose(), fmt='%17.6f %8.2f %f %f %f', 
+					delimiter=" ", header = 'Timestamp (s)   En. (eV) 	i0 (V)	  it(V)	   ir(V)', comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, human_start_time, human_stop_time, human_duration))
 		return fn
 
 class XASdataFlu(XASdata):

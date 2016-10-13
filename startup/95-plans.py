@@ -94,7 +94,7 @@ def prep_trajectory(delay = 1):
 
 
 def execute_trajectory(comment='', **metadata):
-	flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
+	flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
 	def inner():
 		md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment}
 		md.update(**metadata)
@@ -132,7 +132,7 @@ def execute_trajectory(comment='', **metadata):
 
 
 def execute_xia_trajectory(comment='', **metadata):
-	flyers = [pb9.enc1, pba2.adc7, pb4.di]
+	flyers = [pb9.enc1, pba1.adc1, pba2.adc7, pb4.di]
 	def inner():
 		md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment}
 		md.update(**metadata)
