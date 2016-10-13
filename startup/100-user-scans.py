@@ -1,8 +1,14 @@
+import inspect
+
 def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
 	if (prepare_traj == True):
 		prep_trajectory()
 	RE(execute_trajectory(comment))
-	uid, interp_filename = write_html_log(-1, comment, absorp=absorp)
+
+    # Check if tscan was called by the GUI
+	curframe = inspect.currentframe()
+	calframe = inspect.getouterframes(curframe, 2)
+	uid, interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
 	print('Done!')
 	return uid, interp_filename
 
@@ -14,7 +20,9 @@ def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=
 		if (prepare_traj == True):
 			prep_trajectory()
 		RE(execute_trajectory(comment_n))
-		uid, interp_filename = write_html_log(-1, comment_n, absorp=absorp)
+		curframe = inspect.currentframe()
+		calframe = inspect.getouterframes(curframe, 2)
+		uid, interp_filename = write_html_log(-1, comment_n, absorp=absorp, caller=calframe[1][3])
 		time.sleep(delay)
 	print('Done!')
 	return uid, interp_filename
@@ -25,7 +33,9 @@ def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True):
 		prep_trajectory()
 
 	RE(execute_trajectory(comment))
-	uid, interp_filename = write_html_log(-1, comment, absorp=absorp)
+	curframe = inspect.currentframe()
+	calframe = inspect.getouterframes(curframe, 2)
+	uid, interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
 	print('Done!')
 	return uid, interp_filename
 
@@ -34,7 +44,9 @@ def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
 	if (prepare_traj == True):
 		prep_trajectory()
 	RE(execute_loop_trajectory(comment))
-	uid, interp_filename = write_html_log(-1, comment, absorp=absorp)
+	curframe = inspect.currentframe()
+	calframe = inspect.getouterframes(curframe, 2)
+	uid, interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
 	print('Done!')
 	return uid, interp_filename
 
