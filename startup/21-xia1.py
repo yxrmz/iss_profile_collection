@@ -21,6 +21,9 @@ class XIA(Device):
     pix_per_buf_set =    Cpt(EpicsSignal, 'PixelsPerBuffer')
     pix_per_buf_rb =    Cpt(EpicsSignal, 'PixelsPerBuffer_RBV')
 
+    netcdf_filename = Cpt(EpicsSignal, 'netCDF1:FileName')
+    netcdf_filename_rb = Cpt(EpicsSignal, 'netCDF1:FileName_RBV')
+
     def start_mapping_scan(self):
         self.collect_mode.put('MCA mapping')
         ttime.sleep(0.25)

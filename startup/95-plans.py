@@ -93,7 +93,7 @@ def prep_trajectory(delay = 1):
 	ttime.sleep(delay)
 
 
-def execute_trajectory(comment='', **metadata):
+def execute_trajectory(comment, **metadata):
 	flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
 	def inner():
 		md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment}
@@ -131,7 +131,7 @@ def execute_trajectory(comment='', **metadata):
 		yield from bp.unstage(flyer)
 
 
-def execute_xia_trajectory(comment='', **metadata):
+def execute_xia_trajectory(comment, **metadata):
 	flyers = [pb9.enc1, pba1.adc1, pba2.adc7, pb4.di]
 	def inner():
 		md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment}
@@ -139,19 +139,27 @@ def execute_xia_trajectory(comment='', **metadata):
 		yield from bp.open_run(md=md)
 
 		# TODO Replace this with actual status object logic.
+
+		xia1.netcdf_filename.put(comment)
+		name = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
+		name = name[0:len(name) - 1]
+		while(name != comment):
+			name = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
+			name = name[0:len(name) - 1]
+			ttime.sleep(0.05)
 	   
 		shutter.open()
 		xia1.start_mapping_scan()
 		hhm.enable_loop.put("0")
 		hhm.start_trajectory.put("1")
 		while(hhm.trajectory_running.value == 0):
-			ttime.sleep(.1)
+			ttime.sleep(0.05)
 		finished = 0
 		while (hhm.trajectory_running.value == 1 or finished == 0):
 			finished = 0
-			ttime.sleep(.1)
+			ttime.sleep(0.05)
 			if (hhm.trajectory_running.value == 0):
-				ttime.sleep(.5)
+				ttime.sleep(0.05)
 				finished = 1
 
 		xia1.stop_scan()
@@ -173,7 +181,7 @@ def execute_xia_trajectory(comment='', **metadata):
 		yield from bp.unstage(flyer)
 
 
-def execute_loop_trajectory(comment='', **metadata):
+def execute_loop_trajectory(comment, **metadata):
 
 	flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
 	def inner():
