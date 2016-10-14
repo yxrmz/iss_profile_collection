@@ -6,14 +6,10 @@ import math
 import csv
 import databroker as data
 import datamuxer
-#import xasdata
-from isstools.xasmodule import xasmodule
+from isstools.xasdata import xasdata
 
-xas_parser = xasmodule.XASdata()
-xas_abs = xasmodule.XASdataAbs()
-
-#xas_parser = xasdata.XASdata()
-#xas_abs = xasdata.XASdataAbs()
+xas_parser = xasdata.XASdata()
+xas_abs = xasdata.XASdataAbs()
 xas_flu = xasdata.XASdataFlu()
 
 
