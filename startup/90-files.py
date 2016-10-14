@@ -6,10 +6,14 @@ import math
 import csv
 import databroker as data
 import datamuxer
-import xasdata
+#import xasdata
+from isstools.xasmodule import xasmodule
 
-xas_parser = xasdata.XASdata()
-xas_abs = xasdata.XASdataAbs()
+xas_parser = xasmodule.XASdata()
+xas_abs = xasmodule.XASdataAbs()
+
+#xas_parser = xasdata.XASdata()
+#xas_abs = xasdata.XASdataAbs()
 xas_flu = xasdata.XASdataFlu()
 
 
@@ -67,7 +71,7 @@ def plot_abs_files(ion_file, ion_file2, ion_file3, encoder_file, color='r'):
 		xas_abs.load(encoder_file, ion_file, ion_file2, ion_file3)
 		xas_abs.interpolate()
 
-	xas_abs.plot(color)
+	xas_abs.plot(color = color)
 
 
 ########## export_abs_traces ##########
@@ -88,7 +92,7 @@ def plot_abs_db(uid, color='r'):
 	print('Plotting Ion Chambers x Energy...')
 	
 	load_abs_parser(uid)
-	xas_abs.plot(color)
+	xas_abs.plot(color = color)
 
 
 

@@ -33,7 +33,7 @@ class XIA(Device):
     def stop_scan(self):
         pb4.do0.enable.put(0) # Workaround
         ttime.sleep(1)
-        self.stop.put(1)
+        self.stop_sig.put(1)
         ttime.sleep(0.5)
         self.capt_start_stop.put(0)
 
