@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from subprocess import call
 import time
+from scipy.optimize import curve_fit
 
 
 def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
@@ -149,6 +150,44 @@ def tune_mono_y(scan_range, step, retries = 0, fig = None):
 			over = 1
 
 	pba2.adc7.averaging_points.put(aver)
+
+
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+
+def tune_xia(center_energy, scan_range, channel_number):
+#	xia1.collect_mode.put('MCA Spectra')
+#	ttime.sleep(0.25)
+#	xia1.mode.put('Real time')
+#	ttime.sleep(0.25)
+#	xia1.real_time.put('1')
+#	while(xia1.real_time != 1):
+#		ttime.sleep(0.05)
+#	xia1.capt_start_stop.put(1)
+#	ttime.sleep(0.05)
+#	xia1.erase_start.put(1)
+#	ttime.sleep(2)
+	
+	graph_x = xia1.mca_x.value
+	graph_data = getattr(xia1, "mca_array" + "{}".format(channel_number) + ".value")
+
+	condition = (graph_x <= (center_energy + scan_range)/1000) == (graph_x > (center_energy - scan_range)/1000)
+	interval_x = np.extract(condition, graph_x)
+	interval = np.extract(condition, graph_data)
+
+	# p0 is the initial guess for fitting coefficients (A, mu and sigma)
+	p0 = [.1, center_energy/1000, .1]
+	coeff, var_matrix = curve_fit(gauss, interval_x, interval, p0=p0) 
+	print('Fitted mean = ', coeff[1])
+
+	# For testing (following two lines)
+	plt.plot(interval_x, interval)
+	plt.plot(interval_x, gauss(interval_x, *coeff))
+
+	#return gauss(interval_x, *coeff)
+
 
 
 def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
