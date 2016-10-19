@@ -157,7 +157,7 @@ def gauss(x, *p):
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
-def tune_xia(center_energy, scan_range, channel_number):
+def xia_gain_matching(center_energy, scan_range, channel_number):
 #	xia1.collect_mode.put('MCA Spectra')
 #	ttime.sleep(0.25)
 #	xia1.mode.put('Real time')
@@ -180,7 +180,9 @@ def tune_xia(center_energy, scan_range, channel_number):
 	# p0 is the initial guess for fitting coefficients (A, mu and sigma)
 	p0 = [.1, center_energy/1000, .1]
 	coeff, var_matrix = curve_fit(gauss, interval_x, interval, p0=p0) 
+	print('Intensity = ', coeff[0])
 	print('Fitted mean = ', coeff[1])
+	print('Sigma = ', coeff[2])
 
 	# For testing (following two lines)
 	plt.plot(interval_x, interval)

@@ -67,6 +67,8 @@ from time import sleep
 import numpy as np
 from bluesky.plan_tools import print_summary
 
+import isstools.gui
+main = isstools.gui.ScanGui([tscan, tscan_N, tscanxia], [tune_mono_pitch, tune_mono_y], RE, hhm, xia1)
 
 # Uncomment the following lines to turn on verbose messages for debugging.
 # import logging

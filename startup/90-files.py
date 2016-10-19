@@ -7,10 +7,13 @@ import csv
 import databroker as data
 import datamuxer
 from isstools.xasdata import xasdata
+from isstools.xiaparser import xiaparser
 
 xas_parser = xasdata.XASdata()
 xas_abs = xasdata.XASdataAbs()
 xas_flu = xasdata.XASdataFlu()
+
+xia_parser = xiaparser.xiaparser()
 
 
 ########## load_abs_parser ##########
