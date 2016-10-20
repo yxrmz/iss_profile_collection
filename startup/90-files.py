@@ -14,6 +14,7 @@ xas_abs = xasdata.XASdataAbs()
 xas_flu = xasdata.XASdataFlu()
 
 xia_parser = xiaparser.xiaparser()
+smbclient = xiaparser.smbclient()
 
 
 ########## load_abs_parser ##########
@@ -41,18 +42,20 @@ def load_abs_parser(uid):
 # arg1 = uid = unique uid -> this can be an integer relative reference (e.g. -1) or a uid string (e.g. '9a329064') 
 def load_flu_parser(uid):
 	run = db[uid]
-	ion_file = run['descriptors'][0]['data_keys']['pba2_adc7']['filename']
-	ion_file2 = run['descriptors'][1]['data_keys']['pba2_adc6']['filename']
-	ion_file3 = run['descriptors'][2]['data_keys']['pba1_adc1']['filename']
-	encoder_file = run['descriptors'][3]['data_keys']['pb9_enc1']['filename']
+	di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
+	ion_file = run['descriptors'][1]['data_keys']['pba2_adc7']['filename']
+	ion_file2 = run['descriptors'][2]['data_keys']['pba2_adc6']['filename']
+	ion_file3 = run['descriptors'][3]['data_keys']['pba1_adc1']['filename']
+	encoder_file = run['descriptors'][4]['data_keys']['pb9_enc1']['filename']
+	di_file = di_file[len(di_file)-9:len(di_file)]
 	ion_file = ion_file[len(ion_file)-9:len(ion_file)]
 	ion_file2 = ion_file2[len(ion_file2)-9:len(ion_file2)]
 	ion_file3 = ion_file3[len(ion_file3)-9:len(ion_file3)]
 	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
 
-	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != ion_file or xas_flu.it_file != ion_file2 or xas_abs.ir_file != ion_file3):
+	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != ion_file or xas_flu.it_file != ion_file2 or xas_flu.ir_file != ion_file3 or xas_flu.trig_file != di_file):
 		print('Parsing flu files...')
-		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3)
+		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3, di_file)
 		xas_flu.interpolate()
 
 
@@ -92,6 +95,18 @@ def plot_abs_db(uid, color='r'):
 	
 	load_abs_parser(uid)
 	xas_abs.plot(color = color)
+
+
+
+
+
+
+#def copy_xia_file(filename, dest_filename):
+#	smbclient.load(filename, dest_filename)
+#	smbclient.copy()
+
+
+
 
 
 

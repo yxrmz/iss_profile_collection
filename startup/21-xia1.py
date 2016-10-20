@@ -21,6 +21,11 @@ class XIA(Device):
     pix_per_buf_set =  Cpt(EpicsSignal, 'PixelsPerBuffer')
     pix_per_buf_rb =   Cpt(EpicsSignal, 'PixelsPerBuffer_RBV') 
 
+    pre_amp_gain1 = Cpt(EpicsSignal, 'dxp1:PreampGain')
+    pre_amp_gain2 = Cpt(EpicsSignal, 'dxp2:PreampGain')
+    pre_amp_gain3 = Cpt(EpicsSignal, 'dxp3:PreampGain')
+    pre_amp_gain4 = Cpt(EpicsSignal, 'dxp4:PreampGain')
+
     real_time =        Cpt(EpicsSignal, 'PresetReal')
     real_time_rb =     Cpt(EpicsSignal, 'ElapsedReal')
     live_time =        Cpt(EpicsSignal, 'PresetLive')
@@ -38,20 +43,30 @@ class XIA(Device):
     netcdf_filenumber_rb = Cpt(EpicsSignal, 'netCDF1:FileNumber_RBV')
 
     def start_mapping_scan(self):
-        self.collect_mode.put('MCA mapping')
-        ttime.sleep(0.25)
-        self.capt_start_stop.put(1)
-        self.erase_start.put(1)
-        ttime.sleep(1)
-        pb4.do0.enable.put(1) # Workaround
+        yield from bp.abs_set(self.collect_mode, 'MCA mapping', wait=True)
+        #self.collect_mode.put('MCA mapping')
+        yield from bp.sleep(.25)
+        #ttime.sleep(0.25)
+        yield from bp.abs_set(self.capt_start_stop, 1, wait=True)
+        #self.capt_start_stop.put(1)
+        yield from bp.abs_set(self.erase_start, 1, wait=True)
+        #self.erase_start.put(1)
+        yield from bp.sleep(1)
+        #ttime.sleep(1)
+        yield from bp.abs_set(pb4.do0.enable, 1, wait=True)
+        #pb4.do0.enable.put(1) # Workaround
         return self._status
 
     def stop_scan(self):
-        pb4.do0.enable.put(0) # Workaround
-        ttime.sleep(1)
-        self.stop_sig.put(1)
-        ttime.sleep(0.5)
-        self.capt_start_stop.put(0)
+        yield from bp.abs_set(pb4.do0.enable, 0, wait=True)
+        #pb4.do0.enable.put(0) # Workaround
+        yield from bp.sleep(1)
+        yield from bp.abs_set(self.stop_sig, 1, wait=True)
+        #self.stop_sig.put(1)
+        yield from bp.sleep(0.5)
+        #ttime.sleep(0.5)
+        yield from bp.abs_set(self.capt_start_stop, 0, wait=True)
+        #self.capt_start_stop.put(0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

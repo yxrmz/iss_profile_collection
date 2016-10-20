@@ -101,6 +101,10 @@ class EncoderFS(Encoder):
 
         super().stage()
 
+    def unstage(self):
+        set_and_wait(self.ignore_sel, 1)
+        return super().unstage()
+
     def kickoff(self):
         print('kickoff', self.name)
         self._ready_to_collect = True
@@ -214,6 +218,10 @@ class DIFS(DigitalInput):
                                                root=DIRECTORY)
 
         super().stage()
+
+    def unstage(self):
+        set_and_wait(self.ignore_sel, 1)
+        return super().unstage()
 
     def kickoff(self):
         print('kickoff', self.name)
