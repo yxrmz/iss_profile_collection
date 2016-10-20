@@ -34,6 +34,8 @@ class XIA(Device):
 
     netcdf_filename = Cpt(EpicsSignal, 'netCDF1:FileName')
     netcdf_filename_rb = Cpt(EpicsSignal, 'netCDF1:FileName_RBV')
+    netcdf_filenumber = Cpt(EpicsSignal, 'netCDF1:FileNumber')
+    netcdf_filenumber_rb = Cpt(EpicsSignal, 'netCDF1:FileNumber_RBV')
 
     def start_mapping_scan(self):
         self.collect_mode.put('MCA mapping')

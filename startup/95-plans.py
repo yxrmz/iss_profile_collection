@@ -101,46 +101,57 @@ def execute_trajectory(comment, **metadata):
 		yield from bp.open_run(md=md)
 
 		# TODO Replace this with actual status object logic.
-		
-		shutter.open()
-		hhm.enable_loop.put("0")
-		hhm.start_trajectory.put("1")
+		yield from bp.clear_checkpoint()
+		yield from shutter.open_plan()
+		# this must be a float
+		yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
+		# this must be a string
+		yield from bp.abs_set(hhm.start_trajectory, "1", wait=True)
 		while(hhm.trajectory_running.value == 0):
-			ttime.sleep(.1)
+			yield from bp.sleep(.1)
 		finished = 0
 		while (hhm.trajectory_running.value == 1 or finished == 0):
 			finished = 0
-			ttime.sleep(.05)
+			yield from bp.sleep(.05)
 			if (hhm.trajectory_running.value == 0):
-				ttime.sleep(.05)
+				yield from bp.sleep(.05)
 				finished = 1
 
-		shutter.close()
+		
 
 		yield from bp.close_run()
 
+	def final_plan():
+		for flyer in flyers:
+			yield from bp.unstage(flyer)
+		yield from shutter.close_plan()
+		yield from bp.abs_set(hhm.stop_trajectory, '1', wait=True)
+		yield from bp.unstage(hhm)
 
 	for flyer in flyers:
 		yield from bp.stage(flyer)
+
 	yield from bp.stage(hhm)
 
-	yield from bp.fly_during_wrapper(inner(), flyers)
+	yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+									flyers)
 
-	yield from bp.unstage(hhm)
-	for flyer in flyers:
-		yield from bp.unstage(flyer)
+
 
 
 def execute_xia_trajectory(comment, **metadata):
 	flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7, pb4.di]
 	def inner():
-		md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment}
+		# Setting the name of the file
+		xia1.netcdf_filename.put(comment)
+		next_file_number = xia1.netcdf_filenumber_rb.value
+
+		md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number)}
 		md.update(**metadata)
 		yield from bp.open_run(md=md)
 
 		# TODO Replace this with actual status object logic.
 
-		xia1.netcdf_filename.put(comment)
 		name = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
 		name = name[0:len(name) - 1]
 		while(name != comment):
