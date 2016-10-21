@@ -13,6 +13,18 @@ def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     print('Done!')
     return uid, interp_filename, absorp
 
+def tcscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True):
+    if prepare_traj:
+        yield from prep_traj_plan()
+    uid = (yield from execute_trajectory(comment))
+
+    # Check if tscan was called by the GUI
+    curframe = inspect.currentframe()
+    calframe = inspect.getouterframes(curframe, 2)
+    interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
+    print('Done!')
+    return uid, interp_filename, absorp
+    
 
 def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0):
     for indx in range(0, n_cycles): 

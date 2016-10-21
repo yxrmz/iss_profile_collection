@@ -92,6 +92,34 @@ def prep_trajectory(delay = 1):
         ttime.sleep(.1)
     ttime.sleep(delay)
 
+def prep_traj_plan(delay = 0.25):
+    yield from bp.abs_set(hhm.prepare_trajectory, '1', wait=True)
+
+    # Poll the trajectory ready pv
+    while True:
+        ret = (yield from bp.read(hhm.trajectory_ready))
+        if ret is None:
+            break
+        is_running = ret['hhm_trajectory_ready']['value']
+
+        if is_running:
+            break
+        else:
+            yield from bp.sleep(.1)
+
+    while True:
+        ret = (yield from bp.read(hhm.trajectory_ready))
+        if ret is None:
+            break
+        is_running = ret['hhm_trajectory_ready']['value']
+
+        if is_running:
+            yield from bp.sleep(.05)
+        else:
+            break
+
+    yield from bp.sleep(delay)
+
 
 def execute_trajectory(comment, **metadata):
     flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
@@ -106,24 +134,45 @@ def execute_trajectory(comment, **metadata):
         # this must be a float
         yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
-        yield from bp.abs_set(hhm.start_trajectory, "1", wait=True)
-        while(hhm.trajectory_running.value == 0):
-            yield from bp.sleep(.1)
-        finished = 0
-        while (hhm.trajectory_running.value == 1 or finished == 0):
-            finished = 0
-            yield from bp.sleep(.05)
-            if (hhm.trajectory_running.value == 0):
-                yield from bp.sleep(.05)
-                finished = 1
+        yield from bp.abs_set(hhm.start_trajectory, '1', wait=True)
+
+        # this should be replaced by a status object
+        def poll_the_traj_plan():
+            while True:
+                ret = (yield from bp.read(hhm.trajectory_running))
+                if ret is None:
+                    break
+                is_running = ret['hhm_trajectory_running']['value']
+
+                if is_running:
+                    break
+                else:
+                    yield from bp.sleep(.1)
+
+            while True:
+                ret = (yield from bp.read(hhm.trajectory_running))
+                if ret is None:
+                    break
+                is_running = ret['hhm_trajectory_running']['value']
+
+                if is_running:
+                    yield from bp.sleep(.05)
+                else:
+                    break
+
+
+        yield from bp.finalize_wrapper(poll_the_traj_plan(), 
+                                       bp.pchain(shutter.close_plan(), 
+                                                 bp.abs_set(hhm.stop_trajectory, 
+                                                            '1', wait=True)))
 
         yield from bp.close_run()
 
     def final_plan():
-        yield from shutter.close_plan()
+        
+        yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
         for flyer in flyers:
             yield from bp.unstage(flyer)
-        yield from bp.abs_set(hhm.stop_trajectory, '1', wait=True)
         yield from bp.unstage(hhm)
 
     for flyer in flyers:
@@ -131,8 +180,8 @@ def execute_trajectory(comment, **metadata):
 
     yield from bp.stage(hhm)
 
-    yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
-                                    flyers)
+    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+                                              flyers))
 
 
 
