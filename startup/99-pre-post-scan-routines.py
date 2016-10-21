@@ -155,6 +155,7 @@ def tune_mono_y(scan_range, step, retries = 0, fig = None):
             over = 1
 
     pba2.adc7.averaging_points.put(aver)
+    print('Tune complete!')
 
 
 def gauss(x, *p):

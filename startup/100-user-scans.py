@@ -9,7 +9,7 @@ def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     # Check if tscan was called by the GUI
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
+    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
     return uid, interp_filename, absorp
 
@@ -21,7 +21,7 @@ def tcscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     # Check if tscan was called by the GUI
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
+    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
     return uid, interp_filename, absorp
     
@@ -35,7 +35,7 @@ def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=
         uid, = RE(execute_trajectory(comment_n))
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
-        interp_filename = write_html_log(-1, comment_n, absorp=absorp, caller=calframe[1][3])
+        interp_filename = write_html_log(uid, comment_n, absorp=absorp, caller=calframe[1][3])
         time.sleep(delay)
     print('Done!')
     return uid, interp_filename, absorp
@@ -48,7 +48,7 @@ def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True):
     uid, = RE(execute_trajectory(comment))
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    uid, interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
+    uid, interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
     return uid, interp_filename, absorp
 
@@ -59,7 +59,7 @@ def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     uid, = RE(execute_loop_trajectory(comment))
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
+    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
     return uid, interp_filename, absorp
 
@@ -70,7 +70,7 @@ def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False):
     uid, = RE(execute_xia_trajectory(comment)) # CHECK FILENAME (We need to know exactly the next filename)
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(-1, comment, absorp=absorp, caller=calframe[1][3])
+    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
     return uid, interp_filename, absorp
 
