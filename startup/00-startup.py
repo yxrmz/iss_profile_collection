@@ -67,8 +67,6 @@ from time import sleep
 import numpy as np
 from bluesky.plan_tools import print_summary
 
-import isstools.gui
-
 # Uncomment the following lines to turn on verbose messages for debugging.
 # import logging
 # ophyd.logger.setLevel(logging.DEBUG)
