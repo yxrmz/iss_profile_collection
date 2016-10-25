@@ -26,7 +26,7 @@ def tscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     calframe = inspect.getouterframes(curframe, 2)
     interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    #return uid, interp_filename, absorp
+    return uid, interp_filename, absorp
     
 
 def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0):
