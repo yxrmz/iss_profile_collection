@@ -3,7 +3,7 @@ import bluesky.plans as bp
 
 def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     if (prepare_traj == True):
-        prep_trajectory()
+        RE(prep_traj_plan())
     uid, = RE(execute_trajectory(comment))
     print(uid)
 
@@ -34,7 +34,7 @@ def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         if (prepare_traj == True):
-            prep_trajectory()
+            RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 2)
@@ -65,7 +65,7 @@ def tscan_N_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles
 
 def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True):
     if (prepare_traj == True):
-        prep_trajectory()
+        RE(prep_traj_plan())
 
     uid, = RE(execute_trajectory(comment))
     curframe = inspect.currentframe()
@@ -77,7 +77,7 @@ def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True):
 
 def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     if (prepare_traj == True):
-        prep_trajectory()
+        RE(prep_traj_plan())
     uid, = RE(execute_loop_trajectory(comment))
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
@@ -88,7 +88,7 @@ def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
 
 def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False):
     if (prepare_traj == True):
-        prep_trajectory()
+        RE(prep_traj_plan())
     uid, = RE(execute_xia_trajectory(comment)) # CHECK FILENAME (We need to know exactly the next filename)
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
