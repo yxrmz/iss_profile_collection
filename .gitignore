@@ -3,5 +3,6 @@ static
 *.swp
 *~
 startup/tags
-startup/
+startup/log_eli
+startup/__pycache__/
 db/*
