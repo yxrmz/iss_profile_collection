@@ -189,8 +189,8 @@ def execute_xia_trajectory(comment, **metadata):
     flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7, pb4.di]
     def inner():
         # Setting the name of the file
-        yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#xia1.netcdf_filename.put(comment)
-        next_file_number = (yield from bp.read(xia1.netcdf_filenumber_rb))#xia1.netcdf_filenumber_rb.value
+        xia1.netcdf_filename.put(comment) #yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#
+        next_file_number = xia1.netcdf_filenumber_rb.value #(yield from bp.read(xia1.netcdf_filenumber_rb))#
 
         md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number)}
         md.update(**metadata)
@@ -214,7 +214,7 @@ def execute_xia_trajectory(comment, **metadata):
         yield from bp.abs_set(hhm.start_trajectory, "1", wait=True)
 		
 		
-		def poll_the_traj_plan():
+        def poll_the_traj_plan():
             while True:
                 ret = (yield from bp.read(hhm.trajectory_running))
                 if ret is None:
@@ -272,9 +272,9 @@ def execute_loop_trajectory(comment, **metadata):
         # TODO Replace this with actual status object logic.
         yield from shutter.open_plan()
         yield from bp.abs_set(hhm.enable_loop, 1, wait=True)#hhm.enable_loop.put("1")
-		yield from bp.abs_set(hhm.start_trajectory, "1", wait=True) # NOT SURE IF THIS LINE SHOULD BE HERE
+        yield from bp.abs_set(hhm.start_trajectory, "1", wait=True) # NOT SURE IF THIS LINE SHOULD BE HERE
 		
-		def poll_the_traj_plan():
+        def poll_the_traj_plan():
             while True:
                 ret = (yield from bp.read(hhm.trajectory_running))
                 if ret is None:
