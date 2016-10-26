@@ -109,7 +109,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 
     return interp_filename
 
-def tune_mono_pitch(scan_range, step, retries = 0, fig = None):
+def tune_mono_pitch(scan_range, step, retries = 1, fig = None):
     aver=pba2.adc7.averaging_points.get()
     pba2.adc7.averaging_points.put(10)
     num_points = int(round(scan_range/step))
@@ -133,7 +133,7 @@ def tune_mono_pitch(scan_range, step, retries = 0, fig = None):
     pba2.adc7.averaging_points.put(aver)
 
 
-def tune_mono_y(scan_range, step, retries = 0, fig = None):
+def tune_mono_y(scan_range, step, retries = 1, fig = None):
     aver=pba2.adc7.averaging_points.get()
     pba2.adc7.averaging_points.put(10)
     num_points = int(round(scan_range/step))
@@ -164,17 +164,6 @@ def gauss(x, *p):
 
 
 def xia_gain_matching(center_energy, scan_range, channel_number):
-#    xia1.collect_mode.put('MCA Spectra')
-#    ttime.sleep(0.25)
-#    xia1.mode.put('Real time')
-#    ttime.sleep(0.25)
-#    xia1.real_time.put('1')
-#    while(xia1.real_time != 1):
-#        ttime.sleep(0.05)
-#    xia1.capt_start_stop.put(1)
-#    ttime.sleep(0.05)
-#    xia1.erase_start.put(1)
-#    ttime.sleep(2)
     
     graph_x = xia1.mca_x.value
     graph_data = getattr(xia1, "mca_array" + "{}".format(channel_number) + ".value")
