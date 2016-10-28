@@ -111,3 +111,10 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False):
     print('Done!')
     return uid, interp_filename, absorp
 
+
+def get_offsets(num:int = 1):
+    uid, = RE(get_offsets_plan([pba1.adc1, pba2.adc6, pba2.adc7], num = num))
+    print(uid)
+
+    print('Done!')
+    return uid, '', ''

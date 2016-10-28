@@ -68,6 +68,27 @@ def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
 
 
 
+def get_offsets_plan(detectors, num = 1, comment = '', **metadata):
+    """
+    Example
+    -------
+    >>> RE(get_offset([pba1.adc1, pba2.adc7, pba2.adc6]))
+    """
+
+    flyers = detectors 
+
+    plan = bp.count(flyers, num, md={'plan_name': 'get_offset', 'comment': comment})
+
+    def set_offsets():
+        for flyer in flyers:
+            ret = flyer.volt.value
+            yield from bp.abs_set(flyer.offset, ret, wait=True)
+
+    yield from bp.fly_during_wrapper(bp.finalize_wrapper(plan, set_offsets()), flyers)
+
+
+
+
 def tune(detectors, motor, start, stop, num, comment='', **metadata):
     """
     Example

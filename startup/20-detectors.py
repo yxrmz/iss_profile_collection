@@ -83,27 +83,28 @@ class EncoderFS(Encoder):
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
+        if(self.connected):
+            print(self.name, 'stage')
+            DIRECTORY = '/GPFS/xf08id/'
+            rpath = 'pizza_box_data'
+            filename = 'en_' + str(uuid.uuid4())[:6]
+            full_path = os.path.join(rpath, filename)
+            self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
+            if len(self._full_path) > 40:
+                raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
+                               "Choose a different DIRECTORY with a shorter path. (I know....)")
+            self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
+            self.filepath.put(self._full_path)
+            self.resource_uid = fs.insert_resource('PIZZABOX_ENC_FILE_TXT', full_path,
+                                                   {'chunk_size': self.chunk_size},
+                                                   root=DIRECTORY)
 
-        print(self.name, 'stage')
-        DIRECTORY = '/GPFS/xf08id/'
-        rpath = 'pizza_box_data'
-        filename = 'en_' + str(uuid.uuid4())[:6]
-        full_path = os.path.join(rpath, filename)
-        self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-        if len(self._full_path) > 40:
-            raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
-                           "Choose a different DIRECTORY with a shorter path. (I know....)")
-        self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-        self.filepath.put(self._full_path)
-        self.resource_uid = fs.insert_resource('PIZZABOX_ENC_FILE_TXT', full_path,
-                                               {'chunk_size': self.chunk_size},
-                                               root=DIRECTORY)
-
-        super().stage()
+            super().stage()
 
     def unstage(self):
-        set_and_wait(self.ignore_sel, 1)
-        return super().unstage()
+        if(self.connected):
+            set_and_wait(self.ignore_sel, 1)
+            return super().unstage()
 
     def kickoff(self):
         print('kickoff', self.name)
@@ -361,26 +362,28 @@ class AdcFS(Adc):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
 
-        print(self.name, 'stage')
-        DIRECTORY = '/GPFS/xf08id/'
-        rpath = 'pizza_box_data'
-        filename = 'an_' + str(uuid.uuid4())[:6]
-        full_path = os.path.join(rpath, filename)
-        self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-        if len(self._full_path) > 40:
-            raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
-                           "Choose a different DIRECTORY with a shorter path. (I know....)")
-        self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-        self.filepath.put(self._full_path)
-        self.resource_uid = fs.insert_resource('PIZZABOX_AN_FILE_TXT', full_path,
-                                               {'chunk_size': self.chunk_size},
-                                               root=DIRECTORY)
-
-        super().stage()
+        if(self.connected):
+            print(self.name, 'stage')
+            DIRECTORY = '/GPFS/xf08id/'
+            rpath = 'pizza_box_data'
+            filename = 'an_' + str(uuid.uuid4())[:6]
+            full_path = os.path.join(rpath, filename)
+            self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
+            if len(self._full_path) > 40:
+                raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
+                               "Choose a different DIRECTORY with a shorter path. (I know....)")
+            self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
+            self.filepath.put(self._full_path)
+            self.resource_uid = fs.insert_resource('PIZZABOX_AN_FILE_TXT', full_path,
+                                                   {'chunk_size': self.chunk_size},
+                                                   root=DIRECTORY)
+    
+            super().stage()
 
     def unstage(self):
-        set_and_wait(self.enable_sel, 1)
-        return super().unstage()
+        if(self.connected):
+            set_and_wait(self.enable_sel, 1)
+            return super().unstage()
 
     def kickoff(self):
         print('kickoff', self.name)
