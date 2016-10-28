@@ -62,6 +62,7 @@ class HHM(Device):
     start_trajectory = Cpt(EpicsSignal, 'MC:06}StartTraj')
     stop_trajectory = Cpt(EpicsSignal, 'MC:06}StopTraj')
     trajectory_running = Cpt(EpicsSignal,'MC:06}TrajRunning', write_pv='MC:06}TrajRunning-Set')
+    trajectory_progress = Cpt(EpicsSignal,'MC:06}TrajProgress')
 
 
 class HHM_FixedExit(PseudoPositioner):
