@@ -31,9 +31,13 @@ def load_abs_parser(uid):
 	ion_file3 = ion_file3[len(ion_file3)-9:len(ion_file3)]
 	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
 
+	ion_offset = run['start']['pba2_adc7 offset']
+	ion_offset2 = run['start']['pba2_adc6 offset']
+	ion_offset3 = run['start']['pba1_adc1 offset']
+
 	if(xas_abs.encoder_file != encoder_file or xas_abs.i0_file != ion_file or xas_abs.it_file != ion_file2 or xas_abs.ir_file != ion_file3):
 		print('Parsing abs files...')
-		xas_abs.load(encoder_file, ion_file, ion_file2, ion_file3)
+		xas_abs.load(encoder_file, ion_file, ion_file2, ion_file3, ion_offset, ion_offset2, ion_offset3)
 		xas_abs.interpolate()
 
 
@@ -53,9 +57,13 @@ def load_flu_parser(uid):
 	ion_file3 = ion_file3[len(ion_file3)-9:len(ion_file3)]
 	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
 
+	ion_offset = run['start']['pba2_adc7 offset']
+	ion_offset2 = run['start']['pba2_adc6 offset']
+	ion_offset3 = run['start']['pba1_adc1 offset']
+
 	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != ion_file or xas_flu.it_file != ion_file2 or xas_flu.ir_file != ion_file3 or xas_flu.trig_file != di_file):
 		print('Parsing flu files...')
-		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3, di_file)
+		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3, di_file, ion_offset, ion_offset2, ion_offset3)
 		xas_flu.interpolate()
 
 

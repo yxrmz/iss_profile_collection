@@ -77,13 +77,14 @@ def get_offsets_plan(detectors, num = 1, comment = '', **metadata):
 
     flyers = detectors 
 
-    plan = bp.count(flyers, num, md={'plan_name': 'get_offset', 'comment': comment})
+    plan = bp.count(flyers, num, md={'plan_name': 'get_offset', 'comment': comment}, delay = 0.5)
 
     def set_offsets():
         for flyer in flyers:
             ret = flyer.volt.value
             yield from bp.abs_set(flyer.offset, ret, wait=True)
 
+    #yield from bp.fly_during_wrapper(bp.finalize_wrapper(plan), flyers)
     yield from bp.fly_during_wrapper(bp.finalize_wrapper(plan, set_offsets()), flyers)
 
 
@@ -145,7 +146,7 @@ def prep_traj_plan(delay = 0.25):
 def execute_trajectory(comment, **metadata):
     flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment}
+        md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba2.adc7.name + ' offset': pba2.adc7.offset.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
@@ -213,7 +214,7 @@ def execute_xia_trajectory(comment, **metadata):
         xia1.netcdf_filename.put(comment) #yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#
         next_file_number = xia1.netcdf_filenumber_rb.value #(yield from bp.read(xia1.netcdf_filenumber_rb))#
 
-        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number)}
+        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba2.adc7.name + ' offset': pba2.adc7.offset.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
@@ -286,7 +287,7 @@ def execute_loop_trajectory(comment, **metadata):
 
     flyers = [pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'execute_trajectory', 'comment': comment}
+        md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba2.adc7.name + ' offset': pba2.adc7.offset.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 

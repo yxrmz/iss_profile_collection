@@ -113,15 +113,18 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False):
     return uid, interp_filename, absorp
 
 
-def get_offsets(num:int = 1):
+def get_offsets(num:int = 10):
     aver1=pba2.adc7.averaging_points.get()
     aver2=pba2.adc6.averaging_points.get()
     aver3=pba1.adc1.averaging_points.get()
-    pba2.adc7.averaging_points.put(10)
-    pba2.adc6.averaging_points.put(10)
-    pba1.adc1.averaging_points.put(10)
+    pba2.adc7.averaging_points.put(15)
+    pba2.adc6.averaging_points.put(15)
+    pba1.adc1.averaging_points.put(15)
     
     uid, = RE(get_offsets_plan([pba1.adc1, pba2.adc6, pba2.adc7], num = num))
+    pba2.adc7.offset.put(np.mean(db.get_table(db[-1])['pba2_adc7_volt']))
+    pba2.adc6.offset.put(np.mean(db.get_table(db[-1])['pba2_adc6_volt']))
+    pba1.adc1.offset.put(np.mean(db.get_table(db[-1])['pba1_adc1_volt']))
 
     pba2.adc7.averaging_points.put(aver1)
     pba2.adc6.averaging_points.put(aver2)
