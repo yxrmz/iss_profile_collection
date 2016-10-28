@@ -338,6 +338,7 @@ class Adc(Device):
     averaging_points_rbv = Cpt(EpicsSignal, '}GP-ADC:Reg0-RB_')
     volt_array = Cpt(EpicsSignal, '}V-I')
     volt = Cpt(EpicsSignal, '}E-I')
+    offset = Cpt(EpicsSignal, '}Offset')
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
     enable_rb = Cpt(EpicsSignal, '}Ena-Sts')
