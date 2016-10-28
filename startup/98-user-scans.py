@@ -1,5 +1,6 @@
 import inspect
 import bluesky.plans as bp
+import os
 
 def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     if (prepare_traj == True):
@@ -113,8 +114,23 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False):
 
 
 def get_offsets(num:int = 1):
+    aver1=pba2.adc7.averaging_points.get()
+    aver2=pba2.adc6.averaging_points.get()
+    aver3=pba1.adc1.averaging_points.get()
+    pba2.adc7.averaging_points.put(10)
+    pba2.adc6.averaging_points.put(10)
+    pba1.adc1.averaging_points.put(10)
+    
     uid, = RE(get_offsets_plan([pba1.adc1, pba2.adc6, pba2.adc7], num = num))
-    print(uid)
 
+    pba2.adc7.averaging_points.put(aver1)
+    pba2.adc6.averaging_points.put(aver2)
+    pba1.adc1.averaging_points.put(aver3)
+    
+    os.remove(db[uid]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+    os.remove(db[uid]['descriptors'][1]['data_keys']['pba2_adc6']['filename'])
+    os.remove(db[uid]['descriptors'][2]['data_keys']['pba1_adc1']['filename'])
+
+    print(uid)
     print('Done!')
     return uid, '', ''
