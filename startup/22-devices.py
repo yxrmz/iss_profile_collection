@@ -11,11 +11,28 @@ from bluesky.examples import NullStatus
 import filestore.api as fs
 
 class Shutter():
+
     def __init__(self):
         if(pb4.do3.default_pol.value == 1):
             self.state = 'closed'
         elif(pb4.do3.default_pol.value == 0):
             self.state = 'open'
+        self.function_call = None
+        pb4.do3.default_pol.subscribe(self.update_state)
+
+    def subscribe(self, function):
+        self.function_call = function
+
+    def unsubscribe(self):
+        self.function_call = None
+        
+    def update_state(self, pvname=None, value=None, char_value=None, **kwargs):
+        if(value == 1):
+            self.state = 'closed'
+        elif(value == 0):
+            self.state = 'open'
+        if self.function_call is not None:
+            self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
         
     def open(self):
         print('Opening shutter...')
