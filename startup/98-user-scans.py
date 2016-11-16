@@ -122,16 +122,23 @@ def get_offsets(num:int = 10):
     pba1.adc1.averaging_points.put(15)
     
     uid, = RE(get_offsets_plan([pba1.adc1, pba2.adc6, pba2.adc7], num = num))
-    i0_off = np.mean(db.get_table(db[-1])['pba2_adc7_volt'][1:num])
-    it_off = np.mean(db.get_table(db[-1])['pba2_adc6_volt'][1:num])
-    ir_off = np.mean(db.get_table(db[-1])['pba1_adc1_volt'][1:num])
+    i0_array = db.get_table(db[-1])['pba2_adc7_volt']
+    it_array = db.get_table(db[-1])['pba2_adc6_volt']
+    ir_array = db.get_table(db[-1])['pba1_adc1_volt']
+    i0_off = np.mean(i0_array[1:num])
+    it_off = np.mean(it_array[1:num])
+    ir_off = np.mean(ir_array[1:num])
+    #it_off = np.mean(db.get_table(db[-1])['pba2_adc6_volt'][1:num])
+    #ir_off = np.mean(db.get_table(db[-1])['pba1_adc1_volt'][1:num])
     pba2.adc7.offset.put(i0_off)
     pba2.adc6.offset.put(it_off)
     pba1.adc1.offset.put(ir_off)
 
-    print('Offset i0: {}'.format(i0_off))
-    print('Offset it: {}'.format(it_off))
-    print('Offset ir: {}'.format(ir_off))
+    print('{}\nMean (i0) = {}'.format(i0_array, i0_off))
+    print('{}\nMean (it) = {}'.format(it_array, it_off))
+    print('{}\nMean (ir) = {}'.format(ir_array, ir_off))
+    #print('Offset it: {}'.format(it_off))
+    #print('Offset ir: {}'.format(ir_off))
 
     pba2.adc7.averaging_points.put(aver1)
     pba2.adc6.averaging_points.put(aver2)
