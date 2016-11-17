@@ -37,7 +37,7 @@ def load_abs_parser(uid):
 
 	if(xas_abs.encoder_file != encoder_file or xas_abs.i0_file != ion_file or xas_abs.it_file != ion_file2 or xas_abs.ir_file != ion_file3):
 		print('Parsing abs files...')
-		xas_abs.load(encoder_file, ion_file, ion_file2, ion_file3, ion_offset, ion_offset2, ion_offset3)
+		xas_abs.load(encoder_file, ion_file, ion_file2, ion_file3, ion_offset, ion_offset2, ion_offset3, float(run['start']['angle_offset']))
 		xas_abs.interpolate()
 
 
@@ -63,7 +63,7 @@ def load_flu_parser(uid):
 
 	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != ion_file or xas_flu.it_file != ion_file2 or xas_flu.ir_file != ion_file3 or xas_flu.trig_file != di_file):
 		print('Parsing flu files...')
-		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3, di_file, ion_offset, ion_offset2, ion_offset3)
+		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3, di_file, ion_offset, ion_offset2, ion_offset3, float(run['start']['angle_offset']))
 		xas_flu.interpolate()
 
 
