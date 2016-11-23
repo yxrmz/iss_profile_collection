@@ -144,7 +144,7 @@ def tune_mono_y(scan_range, step, retries = 1, fig = None):
         last_table = db.get_table(db[-1])
         min_index = np.argmin(last_table['pba2_adc7_volt'])
         hhm.y.move(last_table['hhm_y'][min_index])
-        print(hhm.y.position)
+        print('New position: {}'.format(hhm.y.position))
         os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
         if (num_points >= 10):
             if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
@@ -155,6 +155,27 @@ def tune_mono_y(scan_range, step, retries = 1, fig = None):
             over = 1
 
     pba2.adc7.averaging_points.put(aver)
+    print('Tune complete!')
+
+
+def tune_mono_y_bpm(scan_range, step, retries = 1, fig = None):
+    num_points = int(round(scan_range/step))
+    over = 0
+
+    while(not over):
+        RE(tune([bpm_fm], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('bpm_fm_stats1_total', 'hhm_y', fig=fig))
+        last_table = db.get_table(db[-1])
+        max_index = np.argmax(last_table['bpm_fm_stats1_total'])
+        hhm.y.move(last_table['hhm_y'][max_index])
+        print('New position: {}'.format(hhm.y.position))
+        if (num_points >= 10):
+            if (((max_index > 0.2 * num_points) and (max_index < 0.8 * num_points)) or retries == 1):
+                over = 1
+            if retries > 1:
+                retries -= 1
+        else:
+            over = 1
+
     print('Tune complete!')
 
 

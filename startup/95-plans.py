@@ -100,9 +100,11 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
     flyers = detectors 
 
     plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'comment': comment})
-    plan = bp.fly_during_wrapper(plan, flyers)
+    
+    if hasattr(flyers[0], 'kickoff'):
+        plan = bp.fly_during_wrapper(plan, flyers)
+        plan = bp.pchain(plan)
 
-    plan = bp.pchain(plan)
     yield from plan
 
 

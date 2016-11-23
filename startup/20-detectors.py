@@ -40,7 +40,7 @@ bpm_bt1 = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_bt2')
 
 for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2]:
-    bpm.read_attrs = ['stats1']
+    bpm.read_attrs = ['stats1', 'stats2']
     bpm.stats1.read_attrs = ['total', 'centroid']
 
 tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',name='tc_mask2_4')
