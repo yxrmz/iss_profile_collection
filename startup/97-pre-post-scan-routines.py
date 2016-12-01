@@ -131,6 +131,7 @@ def tune_mono_pitch(scan_range, step, retries = 1, fig = None):
             over = 1
 
     pba2.adc7.averaging_points.put(aver)
+    print('Pitch tuning complete!')
 
 
 def tune_mono_y(scan_range, step, retries = 1, fig = None):
@@ -155,7 +156,7 @@ def tune_mono_y(scan_range, step, retries = 1, fig = None):
             over = 1
 
     pba2.adc7.averaging_points.put(aver)
-    print('Tune complete!')
+    print('Y tuning complete!')
 
 
 def tune_mono_y_bpm(scan_range, step, retries = 1, fig = None):
@@ -176,7 +177,7 @@ def tune_mono_y_bpm(scan_range, step, retries = 1, fig = None):
         else:
             over = 1
 
-    print('Tune complete!')
+    print('Y tuning complete!')
 
 
 def gauss(x, *p):
@@ -218,8 +219,8 @@ def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=1300
     for energy in range(start_energy, stop_energy + 1, step):
         motor.move(energy)
         time.sleep(0.5)
-        tune_mono_pitch(2, 0.1)
-        tune_mono_y(0.5, 0.025)
+        tune_mono_pitch(2, 0.025)
+        tune_mono_y(0.5, 0.01)
         table.append([energy, hhm.pitch.read()['hhm_pitch']['value'], hhm.y.read()['hhm_y']['value']])
 
     return table

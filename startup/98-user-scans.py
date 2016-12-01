@@ -3,6 +3,38 @@ import bluesky.plans as bp
 import os
 
 def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
+    """
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller
+
+    Parameters
+    ----------
+    comment : str
+        Name of the scan - it will be stored in the metadata
+
+    prepare_traj : bool (default = True)
+        Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
+
+    absorp : bool (default = True)
+        Telling the function how to parse the data - TODO: remake this parameter
+
+
+    Returns
+    -------
+    uid : str
+        Unique id of the scan
+
+    interp_filename : str
+        Filename where the interpolated data was stored
+
+    absorp : bool
+        Just returning the parameter absorp that was passed to the scan
+
+
+    See Also
+    --------
+    :func:`tscan_N`
+    """
+
     if (prepare_traj == True):
         RE(prep_traj_plan())
     uid, = RE(execute_trajectory(comment))
@@ -31,6 +63,44 @@ def tscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     
 
 def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0):
+    """
+    Trajectory Scan N - Runs the monochromator along the trajectory that is previously loaded in the controller N times
+
+    Parameters
+    ----------
+    comment : str
+        Name of the scan - it will be stored in the metadata
+
+    prepare_traj : bool (default = True)
+        Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
+
+    absorp : bool (default = True)
+        Telling the function how to parse the data - TODO: remake this parameter
+
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+
+    delay : float (default = 0)
+        Delay in seconds between scans
+
+
+    Returns
+    -------
+    uid : str
+        Unique id of the scan
+
+    interp_filename : str
+        Filename where the interpolated data was stored
+
+    absorp : bool
+        Just returning the parameter absorp that was passed to the scan
+
+
+    See Also
+    --------
+    :func:`tscan`
+    """
+
     for indx in range(0, n_cycles): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
@@ -88,6 +158,38 @@ def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
 
 
 def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False):
+    """
+    Trajectory Scan Xia - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA
+
+    Parameters
+    ----------
+    comment : str
+        Name of the scan - it will be stored in the metadata
+
+    prepare_traj : bool (default = True)
+        Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
+
+    absorp : bool (default = False)
+        Telling the function how to parse the data - TODO: remake this parameter
+
+
+    Returns
+    -------
+    uid : str
+        Unique id of the scan
+
+    interp_filename : str
+        Filename where the interpolated data was stored
+
+    absorp : bool
+        Just returning the parameter absorp that was passed to the scan
+
+
+    See Also
+    --------
+    :func:`tscan`
+    """
+
     if (prepare_traj == True):
         RE(prep_traj_plan())
     uid, = RE(execute_xia_trajectory(comment)) # CHECK FILENAME (We need to know exactly the next filename)
@@ -114,6 +216,26 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False):
 
 
 def get_offsets(num:int = 10):
+    """
+    Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
+
+    Parameters
+    ----------
+    num : int
+        Number of points to acquire and average for each ion chamber
+
+
+    Returns
+    -------
+    uid : str
+        Unique id of the scan
+
+
+    See Also
+    --------
+    :func:`tscan`
+    """
+
     aver1=pba2.adc7.averaging_points.get()
     aver2=pba2.adc6.averaging_points.get()
     aver3=pba1.adc1.averaging_points.get()
