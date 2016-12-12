@@ -140,13 +140,13 @@ def tune_mono_pitch_encoder(scan_range, step, retries = 1, fig = None):
     num_points = int(round(scan_range/step))
     over = 0
 	
-	start_position = pb2.enc3.pos_I.value
+    start_position = pb2.enc3.pos_I.value
 
     while(not over):
-        RE(tune([pba2.adc7, pb2.enc3], hhm.pitch, -scan_range/2, scan_range/2, 2, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch', fig=fig))
+        RE(tune([pba2.adc7, pb2.enc3], hhm.pitch, -scan_range/2, scan_range/2, 2, ''))
 
-		enc = xasdata.XASdataAbs.loadENCtrace('', '', db[-1]['descriptors'][0]['data_keys']['pb2_enc3']['filename'])
-		i0 = xasdata.XASdataAbs.loadADCtrace('', '', db[-1]['descriptors'][1]['data_keys']['pba2_adc7']['filename'])
+        enc = xasdata.XASdataAbs.loadENCtrace('', '', db[-1]['descriptors'][0]['data_keys']['pb2_enc3']['filename'])
+        i0 = xasdata.XASdataAbs.loadADCtrace('', '', db[-1]['descriptors'][1]['data_keys']['pba2_adc7']['filename'])
 		
         min_timestamp = np.array([i0[0,0], enc[0,0]]).max()
         max_timestamp = np.array([i0[len(i0)-1,0], enc[len(enc)-1,0]]).min()
@@ -154,32 +154,33 @@ def tune_mono_pitch_encoder(scan_range, step, retries = 1, fig = None):
         timestamps = np.arange(min_timestamp, max_timestamp, interval)
         enc_interp = np.array([timestamps, np.interp(timestamps, enc[:,0], enc[:,1])]).transpose()
         i0_interp = np.array([timestamps, np.interp(timestamps, i0[:,0], i0[:,1])]).transpose()
-		len_to_erase = int(np.round(0.015 * len(i0_interp)))
+        len_to_erase = int(np.round(0.015 * len(i0_interp)))
         enc_interp = enc_interp[len_to_erase:]
         i0_interp = i0_interp[len_to_erase:]
 		
-		enc_grid = xas_abs.data_manager.energy_grid_equal(enc_interp[:, 1], 100)
-		xas_abs.data_manager.process_equal(i0_interp[:,0],
-		                                   enc_interp[:,1],
-										   i0_interp[:,1],
-										   i0_interp[:,1],
-										   i0_interp[:,1],
-										   1000)
+        xas_abs.data_manager.process_equal(i0_interp[:,0],
+                                           enc_interp[:,1],
+                                           i0_interp[:,1],
+                                           i0_interp[:,1],
+                                           i0_interp[:,1],
+                                           10)
 												
-        xas_abs.data_manager.en_grid = xas_abs.data_manager.en_grid[2:-2]
-        xas_abs.data_manager.i0_interp = xas_abs.data_manager.i0_interp[2:-2]
+        xas_abs.data_manager.en_grid = xas_abs.data_manager.en_grid[5:-5]
+        xas_abs.data_manager.i0_interp = xas_abs.data_manager.i0_interp[5:-5]
 		#plt.plot(enc_interp[:,1], i0_interp[:,1]) #not binned
 		
-		plt.plot(xas_abs.data_manager.en_grid, xas_abs.data_manager.i0_interp) #binned
-		minarg = np.argmin(xas_abs.data_manager.i0_interp)
-		enc_diff = xas_abs.data_manager.en_grid[minarg] - start_position
+        plt.plot(xas_abs.data_manager.en_grid, xas_abs.data_manager.i0_interp) #binned
+        minarg = np.argmin(xas_abs.data_manager.i0_interp)
+        enc_diff = xas_abs.data_manager.en_grid[minarg] - start_position
 		
+        pitch_pos = enc_diff / 204 # Enc to pitch convertion
+        print('Delta Pitch = {}'.format(pitch_pos))
 		#convert enc_diff to position (need to know the relation)
 		#then move to the new position
 		
         print(hhm.pitch.position)
         #os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
-		over = 1
+        over = 1
 
     pba2.adc7.averaging_points.put(aver)
     print('Pitch tuning complete!')
