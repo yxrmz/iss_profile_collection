@@ -48,6 +48,7 @@ class HHM(Device):
     lut_number_rbv = Cpt(EpicsSignal, 'MC:06}LUT-Read')
     lut_start_transfer = Cpt(EpicsSignal, 'MC:06}TransferLUT')
     lut_transfering = Cpt(EpicsSignal, 'MC:06}TransferLUT-Read')
+    trajectory_loading = Cpt(EpicsSignal, 'MC:06}TrajLoading')
     traj_mode = Cpt(EpicsSignal, 'MC:06}TrajFlag1-Set')
     traj_mode_rbv = Cpt(EpicsSignal, 'MC:06}TrajFlag1-Read')
     enable_ty = Cpt(EpicsSignal, 'MC:06}TrajFlag2-Set')
