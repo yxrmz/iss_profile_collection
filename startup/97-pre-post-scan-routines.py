@@ -40,12 +40,15 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
     if(not os.path.exists(log_path)):
         os.makedirs(log_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
+        call(['chmod', '770', log_path])
 
     # Creating folder /GPFS/xf08id/User Data/[year].[cycle].[proposal]/log if it doesn't exist
     log_path = log_path + 'log/'
     if(not os.path.exists(log_path)):
         os.makedirs(log_path)
-
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
+        call(['chmod', '770', log_path])
 
     start_timestamp = db[uuid]['start']['time']
     stop_timestamp = db[uuid]['stop']['time']
@@ -53,6 +56,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     snapshots_path = log_path + 'snapshots/'
     if(not os.path.exists(snapshots_path)):
         os.makedirs(snapshots_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', snapshots_path])
+        call(['chmod', '770', snapshots_path])
 
     file_path = 'snapshots/' + comment + '.png'
     fn = log_path + file_path
