@@ -13,12 +13,15 @@ import filestore.api as fs
 class Shutter():
 
     def __init__(self):
-        if(pb4.do3.default_pol.value == 1):
-            self.state = 'closed'
-        elif(pb4.do3.default_pol.value == 0):
-            self.state = 'open'
-        self.function_call = None
-        pb4.do3.default_pol.subscribe(self.update_state)
+        if(pb4.connected):
+            if(pb4.do3.default_pol.value == 1):
+                self.state = 'closed'
+            elif(pb4.do3.default_pol.value == 0):
+                self.state = 'open'
+            self.function_call = None
+            pb4.do3.default_pol.subscribe(self.update_state)
+        else:
+            self.state = 'unknown'
 
     def subscribe(self, function):
         self.function_call = function
