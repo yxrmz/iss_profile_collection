@@ -1,7 +1,7 @@
 import isstools.gui
 
 xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, get_offsets], 
-                                 [tune_mono_pitch , tune_mono_y, tune_mono_y_bpm], 
+                                 [tune_mono_pitch , tune_mono_y], 
                                  prep_traj_plan, 
                                  RE, 
                                  db, 
