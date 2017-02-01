@@ -33,6 +33,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     encoder_file = parser.encoder_file
     ion_file = parser.i0_file
     ion_file2 = parser.it_file
+    ion_file3 = parser.ir_file
+    ion_file4 = parser.if_file
 
     interp_filename = create_user_folder(uuid, comment, parser)
 
@@ -83,9 +85,9 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     uuid=('<p><b> Scan ID: </b>'+ str(uuid))
     
     if(absorp):
-        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>ADC 6 file: </b>' + ion_file2 + '</li>\n  <li><b>ADC 7 file: </b>' + ion_file + '</li>\n</ul>')
+        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + ion_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + ion_file2 + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ion_file3 + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + ion_file4 + '</li>\n</ul>')
     else:
-        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>ADC 6 file: </b>' + ion_file2 + '</li>\n  <li><b>ADC 7 file: </b>' + ion_file + '</li>\n  <li><b>DI file: </b>' + di_file + '</li>\n  <li><b>XIA file: </b>' + xia_file + '</li>\n</ul>')
+        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + ion_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + ion_file2 + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ion_file3 + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + ion_file4 + '</li>\n  <li><b>DI file: </b>' + di_file + '</li>\n  <li><b>XIA file: </b>' + xia_file + '</li>\n</ul>')
 
     image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
 
