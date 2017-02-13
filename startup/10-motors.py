@@ -140,3 +140,11 @@ class HRM(Device):
 
 hrm = HRM('XF:08IDB-OP{', name='hrm')
 
+
+class SampleXY(Device):
+    x = Cpt(EpicsMotor, '-Ax:X}Mtr')
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+
+samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
+
+
