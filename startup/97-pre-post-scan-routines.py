@@ -34,7 +34,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     ion_file = parser.i0_file
     ion_file2 = parser.it_file
     ion_file3 = parser.ir_file
-    ion_file4 = parser.if_file
+    ion_file4 = parser.iff_file
 
     interp_filename = create_user_folder(uuid, comment, parser)
 
