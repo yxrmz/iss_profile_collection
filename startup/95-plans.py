@@ -108,6 +108,38 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
     yield from plan
 
 
+def pb_scan_plan(detectors, motor, scan_center, scan_range, comment = ''):
+
+    flyers = detectors
+    def inner():
+        md = {'plan_args': {}, 'plan_name': 'pb_scan','experiment': 'pb_scan', 'comment': comment}
+        #md.update(**metadata)
+        yield from bp.open_run(md=md)
+        yield from bp.sleep(.4)
+        yield from bp.clear_checkpoint()
+        yield from bp.abs_set(motor, scan_center + (scan_range / 2), wait=True)
+        yield from bp.sleep(.4)
+        yield from bp.close_run()
+        yield from shutter.close_plan()
+        yield from bp.abs_set(motor, scan_center, wait=True)
+
+    def final_plan():
+        for flyer in flyers:
+            yield from bp.unstage(flyer)
+        yield from bp.unstage(motor)
+
+    yield from bp.abs_set(motor, scan_center - (scan_range / 2), wait=True)
+
+    yield from shutter.open_plan()
+    for flyer in flyers:
+        yield from bp.stage(flyer)
+
+    yield from bp.stage(motor)
+
+    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+                                              flyers))
+
+
 def prep_trajectory(delay = 1):
     hhm.prepare_trajectory.put("1")
     while (hhm.trajectory_ready.value == 0):
