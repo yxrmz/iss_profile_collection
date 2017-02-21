@@ -247,16 +247,16 @@ def get_offsets(num:int = 10):
     
     uid, = RE(get_offsets_plan([pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7], num = num))
     i0_array = db.get_table(db[-1])['pba1_adc7_volt']
-    it_array = db.get_table(db[-1])['pba2_adc6_volt']
-    ir_array = db.get_table(db[-1])['pba1_adc1_volt']
+    it_array = db.get_table(db[-1])['pba1_adc1_volt']
+    ir_array = db.get_table(db[-1])['pba2_adc6_volt']
     iff_array = db.get_table(db[-1])['pba1_adc6_volt']
     i0_off = np.mean(i0_array[1:num])
     it_off = np.mean(it_array[1:num])
     ir_off = np.mean(ir_array[1:num])
     iff_off = np.mean(iff_array[1:num])
     pba1.adc7.offset.put(i0_off)
-    pba2.adc6.offset.put(it_off)
-    pba1.adc1.offset.put(ir_off)
+    pba1.adc1.offset.put(it_off)
+    pba2.adc6.offset.put(ir_off)
     pba1.adc6.offset.put(iff_off)
 
     print('{}\nMean (i0) = {}'.format(i0_array, i0_off))
