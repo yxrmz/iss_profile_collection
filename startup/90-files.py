@@ -22,25 +22,47 @@ smbclient = xiaparser.smbclient()
 # arg1 = uid = unique uid -> this can be an integer relative reference (e.g. -1) or a uid string (e.g. '9a329064') 
 def load_abs_parser(uid):
 	run = db[uid]
-	ion_file = run['descriptors'][0]['data_keys']['pba1_adc7']['filename']
-	ion_file3 = run['descriptors'][1]['data_keys']['pba2_adc6']['filename']
-	ion_file2 = run['descriptors'][2]['data_keys']['pba1_adc1']['filename']
-	encoder_file = run['descriptors'][3]['data_keys']['pb9_enc1']['filename']
-	ion_file4 = run['descriptors'][4]['data_keys']['pba1_adc6']['filename']
-	ion_file = ion_file[len(ion_file)-9:len(ion_file)]
-	ion_file3 = ion_file3[len(ion_file3)-9:len(ion_file3)]
-	ion_file2 = ion_file2[len(ion_file2)-9:len(ion_file2)]
+	check = 1
+	for i in run['descriptors']:
+		if 'dev_name' in i['data_keys'][i['name']]:
+			check += 1
+			if i['data_keys'][i['name']]['dev_name'] == 'i0':
+				i0_file = i['data_keys'][i['name']]['filename']
+				i0_offset = run['start'][i['name'] + ' offset']
+			else if i['data_keys'][i['name']]['dev_name'] == 'it':
+				it_file = i['data_keys'][i['name']]['filename']
+				it_offset = run['start'][i['name'] + ' offset']
+			else if i['data_keys'][i['name']]['dev_name'] == 'ir':
+				ir_file = i['data_keys'][i['name']]['filename']
+				ir_offset = run['start'][i['name'] + ' offset']
+			else if i['data_keys'][i['name']]['dev_name'] == 'iff':
+				iff_file = i['data_keys'][i['name']]['filename']
+				iff_offset = run['start'][i['name'] + ' offset']
+
+	# Keeping this if for back portability
+	if check != len(run['descriptors']):
+		i0_file = run['descriptors'][0]['data_keys'][run['descriptors'][0]['name']]['filename']
+		it_file = run['descriptors'][1]['data_keys'][run['descriptors'][1]['name']]['filename']
+		ir_file = run['descriptors'][2]['data_keys'][run['descriptors'][2]['name']]['filename']
+		encoder_file = run['descriptors'][3]['data_keys'][run['descriptors'][3]['name']]['filename']
+		if len(run['descriptors']) > 4:
+			iff_file = run['descriptors'][4]['data_keys'][run['descriptors'][4]['name']]['filename']
+
+		i0_offset = run['start']['pba2_adc7 offset']
+		it_offset = run['start']['pba2_adc6 offset']
+		ir_offset = run['start']['pba1_adc1 offset']
+		if 'pba1_adc6 offset' in run['start']:
+			iff_offset = run['start']['pba1_adc6 offset']
+		
+	i0_file = i0_file[len(i0_file)-9:len(i0_file)]
+	ir_file = ir_file[len(ir_file)-9:len(ir_file)]
+	it_file = it_file[len(it_file)-9:len(it_file)]
 	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
-	ion_file4 = ion_file4[len(ion_file4)-9:len(ion_file4)]
+	iff_file = iff_file[len(iff_file)-9:len(iff_file)]
 
-	ion_offset = run['start']['pba1_adc7 offset']
-	ion_offset2 = run['start']['pba2_adc6 offset']
-	ion_offset3 = run['start']['pba1_adc1 offset']
-	ion_offset4 = run['start']['pba1_adc6 offset']
-
-	if(xas_abs.encoder_file != encoder_file or xas_abs.i0_file != ion_file or xas_abs.it_file != ion_file2 or xas_abs.ir_file != ion_file3 or xas_abs.if_file != ion_file4):
+	if(xas_abs.encoder_file != encoder_file or xas_abs.i0_file != i0_file or xas_abs.it_file != it_file or xas_abs.ir_file != ir_file or xas_abs.if_file != iff_file):
 		print('Parsing abs files...')
-		xas_abs.load(encoder_file, ion_file, ion_file2, ion_file3, ion_file4, ion_offset, ion_offset2, ion_offset3, ion_offset4, float(run['start']['angle_offset']))
+		xas_abs.load(encoder_file, i0_file, it_file, ir_file, iff_file, i0_offset, it_offset, ir_offset, iff_offset, float(run['start']['angle_offset']))
 		xas_abs.interpolate()
 
 
@@ -49,26 +71,47 @@ def load_abs_parser(uid):
 # arg1 = uid = unique uid -> this can be an integer relative reference (e.g. -1) or a uid string (e.g. '9a329064') 
 def load_flu_parser(uid):
 	run = db[uid]
-	di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
-	ion_file = run['descriptors'][1]['data_keys']['pba1_adc7']['filename']
-	ion_file3 = run['descriptors'][2]['data_keys']['pba2_adc6']['filename']
-	ion_file2 = run['descriptors'][3]['data_keys']['pba1_adc1']['filename']
-	encoder_file = run['descriptors'][4]['data_keys']['pb9_enc1']['filename']
-	ion_file4 = run['descriptors'][5]['data_keys']['pba1_adc6']['filename']
+	check = 2
+	for i in run['descriptors']:
+		if 'dev_name' in i['data_keys'][i['name']]:
+			check += 1
+			if i['data_keys'][i['name']]['dev_name'] == 'i0':
+				i0_file = i['data_keys'][i['name']]['filename']
+				ion_offset = run['start'][i['name'] + ' offset']
+			else if i['data_keys'][i['name']]['dev_name'] == 'it':
+				it_file = i['data_keys'][i['name']]['filename']
+				ion_offset2 = run['start'][i['name'] + ' offset']
+			else if i['data_keys'][i['name']]['dev_name'] == 'ir':
+				ir_file = i['data_keys'][i['name']]['filename']
+				ion_offset3 = run['start'][i['name'] + ' offset']
+			else if i['data_keys'][i['name']]['dev_name'] == 'iff':
+				iff_file = i['data_keys'][i['name']]['filename']
+				ion_offset4 = run['start'][i['name'] + ' offset']
+		
+	if check != len(run['descriptors']):		
+		di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
+		i0_file = run['descriptors'][1]['data_keys']['pba1_adc7']['filename']
+		ir_file = run['descriptors'][2]['data_keys']['pba2_adc6']['filename']
+		it_file = run['descriptors'][3]['data_keys']['pba1_adc1']['filename']
+		encoder_file = run['descriptors'][4]['data_keys']['pb9_enc1']['filename']
+		iff_file = run['descriptors'][5]['data_keys']['pba1_adc6']['filename']
+
+		ion_offset = run['start']['pba2_adc7 offset']
+		ion_offset2 = run['start']['pba2_adc6 offset']
+		ion_offset3 = run['start']['pba1_adc1 offset']
+		if 'pba1_adc6 offset' in run['start']:
+			ion_offset4 = run['start']['pba1_adc6 offset']
+		
 	di_file = di_file[len(di_file)-9:len(di_file)]
-	ion_file = ion_file[len(ion_file)-9:len(ion_file)]
-	ion_file3 = ion_file3[len(ion_file3)-9:len(ion_file3)]
-	ion_file2 = ion_file2[len(ion_file2)-9:len(ion_file2)]
+	i0_file = i0_file[len(i0_file)-9:len(i0_file)]
+	ir_file = ir_file[len(ir_file)-9:len(ir_file)]
+	it_file = it_file[len(it_file)-9:len(it_file)]
 	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
-	ion_file4 = ion_file4[len(ion_file4)-9:len(ion_file4)]
+	iff_file = iff_file[len(iff_file)-9:len(iff_file)]
 
-	ion_offset = run['start']['pba1_adc7 offset']
-	ion_offset2 = run['start']['pba2_adc6 offset']
-	ion_offset3 = run['start']['pba1_adc1 offset']
-
-	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != ion_file or xas_flu.it_file != ion_file2 or xas_flu.ir_file != ion_file3 or xas_flu.if_file != ion_file4 or xas_flu.trig_file != di_file):
+	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != i0_file or xas_flu.it_file != it_file or xas_flu.ir_file != ir_file or xas_flu.if_file != iff_file or xas_flu.trig_file != di_file):
 		print('Parsing flu files...')
-		xas_flu.load(encoder_file, ion_file, ion_file2, ion_file3, ion_file4, di_file, ion_offset, ion_offset2, ion_offset3, ion_offset4, float(run['start']['angle_offset']))
+		xas_flu.load(encoder_file, i0_file, it_file, ir_file, iff_file, di_file, ion_offset, ion_offset2, ion_offset3, ion_offset4, float(run['start']['angle_offset']))
 		xas_flu.interpolate()
 
 
