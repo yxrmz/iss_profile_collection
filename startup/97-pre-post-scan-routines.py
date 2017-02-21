@@ -95,6 +95,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
         create_file = open(log_path + 'log.html', "w")
         create_file.write('<html> <body>\n</body> </html>')
         create_file.close()
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path + 'log.html'])
+        call(['chmod', '660', log_path + 'log.html'])
 
     text_file = open(log_path + 'log.html', "r")
     lines = text_file.readlines()

@@ -24,20 +24,22 @@ def load_abs_parser(uid):
 	run = db[uid]
 	check = 1
 	for i in run['descriptors']:
-		if 'dev_name' in i['data_keys'][i['name']]:
+		if 'devname' in i['data_keys'][i['name']]:
 			check += 1
-			if i['data_keys'][i['name']]['dev_name'] == 'i0':
+			if i['data_keys'][i['name']]['devname'] == 'i0':
 				i0_file = i['data_keys'][i['name']]['filename']
 				i0_offset = run['start'][i['name'] + ' offset']
-			else if i['data_keys'][i['name']]['dev_name'] == 'it':
+			elif i['data_keys'][i['name']]['devname'] == 'it':
 				it_file = i['data_keys'][i['name']]['filename']
 				it_offset = run['start'][i['name'] + ' offset']
-			else if i['data_keys'][i['name']]['dev_name'] == 'ir':
+			elif i['data_keys'][i['name']]['devname'] == 'ir':
 				ir_file = i['data_keys'][i['name']]['filename']
 				ir_offset = run['start'][i['name'] + ' offset']
-			else if i['data_keys'][i['name']]['dev_name'] == 'iff':
+			elif i['data_keys'][i['name']]['devname'] == 'iff':
 				iff_file = i['data_keys'][i['name']]['filename']
 				iff_offset = run['start'][i['name'] + ' offset']
+		else:
+		    encoder_file = i['data_keys'][i['name']]['filename']
 
 	# Keeping this if for back portability
 	if check != len(run['descriptors']):
@@ -73,18 +75,18 @@ def load_flu_parser(uid):
 	run = db[uid]
 	check = 2
 	for i in run['descriptors']:
-		if 'dev_name' in i['data_keys'][i['name']]:
+		if 'devname' in i['data_keys'][i['name']]:
 			check += 1
-			if i['data_keys'][i['name']]['dev_name'] == 'i0':
+			if i['data_keys'][i['name']]['devname'] == 'i0':
 				i0_file = i['data_keys'][i['name']]['filename']
 				ion_offset = run['start'][i['name'] + ' offset']
-			else if i['data_keys'][i['name']]['dev_name'] == 'it':
+			elif i['data_keys'][i['name']]['devname'] == 'it':
 				it_file = i['data_keys'][i['name']]['filename']
 				ion_offset2 = run['start'][i['name'] + ' offset']
-			else if i['data_keys'][i['name']]['dev_name'] == 'ir':
+			elif i['data_keys'][i['name']]['devname'] == 'ir':
 				ir_file = i['data_keys'][i['name']]['filename']
 				ion_offset3 = run['start'][i['name'] + ' offset']
-			else if i['data_keys'][i['name']]['dev_name'] == 'iff':
+			elif i['data_keys'][i['name']]['devname'] == 'iff':
 				iff_file = i['data_keys'][i['name']]['filename']
 				ion_offset4 = run['start'][i['name'] + ' offset']
 		

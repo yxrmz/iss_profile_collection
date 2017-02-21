@@ -436,7 +436,7 @@ class AdcFS(Adc):
         now = ttime.time()
         return {self.name: {self.name:
                      {'filename': self._full_path, 
-                      'devname': self.dev_name,
+                      'devname': self.dev_name.value,
                       'source': 'pizzabox-adc-file', 
                       'external': 'FILESTORE:', 
                       'shape': [5,],
