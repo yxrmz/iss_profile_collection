@@ -106,6 +106,25 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
     yield from plan
 
 
+def sampleXY_plan(detectors, motor, start, stop, num):
+    """
+    Example
+    -------
+    >>> RE(sampleXY_plan([pba1.adc7], samplexy.x, -2, 2, 5, ''), LivePlot('pba1.adc7_volt', 'samplexy_x'))
+    """
+
+    flyers = detectors 
+
+    plan = bp.relative_scan(flyers, motor, start, stop, num)
+    
+    if hasattr(flyers[0], 'kickoff'):
+        #plan = bp.fly_during_wrapper(plan, flyers)
+        plan = bp.pchain(bp.fly_during_wrapper(plan, flyers))
+		# Check if I can remove bp.pchain
+
+    yield from plan
+
+
 def pb_scan_plan(detectors, motor, scan_center, scan_range, comment = ''):
 
     flyers = detectors
