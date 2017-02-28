@@ -89,6 +89,8 @@ def load_flu_parser(uid):
 			elif i['data_keys'][i['name']]['devname'] == 'iff':
 				iff_file = i['data_keys'][i['name']]['filename']
 				ion_offset4 = run['start'][i['name'] + ' offset']
+		else:
+		    encoder_file = i['data_keys'][i['name']]['filename']
 		
 	if check != len(run['descriptors']):		
 		di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
@@ -103,7 +105,7 @@ def load_flu_parser(uid):
 		ion_offset3 = run['start']['pba1_adc1 offset']
 		if 'pba1_adc6 offset' in run['start']:
 			ion_offset4 = run['start']['pba1_adc6 offset']
-		
+	di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
 	di_file = di_file[len(di_file)-9:len(di_file)]
 	i0_file = i0_file[len(i0_file)-9:len(i0_file)]
 	ir_file = ir_file[len(ir_file)-9:len(ir_file)]

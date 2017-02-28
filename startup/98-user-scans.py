@@ -280,7 +280,7 @@ def get_offsets(num:int = 10):
 
 def samplexy_scan(detectors, motor, rel_start, rel_stop, num):
     if type(detectors) is not list:
-		detectors = [detectors]
+        detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
 
 
