@@ -105,6 +105,30 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 
     yield from plan
 
+def get_xia_energy_grid(self, array, e0, edge_start, edge_end, preedge_spacing, xanes, exafsk):
+    preedge = np.arange(np.min(array), edge_start, preedge_spacing)
+    edge = np.arange(edge_start, edge_end, xanes)
+
+    iterator = exafsk
+    kenergy = 0
+    postedge = np.array([])
+
+    while(kenergy + edge_end < np.max(array)):
+        kenergy = xray.k2e(iterator, e0) - e0
+        postedge = np.append(postedge, edge_end + kenergy)
+        iterator += exafsk
+
+    return np.append(np.append(preedge, edge), postedge)
+
+def step_xia_scan(detectors, motor, start, stop, num):
+    """
+    Example
+    -------
+    >>> TODO
+    """
+    energy_grid = get_xia_energy_grid()
+    xia1.
+	
 
 def sampleXY_plan(detectors, motor, start, stop, num):
     """
