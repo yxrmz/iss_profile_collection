@@ -4,7 +4,7 @@ import time as ttime
 import PyQt4.QtCore
 
 
-def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba2.adc7], comment='', **metadata):
+def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba1.adc7], comment='', **metadata):
     """
     Example
     -------
@@ -36,7 +36,7 @@ def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
     -------
     >>> RE(energy_scan(11350, 11450, 2))
     """
-    flyers = [pb9.enc1, pba2.adc6, pba2.adc7]
+    flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'comment': comment}
         md.update(**metadata)
@@ -72,7 +72,7 @@ def get_offsets_plan(detectors, num = 1, comment = '', **metadata):
     """
     Example
     -------
-    >>> RE(get_offset([pba1.adc1, pba1.adc6, pba2.adc7, pba2.adc6]))
+    >>> RE(get_offset([pba1.adc1, pba1.adc6, pba1.adc7, pba2.adc6]))
     """
 
     flyers = detectors 
@@ -92,7 +92,7 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
     """
     Example
     -------
-    >>> RE(tune([pba2.adc7], hhm.pitch,-2, 2, 5, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch'))
+    >>> RE(tune([pba1.adc7], hhm.pitch,-2, 2, 5, ''), LivePlot('pba1.adc7_volt', 'hhm_pitch'))
     """
 
     flyers = detectors 
@@ -102,6 +102,25 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
     if hasattr(flyers[0], 'kickoff'):
         plan = bp.fly_during_wrapper(plan, flyers)
         plan = bp.pchain(plan)
+
+    yield from plan
+
+
+def sampleXY_plan(detectors, motor, start, stop, num):
+    """
+    Example
+    -------
+    >>> RE(sampleXY_plan([pba1.adc7], samplexy.x, -2, 2, 5, ''), LivePlot('pba1.adc7_volt', 'samplexy_x'))
+    """
+
+    flyers = detectors 
+
+    plan = bp.relative_scan(flyers, motor, start, stop, num)
+    
+    if hasattr(flyers[0], 'kickoff'):
+        #plan = bp.fly_during_wrapper(plan, flyers)
+        plan = bp.pchain(bp.fly_during_wrapper(plan, flyers))
+		# Check if I can remove bp.pchain
 
     yield from plan
 
@@ -176,9 +195,9 @@ def prep_traj_plan(delay = 0.25):
 
 
 def execute_trajectory(comment, **metadata):
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
+    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba2.adc7.name + ' offset': pba2.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
@@ -240,13 +259,13 @@ def execute_trajectory(comment, **metadata):
 
 
 def execute_xia_trajectory(comment, **metadata):
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7, pb4.di]
+    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
     def inner():
         # Setting the name of the file
         xia1.netcdf_filename.put(comment) #yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#
         next_file_number = xia1.netcdf_filenumber_rb.value #(yield from bp.read(xia1.netcdf_filenumber_rb))#
 
-        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba2.adc7.name + ' offset': pba2.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
@@ -317,9 +336,9 @@ def execute_xia_trajectory(comment, **metadata):
 
 def execute_loop_trajectory(comment, **metadata):
 
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba2.adc7]
+    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba2.adc7.name + ' offset': pba2.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 

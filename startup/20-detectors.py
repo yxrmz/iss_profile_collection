@@ -340,6 +340,7 @@ class Adc(Device):
     volt_array = Cpt(EpicsSignal, '}V-I')
     volt = Cpt(EpicsSignal, '}E-I')
     offset = Cpt(EpicsSignal, '}Offset')
+    dev_name = Cpt(EpicsSignal, '}DevName')
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
     enable_rb = Cpt(EpicsSignal, '}Ena-Sts')
@@ -434,7 +435,11 @@ class AdcFS(Adc):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 'source': 'pizzabox-adc-file', 'external': 'FILESTORE:', 'shape': [5,],
+                     {'filename': self._full_path, 
+                      'devname': self.dev_name.value,
+                      'source': 'pizzabox-adc-file', 
+                      'external': 'FILESTORE:', 
+                      'shape': [5,],
                       'dtype': 'array'}}}
 
 

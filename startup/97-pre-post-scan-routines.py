@@ -31,10 +31,10 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
         di_file = parser.trig_file
 
     encoder_file = parser.encoder_file
-    ion_file = parser.i0_file
-    ion_file2 = parser.it_file
-    ion_file3 = parser.ir_file
-    ion_file4 = parser.iff_file
+    i0_file = parser.i0_file
+    it_file = parser.it_file
+    ir_file = parser.ir_file
+    iff_file = parser.iff_file
 
     interp_filename = create_user_folder(uuid, comment, parser)
 
@@ -85,9 +85,9 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     uuid=('<p><b> Scan ID: </b>'+ str(uuid))
     
     if(absorp):
-        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + ion_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + ion_file2 + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ion_file3 + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + ion_file4 + '</li>\n</ul>')
+        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + i0_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + it_file + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ir_file + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + iff_file + '</li>\n</ul>')
     else:
-        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + ion_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + ion_file2 + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ion_file3 + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + ion_file4 + '</li>\n  <li><b>DI file: </b>' + di_file + '</li>\n  <li><b>XIA file: </b>' + xia_file + '</li>\n</ul>')
+        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + i0_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + it_file + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ir_file + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + iff_file + '</li>\n  <li><b>DI file: </b>' + di_file + '</li>\n  <li><b>XIA file: </b>' + xia_file + '</li>\n</ul>')
 
     image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
 
@@ -95,6 +95,8 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
         create_file = open(log_path + 'log.html', "w")
         create_file.write('<html> <body>\n</body> </html>')
         create_file.close()
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path + 'log.html'])
+        call(['chmod', '660', log_path + 'log.html'])
 
     text_file = open(log_path + 'log.html', "r")
     lines = text_file.readlines()
@@ -118,18 +120,18 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
     return interp_filename
 
 def tune_mono_pitch(scan_range, step, retries = 1, fig = None):
-    aver=pba2.adc7.averaging_points.get()
-    pba2.adc7.averaging_points.put(10)
+    aver=pba1.adc7.averaging_points.get()
+    pba1.adc7.averaging_points.put(10)
     num_points = int(round(scan_range/step))
     over = 0
 
     while(not over):
-        RE(tune([pba2.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_pitch', fig=fig))
+        RE(tune([pba1.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba1_adc7_volt', 'hhm_pitch', fig=fig))
         last_table = db.get_table(db[-1])
-        min_index = np.argmin(last_table['pba2_adc7_volt'])
+        min_index = np.argmin(last_table['pba1_adc7_volt'])
         hhm.pitch.move(last_table['hhm_pitch'][min_index])
         print(hhm.pitch.position)
-        os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+        os.remove(db[-1]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
         if (num_points >= 10):
             if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
                 over = 1
@@ -138,22 +140,22 @@ def tune_mono_pitch(scan_range, step, retries = 1, fig = None):
         else:
             over = 1
 
-    pba2.adc7.averaging_points.put(aver)
+    pba1.adc7.averaging_points.put(aver)
     print('Pitch tuning complete!')
 
 def tune_mono_pitch_encoder(scan_range, step, retries = 1, fig = None):
-    aver=pba2.adc7.averaging_points.get()
-    pba2.adc7.averaging_points.put(10)
+    aver=pba1.adc7.averaging_points.get()
+    pba1.adc7.averaging_points.put(10)
     num_points = int(round(scan_range/step))
     over = 0
 	
     start_position = pb2.enc3.pos_I.value
 
     while(not over):
-        RE(tune([pba2.adc7, pb2.enc3], hhm.pitch, -scan_range/2, scan_range/2, 2, ''))
+        RE(tune([pba1.adc7, pb2.enc3], hhm.pitch, -scan_range/2, scan_range/2, 2, ''))
 
         enc = xasdata.XASdataAbs.loadENCtrace('', '', db[-1]['descriptors'][0]['data_keys']['pb2_enc3']['filename'])
-        i0 = xasdata.XASdataAbs.loadADCtrace('', '', db[-1]['descriptors'][1]['data_keys']['pba2_adc7']['filename'])
+        i0 = xasdata.XASdataAbs.loadADCtrace('', '', db[-1]['descriptors'][1]['data_keys']['pba1_adc7']['filename'])
 		
         min_timestamp = np.array([i0[0,0], enc[0,0]]).max()
         max_timestamp = np.array([i0[len(i0)-1,0], enc[len(enc)-1,0]]).min()
@@ -186,26 +188,26 @@ def tune_mono_pitch_encoder(scan_range, step, retries = 1, fig = None):
 		#then move to the new position
 		
         print(hhm.pitch.position)
-        #os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+        #os.remove(db[-1]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
         over = 1
 
-    pba2.adc7.averaging_points.put(aver)
+    pba1.adc7.averaging_points.put(aver)
     print('Pitch tuning complete!')
 
 
 def tune_mono_y(scan_range, step, retries = 1, fig = None):
-    aver=pba2.adc7.averaging_points.get()
-    pba2.adc7.averaging_points.put(10)
+    aver=pba1.adc7.averaging_points.get()
+    pba1.adc7.averaging_points.put(10)
     num_points = int(round(scan_range/step))
     over = 0
 
     while(not over):
-        RE(tune([pba2.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba2_adc7_volt', 'hhm_y', fig=fig))
+        RE(tune([pba1.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba1_adc7_volt', 'hhm_y', fig=fig))
         last_table = db.get_table(db[-1])
-        min_index = np.argmin(last_table['pba2_adc7_volt'])
+        min_index = np.argmin(last_table['pba1_adc7_volt'])
         hhm.y.move(last_table['hhm_y'][min_index])
         print('New position: {}'.format(hhm.y.position))
-        os.remove(db[-1]['descriptors'][0]['data_keys']['pba2_adc7']['filename'])
+        os.remove(db[-1]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
         if (num_points >= 10):
             if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
                 over = 1
@@ -214,7 +216,7 @@ def tune_mono_y(scan_range, step, retries = 1, fig = None):
         else:
             over = 1
 
-    pba2.adc7.averaging_points.put(aver)
+    pba1.adc7.averaging_points.put(aver)
     print('Y tuning complete!')
 
 
