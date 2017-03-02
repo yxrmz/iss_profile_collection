@@ -166,7 +166,7 @@ def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])
         while(xia1.acquiring.value):
             ttime.sleep(.005)
 
-        i0_array.append([i, pba1.adc7.volt.value])
+        i0_array.append([energy_grid[i], pba1.adc7.volt.value])
         xia1_chan1_array.append(xia1.mca_array1.value)
         xia1_chan2_array.append(xia1.mca_array2.value)
         xia1_chan3_array.append(xia1.mca_array3.value)
