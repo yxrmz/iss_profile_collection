@@ -128,7 +128,7 @@ def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, pre
 
     integration_times = np.append(np.append(preedge_int, edge_int), np.array(exafs_int))
     grid = np.append(np.append(preedge, edge), postedge)
-    return grid, integration_times
+    return grid[::-1], integration_times
     #return np.append(np.append(preedge, edge), postedge)
 
 def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])):
@@ -163,8 +163,11 @@ def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])
             ttime.sleep(.005)
 
         xia1.erase_start.put(1)
+        ttime.sleep(.1)
         while(xia1.acquiring.value):
             ttime.sleep(.005)
+        
+        ttime.sleep(.1)
 
         i0_array.append([energy_grid[i], pba1.adc7.volt.value])
         xia1_chan1_array.append(xia1.mca_array1.value)
