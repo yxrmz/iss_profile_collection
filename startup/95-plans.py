@@ -2,6 +2,8 @@ import bluesky as bs
 import bluesky.plans as bp
 import time as ttime
 import PyQt4.QtCore
+from isstools.conversions import xray
+
 
 
 def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba1.adc7], comment='', **metadata):
@@ -105,7 +107,91 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 
     yield from plan
 
+def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, preedge_spacing, xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
+    preedge = np.arange(e0 + preedge_start, e0 + xanes_start, preedge_spacing)
+    preedge_int = np.ones(len(preedge)) * int_time_preedge
 
+    edge = np.arange(e0 + xanes_start, e0 + xanes_end, xanes_spacing)
+    edge_int = np.ones(len(edge)) * int_time_xanes
+
+    iterator = exafsk_spacing
+    kenergy = 0
+    postedge = np.array([])
+
+    energy_end = xray.k2e(xafs_end, e0)
+    exafs_int = []
+    while(kenergy + e0 + xanes_end < energy_end):
+        kenergy = xray.k2e(iterator, e0) - e0
+        postedge = np.append(postedge, e0 + xanes_end + kenergy)
+        exafs_int.append(int_time_exafs * (iterator ** k_power))
+        iterator += exafsk_spacing
+
+    integration_times = np.append(np.append(preedge_int, edge_int), np.array(exafs_int))
+    grid = np.append(np.append(preedge, edge), postedge)
+    return grid[::-1], integration_times
+    #return np.append(np.append(preedge, edge), postedge)
+
+def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])):
+    """
+    Example
+    -------
+    >>> TODO
+    """
+    xia1_chan1_array = []
+    xia1_chan2_array = []
+    xia1_chan3_array = []
+    xia1_chan4_array = []
+    i0_array = []
+
+    if(len(integration_times)) == 0:
+        integration_times = np.ones(len(energy_grid)) * xia1.real_time.value
+
+    #energy_grid = np.arange(7112 - 50, 7112 + 50, 1)#get_xia_energy_grid(energy_start, e0, edge_start, edge_end, energy_end, preedge_spacing, xanes, exafsk)
+
+    pba1.adc7.filepath.put('')
+    pba1.adc7.enable_sel.put(0)
+    xia1.collect_mode.put(0)
+    while(xia1.collect_mode.value != 0):
+        ttime.sleep(.01)
+    for i in range(len(energy_grid)):
+        print("[{}/{}]".format(i + 1, len(energy_grid)))
+        if(xia1.real_time.value != integration_times[i]):
+            xia1.real_time.put(integration_times[i])
+        ttime.sleep(.005)
+        motor.move(xray.energy2encoder(energy_grid[i])/360000)
+        while(np.abs(motor.read()['hhm_theta']['value'] - motor.read()['hhm_theta_user_setpoint']['value']) > 0.00001 or motor.moving == True):
+            ttime.sleep(.005)
+
+        xia1.erase_start.put(1)
+        ttime.sleep(.1)
+        while(xia1.acquiring.value):
+            ttime.sleep(.005)
+        
+        ttime.sleep(.1)
+
+        i0_array.append([energy_grid[i], pba1.adc7.volt.value])
+        xia1_chan1_array.append(xia1.mca_array1.value)
+        xia1_chan2_array.append(xia1.mca_array2.value)
+        xia1_chan3_array.append(xia1.mca_array3.value)
+        xia1_chan4_array.append(xia1.mca_array4.value)
+        
+    pba1.adc7.enable_sel.put(1)
+    
+    np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-i0', np.array(i0_array))
+    np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-1', np.array(xia1_chan1_array))
+    np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-2', np.array(xia1_chan2_array))
+    np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-3', np.array(xia1_chan3_array))
+    np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-4', np.array(xia1_chan4_array))
+
+def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
+    
+    plan = bp.relative_scan(detectors, motor, rel_start, rel_stop, num)
+    
+    if hasattr(detectors[0], 'kickoff'):
+        plan = bp.fly_during_wrapper(plan, detectors)
+        
+    yield from plan 
+    
 def sampleXY_plan(detectors, motor, start, stop, num):
     """
     Example

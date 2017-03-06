@@ -156,14 +156,18 @@ def plot_abs_db(uid, color='r'):
 	load_abs_parser(uid)
 	xas_abs.plot(color = color)
 
+def save_mca_to_file(filename, path = '/GPFS/xf08id/xia_files/', mcas = [xia1.mca1, xia1.mca2, xia1.mca3, xia1.mca4]):
+    if path[-1] != '/':
+        path += '/'
+    arrays = []
+    header = ""
+    for mca in mcas:
+        arrays.append(mca.array.value)
+        header += "{}  ".format(mca.name)
+    
+    arrays = np.array(arrays).transpose()
+    np.savetxt("{}{}.txt".format(path, filename), arrays, fmt = "%d", header = header)
 
-
-
-
-
-#def copy_xia_file(filename, dest_filename):
-#	smbclient.load(filename, dest_filename)
-#	smbclient.copy()
 
 
 

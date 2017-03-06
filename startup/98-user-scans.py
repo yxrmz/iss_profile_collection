@@ -278,9 +278,17 @@ def get_offsets(num:int = 10):
     print('Done!')
     return uid, '', ''
 
+def general_scan(detector, motor, rel_start, rel_stop, num, fig = None):
+    if type(detector) == str:
+        detector = [eval(detector)]
+    if type(detector) != list:
+        detector = [detector]
+
+    if type(motor) == str:
+        motor = eval(motor)
+    return RE(general_scan_plan(detector, motor, rel_start, rel_stop, num), LivePlot(detector.name, motor.name, fig=fig))
+
 def samplexy_scan(detectors, motor, rel_start, rel_stop, num):
     if type(detectors) is not list:
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
-
-
