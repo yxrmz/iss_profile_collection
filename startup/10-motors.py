@@ -134,7 +134,7 @@ class HRM(Device):
     mir_pitch = Cpt(EpicsMotor, 'Mir:HRM:P}Mtr')
     hor_translation = Cpt(EpicsMotor, 'Mir:HRM:H}Mtr')
 
-    pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
+    table_pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
     y = Cpt(EpicsMotor, 'Mir:HRM:TY}Mtr')
 
 

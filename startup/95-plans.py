@@ -189,9 +189,9 @@ def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
     
     if hasattr(detectors[0], 'kickoff'):
         plan = bp.fly_during_wrapper(plan, detectors)
-        
-    yield from plan 
-    
+
+    yield from plan
+
 def sampleXY_plan(detectors, motor, start, stop, num):
     """
     Example
@@ -204,8 +204,7 @@ def sampleXY_plan(detectors, motor, start, stop, num):
     plan = bp.relative_scan(flyers, motor, start, stop, num)
     
     if hasattr(flyers[0], 'kickoff'):
-        #plan = bp.fly_during_wrapper(plan, flyers)
-        plan = bp.pchain(bp.fly_during_wrapper(plan, flyers))
+        plan = bp.fly_during_wrapper(plan, flyers)
 		# Check if I can remove bp.pchain
 
     yield from plan

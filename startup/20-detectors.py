@@ -36,12 +36,14 @@ class BPM(ProsilicaDetector, SingleTrigger):
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
-bpm_bt1 = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_bt1')
-bpm_bt2 = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_bt2')
+bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
+bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
+bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 
-for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2]:
+for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es]:
     bpm.read_attrs = ['stats1', 'stats2']
     bpm.stats1.read_attrs = ['total', 'centroid']
+    bpm.stats2.read_attrs = ['total', 'centroid']
 
 tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',name='tc_mask2_4')
 tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',name='tc_mask2_3')
