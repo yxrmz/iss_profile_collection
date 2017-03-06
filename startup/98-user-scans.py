@@ -292,3 +292,39 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num):
     if type(detectors) is not list:
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
+
+def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True):
+
+    if len(xyposlist) < 1:
+        print('xyposlist is empty')
+        raise
+    if len(samplelist) < 1:
+        print('samplelist is empty')
+        raise
+
+    if len(xyposlist) is not len(samplelist):
+        print('xypolist and samplelist must have the same length')
+        raise
+
+    for runnum in range(numrepeat):
+        print('current run', runnum)
+        for i in range(len(xyposlist)):
+            print('moving sample xy to', xyposlist[i])
+            if testing is not True:
+                samplexy.x.move(xyposlist[i][0])
+                samplexy.y.move(xyposlist[i][1])
+
+            print('done moving, taking a nap with wait time (s)', sleeptime)
+            time.sleep(sleeptime)
+
+            print('done napping, starting taking the scan')
+            if testing is not True:
+                if simulation is not True:
+                    tscan_comment = samplelist[i]+'_'+str(runnum).zfill(3)
+                    tscan(tscan_comment)
+
+            print('done taking the current scan')
+
+        print('done with the current run')
+    print('done with all the runs! congratulations!')
+
