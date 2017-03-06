@@ -293,8 +293,23 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num):
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
 
-def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True):
+def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0):
 
+    '''
+    collect EXAFS scans on given sample locations repeatedly.
+
+    variables:
+    numrepeat (int): number of repeated runs
+    xyposlist (list of of [x,y] positions in pairs, x, y are floats): \
+                     list of [x, y] positions, e.g. [[2.3, 23], [34.5, 23.2]]
+    samplelist (list of strings) sample/file names for each scans
+    sleeptime (int): how long (in sec.) to wait between samples
+    testing (bool): if True, no sample motion, no EXAFS scans but just print the process
+    simulation (bool): if True, only sample motions, no EXAFS scans
+
+    each scan file name will be: [samplename]_[current-runnum+runnum_start].txt
+
+    '''
     if len(xyposlist) < 1:
         print('xyposlist is empty')
         raise
@@ -308,6 +323,7 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
 
     for runnum in range(numrepeat):
         print('current run', runnum)
+        print('current run + run start', runnum+runnum_start)
         for i in range(len(xyposlist)):
             print('moving sample xy to', xyposlist[i])
             if testing is not True:
@@ -320,7 +336,7 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
             print('done napping, starting taking the scan')
             if testing is not True:
                 if simulation is not True:
-                    tscan_comment = samplelist[i]+'_'+str(runnum).zfill(3)
+                    tscan_comment = samplelist[i]+'_'+str(runnum+runnum_start).zfill(3)
                     tscan(tscan_comment)
 
             print('done taking the current scan')
