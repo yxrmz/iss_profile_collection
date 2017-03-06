@@ -183,6 +183,15 @@ def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])
     np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-3', np.array(xia1_chan3_array))
     np.savetxt('/GPFS/xf08id/xia_files/' + filename + '-4', np.array(xia1_chan4_array))
 
+def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
+    
+    plan = bp.relative_scan(detectors, motor, rel_start, rel_stop, num)
+    
+    if hasattr(detectors[0], 'kickoff'):
+        plan = bp.fly_during_wrapper(plan, detectors)
+        
+    yield from plan 
+    
 def sampleXY_plan(detectors, motor, start, stop, num):
     """
     Example
