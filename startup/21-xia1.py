@@ -69,6 +69,7 @@ class XIA(Device):
     mca_array2 =       Cpt(EpicsSignal, 'mca2')
     mca_array3 =       Cpt(EpicsSignal, 'mca3')
     mca_array4 =       Cpt(EpicsSignal, 'mca4')
+
     mca_x =            Cpt(EpicsSignal, 'dxp1:Graph0X.AVAL')
 
     netcdf_filename = Cpt(EpicsSignal, 'netCDF1:FileName')
@@ -111,15 +112,22 @@ class XIA(Device):
         self.next_pixel.put(1)
 
     def stage(self):
+        self.collect_mode.put('MCA spectra')
         self.acquiring.subscribe(self._acquiring_changed)
+        #pass
 
     def unstage(self):
         self.acquiring.clear_sub(self._acquiring_changed)
+        #pass
+        
+    #def read(self):
+        
 
     def trigger(self):
         self._status = DeviceStatus(self)
+        ttime.sleep(0.1)
         self.erase_start.put(1)
-        pb4.do0.enable.put(1) # Workaround
+        #pb4.do0.enable.put(1) # Workaround
         return self._status
 
     def _acquiring_changed(self, value=None, old_value=None, **kwargs):
@@ -129,9 +137,9 @@ class XIA(Device):
             return
         if (old_value == 1) and (value == 0):
             # 'acquiring' has flipped from 'Acquiring' to 'Done'.
-            pb4.do0.enable.put(0) # Workaround
+            #pb4.do0.enable.put(0) # Workaround
             self._status._finished()
            
 
 xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1') #XIA('dxpXMAP:', name='xia1')
-xia1.read_attrs = ['graph1', 'graph2', 'graph3', 'graph4']
+xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4']

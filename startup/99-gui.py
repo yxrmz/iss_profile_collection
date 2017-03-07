@@ -9,7 +9,11 @@ det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],
             iff:['pba1_adc6_volt'],
             i0:['pba1_adc7_volt'],
             ir:['pba2_adc6_volt'],
-            pba2.adc7:['pba2_adc7_volt']}
+            pba2.adc7:['pba2_adc7_volt'],
+            xia1:['xia1_mca1_roi0_sum', 'xia1_mca1_roi1_sum', 
+                  'xia1_mca2_roi0_sum', 'xia1_mca2_roi1_sum', 
+                  'xia1_mca3_roi0_sum', 'xia1_mca3_roi1_sum', 
+                  'xia1_mca4_roi0_sum', 'xia1_mca4_roi1_sum', ]}
 
 motors_list = [samplexy.x,
                samplexy.y,
