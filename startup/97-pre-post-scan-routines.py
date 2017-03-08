@@ -122,7 +122,7 @@ def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', abso
 def tune_mono_pitch(scan_range, step, retries = 1, ax = None):
     aver=pba1.adc7.averaging_points.get()
     pba1.adc7.averaging_points.put(10)
-    num_points = int(round(scan_range/step))
+    num_points = int(round(scan_range/step) + 1)
     over = 0
 
     while(not over):
@@ -152,7 +152,7 @@ def tune_mono_pitch(scan_range, step, retries = 1, ax = None):
 def tune_mono_pitch_encoder(scan_range, step, retries = 1, ax = None):
     aver=pba1.adc7.averaging_points.get()
     pba1.adc7.averaging_points.put(10)
-    num_points = int(round(scan_range/step))
+    num_points = int(round(scan_range/step) + 1)
     over = 0
 	
     start_position = pb2.enc3.pos_I.value
@@ -204,7 +204,7 @@ def tune_mono_pitch_encoder(scan_range, step, retries = 1, ax = None):
 def tune_mono_y(scan_range, step, retries = 1, ax = None):
     aver=pba1.adc7.averaging_points.get()
     pba1.adc7.averaging_points.put(10)
-    num_points = int(round(scan_range/step))
+    num_points = int(round(scan_range/step) + 1)
     over = 0
 
     while(not over):
@@ -229,7 +229,7 @@ def tune_mono_y(scan_range, step, retries = 1, ax = None):
 
 
 def tune_mono_y_bpm(scan_range, step, retries = 1, ax = None):
-    num_points = int(round(scan_range/step))
+    num_points = int(round(scan_range/step) + 1)
     over = 0
 
     while(not over):
