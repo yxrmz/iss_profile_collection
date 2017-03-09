@@ -131,6 +131,29 @@ def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, pre
     return grid[::-1], integration_times
     #return np.append(np.append(preedge, edge), postedge)
 
+def step_list_plan(detectors, motor, positions_grid, comment = ''):
+    """
+    Example
+    -------
+    >>> Ni_energy_grid, time_grid = get_xia_energy_grid(8333, -200, -50, 30, 16, 10, 0.2, 0.04)
+    >>> Ni_positions_grid = xray.energy2encoder(Ni_energy_grid) / 360000
+    >>> RE(step_list_plan([xia1, pba1.adc7], hhm.theta, Ni_positions_grid), LivePlot('xia1_mca1_roi0_sum', 'hhm_theta'))
+    """
+    
+    plan = bp.list_scan(detectors, motor, positions_grid, md={'comment': comment, 'plan_name': 'step_list_plan'})
+    
+    fly = 0
+    for det in detectors:
+        if hasattr(det, 'kickoff'):
+            fly = 1
+            
+    if fly:
+        plan = bp.fly_during_wrapper(plan, detectors)
+        
+    yield from plan
+    
+
+    
 def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])):
     """
     Example
