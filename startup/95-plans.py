@@ -142,13 +142,13 @@ def step_list_plan(detectors, motor, positions_grid, comment = ''):
     
     plan = bp.list_scan(detectors, motor, positions_grid, md={'comment': comment, 'plan_name': 'step_list_plan'})
     
-    fly = 0
+    flyers = []
     for det in detectors:
         if hasattr(det, 'kickoff'):
-            fly = 1
+            flyers.append(det)
             
-    if fly:
-        plan = bp.fly_during_wrapper(plan, detectors)
+    if len(flyers) > 0:
+        plan = bp.fly_during_wrapper(plan, flyers)
         
     yield from plan
     
