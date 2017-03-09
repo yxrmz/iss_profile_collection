@@ -107,7 +107,7 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 
     yield from plan
 
-def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, preedge_spacing, xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
+def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
     preedge = np.arange(e0 + preedge_start, e0 + xanes_start, preedge_spacing)
     preedge_int = np.ones(len(preedge)) * int_time_preedge
 
@@ -118,7 +118,7 @@ def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, pre
     kenergy = 0
     postedge = np.array([])
 
-    energy_end = xray.k2e(xafs_end, e0)
+    energy_end = xray.k2e(exafs_end, e0)
     exafs_int = []
     while(kenergy + e0 + xanes_end < energy_end):
         kenergy = xray.k2e(iterator, e0) - e0

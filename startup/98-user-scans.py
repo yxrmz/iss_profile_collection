@@ -286,6 +286,49 @@ def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, ax = 
         motor = eval(motor)
     return RE(general_scan_plan([detector], motor, rel_start, rel_stop, num), LivePlot(det_plot_name, motor.name, ax=ax))
 
+
+def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, xafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, ax=None):
+    '''
+    xia_step_scan - Runs the monochromator along the trajectory defined in the parameters. Gets data from the XIA and the ion chambers after each step. 
+
+    Parameters
+    ----------
+    comment : str
+        Name of the scan - it will be stored in the metadata
+        Other parameters: TODO
+
+
+    Returns
+    -------
+    uid : str
+        Unique id of the scan
+
+    interp_filename : str
+        Filename where the interpolated data was stored
+
+
+    See Also
+    --------
+    :func:`tscan`
+
+    '''
+
+    energy_grid, time_grid = get_xia_energy_grid(8333, -200, -50, 30, 16, 10, 0.2, 0.04)
+
+    if ax is not None:
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, energy_grid, comment), LivePlot(xia1.mca1.roi0.sum.name, hhm.theta.name, ax = ax))
+    else:
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, energy_grid, comment))
+
+    path = '/GPFS/xf08id/User Data/{}.{}.{}/'.format(db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['PROPOSAL'])
+    filename = parse_xia_step_scan(uid, comment, path)
+
+    
+
+    return uid, filename, ''
+
+    
+
 def samplexy_scan(detectors, motor, rel_start, rel_stop, num):
     if type(detectors) is not list:
         detectors = [detectors]
