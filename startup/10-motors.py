@@ -125,6 +125,8 @@ hhm_fe = HHM_FixedExit('XF:08IDA-OP{', name='fixed_exit', read_attrs=['theta', '
 hhm_en = HHM_Energy('XF:08IDA-OP{', name='hhm_en', read_attrs=['energy','y'])
 hhm = HHM('XF:08IDA-OP{', name='hhm')
 
+hhm.read_attrs = ['pitch', 'roll', 'theta', 'y']
+
 
 class HRM(Device):
     "high heat load monochrometer"
