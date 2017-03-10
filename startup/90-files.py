@@ -204,7 +204,8 @@ def gen_xia_comments(uid):
     comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Plan name: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, plan_name, human_start_time, human_stop_time, human_duration)
     return comments
 
-def plot_xia_step_scan(uid):
+def plot_xia_step_scan(uid, ax = None):
+
     table = db.get_table(db[uid])
 
     xia_sum = table[xia1.mca1.roi0.sum.name] + \
@@ -214,7 +215,11 @@ def plot_xia_step_scan(uid):
 
     i0_data = table[i0.volt.name]
     hhm_data = table[hhm.theta.name]
-    plt.plot(hhm_data, -(xia_sum / i0_data))
+
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    ax.plot(hhm_data, -(xia_sum / i0_data))
 
 def parse_xia_step_scan(uid, filename, path):
     table = db.get_table(db[uid])

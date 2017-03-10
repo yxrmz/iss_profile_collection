@@ -2,7 +2,7 @@ import inspect
 import bluesky.plans as bp
 import os
 
-def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
+def tscan(comment:str, prepare_traj:bool=True, absor:bool=True, **kwargs):
     """
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller
 
@@ -47,7 +47,7 @@ def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     print('Done!')
     return uid, interp_filename, absorp
 
-def tscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True):
+def tscan_plan(comment:str, prepare_traj:bool=True, absor:bool=True, **kwargs):
     if prepare_traj:
         yield from prep_traj_plan()
     #uid = (yield from execute_trajectory(comment))
@@ -62,7 +62,7 @@ def tscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     return uid, interp_filename, absorp
     
 
-def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0):
+def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     """
     Trajectory Scan N - Runs the monochromator along the trajectory that is previously loaded in the controller N times
 
@@ -115,7 +115,7 @@ def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=
     return uid, interp_filename, absorp
     
 
-def tscan_N_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0):
+def tscan_N_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     for indx in range(0, n_cycles): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
@@ -134,7 +134,7 @@ def tscan_N_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles
     return uid, interp_filename, absorp
 
 
-def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True):
+def tscan_Rrep(comment:str, prepare_traj:bool=True, absor:bool=True, **kwargs):
     if (prepare_traj == True):
         RE(prep_traj_plan())
 
@@ -146,7 +146,7 @@ def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True):
     return uid, interp_filename, absorp
 
 
-def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
+def tloopscan(comment:str, prepare_traj:bool=True, absor:bool=True, **kwargs):
     if (prepare_traj == True):
         RE(prep_traj_plan())
     uid, = RE(execute_loop_trajectory(comment))
@@ -157,7 +157,7 @@ def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True):
     return uid, interp_filename, absorp
 
 
-def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False):
+def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwargs):
     """
     Trajectory Scan Xia - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA
 
@@ -200,7 +200,7 @@ def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False):
     return uid, interp_filename, absorp
 
 
-def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False):
+def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwargs):
     if prepare_traj:
         yield from prep_traj_plan()
     #uid = (yield from execute_xia_trajectory(comment))
@@ -215,7 +215,7 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False):
     return uid, interp_filename, absorp
 
 
-def get_offsets(num:int = 10):
+def get_offsets(num:int = 10, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -278,16 +278,18 @@ def get_offsets(num:int = 10):
     print('Done!')
     return uid, '', ''
 
-def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, ax = None):
+def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, **kwargs):
     if type(detector) == str:
         detector = [eval(detector)]
 
     if type(motor) == str:
         motor = eval(motor)
+
+    ax = kwargs.get('ax')
     return RE(general_scan_plan([detector], motor, rel_start, rel_stop, num), LivePlot(det_plot_name, motor.name, ax=ax))
 
 
-def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, xafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, ax=None):
+def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, xafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
     '''
     xia_step_scan - Runs the monochromator along the trajectory defined in the parameters. Gets data from the XIA and the ion chambers after each step. 
 
@@ -304,7 +306,7 @@ def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:
         Unique id of the scan
 
     interp_filename : str
-        Filename where the interpolated data was stored
+    Filename where the interpolated data was stored
 
 
     See Also
@@ -315,26 +317,27 @@ def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:
 
     energy_grid, time_grid = get_xia_energy_grid(8333, -200, -50, 30, 16, 10, 0.2, 0.04)
 
+    ax = kwargs.get('ax')
     if ax is not None:
-        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, energy_grid, comment), LivePlot(xia1.mca1.roi0.sum.name, hhm.theta.name, ax = ax))
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, energy_grid, comment), LivePlot(xia1.mca1.roi0.sum.name, hhm.theta.name, ax=ax))
     else:
         uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, energy_grid, comment))
 
     path = '/GPFS/xf08id/User Data/{}.{}.{}/'.format(db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['PROPOSAL'])
     filename = parse_xia_step_scan(uid, comment, path)
 
+    plot_xia_step_scan(uid, ax=ax) 
+
+    return uid, filename, 'xia_step_scan'
+
     
 
-    return uid, filename, ''
-
-    
-
-def samplexy_scan(detectors, motor, rel_start, rel_stop, num):
+def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
     if type(detectors) is not list:
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
 
-def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0):
+def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, **kwargs):
 
     '''
     collect EXAFS scans on given sample locations repeatedly.
