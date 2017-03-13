@@ -107,7 +107,7 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 
     yield from plan
 
-def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, preedge_spacing, xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
+def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
     preedge = np.arange(e0 + preedge_start, e0 + xanes_start, preedge_spacing)
     preedge_int = np.ones(len(preedge)) * int_time_preedge
 
@@ -118,7 +118,7 @@ def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, pre
     kenergy = 0
     postedge = np.array([])
 
-    energy_end = xray.k2e(xafs_end, e0)
+    energy_end = xray.k2e(exafs_end, e0)
     exafs_int = []
     while(kenergy + e0 + xanes_end < energy_end):
         kenergy = xray.k2e(iterator, e0) - e0
@@ -131,6 +131,29 @@ def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, xafs_end, pre
     return grid[::-1], integration_times
     #return np.append(np.append(preedge, edge), postedge)
 
+def step_list_plan(detectors, motor, positions_grid, comment = ''):
+    """
+    Example
+    -------
+    >>> Ni_energy_grid, time_grid = get_xia_energy_grid(8333, -200, -50, 30, 16, 10, 0.2, 0.04)
+    >>> Ni_positions_grid = xray.energy2encoder(Ni_energy_grid) / 360000
+    >>> RE(step_list_plan([xia1, pba1.adc7], hhm.theta, Ni_positions_grid), LivePlot('xia1_mca1_roi0_sum', 'hhm_theta'))
+    """
+    
+    plan = bp.list_scan(detectors, motor, list(positions_grid), md={'comment': comment, 'plan_name': 'step_list_plan'})
+    
+    flyers = []
+    for det in detectors:
+        if hasattr(det, 'kickoff'):
+            flyers.append(det)
+            
+    if len(flyers) > 0:
+        plan = bp.fly_during_wrapper(plan, flyers)
+        
+    yield from plan
+    
+
+    
 def step_xia_scan(motor, filename, energy_grid, integration_times = np.array([])):
     """
     Example

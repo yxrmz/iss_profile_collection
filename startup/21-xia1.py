@@ -1,31 +1,43 @@
 import time as ttime
 
+class ROI(Device):
+    low =               Cpt(EpicsSignal, 'LO')
+    high =              Cpt(EpicsSignal, 'HI')
+    sum =               Cpt(EpicsSignal, '')
+    net =               Cpt(EpicsSignal, 'N')
+
 class MCA(Device):
     array =             Cpt(EpicsSignal, '')
-    roi0_lo =           Cpt(EpicsSignal, '.R0LO')
-    roi0_hi =           Cpt(EpicsSignal, '.R0HI')
-    roi0_sum =          Cpt(EpicsSignal, '.R0')
-    roi0_net =          Cpt(EpicsSignal, '.R0N')
-    roi1_lo =           Cpt(EpicsSignal, '.R1LO')
-    roi1_hi =           Cpt(EpicsSignal, '.R1HI')
-    roi1_sum =          Cpt(EpicsSignal, '.R1')
-    roi1_net =          Cpt(EpicsSignal, '.R1N')
-    roi2_lo =           Cpt(EpicsSignal, '.R2LO')
-    roi2_hi =           Cpt(EpicsSignal, '.R2HI')
-    roi2_sum =          Cpt(EpicsSignal, '.R2')
-    roi2_net =          Cpt(EpicsSignal, '.R2N')
-    roi3_lo =           Cpt(EpicsSignal, '.R3LO')
-    roi3_hi =           Cpt(EpicsSignal, '.R3HI')
-    roi3_sum =          Cpt(EpicsSignal, '.R3')
-    roi3_net =          Cpt(EpicsSignal, '.R3N')
-    roi4_lo =           Cpt(EpicsSignal, '.R4LO')
-    roi4_hi =           Cpt(EpicsSignal, '.R4HI')
-    roi4_sum =          Cpt(EpicsSignal, '.R4')
-    roi4_net =          Cpt(EpicsSignal, '.R4N')
-    roi5_lo =           Cpt(EpicsSignal, '.R5LO')
-    roi5_hi =           Cpt(EpicsSignal, '.R5HI')
-    roi5_sum =          Cpt(EpicsSignal, '.R5')
-    roi5_net =          Cpt(EpicsSignal, '.R5N')
+    roi0 =              Cpt(ROI, '.R0')
+    roi1 =              Cpt(ROI, '.R1')
+    roi2 =              Cpt(ROI, '.R2')
+    roi3 =              Cpt(ROI, '.R3')
+    roi4 =              Cpt(ROI, '.R4')
+    roi5 =              Cpt(ROI, '.R5')
+#    roi0_lo =           Cpt(EpicsSignal, '.R0LO')
+#    roi0_hi =           Cpt(EpicsSignal, '.R0HI')
+#    roi0_sum =          Cpt(EpicsSignal, '.R0')
+#    roi0_net =          Cpt(EpicsSignal, '.R0N')
+#    roi1_lo =           Cpt(EpicsSignal, '.R1LO')
+#    roi1_hi =           Cpt(EpicsSignal, '.R1HI')
+#    roi1_sum =          Cpt(EpicsSignal, '.R1')
+#    roi1_net =          Cpt(EpicsSignal, '.R1N')
+#    roi2_lo =           Cpt(EpicsSignal, '.R2LO')
+#    roi2_hi =           Cpt(EpicsSignal, '.R2HI')
+#    roi2_sum =          Cpt(EpicsSignal, '.R2')
+#    roi2_net =          Cpt(EpicsSignal, '.R2N')
+#    roi3_lo =           Cpt(EpicsSignal, '.R3LO')
+#    roi3_hi =           Cpt(EpicsSignal, '.R3HI')
+#    roi3_sum =          Cpt(EpicsSignal, '.R3')
+#    roi3_net =          Cpt(EpicsSignal, '.R3N')
+#    roi4_lo =           Cpt(EpicsSignal, '.R4LO')
+#    roi4_hi =           Cpt(EpicsSignal, '.R4HI')
+#    roi4_sum =          Cpt(EpicsSignal, '.R4')
+#    roi4_net =          Cpt(EpicsSignal, '.R4N')
+#    roi5_lo =           Cpt(EpicsSignal, '.R5LO')
+#    roi5_hi =           Cpt(EpicsSignal, '.R5HI')
+#    roi5_sum =          Cpt(EpicsSignal, '.R5')
+#    roi5_net =          Cpt(EpicsSignal, '.R5N')
             
 
 class XIA(Device):
@@ -69,6 +81,7 @@ class XIA(Device):
     mca_array2 =       Cpt(EpicsSignal, 'mca2')
     mca_array3 =       Cpt(EpicsSignal, 'mca3')
     mca_array4 =       Cpt(EpicsSignal, 'mca4')
+
     mca_x =            Cpt(EpicsSignal, 'dxp1:Graph0X.AVAL')
 
     netcdf_filename = Cpt(EpicsSignal, 'netCDF1:FileName')
@@ -111,15 +124,22 @@ class XIA(Device):
         self.next_pixel.put(1)
 
     def stage(self):
+        self.collect_mode.put('MCA spectra')
         self.acquiring.subscribe(self._acquiring_changed)
+        #pass
 
     def unstage(self):
         self.acquiring.clear_sub(self._acquiring_changed)
+        #pass
+        
+    #def read(self):
+        
 
     def trigger(self):
         self._status = DeviceStatus(self)
+        ttime.sleep(0.1)
         self.erase_start.put(1)
-        pb4.do0.enable.put(1) # Workaround
+        #pb4.do0.enable.put(1) # Workaround
         return self._status
 
     def _acquiring_changed(self, value=None, old_value=None, **kwargs):
@@ -129,9 +149,9 @@ class XIA(Device):
             return
         if (old_value == 1) and (value == 0):
             # 'acquiring' has flipped from 'Acquiring' to 'Done'.
-            pb4.do0.enable.put(0) # Workaround
+            #pb4.do0.enable.put(0) # Workaround
             self._status._finished()
            
 
 xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1') #XIA('dxpXMAP:', name='xia1')
-xia1.read_attrs = ['graph1', 'graph2', 'graph3', 'graph4']
+xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4']

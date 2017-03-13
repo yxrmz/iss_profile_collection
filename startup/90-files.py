@@ -168,6 +168,102 @@ def save_mca_to_file(filename, path = '/GPFS/xf08id/xia_files/', mcas = [xia1.mc
     arrays = np.array(arrays).transpose()
     np.savetxt("{}{}.txt".format(path, filename), arrays, fmt = "%d", header = header)
 
+def parse_step_scan(set_name, roi_start, roi_end, path = '/GPFS/xf08id/xia_files/'):
+    det_channels = []
+
+    energies, i0_values = np.loadtxt("{}{}-{}".format(path, set_name, "i0")).transpose()
+    det_channels.append(energies)
+    det_channels.append(i0_values - pba1.adc7.offset.value)
+
+    for i in range(4):
+        cur_det = np.loadtxt("{}{}-{}".format(path, set_name, i + 1))
+        cur_det_roi = [];
+        for i in cur_det:
+            cur_det_roi.append(np.sum(i[roi_start:roi_end + 1]))
+        det_channels.append(cur_det_roi)
+
+    det_channels.append(np.array(det_channels[2]) + np.array(det_channels[3]) + np.array(det_channels[4]) + np.array(det_channels[5]))
+    det_channels = np.array(det_channels).transpose()
+    np.savetxt("{}{}-parsed.txt".format(path, set_name), det_channels)
+    return np.array(det_channels)
+
+def gen_xia_comments(uid):
+    info = db[uid]
+    year = info['start']['year']
+    cycle = info['start']['cycle']
+    saf = info['start']['SAF']
+    pi = info['start']['PI']
+    proposal = info['start']['PROPOSAL']
+    scan_id = info['start']['scan_id']
+    plan_name = info['start']['plan_name']
+    real_uid = info['start']['uid']
+    human_start_time = str(datetime.fromtimestamp(info['start']['time']).strftime('%m/%d/%Y  %H:%M:%S'))
+    human_stop_time = str(datetime.fromtimestamp(info['stop']['time']).strftime(' %m/%d/%Y  %H:%M:%S'))
+    human_duration = str(datetime.fromtimestamp(info['stop']['time'] - info['start']['time']).strftime('%M:%S'))
+
+    comments = '# Year: {}\n# Cycle: {}\n# SAF: {}\n# PI: {}\n# PROPOSAL: {}\n# Scan ID: {}\n# UID: {}\n# Plan name: {}\n# Start time: {}\n# Stop time: {}\n# Total time: {}\n#\n# '.format(year, cycle, saf, pi, proposal, scan_id, real_uid, plan_name, human_start_time, human_stop_time, human_duration)
+    return comments
+
+def plot_xia_step_scan(uid, ax = None):
+
+    table = db.get_table(db[uid])
+
+    xia_sum = table[xia1.mca1.roi0.sum.name] + \
+              table[xia1.mca2.roi0.sum.name] + \
+              table[xia1.mca3.roi0.sum.name] + \
+              table[xia1.mca4.roi0.sum.name]
+
+    i0_data = table[i0.volt.name]
+    hhm_data = table[hhm.theta.name]
+    energy_data = xray.encoder2energy(hhm_data * 360000)
+
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    ax.plot(energy_data, -(xia_sum / i0_data))
+
+def parse_xia_step_scan(uid, filename, path):
+    table = db.get_table(db[uid])
+    if path[-1] != '/':
+        path += '/'
+
+
+    xia_sum = table[xia1.mca1.roi0.sum.name] + \
+              table[xia1.mca2.roi0.sum.name] + \
+              table[xia1.mca3.roi0.sum.name] + \
+              table[xia1.mca4.roi0.sum.name]
+
+    xia_mca1 = table[xia1.mca1.array.name]
+    xia_mca2 = table[xia1.mca2.array.name]
+    xia_mca3 = table[xia1.mca3.array.name]
+    xia_mca4 = table[xia1.mca4.array.name]
+
+    i0_data = table[i0.volt.name] - table[i0.offset.name][1]
+    it_data = table[it.volt.name] - table[it.offset.name][1]
+    ir_data = table[ir.volt.name] - table[ir.offset.name][1]
+    iff_data = table[iff.volt.name] - table[iff.offset.name][1]
+    hhm_data = table[hhm.theta.name]
+    energy_grid = xray.encoder2energy(hhm_data * 360000)
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', path])
+        call(['chmod', '770', log_path])
+
+    if os.path.isfile('{}{}.txt'.format(path, filename)):
+        i = 2
+        while os.path.isfile('{}{}-{}.txt'.format(path, filename, i)):
+            i += 1
+        filename = '{}-{}'.format(filename, i)
+
+    matrix = np.array([energy_grid, i0_data, it_data, ir_data, iff_data, xia_sum]).transpose()
+    np.savetxt('{}{}.txt'.format(path, filename), 
+                                 matrix, 
+                                 fmt = '%12.6f %10.6f %10.6f %10.6f %10.6f %8d',
+                                 header = 'Energy (eV)   i0(V)     it(V)     ir(V)     iff(V)     XIA_SUM',
+                                 comments = gen_xia_comments(uid))
+
+    return '{}{}.txt'.format(path, filename)
 
 
 
