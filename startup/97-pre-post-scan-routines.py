@@ -16,7 +16,53 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
         call(['chmod', '770', path])
 
     return parser.export_trace(comment, filepath = path, uid = uuid)
-    
+
+def write_html_log2(uuid, figure, log_path='/GPFS/xf08id/User Data/')
+    # Get needed data from db
+    comment = db[uuid]['start']['comment']
+    year = db[uuid]['start']['year']
+    cycle = db[uuid]['start']['cycle']
+    proposal = db[uuid]['start']['proposal']
+
+    # Create dirs if they are not there
+    if log_path[-1] != '/':
+        log_path += '/'
+    log_path = '{}{}.{}.{}/'.format(log_path, year, cycle, proposal)
+    if(not os.path.exists(path)):
+        os.makedirs(log_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
+        call(['chmod', '770', log_path])
+
+    log_path = log_path + 'log/'
+    if(not os.path.exists(log_path)):
+        os.makedirs(log_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
+        call(['chmod', '770', log_path])
+
+    snapshots_path = log_path + 'snapshots/'
+    if(not os.path.exists(snapshots_path)):
+        os.makedirs(snapshots_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', snapshots_path])
+        call(['chmod', '770', snapshots_path])
+
+    file_path = 'snapshots/{}.png'.format(comment)
+    fn = log_path + file_path
+    repeat = 1
+    while(os.path.isfile(fn)):
+        repeat += 1
+        file_path = 'snapshots/{}-{}.png'.format(comment, repeat)
+        fn = log_path + file_path
+
+    # Save figure
+    figure.savefig(fn)
+
+    # Create or update the html file
+    relative_path = './' + file_path
+
+    #for i in db[-2]['descriptors']:
+    #    print(str(i['data_keys']) + '\n')
+
+
 
 def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', absorp=True, caller=''):
     print('Plotting Ion Chambers x Energy and generating log...')
