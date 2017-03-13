@@ -140,7 +140,7 @@ def step_list_plan(detectors, motor, positions_grid, comment = ''):
     >>> RE(step_list_plan([xia1, pba1.adc7], hhm.theta, Ni_positions_grid), LivePlot('xia1_mca1_roi0_sum', 'hhm_theta'))
     """
     
-    plan = bp.list_scan(detectors, motor, positions_grid, md={'comment': comment, 'plan_name': 'step_list_plan'})
+    plan = bp.list_scan(detectors, motor, list(positions_grid), md={'comment': comment, 'plan_name': 'step_list_plan'})
     
     flyers = []
     for det in detectors:

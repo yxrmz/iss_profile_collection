@@ -215,11 +215,12 @@ def plot_xia_step_scan(uid, ax = None):
 
     i0_data = table[i0.volt.name]
     hhm_data = table[hhm.theta.name]
+    energy_data = xray.encoder2energy(hhm_data * 360000)
 
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
-    ax.plot(hhm_data, -(xia_sum / i0_data))
+    ax.plot(energy_data, -(xia_sum / i0_data))
 
 def parse_xia_step_scan(uid, filename, path):
     table = db.get_table(db[uid])
@@ -251,14 +252,14 @@ def parse_xia_step_scan(uid, filename, path):
 
     if os.path.isfile('{}{}.txt'.format(path, filename)):
         i = 2
-        while os.path.isfile('{}{}-{}.txt'.format(path, filename, i):
+        while os.path.isfile('{}{}-{}.txt'.format(path, filename, i)):
             i += 1
         filename = '{}-{}'.format(filename, i)
 
     matrix = np.array([energy_grid, i0_data, it_data, ir_data, iff_data, xia_sum]).transpose()
     np.savetxt('{}{}.txt'.format(path, filename), 
                                  matrix, 
-                                 fmt = '%12.6f %10.6f %10.6f %10.6f %10.6f %8d'
+                                 fmt = '%12.6f %10.6f %10.6f %10.6f %10.6f %8d',
                                  header = 'Energy (eV)   i0(V)     it(V)     ir(V)     iff(V)     XIA_SUM',
                                  comments = gen_xia_comments(uid))
 
