@@ -17,18 +17,19 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 
     return parser.export_trace(comment, filepath = path, uid = uuid)
 
-def write_html_log2(uuid, figure, log_path='/GPFS/xf08id/User Data/')
+def write_html_log2(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Get needed data from db
+    uuid = db[uuid]['start']['uid']
     comment = db[uuid]['start']['comment']
     year = db[uuid]['start']['year']
     cycle = db[uuid]['start']['cycle']
-    proposal = db[uuid]['start']['proposal']
+    proposal = db[uuid]['start']['PROPOSAL']
 
     # Create dirs if they are not there
     if log_path[-1] != '/':
         log_path += '/'
     log_path = '{}{}.{}.{}/'.format(log_path, year, cycle, proposal)
-    if(not os.path.exists(path)):
+    if(not os.path.exists(log_path)):
         os.makedirs(log_path)
         call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
         call(['chmod', '770', log_path])
@@ -55,12 +56,61 @@ def write_html_log2(uuid, figure, log_path='/GPFS/xf08id/User Data/')
 
     # Save figure
     figure.savefig(fn)
+    call(['setfacl', '-m', 'g:iss-staff:rw', fn])
+    call(['chmod', '660', fn])
 
     # Create or update the html file
     relative_path = './' + file_path
+    
+    start_timestamp = db[uuid]['start']['time']
+    stop_timestamp = db[uuid]['stop']['time']
+    time_stamp_start='<p><b> Scan start: </b> {} </p>\n'.format(datetime.fromtimestamp(start_timestamp).strftime('%m/%d/%Y    %H:%M:%S'))
+    time_stamp='<p><b> Scan complete: </b> {} </p>\n'.format(datetime.fromtimestamp(stop_timestamp).strftime('%m/%d/%Y    %H:%M:%S'))
+    time_total='<p><b> Total time: </b> {} </p>\n'.format(datetime.fromtimestamp(stop_timestamp - start_timestamp).strftime('%M:%S'))
+    uuid_html='<p><b> Scan ID: </b> {} </p>\n'.format(uuid)
 
-    #for i in db[-2]['descriptors']:
-    #    print(str(i['data_keys']) + '\n')
+    filenames = {}
+    for i in db[uuid]['descriptors']:
+        if 'filename' in i['data_keys'][i['name']]:
+            name = i['name']
+            if 'devname' in i['data_keys'][i['name']]:
+                name = i['data_keys'][i['name']]['devname']
+            filenames[name] = i['data_keys'][i['name']]['filename']
+    
+    fn_html = '<p><b> Files: </b></p>\n<ul>\n'
+    for key in filenames.keys():
+        fn_html += '  <li><b>{}:</b> {}</ln>\n'.format(key, filenames[key])
+    fn_html += '</ul>\n'
+    
+    image = '<img src="{}" alt="{}" height="447" width="610">\n'.format(fn, comment)
+
+    if(not os.path.isfile(log_path + 'log.html')):
+        create_file = open(log_path + 'log.html', "w")
+        create_file.write('<html> <body>\n</body> </html>')
+        create_file.close()
+        call(['setfacl', '-m', 'g:iss-staff:rw', log_path + 'log.html'])
+        call(['chmod', '660', log_path + 'log.html'])
+
+    text_file = open(log_path + 'log.html', "r")
+    lines = text_file.readlines()
+    text_file.close()
+
+    text_file = open(log_path + 'log.html', "w")
+
+    for indx,line in enumerate(lines):
+        if indx is 1:
+            text_file.write('<header><h2> {} </h2></header>\n'.format(comment))
+            text_file.write(uuid_html)
+            text_file.write(fn_html)
+            text_file.write(time_stamp_start)
+            text_file.write(time_stamp)
+            text_file.write(time_total)
+            text_file.write(image)
+            text_file.write('<hr>\n\n')
+        text_file.write(line)
+    text_file.close()
+        
+    
 
 
 
