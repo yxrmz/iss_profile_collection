@@ -61,6 +61,7 @@ class Encoder(Device):
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     # The '$' in the PV allows us to write 40 chars instead of 20.
     filepath = Cpt(EpicsSignal, '}ID:File.VAL$', string=True)
+    dev_name = Cpt(EpicsSignal, '}DevName')
 
     filter_dy = Cpt(EpicsSignal, '}Fltr:dY-SP')
     filter_dt = Cpt(EpicsSignal, '}Fltr:dT-SP')
@@ -156,7 +157,11 @@ class EncoderFS(Encoder):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 'source': 'pizzabox-enc-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
+                     {'filename': self._full_path, 
+                      'devname': self.dev_name.value,
+                      'source': 'pizzabox-enc-file', 
+                      'external': 'FILESTORE:', 
+                      'shape': [1024, 5],
                       'dtype': 'array'}}}
 
 
@@ -185,6 +190,7 @@ class DigitalInput(Device):
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     # The '$' in the PV allows us to write 40 chars instead of 20.
     filepath = Cpt(EpicsSignal, '}ID:File.VAL$', string=True)
+    dev_name = Cpt(EpicsSignal, '}DevName')
 
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
@@ -274,7 +280,11 @@ class DIFS(DigitalInput):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 'source': 'pizzabox-di-file', 'external': 'FILESTORE:', 'shape': [1024, 5],
+                     {'filename': self._full_path, 
+                      'devname': self.dev_name.value,
+                      'source': 'pizzabox-di-file', 
+                      'external': 'FILESTORE:', 
+                      'shape': [1024, 5],
                       'dtype': 'array'}}}
 
 class PizzaBoxFS(Device):
