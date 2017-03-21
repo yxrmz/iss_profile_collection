@@ -39,7 +39,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, xia_step_scan, get_o
                                  shutter, 
                                  det_dict,
                                  motors_list,
-                                 general_scan)
+                                 general_scan,
+                                 write_html_log = write_html_log2)
 
 def xlive():
     xlive_gui.show()

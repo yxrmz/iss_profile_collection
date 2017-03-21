@@ -193,11 +193,11 @@ def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwargs):
     if (prepare_traj == True):
         RE(prep_traj_plan())
     uid, = RE(execute_xia_trajectory(comment)) # CHECK FILENAME (We need to know exactly the next filename)
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid, '', absorp
 
 
 def tscanxia_N(comment, num):
