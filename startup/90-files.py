@@ -92,6 +92,7 @@ def load_flu_parser(uid):
 		else:
 		    encoder_file = i['data_keys'][i['name']]['filename']
 		
+	print(check, len(run['descriptors']))
 	if check != len(run['descriptors']):		
 		di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
 		i0_file = run['descriptors'][1]['data_keys']['pba1_adc7']['filename']
@@ -107,11 +108,17 @@ def load_flu_parser(uid):
 			ion_offset4 = run['start']['pba1_adc6 offset']
 	di_file = run['descriptors'][0]['data_keys']['pb4_di']['filename']
 	di_file = di_file[len(di_file)-9:len(di_file)]
+	print(di_file)
 	i0_file = i0_file[len(i0_file)-9:len(i0_file)]
+	print(i0_file)
 	ir_file = ir_file[len(ir_file)-9:len(ir_file)]
+	print(ir_file)
 	it_file = it_file[len(it_file)-9:len(it_file)]
+	print(it_file)
 	encoder_file = encoder_file[len(encoder_file)-9:len(encoder_file)]
+	print(encoder_file)
 	iff_file = iff_file[len(iff_file)-9:len(iff_file)]
+	print(iff_file)
 
 	if(xas_flu.encoder_file != encoder_file or xas_flu.i0_file != i0_file or xas_flu.it_file != it_file or xas_flu.ir_file != ir_file or xas_flu.if_file != iff_file or xas_flu.trig_file != di_file):
 		print('Parsing flu files...')

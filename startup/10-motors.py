@@ -150,3 +150,11 @@ class SampleXY(Device):
 samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
 
 
+class Slits(Device):
+    v_gap = Cpt(EpicsMotor, '-Ax:V-GAP}Mtr')
+    v_pos = Cpt(EpicsMotor, '-Ax:V-POS}Mtr')
+    hor_in = Cpt(EpicsMotor, '-Ax:XI}Mtr')
+    hor_out = Cpt(EpicsMotor, '-Ax:XO}Mtr')
+
+slits = Slits('XF:08IDB-OP{Slt', name='slits')
+

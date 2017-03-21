@@ -388,11 +388,16 @@ def execute_xia_trajectory(comment, **metadata):
             yield from bp.sleep(.05)
        
         yield from shutter.open_plan()
+        yield from bp.sleep(.5)
         yield from xia1.start_mapping_scan()
+        yield from bp.sleep(.5)
+
         # this must be a float
         yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
+        yield from bp.sleep(.5)
         # this must be a string
         yield from bp.abs_set(hhm.start_trajectory, "1", wait=True)
+        yield from bp.sleep(.5)
 		
 		
         def poll_the_traj_plan():

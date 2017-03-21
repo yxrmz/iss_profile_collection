@@ -15,7 +15,11 @@ det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],
                   'xia1_mca3_roi0_sum', 'xia1_mca3_roi1_sum', 
                   'xia1_mca4_roi0_sum', 'xia1_mca4_roi1_sum', ]}
 
-motors_list = [samplexy.x,
+motors_list = [slits.v_gap,
+               slits.v_pos,
+               slits.hor_in,
+               slits.hor_out,
+               samplexy.x,
                samplexy.y,
                hhm.theta,
                hhm.y,
