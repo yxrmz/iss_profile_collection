@@ -2,7 +2,7 @@ import inspect
 import bluesky.plans as bp
 import os
 
-def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True, **kwargs):
+def tscan(comment:str, prepare_traj:bool=True, **kwargs):
     """
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller
 
@@ -41,13 +41,13 @@ def tscan(comment:str, prepare_traj:bool=True, absorp:bool=True, **kwargs):
     print(uid)
 
     # Check if tscan was called by the GUI
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
 
-def tscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, **kwargs):
+def tscan_plan(comment:str, prepare_traj:bool=True, **kwargs):
     if prepare_traj:
         yield from prep_traj_plan()
     #uid = (yield from execute_trajectory(comment))
@@ -55,14 +55,14 @@ def tscan_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, **kwargs):
     uid = db[-1]['start']['uid']
 
     # Check if tscan was called by the GUI
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
     
 
-def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan_N(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     """
     Trajectory Scan N - Runs the monochromator along the trajectory that is previously loaded in the controller N times
 
@@ -107,15 +107,15 @@ def tscan_N(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=
         if (prepare_traj == True):
             RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        interp_filename = write_html_log(uid, comment_n, absorp=absorp, caller=calframe[1][3])
+        #curframe = inspect.currentframe()
+        #calframe = inspect.getouterframes(curframe, 2)
+        #interp_filename = write_html_log(uid, comment_n, absorp=absorp, caller=calframe[1][3])
         time.sleep(delay)
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
     
 
-def tscan_N_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     for indx in range(0, n_cycles): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
@@ -126,38 +126,38 @@ def tscan_N_plan(comment:str, prepare_traj:bool=True, absorp:bool=True, n_cycles
         uid = db[-1]['start']['uid']
 			
         # Check if tscan was called by the GUI
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        interp_filename = write_html_log(uid, comment_n, absorp=absorp, caller=calframe[1][3])
+        #curframe = inspect.currentframe()
+        #calframe = inspect.getouterframes(curframe, 2)
+        #interp_filename = write_html_log(uid, comment_n, absorp=absorp, caller=calframe[1][3])
         yield from bp.sleep(delay)
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
 
 
-def tscan_Rrep(comment:str, prepare_traj:bool=True, absorp:bool=True, **kwargs):
+def tscan_Rrep(comment:str, prepare_traj:bool=True, **kwargs):
     if (prepare_traj == True):
         RE(prep_traj_plan())
 
     uid, = RE(execute_trajectory(comment))
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    uid, interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #uid, interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
 
 
-def tloopscan(comment:str, prepare_traj:bool=True, absorp:bool=True, **kwargs):
+def tloopscan(comment:str, prepare_traj:bool=True, **kwargs):
     if (prepare_traj == True):
         RE(prep_traj_plan())
     uid, = RE(execute_loop_trajectory(comment))
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
 
 
-def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwargs):
+def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
     """
     Trajectory Scan Xia - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA
 
@@ -197,7 +197,7 @@ def tscanxia(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwargs):
     #calframe = inspect.getouterframes(curframe, 2)
     #interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, '', absorp
+    return uid
 
 
 def tscanxia_N(comment, num):
@@ -237,7 +237,7 @@ def tscanxia_N(comment, num):
         np.savetxt(current_filepath[:-4] + '-parsed.txt', np.array([ts, energy_interp, i0_interp, it_interp, iff_interp, ir_interp, mca_sum]).transpose(), header='time    energy    i0    it    iff    ir    XIA_SUM', fmt = '%f %f %f %f %f %f %d')
 
 
-def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwargs):
+def tscanxia_plan(comment:str, prepare_traj:bool=True, **kwargs):
     if prepare_traj:
         yield from prep_traj_plan()
     #uid = (yield from execute_xia_trajectory(comment))
@@ -245,11 +245,11 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, absorp:bool=False, **kwar
     uid = db[-1]['start']['uid']
 	
 	# Check if tscan was called by the GUI
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #interp_filename = write_html_log(uid, comment, absorp=absorp, caller=calframe[1][3])
     print('Done!')
-    return uid, interp_filename, absorp
+    return uid
 
 
 def get_offsets(num:int = 10, **kwargs):
@@ -368,7 +368,7 @@ def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:
     plot_xia_step_scan(uid, ax=ax) 
 
     print('Done!')
-    return uid, filename, 'xia_step_scan'
+    return uid
 
     
 
