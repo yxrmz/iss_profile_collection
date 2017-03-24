@@ -291,10 +291,13 @@ def get_offsets(num:int = 10, **kwargs):
     it_off = np.mean(it_array[1:num])
     ir_off = np.mean(ir_array[1:num])
     iff_off = np.mean(iff_array[1:num])
-    pba1.adc7.offset.put(i0_off)
-    pba1.adc1.offset.put(it_off)
-    pba2.adc6.offset.put(ir_off)
-    pba1.adc6.offset.put(iff_off)
+
+    if 'dummy_read' not in kwargs:
+        print('Updating values...')
+        pba1.adc7.offset.put(i0_off)
+        pba1.adc1.offset.put(it_off)
+        pba2.adc6.offset.put(ir_off)
+        pba1.adc6.offset.put(iff_off)
 
     print('{}\nMean (i0) = {}'.format(i0_array, i0_off))
     print('{}\nMean (it) = {}'.format(it_array, it_off))
@@ -306,10 +309,32 @@ def get_offsets(num:int = 10, **kwargs):
     pba1.adc1.averaging_points.put(aver3)
     pba1.adc6.averaging_points.put(aver4)
     
-    os.remove(db[uid]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
-    os.remove(db[uid]['descriptors'][1]['data_keys']['pba2_adc6']['filename'])
-    os.remove(db[uid]['descriptors'][2]['data_keys']['pba1_adc1']['filename'])
-    os.remove(db[uid]['descriptors'][3]['data_keys']['pba1_adc6']['filename'])
+    run = db[uid]
+    for i in run['descriptors']:
+        if i['name'] != 'primary':
+            os.remove(i['data_keys'][i['name']]['filename'])
+    #os.remove(db[uid]['descriptors'][1]['data_keys']['pba2_adc6']['filename'])
+    #os.remove(db[uid]['descriptors'][2]['data_keys']['pba1_adc1']['filename'])
+    #os.remove(db[uid]['descriptors'][3]['data_keys']['pba1_adc6']['filename'])
+
+
+    if i0_off > -0.04:
+        print('Increase i0 gain by 10^2')
+    if it_off > -0.04:
+        print('Increase it gain by 10^2')
+    if ir_off > -0.04:
+        print('Increase ir gain by 10^2')
+    if iff_off > -0.04:
+        print('Increase iff gain by 10^2')
+
+    if i0_off <= -0.04 and i0_off > -0.4:
+        print('Increase i0 gain by 10^1')
+    if it_off <= 0.04 and it_off > 0.4:
+        print('Increase it gain by 10^1')
+    if ir_off <= 0.04 and ir_off > 0.4:
+        print('Increase ir gain by 10^1')
+    if iff_off <= 0.04 and iff_off > 0.4:
+        print('Increase iff gain by 10^1')
 
     print(uid)
     print('Done!')
