@@ -33,7 +33,7 @@ motors_list = [slits.v_gap,
                hrm.table_pitch,
                hrm.y]
 
-xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, xia_step_scan, get_offsets], 
+xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, xia_step_scan, get_offsets], 
                                  [tune_mono_pitch , tune_mono_y], 
                                  prep_traj_plan, 
                                  RE, 
@@ -43,7 +43,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, xia_step_scan, get_o
                                  shutter, 
                                  det_dict,
                                  motors_list,
-                                 general_scan)
+                                 general_scan,
+                                 write_html_log = write_html_log2)
 
 def xlive():
     xlive_gui.show()

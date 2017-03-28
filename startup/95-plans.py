@@ -373,7 +373,11 @@ def execute_xia_trajectory(comment, **metadata):
         xia1.netcdf_filename.put(comment) #yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#
         next_file_number = xia1.netcdf_filenumber_rb.value #(yield from bp.read(xia1.netcdf_filenumber_rb))#
 
-        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        xia_rois = {}
+        for i in range(1, 5):
+            xia_rois[eval('xia1.mca{}.roi0.high.name'.format(i))] = eval('xia1.mca{}.roi0.high.value'.format(i)) * 20 / 2048
+            xia_rois[eval('xia1.mca{}.roi0.low.name'.format(i))] = eval('xia1.mca{}.roi0.low.value'.format(i)) * 20 / 2048
+        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), 'xia_rois':xia_rois, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
