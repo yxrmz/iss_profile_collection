@@ -180,42 +180,15 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
     return [uid]
 
 
-def tscanxia_N(comment, num):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    fig2 = plt.figure()
-    ax2 = fig2.add_subplot(111)
+def tscanxia_N(comment:str, n_cycles:int=1, **kwargs):
+    uids = []
 
-    for i in range(num):
-        current_uid, current_filepath, absorp = tscanxia(comment + '_' + str(i), prepare_traj = True, absorp = False)
-        xas_flu.loadInterpFile(current_filepath)
-        xia_filename = db[current_uid]['start']['xia_filename']
-        xia_filepath = 'smb://elistavitski-ni/epics/{}'.format(xia_filename)
-        xia_destfilepath = '/GPFS/xf08id/xia_files/{}'.format(xia_filename)
-        smbclient = xiaparser.smbclient(xia_filepath, xia_destfilepath)
-        smbclient.copy()
-        xia_parser.parse(xia_filename, '/GPFS/xf08id/xia_files/')
-        xia_parsed_filepath = current_filepath[0 : current_filepath.rfind('/') + 1]
-        xia_parser.export_files(dest_filepath = xia_parsed_filepath, all_in_one = True)
+    for i in range(n_cycles):
+        RE(prep_traj_plan())
+        uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
+        uids.append(uid)
 
-        length = min(len(xia_parser.exporting_array1), len(xas_flu.energy_interp))
-
-        mca1 = xia_parser.parse_roi(range(0, length), 1, 6.7, 6.9)
-        mca2 = xia_parser.parse_roi(range(0, length), 2, 6.7, 6.9)
-        mca3 = xia_parser.parse_roi(range(0, length), 3, 6.7, 6.9)
-        mca4 = xia_parser.parse_roi(range(0, length), 4, 6.7, 6.9)
-        mca_sum = mca1 + mca2 + mca3 + mca4
-        ts = xas_flu.energy_interp[:,0]
-        energy_interp = xas_flu.energy_interp[:,1]
-        i0_interp = xas_flu.i0_interp[:,1]
-        it_interp = xas_flu.it_interp[:,1]
-        ir_interp = xas_flu.ir_interp[:,1]
-        iff_interp = xas_flu.iff_interp[:,1]
-
-        ax.plot(energy_interp, -(mca_sum/i0_interp))
-
-        np.savetxt(current_filepath[:-4] + '-parsed.txt', np.array([ts, energy_interp, i0_interp, it_interp, iff_interp, ir_interp, mca_sum]).transpose(), header='time    energy    i0    it    iff    ir    XIA_SUM', fmt = '%f %f %f %f %f %f %d')
-
+    return uids
 
 def tscanxia_plan(comment:str, prepare_traj:bool=True, **kwargs):
     if prepare_traj:
