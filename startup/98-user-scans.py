@@ -248,10 +248,10 @@ def get_offsets(num:int = 10, **kwargs):
         pba2.adc6.offset.put(ir_off)
         pba1.adc6.offset.put(iff_off)
 
-    print('{}\nMean (i0) = {}'.format(i0_array, i0_off))
-    print('{}\nMean (it) = {}'.format(it_array, it_off))
-    print('{}\nMean (ir) = {}'.format(ir_array, ir_off))
-    print('{}\nMean (ir) = {}'.format(iff_array, iff_off))
+        print('{}\nMean (i0) = {}'.format(i0_array, i0_off))
+        print('{}\nMean (it) = {}'.format(it_array, it_off))
+        print('{}\nMean (ir) = {}'.format(ir_array, ir_off))
+        print('{}\nMean (iff) = {}'.format(iff_array, iff_off))
 
     pba1.adc7.averaging_points.put(aver1)
     pba2.adc6.averaging_points.put(aver2)
@@ -266,28 +266,35 @@ def get_offsets(num:int = 10, **kwargs):
     #os.remove(db[uid]['descriptors'][2]['data_keys']['pba1_adc1']['filename'])
     #os.remove(db[uid]['descriptors'][3]['data_keys']['pba1_adc6']['filename'])
 
+    if 'dummy_read' in kwargs:
+        print('Mean (i0) = {}'.format(i0_off))
+        print('Mean (it) = {}'.format(it_off))
+        print('Mean (ir) = {}'.format(ir_off))
+        print('Mean (iff) = {}\n'.format(iff_off))
 
-    if i0_off > -0.04:
-        print('Increase i0 gain by 10^2')
-    if it_off > -0.04:
-        print('Increase it gain by 10^2')
-    if ir_off > -0.04:
-        print('Increase ir gain by 10^2')
-    if iff_off > -0.04:
-        print('Increase iff gain by 10^2')
+        if i0_off > -0.04:
+            print('Increase i0 gain by 10^2')
+        elif i0_off <= -0.04 and i0_off > -0.4:
+            print('Increase i0 gain by 10^1')
 
-    if i0_off <= -0.04 and i0_off > -0.4:
-        print('Increase i0 gain by 10^1')
-    if it_off <= 0.04 and it_off > 0.4:
-        print('Increase it gain by 10^1')
-    if ir_off <= 0.04 and ir_off > 0.4:
-        print('Increase ir gain by 10^1')
-    if iff_off <= 0.04 and iff_off > 0.4:
-        print('Increase iff gain by 10^1')
+        if it_off > -0.04:
+            print('Increase it gain by 10^2')
+        elif it_off <= -0.04 and it_off > -0.4:
+            print('Increase it gain by 10^1')
+
+        if ir_off > -0.04:
+            print('Increase ir gain by 10^2')
+        elif ir_off <= -0.04 and ir_off > -0.4:
+            print('Increase ir gain by 10^1')
+
+        if iff_off > -0.04:
+            print('Increase iff gain by 10^2')
+        elif iff_off <= -0.04 and iff_off > -0.4:
+            print('Increase iff gain by 10^1')
 
     print(uid)
     print('Done!')
-    return uid, '', ''
+    return [uid]
 
 def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, **kwargs):
     if type(detector) == str:
