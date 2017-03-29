@@ -54,7 +54,7 @@ def tscan_plan(comment:str, prepare_traj:bool=True, **kwargs):
     return [uid]
     
 
-def tscan_N(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
     Trajectory Scan N - Runs the monochromator along the trajectory that is previously loaded in the controller N times
 
@@ -180,13 +180,14 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
     return [uid]
 
 
-def tscanxia_N(comment:str, n_cycles:int=1, **kwargs):
+def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
 
     for i in range(n_cycles):
         RE(prep_traj_plan())
         uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
         uids.append(uid)
+        time.sleep(delay)
 
     return uids
 
