@@ -158,3 +158,8 @@ class Slits(Device):
 
 slits = Slits('XF:08IDB-OP{Slt', name='slits')
 
+class HuberStage(Device):
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
+
+huber_stage = HuberStage('XF:08IDB-OP{Analyzer', name='huber_stage')
