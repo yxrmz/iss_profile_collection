@@ -31,7 +31,9 @@ motors_list = [slits.v_gap,
                hrm.mir_pitch,
                hrm.hor_translation,
                hrm.table_pitch,
-               hrm.y]
+               hrm.y,
+               huber_stage.y,
+               huber_stage.pitch]
 
 xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, get_offsets], 
                                  [tune_mono_pitch , tune_mono_y], 
