@@ -41,7 +41,7 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, get_offs
                                  RE, 
                                  db, 
                                  hhm, 
-                                 {'xia':xia1, 'pba1':pba1, 'pba2':pba2, 'pb9':pb9}, 
+                                 {'xia':xia1, 'pba1':pba1, 'pba2':pba2, 'pb4':pb4, 'pb9':pb9}, 
                                  shutter, 
                                  det_dict,
                                  motors_list,
