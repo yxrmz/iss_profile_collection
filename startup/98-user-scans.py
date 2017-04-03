@@ -97,8 +97,7 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     for indx in range(0, n_cycles): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
-        if (prepare_traj == True):
-            RE(prep_traj_plan())
+        RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
         uids.append(uid)
         time.sleep(delay)
@@ -359,7 +358,7 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
 
-def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, **kwargs):
+def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
 
     '''
     collect EXAFS scans on given sample locations repeatedly.
@@ -387,6 +386,8 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
         print('xypolist and samplelist must have the same length')
         raise
 
+    gen_parser = xasdata.XASdataGeneric(db)
+    uids = []
     for runnum in range(numrepeat):
         print('current run', runnum)
         print('current run + run start', runnum+runnum_start)
@@ -403,10 +404,55 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
             if testing is not True:
                 if simulation is not True:
                     tscan_comment = samplelist[i]+'_'+str(runnum+runnum_start).zfill(3)
-                    tscan(tscan_comment)
+                    if usexia is False:
+                        uid = tscan(tscan_comment)[0]
+                    else:
+                        uid = tscanxia(tscan_comment)[0]
 
             print('done taking the current scan')
 
+            print('parsing the current scan')
+            current_filepath = '/GPFS/xf08id/User Data/{}.{}.{}/' \
+                               '{}.txt'.format(db[uid]['start']['year'],
+                                               db[uid]['start']['cycle'],
+                                               db[uid]['start']['PROPOSAL'],
+                                               db[uid]['start']['comment'])
+    
+            gen_parser.load(uid)
+            key_base = 'i0'
+            if 'xia_filename' in db[uid]['start']:
+                 key_base = 'xia_trigger'
+            gen_parser.interpolate(key_base = key_base)
+    
+            if 'xia_filename' in db[uid]['start']:
+                # Parse xia
+                xia_filename = db[uid]['start']['xia_filename']
+                xia_filepath = 'smb://elistavitski-ni/epics/{}'.format(xia_filename)
+                xia_destfilepath = '/GPFS/xf08id/xia_files/{}'.format(xia_filename)
+                smbclient = xiaparser.smbclient(xia_filepath, xia_destfilepath)
+                smbclient.copy()
+                xia_parser.parse(xia_filename, '/GPFS/xf08id/xia_files/')
+                xia_parsed_filepath = current_filepath[0 : current_filepath.rfind('/') + 1]
+                xia_parser.export_files(dest_filepath = xia_parsed_filepath, all_in_one = True)
+    
+                length = min(len(xia_parser.exporting_array1), len(gen_parser.interp_arrays['energy']))
+    
+                mcas = []
+                if 'xia_rois' in db[uid]['start']:
+                    xia_rois = db[uid]['start']['xia_rois']
+                    for mca_number in range(1, 5):
+                        mcas.append(xia_parser.parse_roi(range(0, length), mca_number, xia_rois['xia1_mca{}_roi0_low'.format(mca_number)], xia_rois['xia1_mca{}_roi0_high'.format(mca_number)]))
+                    mca_sum = sum(mcas)
+                else:
+                    for mca_number in range(1, 5):
+                        mcas.append(xia_parser.parse_roi(range(0, length), mca_number, 6.7, 6.9))
+                    mca_sum = sum(mcas)
+    
+                gen_parser.interp_arrays['XIA_SUM'] = np.array([gen_parser.interp_arrays['energy'][:, 0], mca_sum]).transpose()
+    
+                gen_parser.export_trace(current_filepath[:-4], '')
+
         print('done with the current run')
+
     print('done with all the runs! congratulations!')
 
