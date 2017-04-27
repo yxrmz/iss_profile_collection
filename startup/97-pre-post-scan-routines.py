@@ -17,7 +17,7 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 
     return parser.export_trace(comment, filepath = path, uid = uuid)
 
-def write_html_log2(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
+def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Get needed data from db
     uuid = db[uuid]['start']['uid']
     comment = db[uuid]['start']['comment']
@@ -109,111 +109,9 @@ def write_html_log2(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
             text_file.write('<hr>\n\n')
         text_file.write(line)
     text_file.close()
-        
-    
 
 
 
-def write_html_log(uuid='', comment='', log_path='/GPFS/xf08id/User Data/', absorp=True, caller=''):
-    print('Plotting Ion Chambers x Energy and generating log...')
-
-    if(absorp):
-        parser = xas_abs
-        load_abs_parser(uuid)
-    else:
-        parser = xas_flu
-        load_flu_parser(uuid)
-        xia_file = db[uuid]['start']['xia_filename']
-        di_file = parser.trig_file
-
-    encoder_file = parser.encoder_file
-    i0_file = parser.i0_file
-    it_file = parser.it_file
-    ir_file = parser.ir_file
-    iff_file = parser.iff_file
-
-    interp_filename = create_user_folder(uuid, comment, parser)
-
-    # Creating folder /GPFS/xf08id/User Data/[year].[cycle].[proposal]/ if it doesn't exist
-    log_path = log_path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
-    if(not os.path.exists(log_path)):
-        os.makedirs(log_path)
-        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
-        call(['chmod', '770', log_path])
-
-    # Creating folder /GPFS/xf08id/User Data/[year].[cycle].[proposal]/log if it doesn't exist
-    log_path = log_path + 'log/'
-    if(not os.path.exists(log_path)):
-        os.makedirs(log_path)
-        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
-        call(['chmod', '770', log_path])
-
-    start_timestamp = db[uuid]['start']['time']
-    stop_timestamp = db[uuid]['stop']['time']
-
-    snapshots_path = log_path + 'snapshots/'
-    if(not os.path.exists(snapshots_path)):
-        os.makedirs(snapshots_path)
-        call(['setfacl', '-m', 'g:iss-staff:rwx', snapshots_path])
-        call(['chmod', '770', snapshots_path])
-
-    file_path = 'snapshots/' + comment + '.png'
-    fn = log_path + file_path
-    repeat = 1
-    while(os.path.isfile(fn)):
-        repeat += 1
-        file_path = 'snapshots/' + comment + '-' + str(repeat) + '.png'
-        fn = log_path + file_path
-
-    # Check if caller is the GUI, if not, plot graph outside
-    if (caller != 'run_scan'):
-        plt.clf()
-        parser.plot()
-        plt.show()
-        plt.savefig(fn)
-        #plt.close()
-
-    fn = './' + file_path
-
-    time_stamp_start=('<p><b> Scan start: </b> ' + str(datetime.fromtimestamp(start_timestamp).strftime('%m/%d/%Y    %H:%M:%S')) + '</p>')
-    time_stamp=('<p><b> Scan complete: </b> ' + str(datetime.fromtimestamp(stop_timestamp).strftime('%m/%d/%Y    %H:%M:%S')) + '</p>')
-    time_total=('<p><b> Total time: </b> ' + str(datetime.fromtimestamp(stop_timestamp - start_timestamp).strftime('%M:%S')) + '</p>')
-    uuid=('<p><b> Scan ID: </b>'+ str(uuid))
-    
-    if(absorp):
-        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + i0_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + it_file + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ir_file + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + iff_file + '</li>\n</ul>')
-    else:
-        files= ('<ul>\n  <li><b>Encoder file: </b>' + encoder_file + '</li>\n  <li><b>PBA2_ADC7 (i0) file: </b>' + i0_file + '</li>\n  <li><b>PBA2_ADC6 (if) file: </b>' + it_file + '</li>\n  <li><b>PBA1_ADC1 (ir) file: </b>' + ir_file + '</li>\n  <li><b>PBA1_ADC6 (if) file: </b>' + iff_file + '</li>\n  <li><b>DI file: </b>' + di_file + '</li>\n  <li><b>XIA file: </b>' + xia_file + '</li>\n</ul>')
-
-    image=('<img src="'  + fn +  '" alt="' + comment + '" height="447" width="610">')
-
-    if(not os.path.isfile(log_path + 'log.html')):
-        create_file = open(log_path + 'log.html', "w")
-        create_file.write('<html> <body>\n</body> </html>')
-        create_file.close()
-        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path + 'log.html'])
-        call(['chmod', '660', log_path + 'log.html'])
-
-    text_file = open(log_path + 'log.html', "r")
-    lines = text_file.readlines()
-    text_file.close()
-
-    text_file_new = open(log_path + 'log.html', "w")
-
-    for indx,line in enumerate(lines):
-        if indx is 1:
-            text_file_new.write('<header><h2> ' + comment + ' </h2></header>\n')
-            text_file_new.write(str(uuid) + '\n')
-            text_file_new.write('<p><b> Files: </b></p>' + '\n')
-            text_file_new.write(files + '\n')
-            text_file_new.write(time_stamp_start + '\n')
-            text_file_new.write(time_stamp + '\n')
-            text_file_new.write(time_total + '\n')
-            text_file_new.write(image + '\n')
-            text_file_new.write('<hr>' + '\n\n')
-        text_file_new.write(line)
-
-    return interp_filename
 
 def tune_mono_pitch(scan_range, step, retries = 1, ax = None):
     aver=pba1.adc7.averaging_points.get()

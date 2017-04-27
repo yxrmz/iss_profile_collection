@@ -9,6 +9,7 @@ from ophyd.areadetector.base import ADComponent as ADCpt, EpicsSignalWithRBV
 from ophyd import DeviceStatus, set_and_wait
 from bluesky.examples import NullStatus
 import filestore.api as fs
+import signal
 #fs.api.register_handler('PIZZABOX_FILE', PizzaBoxHandler, overwrite=True)
 
 class BPM(ProsilicaDetector, SingleTrigger):
@@ -75,7 +76,7 @@ class Encoder(Device):
         self._ready_to_collect = False
         if self.connected:
             self.ignore_sel.put(1)
-            self.filter_dt.put(10000)
+            #self.filter_dt.put(10000)
             
 
 
@@ -343,10 +344,8 @@ class Adc(Device):
     #pos_array = Cpt(EpicsSignal, '}Cnt:Pos_Bin_')
     index_array = Cpt(EpicsSignal, '}Cnt:Index_Bin_')
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
-    sample_rate = Cpt(EpicsSignal, '}F:Sample-SP')
-    sample_rate_rbv = Cpt(EpicsSignal, '}F:Sample-I_')
-    enable_averaging = Cpt(EpicsSignal, '}Avrg-Sel')
-    enable_averaging_rbv = Cpt(EpicsSignal, '}Avrg-Sts')
+    sample_rate = Cpt(EpicsSignal,'}F:Sample-I_', write_pv='}F:Sample-SP')
+    enable_averaging = Cpt(EpicsSignal, '}Avrg-Sts', write_pv='}Avrg-Sel')
     averaging_points = Cpt(EpicsSignal, '}Avrg-SP')
     averaging_points_rbv = Cpt(EpicsSignal, '}GP-ADC:Reg0-RB_')
     volt_array = Cpt(EpicsSignal, '}V-I')
@@ -357,14 +356,29 @@ class Adc(Device):
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
     enable_rb = Cpt(EpicsSignal, '}Ena-Sts')
 
+    def timeout_handler(self, signum, frame):
+        print("{}.connected timeout".format(self.name))
+        raise Exception("end of time")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
-        if self.connected:
-            self.enable_sel.put(1)
-            #self.sample_rate.put(275) # Is 275 * 10ns a good sample rate?
-            self.enable_averaging.put(1)
-            #self.averaging_points.put("64")
+
+        signal.signal(signal.SIGALRM, self.timeout_handler)
+        signal.setitimer(signal.ITIMER_REAL, 2)
+        try:
+            while(self.connected == False):
+                pass
+            if self.connected:
+                self.enable_sel.put(1)
+                self.sample_rate.put(350)
+                self.enable_averaging.put(1)
+                if self.averaging_points.value == 0:
+                    self.averaging_points.put("1024")
+        except Exception as exc:
+            pass
+        signal.alarm(0)
+
 
 
 class AdcFS(Adc):
