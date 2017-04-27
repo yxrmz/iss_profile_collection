@@ -14,30 +14,6 @@ class MCA(Device):
     roi3 =              Cpt(ROI, '.R3')
     roi4 =              Cpt(ROI, '.R4')
     roi5 =              Cpt(ROI, '.R5')
-#    roi0_lo =           Cpt(EpicsSignal, '.R0LO')
-#    roi0_hi =           Cpt(EpicsSignal, '.R0HI')
-#    roi0_sum =          Cpt(EpicsSignal, '.R0')
-#    roi0_net =          Cpt(EpicsSignal, '.R0N')
-#    roi1_lo =           Cpt(EpicsSignal, '.R1LO')
-#    roi1_hi =           Cpt(EpicsSignal, '.R1HI')
-#    roi1_sum =          Cpt(EpicsSignal, '.R1')
-#    roi1_net =          Cpt(EpicsSignal, '.R1N')
-#    roi2_lo =           Cpt(EpicsSignal, '.R2LO')
-#    roi2_hi =           Cpt(EpicsSignal, '.R2HI')
-#    roi2_sum =          Cpt(EpicsSignal, '.R2')
-#    roi2_net =          Cpt(EpicsSignal, '.R2N')
-#    roi3_lo =           Cpt(EpicsSignal, '.R3LO')
-#    roi3_hi =           Cpt(EpicsSignal, '.R3HI')
-#    roi3_sum =          Cpt(EpicsSignal, '.R3')
-#    roi3_net =          Cpt(EpicsSignal, '.R3N')
-#    roi4_lo =           Cpt(EpicsSignal, '.R4LO')
-#    roi4_hi =           Cpt(EpicsSignal, '.R4HI')
-#    roi4_sum =          Cpt(EpicsSignal, '.R4')
-#    roi4_net =          Cpt(EpicsSignal, '.R4N')
-#    roi5_lo =           Cpt(EpicsSignal, '.R5LO')
-#    roi5_hi =           Cpt(EpicsSignal, '.R5HI')
-#    roi5_sum =          Cpt(EpicsSignal, '.R5')
-#    roi5_net =          Cpt(EpicsSignal, '.R5N')
             
 
 class XIA(Device):
@@ -89,6 +65,7 @@ class XIA(Device):
     netcdf_filenumber = Cpt(EpicsSignal, 'netCDF1:FileNumber')
     netcdf_filenumber_rb = Cpt(EpicsSignal, 'netCDF1:FileNumber_RBV')
 
+
     def start_mapping_scan(self):
         yield from bp.abs_set(self.collect_mode, 'MCA mapping', wait=True)
         #self.collect_mode.put('MCA mapping')
@@ -116,9 +93,14 @@ class XIA(Device):
         #self.capt_start_stop.put(0)
 
     def __init__(self, *args, **kwargs):
+        # link trigger to xia object
+        if 'input_trigger' in kwargs:
+            self.input_trigger = kwargs['input_trigger']#pb4.do0
+            del kwargs['input_trigger']
         super().__init__(*args, **kwargs)
         self.stage_sigs[self.mode] = 'Real time'
         self._status = None
+
 
     def goto_next_pixel(self):
         self.next_pixel.put(1)
@@ -153,5 +135,5 @@ class XIA(Device):
             self._status._finished()
            
 
-xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1') #XIA('dxpXMAP:', name='xia1')
+xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0) #XIA('dxpXMAP:', name='xia1')
 xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4']
