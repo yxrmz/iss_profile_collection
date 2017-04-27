@@ -163,3 +163,10 @@ class HuberStage(Device):
     pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
 
 huber_stage = HuberStage('XF:08IDB-OP{Analyzer', name='huber_stage')
+
+class XBIC(Device):
+    dac1 = Cpt(EpicsSignal, 'MC:XBIC}DAC1-I', write_pv='MC:XBIC}DAC1R-SP')#'Mono:HHM-Ax:P}Mtr')
+    dac2 = Cpt(EpicsSignal, 'MC:XBIC}DAC2-I', write_pv='MC:XBIC}DAC2R-SP')
+
+xbic = XBIC('XF:08IDB-OP{', name='xbic')
+
