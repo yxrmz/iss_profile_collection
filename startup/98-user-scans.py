@@ -35,7 +35,7 @@ def tscan(comment:str, prepare_traj:bool=True, **kwargs):
     :func:`tscan_N`
     """
 
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
     uid, = RE(execute_trajectory(comment))
     print(uid)
@@ -94,20 +94,20 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
 
     uids = []
-    for indx in range(0, n_cycles): 
+    for indx in range(int(n_cycles)): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
         uids.append(uid)
-        time.sleep(delay)
+        time.sleep(float(delay))
     print('Done!')
     return uids
     
 
 def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
-    for indx in range(0, n_cycles): 
+    for indx in range(int(n_cycles)): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         if prepare_traj:
@@ -117,13 +117,13 @@ def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:floa
         uid = db[-1]['start']['uid']
         uids.append(uid)
 			
-        yield from bp.sleep(delay)
+        yield from bp.sleep(float(delay))
     print('Done!')
     return uids
 
 
 def tscan_Rrep(comment:str, prepare_traj:bool=True, **kwargs):
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
 
     uid, = RE(execute_trajectory(comment))
@@ -132,7 +132,7 @@ def tscan_Rrep(comment:str, prepare_traj:bool=True, **kwargs):
 
 
 def tloopscan(comment:str, prepare_traj:bool=True, **kwargs):
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
     uid, = RE(execute_loop_trajectory(comment))
     print('Done!')
@@ -172,7 +172,7 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
     :func:`tscan`
     """
 
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
     uid, = RE(execute_xia_trajectory(comment))
     print('Done!')
@@ -182,11 +182,11 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
 def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
 
-    for i in range(n_cycles):
+    for i in range(int(n_cycles)):
         RE(prep_traj_plan())
         uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
         uids.append(uid)
-        time.sleep(delay)
+        time.sleep(float(delay))
 
     return uids
 
@@ -229,7 +229,7 @@ def get_offsets(num:int = 10, **kwargs):
         old_avers.append(adc.averaging_points.get())
         adc.averaging_points.put(15)
     
-    uid, = RE(get_offsets_plan(adcs, num = num))
+    uid, = RE(get_offsets_plan(adcs, num = int(num)))
 
     if 'dummy_read' not in kwargs:
         print('Updating values...')
@@ -240,7 +240,7 @@ def get_offsets(num:int = 10, **kwargs):
     for index, adc in enumerate(adcs):
         key = '{}_volt'.format(adc.name)
         array = df[key]
-        offset = np.mean(df[key][1:num])
+        offset = np.mean(df[key][1:int(num)])
 
         arrays.append(array)
         offsets.append(offset)
@@ -279,7 +279,7 @@ def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, **kwa
         motor = eval(motor)
 
     ax = kwargs.get('ax')
-    return RE(general_scan_plan([detector], motor, rel_start, rel_stop, num), LivePlot(det_plot_name, motor.name, ax=ax))
+    return RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
 
 
 def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
@@ -331,7 +331,7 @@ def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:
 def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
     if type(detectors) is not list:
         detectors = [detectors]
-    return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
+    return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, int(num)), LivePlot(detectors[0].volt.name, motor.name))
 
 def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
 
