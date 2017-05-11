@@ -1,7 +1,7 @@
 import bluesky as bs
 import bluesky.plans as bp
 import time as ttime
-import PyQt4.QtCore
+# import PyQt4.QtCore
 from isstools.conversions import xray
 
 

@@ -41,16 +41,16 @@ from bluesky.spec_api import *
 from bluesky.global_state import gs, abort, stop, resume
 # from databroker import (DataBroker as db, get_events, get_images,
 #                         get_table, get_fields, restream, process)
-import metadataclient.mds as mdc
+from metadataclient.mds import MDS
 
 # mds = MDS({'host':'xf08id-ca1.cs.nsls2.local', 
 #	   'database': 'datastore', 'port': 27017, 'timezone': 'US/Eastern'}, auth=False)
 
-db = Broker(mdc, FileStore({'host':'xf08id-ca1.cs.nsls2.local', 'port': 27017, 'database':'filestore'}))
+mds = MDS({'host': 'xf08id-ca1.cs.nsls2.local', 'port': 7770,'timezone': 'US/Eastern'})
+		  
 
-db.mds = mdc.MDS({'host': 'xf08id-ca1.cs.nsls2.local', 'port': 7770,
-		  'timezone': 'US/Eastern'})
-mds = db.mds
+db = Broker(mds, FileStore({'host':'xf08id-ca1.cs.nsls2.local', 'port': 27017, 'database':'filestore'}))
+
 
 print(mds.config)
 register_builtin_handlers(db.fs)
