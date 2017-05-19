@@ -222,7 +222,7 @@ def get_offsets(num:int = 10, **kwargs):
     :func:`tscan`
     """
 
-    adcs = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
 
     old_avers = []
     for adc in adcs:
