@@ -303,9 +303,16 @@ def prep_traj_plan(delay = 0.25):
 
 
 def execute_trajectory(comment, **metadata):
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'execute_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        md = {'plan_args': {}, 
+              'plan_name': 'execute_trajectory',
+              'experiment': 'transmission', 
+              'comment': comment, 
+              'trajectory_name': hhm.trajectory_name.value}
+        for flyer in flyers:
+            if hasattr(flyer, 'offset'):
+                md['{} offset'.format(flyer.name)] = flyer.offset.value
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
@@ -367,17 +374,25 @@ def execute_trajectory(comment, **metadata):
 
 
 def execute_xia_trajectory(comment, **metadata):
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
+    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
     def inner():
         # Setting the name of the file
         xia1.netcdf_filename.put(comment) #yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#
         next_file_number = xia1.netcdf_filenumber_rb.value #(yield from bp.read(xia1.netcdf_filenumber_rb))#
 
         xia_rois = {}
-        for i in range(1, 5):
-            xia_rois[eval('xia1.mca{}.roi0.high.name'.format(i))] = eval('xia1.mca{}.roi0.high.value'.format(i)) * 20 / 2048
-            xia_rois[eval('xia1.mca{}.roi0.low.name'.format(i))] = eval('xia1.mca{}.roi0.low.value'.format(i)) * 20 / 2048
-        md = {'plan_args': {}, 'plan_name': 'execute_xia_trajectory','experiment': 'fluorescence_sdd', 'comment': comment, 'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), 'xia_rois':xia_rois, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        for mca in xia1.read_attrs:
+            xia_rois[eval('xia1.{}.roi0.high.name'.format(mca))] = eval('xia1.{}.roi0.high.value'.format(mca)) * 20 / 2048
+            xia_rois[eval('xia1.{}.roi0.low.name'.format(mca))] = eval('xia1.{}.roi0.low.value'.format(mca)) * 20 / 2048
+        md = {'plan_args': {}, 
+              'plan_name': 'execute_xia_trajectory',
+              'experiment': 'fluorescence_sdd', 
+              'comment': comment, 
+              'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), 
+              'xia_rois':xia_rois, 'trajectory_name': hhm.trajectory_name.value}
+        for flyer in flyers:
+            if hasattr(flyer, 'offset'):
+                md['{} offset'.format(flyer.name)] = flyer.offset.value
         md.update(**metadata)
         yield from bp.open_run(md=md)
 

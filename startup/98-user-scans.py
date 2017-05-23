@@ -35,7 +35,7 @@ def tscan(comment:str, prepare_traj:bool=True, **kwargs):
     :func:`tscan_N`
     """
 
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
     uid, = RE(execute_trajectory(comment))
     print(uid)
@@ -94,20 +94,20 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
 
     uids = []
-    for indx in range(0, n_cycles): 
+    for indx in range(int(n_cycles)): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
         uids.append(uid)
-        time.sleep(delay)
+        time.sleep(float(delay))
     print('Done!')
     return uids
     
 
 def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
-    for indx in range(0, n_cycles): 
+    for indx in range(int(n_cycles)): 
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         if prepare_traj:
@@ -117,13 +117,13 @@ def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:floa
         uid = db[-1]['start']['uid']
         uids.append(uid)
 			
-        yield from bp.sleep(delay)
+        yield from bp.sleep(float(delay))
     print('Done!')
     return uids
 
 
 def tscan_Rrep(comment:str, prepare_traj:bool=True, **kwargs):
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
 
     uid, = RE(execute_trajectory(comment))
@@ -132,7 +132,7 @@ def tscan_Rrep(comment:str, prepare_traj:bool=True, **kwargs):
 
 
 def tloopscan(comment:str, prepare_traj:bool=True, **kwargs):
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
     uid, = RE(execute_loop_trajectory(comment))
     print('Done!')
@@ -172,7 +172,7 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
     :func:`tscan`
     """
 
-    if (prepare_traj == True):
+    if (bool(prepare_traj) == True):
         RE(prep_traj_plan())
     uid, = RE(execute_xia_trajectory(comment))
     print('Done!')
@@ -182,11 +182,11 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
 def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
 
-    for i in range(n_cycles):
+    for i in range(int(n_cycles)):
         RE(prep_traj_plan())
         uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
         uids.append(uid)
-        time.sleep(delay)
+        time.sleep(float(delay))
 
     return uids
 
@@ -222,75 +222,50 @@ def get_offsets(num:int = 10, **kwargs):
     :func:`tscan`
     """
 
-    aver1=pba1.adc7.averaging_points.get()
-    aver2=pba2.adc6.averaging_points.get()
-    aver3=pba1.adc1.averaging_points.get()
-    aver4=pba1.adc6.averaging_points.get()
-    pba1.adc7.averaging_points.put(15)
-    pba2.adc6.averaging_points.put(15)
-    pba1.adc1.averaging_points.put(15)
-    pba1.adc6.averaging_points.put(15)
+    adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+
+    old_avers = []
+    for adc in adcs:
+        old_avers.append(adc.averaging_points.get())
+        adc.averaging_points.put(15)
     
-    uid, = RE(get_offsets_plan([pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7], num = num))
-    i0_array = db.get_table(db[-1])['pba1_adc7_volt']
-    it_array = db.get_table(db[-1])['pba1_adc1_volt']
-    ir_array = db.get_table(db[-1])['pba2_adc6_volt']
-    iff_array = db.get_table(db[-1])['pba1_adc6_volt']
-    i0_off = np.mean(i0_array[1:num])
-    it_off = np.mean(it_array[1:num])
-    ir_off = np.mean(ir_array[1:num])
-    iff_off = np.mean(iff_array[1:num])
+    uid, = RE(get_offsets_plan(adcs, num = int(num)))
 
     if 'dummy_read' not in kwargs:
         print('Updating values...')
-        pba1.adc7.offset.put(i0_off)
-        pba1.adc1.offset.put(it_off)
-        pba2.adc6.offset.put(ir_off)
-        pba1.adc6.offset.put(iff_off)
 
-        print('{}\nMean (i0) = {}'.format(i0_array, i0_off))
-        print('{}\nMean (it) = {}'.format(it_array, it_off))
-        print('{}\nMean (ir) = {}'.format(ir_array, ir_off))
-        print('{}\nMean (iff) = {}'.format(iff_array, iff_off))
+    arrays = []
+    offsets = []
+    df = db.get_table(db[-1])
+    for index, adc in enumerate(adcs):
+        key = '{}_volt'.format(adc.name)
+        array = df[key]
+        offset = np.mean(df[key][1:int(num)])
 
-    pba1.adc7.averaging_points.put(aver1)
-    pba2.adc6.averaging_points.put(aver2)
-    pba1.adc1.averaging_points.put(aver3)
-    pba1.adc6.averaging_points.put(aver4)
+        arrays.append(array)
+        offsets.append(offset)
+        if 'dummy_read' not in kwargs:
+            adc.offset.put(offset)
+            print('{}\nMean ({}) = {}'.format(array, adc.dev_name.value, offset))
+        adc.averaging_points.put(old_avers[index])
     
     run = db[uid]
     for i in run['descriptors']:
         if i['name'] != 'primary':
             os.remove(i['data_keys'][i['name']]['filename'])
-    #os.remove(db[uid]['descriptors'][1]['data_keys']['pba2_adc6']['filename'])
-    #os.remove(db[uid]['descriptors'][2]['data_keys']['pba1_adc1']['filename'])
-    #os.remove(db[uid]['descriptors'][3]['data_keys']['pba1_adc6']['filename'])
 
     if 'dummy_read' in kwargs:
-        print('Mean (i0) = {}'.format(i0_off))
-        print('Mean (it) = {}'.format(it_off))
-        print('Mean (ir) = {}'.format(ir_off))
-        print('Mean (iff) = {}\n'.format(iff_off))
+        print_message = ''
+        for index, adc in enumerate(adcs):
+            print('Mean ({}) = {}'.format(adc.dev_name.value, offsets[index]))
 
-        if i0_off > -0.04:
-            print('Increase i0 gain by 10^2')
-        elif i0_off <= -0.04 and i0_off > -0.4:
-            print('Increase i0 gain by 10^1')
-
-        if it_off > -0.04:
-            print('Increase it gain by 10^2')
-        elif it_off <= -0.04 and it_off > -0.4:
-            print('Increase it gain by 10^1')
-
-        if ir_off > -0.04:
-            print('Increase ir gain by 10^2')
-        elif ir_off <= -0.04 and ir_off > -0.4:
-            print('Increase ir gain by 10^1')
-
-        if iff_off > -0.04:
-            print('Increase iff gain by 10^2')
-        elif iff_off <= -0.04 and iff_off > -0.4:
-            print('Increase iff gain by 10^1')
+            if offsets[index] > -0.04:
+                print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
+            elif offsets[index] <= -0.04 and offsets[index] > -0.4:
+                print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
+        print('-' * 30)
+        print(print_message[:-1])
+        print('-' * 30)
 
     print(uid)
     print('Done!')
@@ -304,7 +279,7 @@ def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, **kwa
         motor = eval(motor)
 
     ax = kwargs.get('ax')
-    return RE(general_scan_plan([detector], motor, rel_start, rel_stop, num), LivePlot(det_plot_name, motor.name, ax=ax))
+    return RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
 
 
 def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
@@ -356,7 +331,7 @@ def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:
 def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
     if type(detectors) is not list:
         detectors = [detectors]
-    return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, num), LivePlot(detectors[0].volt.name, motor.name))
+    return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, int(num)), LivePlot(detectors[0].volt.name, motor.name))
 
 def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
 
