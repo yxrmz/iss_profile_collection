@@ -42,6 +42,18 @@ class XIA(Device):
     pre_amp_gain2 = Cpt(EpicsSignal, 'dxp2:PreampGain')
     pre_amp_gain3 = Cpt(EpicsSignal, 'dxp3:PreampGain')
     pre_amp_gain4 = Cpt(EpicsSignal, 'dxp4:PreampGain')
+    pre_amp_gain5 = Cpt(EpicsSignal, 'dxp5:PreampGain')
+    pre_amp_gain6 = Cpt(EpicsSignal, 'dxp6:PreampGain')
+    pre_amp_gain7 = Cpt(EpicsSignal, 'dxp7:PreampGain')
+    pre_amp_gain8 = Cpt(EpicsSignal, 'dxp8:PreampGain')
+    pre_amp_gain9 = Cpt(EpicsSignal, 'dxp9:PreampGain')
+    pre_amp_gain10 = Cpt(EpicsSignal, 'dxp10:PreampGain')
+    pre_amp_gain11 = Cpt(EpicsSignal, 'dxp11:PreampGain')
+    pre_amp_gain12 = Cpt(EpicsSignal, 'dxp12:PreampGain')
+    pre_amp_gain13 = Cpt(EpicsSignal, 'dxp13:PreampGain')
+    pre_amp_gain14 = Cpt(EpicsSignal, 'dxp14:PreampGain')
+    pre_amp_gain15 = Cpt(EpicsSignal, 'dxp15:PreampGain')
+    pre_amp_gain16 = Cpt(EpicsSignal, 'dxp16:PreampGain')
 
     real_time =        Cpt(EpicsSignal, 'PresetReal')
     real_time_rb =     Cpt(EpicsSignal, 'ElapsedReal')
@@ -52,11 +64,36 @@ class XIA(Device):
     mca2 =             Cpt(MCA, 'mca2')
     mca3 =             Cpt(MCA, 'mca3')
     mca4 =             Cpt(MCA, 'mca4')
+    mca5 =             Cpt(MCA, 'mca5')
+    mca6 =             Cpt(MCA, 'mca6')
+    mca7 =             Cpt(MCA, 'mca7')
+    mca8 =             Cpt(MCA, 'mca8')
+    mca9 =             Cpt(MCA, 'mca9')
+    mca10 =             Cpt(MCA, 'mca10')
+    mca11 =             Cpt(MCA, 'mca11')
+    mca12 =             Cpt(MCA, 'mca12')
+    mca13 =             Cpt(MCA, 'mca13')
+    mca14 =             Cpt(MCA, 'mca14')
+    mca15 =             Cpt(MCA, 'mca15')
+    mca16 =             Cpt(MCA, 'mca16')
+
 
     mca_array1 =       Cpt(EpicsSignal, 'mca1')
     mca_array2 =       Cpt(EpicsSignal, 'mca2')
     mca_array3 =       Cpt(EpicsSignal, 'mca3')
     mca_array4 =       Cpt(EpicsSignal, 'mca4')
+    mca_array5 =       Cpt(EpicsSignal, 'mca5')
+    mca_array6 =       Cpt(EpicsSignal, 'mca6')
+    mca_array7 =       Cpt(EpicsSignal, 'mca7')
+    mca_array8 =       Cpt(EpicsSignal, 'mca8')
+    mca_array9 =       Cpt(EpicsSignal, 'mca9')
+    mca_array10 =       Cpt(EpicsSignal, 'mca10')
+    mca_array11 =       Cpt(EpicsSignal, 'mca11')
+    mca_array12 =       Cpt(EpicsSignal, 'mca12')
+    mca_array13 =       Cpt(EpicsSignal, 'mca13')
+    mca_array14 =       Cpt(EpicsSignal, 'mca14')
+    mca_array15 =       Cpt(EpicsSignal, 'mca15')
+    mca_array16 =       Cpt(EpicsSignal, 'mca16')
 
     mca_x =            Cpt(EpicsSignal, 'dxp1:Graph0X.AVAL')
 
@@ -136,4 +173,7 @@ class XIA(Device):
            
 
 xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0) #XIA('dxpXMAP:', name='xia1')
-xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4']
+xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4',
+                   'mca5', 'mca6', 'mca7', 'mca8',
+                   'mca9', 'mca10', 'mca11', 'mca12',
+                   'mca13', 'mca14', 'mca15', 'mca16']
