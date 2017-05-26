@@ -1,4 +1,5 @@
 import isstools.gui
+import collections
 
 det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'], 
             bpm_cm:['bpm_cm_stats1_total','bpm_cm_stats2_total'],
@@ -50,13 +51,17 @@ motors_list = [slits.v_gap,
                xbic.dac1,
                xbic.dac2]
 
+shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe), 
+                                         (shutter_ph.name, shutter_ph), 
+                                         (shutter.name, shutter)])
+
 xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, get_offsets], 
                                  [tune_mono_pitch , tune_mono_y], 
                                  prep_traj_plan, 
                                  RE, 
                                  db, 
                                  hhm, 
-                                 shutter, 
+                                 shutters_dict,
                                  det_dict,
                                  motors_list,
                                  general_scan,

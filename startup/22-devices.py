@@ -12,14 +12,16 @@ import filestore.api as fs
 
 class Shutter():
 
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         if(pb4.connected):
-            if(pb4.do3.default_pol.value == 1):
+            self.output = pb4.do3.default_pol
+            if(self.output.value == 1):
                 self.state = 'closed'
-            elif(pb4.do3.default_pol.value == 0):
+            elif(self.output.value == 0):
                 self.state = 'open'
             self.function_call = None
-            pb4.do3.default_pol.subscribe(self.update_state)
+            self.output.subscribe(self.update_state)
         else:
             self.state = 'unknown'
 
@@ -38,23 +40,43 @@ class Shutter():
             self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
         
     def open(self):
-        print('Opening shutter...')
-        pb4.do3.default_pol.put(0)
+        print('Opening {}'.format(self.name))
+        self.output.put(0)
         self.state = 'open'
         
     def close(self):
-        print('Closing shutter...')
-        pb4.do3.default_pol.put(1)
+        print('Closing {}'.format(self.name))
+        self.output.put(1)
         self.state = 'closed'
 
     def open_plan(self):
-        print('Opening shutter...')
-        yield from bp.abs_set(pb4.do3.default_pol, 0, wait=True)
+        print('Opening {}'.format(self.name))
+        yield from bp.abs_set(self.output, 0, wait=True)
         self.state = 'open'
 
     def close_plan(self):
-        print('Closing shutter...')
-        yield from bp.abs_set(pb4.do3.default_pol, 1, wait=True)
+        print('Closing {}'.format(self.name))
+        yield from bp.abs_set(self.output, 1, wait=True)
         self.state = 'closed'
 
-shutter = Shutter()
+shutter = Shutter(name = 'SP Shutter')
+
+class EPS_Shutter(Device):
+    state = Cpt(EpicsSignal, 'Pos-Sts')
+    cls = Cpt(EpicsSignal, 'Cmd:Cls-Cmd')
+    opn = Cpt(EpicsSignal, 'Cmd:Opn-Cmd')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.color = 'red'
+
+    def open(self):
+        print('Opening {}'.format(self.name))
+        self.opn.put(1)
+
+    def close(self):
+        print('Closing {}'.format(self.name))
+        self.cls.put(1)
+
+shutter_fe = EPS_Shutter('XF:08ID-PPS{Sh:FE}', name = 'FE Shutter')
+shutter_ph = EPS_Shutter('XF:08IDA-PPS{PSh}', name = 'PH Shutter')
