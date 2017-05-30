@@ -60,6 +60,7 @@ class Shutter():
         self.state = 'closed'
 
 shutter = Shutter(name = 'SP Shutter')
+shutter.shutter_type = 'SP'
 
 class EPS_Shutter(Device):
     state = Cpt(EpicsSignal, 'Pos-Sts')
@@ -79,4 +80,6 @@ class EPS_Shutter(Device):
         self.cls.put(1)
 
 shutter_fe = EPS_Shutter('XF:08ID-PPS{Sh:FE}', name = 'FE Shutter')
+shutter_fe.shutter_type = 'FE'
 shutter_ph = EPS_Shutter('XF:08IDA-PPS{PSh}', name = 'PH Shutter')
+shutter_ph.shutter_type = 'PH'
