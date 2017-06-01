@@ -14,20 +14,11 @@ def tscan(comment:str, prepare_traj:bool=True, **kwargs):
     prepare_traj : bool (default = True)
         Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
 
-    absorp : bool (default = True)
-        Telling the function how to parse the data - TODO: remake this parameter
-
 
     Returns
     -------
-    uid : str
-        Unique id of the scan
-
-    interp_filename : str
-        Filename where the interpolated data was stored
-
-    absorp : bool
-        Just returning the parameter absorp that was passed to the scan
+    uid : list(str)
+        List containing the unique id of the scan
 
 
     See Also
@@ -63,12 +54,6 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     comment : str
         Name of the scan - it will be stored in the metadata
 
-    prepare_traj : bool (default = True)
-        Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
-
-    absorp : bool (default = True)
-        Telling the function how to parse the data - TODO: remake this parameter
-
     n_cycles : int (default = 1)
         Number of times to run the scan automatically
 
@@ -78,14 +63,8 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
 
     Returns
     -------
-    uid : str
-        Unique id of the scan
-
-    interp_filename : str
-        Filename where the interpolated data was stored
-
-    absorp : bool
-        Just returning the parameter absorp that was passed to the scan
+    uid : list(str)
+        Lists containing the unique ids of the scans
 
 
     See Also
@@ -151,20 +130,11 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
     prepare_traj : bool (default = True)
         Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
 
-    absorp : bool (default = False)
-        Telling the function how to parse the data - TODO: remake this parameter
-
 
     Returns
     -------
-    uid : str
-        Unique id of the scan
-
-    interp_filename : str
-        Filename where the interpolated data was stored
-
-    absorp : bool
-        Just returning the parameter absorp that was passed to the scan
+    uid : list(str)
+        List containing the unique id of the scan
 
 
     See Also
@@ -180,6 +150,31 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
 
 
 def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
+    """
+    Trajectory Scan XIA N - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA N times
+
+    Parameters
+    ----------
+    comment : str
+        Name of the scan - it will be stored in the metadata
+
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+
+    delay : float (default = 0)
+        Delay in seconds between scans
+
+
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+
+    See Also
+    --------
+    :func:`tscanxia`
+    """
     uids = []
 
     for i in range(int(n_cycles)):
@@ -213,8 +208,8 @@ def get_offsets(num:int = 10, **kwargs):
 
     Returns
     -------
-    uid : str
-        Unique id of the scan
+    uid : list(str)
+        List containing the unique id of the scan
 
 
     See Also
