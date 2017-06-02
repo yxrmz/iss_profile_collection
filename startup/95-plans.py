@@ -382,8 +382,21 @@ def execute_xia_trajectory(comment, **metadata):
 
         xia_rois = {}
         for mca in xia1.read_attrs:
-            xia_rois[eval('xia1.{}.roi0.high.name'.format(mca))] = eval('xia1.{}.roi0.high.value'.format(mca)) * 20 / 2048
-            xia_rois[eval('xia1.{}.roi0.low.name'.format(mca))] = eval('xia1.{}.roi0.low.value'.format(mca)) * 20 / 2048
+            if not (eval('xia1.{}.roi0.low.value'.format(mca)) == 0 and eval('xia1.{}.roi0.high.value'.format(mca)) == 0):
+                xia_rois[eval('xia1.{}.roi0.high.name'.format(mca))] = eval('xia1.{}.roi0.high.value'.format(mca)) * 20 / 2048
+                xia_rois[eval('xia1.{}.roi0.low.name'.format(mca))] = eval('xia1.{}.roi0.low.value'.format(mca)) * 20 / 2048
+
+            if not (eval('xia1.{}.roi1.low.value'.format(mca)) == 0 and eval('xia1.{}.roi1.high.value'.format(mca)) == 0):
+                xia_rois[eval('xia1.{}.roi1.high.name'.format(mca))] = eval('xia1.{}.roi1.high.value'.format(mca)) * 20 / 2048
+                xia_rois[eval('xia1.{}.roi1.low.name'.format(mca))] = eval('xia1.{}.roi1.low.value'.format(mca)) * 20 / 2048
+
+            if not (eval('xia1.{}.roi2.low.value'.format(mca)) == 0 and eval('xia1.{}.roi2.high.value'.format(mca)) == 0):
+                xia_rois[eval('xia1.{}.roi2.high.name'.format(mca))] = eval('xia1.{}.roi2.high.value'.format(mca)) * 20 / 2048
+                xia_rois[eval('xia1.{}.roi2.low.name'.format(mca))] = eval('xia1.{}.roi2.low.value'.format(mca)) * 20 / 2048
+
+            if not (eval('xia1.{}.roi3.low.value'.format(mca)) == 0 and eval('xia1.{}.roi3.high.value'.format(mca)) == 0):
+                xia_rois[eval('xia1.{}.roi3.high.name'.format(mca))] = eval('xia1.{}.roi3.high.value'.format(mca)) * 20 / 2048
+                xia_rois[eval('xia1.{}.roi3.low.name'.format(mca))] = eval('xia1.{}.roi3.low.value'.format(mca)) * 20 / 2048
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd', 
