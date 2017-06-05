@@ -96,6 +96,7 @@ class XIA(Device):
     mca_array16 =       Cpt(EpicsSignal, 'mca16')
 
     mca_x =            Cpt(EpicsSignal, 'dxp1:Graph0X.AVAL')
+    mca_max_energy = Cpt(EpicsSignal, 'dxp1:Graph0High')
 
     netcdf_filename = Cpt(EpicsSignal, 'netCDF1:FileName')
     netcdf_filename_rb = Cpt(EpicsSignal, 'netCDF1:FileName_RBV')
