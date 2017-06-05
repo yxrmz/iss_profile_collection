@@ -177,3 +177,6 @@ xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4',
                    'mca5', 'mca6', 'mca7', 'mca8',
                    'mca9', 'mca10', 'mca11', 'mca12',
                    'mca13', 'mca14', 'mca15', 'mca16']
+
+if not xia1.mca5.connected:
+    xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4']

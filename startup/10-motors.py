@@ -39,9 +39,9 @@ class HHM(Device):
     "high heat load monochrometer"
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
-    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
-    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')  # degrees
+    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
+    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr')
 
   # The following are related to trajectory motion
     lut_number = Cpt(EpicsSignal, 'MC:06}LUT-Set')
@@ -125,7 +125,7 @@ hhm_fe = HHM_FixedExit('XF:08IDA-OP{', name='fixed_exit', read_attrs=['theta', '
 hhm_en = HHM_Energy('XF:08IDA-OP{', name='hhm_en', read_attrs=['energy','y'])
 hhm = HHM('XF:08IDA-OP{', name='hhm')
 
-hhm.read_attrs = ['pitch', 'roll', 'theta', 'y']
+hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
 
 
 class HRM(Device):
