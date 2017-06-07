@@ -364,20 +364,20 @@ class Adc(Device):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
 
-        signal.signal(signal.SIGALRM, self.timeout_handler)
-        signal.setitimer(signal.ITIMER_REAL, 2)
-        try:
-            while(self.connected == False):
-                pass
-            if self.connected:
-                self.enable_sel.put(1)
-                self.sample_rate.put(350)
-                self.enable_averaging.put(1)
-                if self.averaging_points.value == 0:
-                    self.averaging_points.put("1024")
-        except Exception as exc:
-            pass
-        signal.alarm(0)
+        #signal.signal(signal.SIGALRM, self.timeout_handler)
+        #signal.setitimer(signal.ITIMER_REAL, 2)
+        #try:
+        #    while(self.connected == False):
+        #        pass
+        if self.connected:
+            #self.enable_sel.put(1)
+            #self.sample_rate.put(350)
+            self.enable_averaging.put(1)
+            if self.averaging_points.value == 0:
+                self.averaging_points.put("1024")
+        #except Exception as exc:
+        #    pass
+        #signal.alarm(0)
 
 
 
