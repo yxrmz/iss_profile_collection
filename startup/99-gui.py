@@ -52,8 +52,8 @@ motors_list = [slits.v_gap,
                xbic.dac1,
                xbic.dac2]
 
-shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe), 
-                                         (shutter_ph.name, shutter_ph), 
+#shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe), 
+shutters_dict = collections.OrderedDict([(shutter_ph.name, shutter_ph), 
                                          (shutter.name, shutter)])
 
 xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, get_offsets], 
