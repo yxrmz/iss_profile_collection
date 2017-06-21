@@ -1,5 +1,6 @@
 import isstools.gui
 import collections
+import atexit
 
 det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'], 
             bpm_cm:['bpm_cm_stats1_total','bpm_cm_stats2_total'],
@@ -71,3 +72,9 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, get_offs
 
 def xlive():
     xlive_gui.show()
+
+def cleaning():
+    if xlive_gui.piezo_thread.isRunning():
+        xlive_gui.toggle_piezo_fb(0)
+
+atexit.register(cleaning)

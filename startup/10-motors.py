@@ -66,6 +66,13 @@ class HHM(Device):
     trajectory_progress = Cpt(EpicsSignal,'MC:06}TrajProgress')
     trajectory_name = Cpt(EpicsSignal, 'MC:06}TrajFilename')
 
+    fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
+    fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
+    fb_line = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Line')
+    fb_nlines = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NLines')
+    fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
+    fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
+
 
 class HHM_FixedExit(PseudoPositioner):
     # do not set values to actual theta!

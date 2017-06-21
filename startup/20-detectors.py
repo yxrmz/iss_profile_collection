@@ -40,8 +40,9 @@ bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
+bpm_sp = BPM('XF:08IDB-BI{BPM:SP}', name='bpm_sp')
 
-for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es]:
+for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp]:
     bpm.read_attrs = ['stats1', 'stats2']
     bpm.stats1.read_attrs = ['total', 'centroid']
     bpm.stats2.read_attrs = ['total', 'centroid']
