@@ -543,4 +543,5 @@ def execute_loop_trajectory(comment, **metadata):
                                               flyers))
 
 
-
+def sleep_plan(sleep_time, **metadata):
+    yield from bp.sleep(float(sleep_time))

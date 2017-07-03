@@ -328,6 +328,11 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, int(num)), LivePlot(detectors[0].volt.name, motor.name))
 
+
+def sleep_seconds(secs:float=1, **kwargs):
+    return RE(sleep_plan(secs))
+
+
 def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
 
     '''
