@@ -459,7 +459,8 @@ def execute_xia_trajectory(comment, **metadata):
 
 
         yield from bp.finalize_wrapper(poll_the_traj_plan(), 
-                                       bp.pchain(shutter.close_plan(), 
+                                       bp.pchain(xia1.stop_scan(),
+                                                 shutter.close_plan(), 
                                                  bp.abs_set(hhm.stop_trajectory, 
                                                             '1', wait=True)))
 		
@@ -467,9 +468,12 @@ def execute_xia_trajectory(comment, **metadata):
 
     def final_plan():
         yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        #yield from xia1.stop_scan()
+        while xia1.capt_start_stop.value:
+            pass
+        print('Stopped XIA')
         for flyer in flyers:
             yield from bp.unstage(flyer)
-        yield from xia1.stop_scan()
         yield from bp.unstage(hhm)
 
 

@@ -30,7 +30,7 @@ class XIA(Device):
     acquiring =        Cpt(EpicsSignalRO, 'Acquiring')
     #acquiring =        Cpt(EpicsSignal,'Acquiring', write_pv='EraseStart', trigger_value = 1)
 
-    capt_start_stop =  Cpt(EpicsSignal, 'netCDF1:Capture')
+    capt_start_stop =  Cpt(EpicsSignal, 'netCDF1:Capture_RBV', write_pv='netCDF1:Capture')
     pixels_per_run =   Cpt(EpicsSignal, 'PixelsPerRun')
     current_pixel =    Cpt(EpicsSignal, 'dxp1:CurrentPixel')
     next_pixel =       Cpt(EpicsSignal, 'NextPixel')
@@ -121,8 +121,10 @@ class XIA(Device):
 
     def stop_scan(self):
         yield from bp.abs_set(pb4.do0.enable, 0, wait=True)
+        while(pb4.do0.enable.value):
+            pass
         #pb4.do0.enable.put(0) # Workaround
-        yield from bp.sleep(1)
+        yield from bp.sleep(1.5)
         yield from bp.abs_set(self.stop_sig, 1, wait=True)
         #self.stop_sig.put(1)
         yield from bp.sleep(0.5)
