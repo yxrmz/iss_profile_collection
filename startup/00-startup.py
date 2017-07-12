@@ -17,6 +17,7 @@ from bluesky.global_state import gs
 RE = gs.RE  # convenience alias
 from historydict import HistoryDict
 RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db') #/home/istavitski/.config/bluesky/bluesky_history.db
+RE.is_aborted = False
 
 # At the end of every run, verify that files were saved and
 # print a confirmation message.

@@ -73,7 +73,10 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
 
     uids = []
+    RE.is_aborted = False
     for indx in range(int(n_cycles)): 
+        if RE.is_aborted:
+            return uids
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         RE(prep_traj_plan())
@@ -175,9 +178,12 @@ def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     --------
     :func:`tscanxia`
     """
-    uids = []
 
+    uids = []
+    RE.is_aborted = False
     for i in range(int(n_cycles)):
+        if RE.is_aborted:
+            return uids
         RE(prep_traj_plan())
         uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
         uids.append(uid)
