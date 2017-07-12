@@ -73,6 +73,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscan_N, tscanxia, tscanxia_N, get_offs
 def xlive():
     xlive_gui.show()
 
+xlive()
+
 def cleaning():
     if xlive_gui.piezo_thread.isRunning():
         xlive_gui.toggle_piezo_fb(0)

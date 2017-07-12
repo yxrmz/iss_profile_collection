@@ -141,6 +141,11 @@ class XIA(Device):
         self.stage_sigs[self.mode] = 'Real time'
         self._status = None
 
+        self.mcas = [self.mca1, self.mca2, self.mca3, self.mca4, 
+                self.mca5, self.mca6, self.mca7, self.mca8,
+                self.mca9, self.mca10, self.mca11, self.mca12,
+                self.mca13, self.mca14, self.mca15, self.mca16]
+
 
     def goto_next_pixel(self):
         self.next_pixel.put(1)
@@ -175,11 +180,12 @@ class XIA(Device):
             self._status._finished()
            
 
-xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0) #XIA('dxpXMAP:', name='xia1')
-xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4',
-                   'mca5', 'mca6', 'mca7', 'mca8',
-                   'mca9', 'mca10', 'mca11', 'mca12',
-                   'mca13', 'mca14', 'mca15', 'mca16']
+xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0)
 
-if not xia1.mca5.connected:
-    xia1.read_attrs = ['mca1', 'mca2', 'mca3', 'mca4']
+xia1.read_attrs = []
+
+for mca in xia1.mcas:
+    if mca.connected:
+        xia1.read_attrs.append(mca.name.split('_')[1])
+
+
