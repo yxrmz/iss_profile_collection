@@ -32,7 +32,7 @@ def tscan(comment:str, prepare_traj:bool=True, **kwargs):
     print(uid)
 
     print('Done!')
-    return [uid]
+    yield uid
 
 def tscan_plan(comment:str, prepare_traj:bool=True, **kwargs):
     if prepare_traj:
@@ -42,7 +42,7 @@ def tscan_plan(comment:str, prepare_traj:bool=True, **kwargs):
     uid = db[-1]['start']['uid']
 
     print('Done!')
-    return [uid]
+    yield uid
     
 
 def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
@@ -72,19 +72,20 @@ def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     :func:`tscan`
     """
 
-    uids = []
+    #uids = []
     RE.is_aborted = False
     for indx in range(int(n_cycles)): 
         if RE.is_aborted:
-            return uids
+            return 'Aborted'
         comment_n = comment + ' ' + str(indx + 1)
         print(comment_n) 
         RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
-        uids.append(uid)
+        yield uid
+        #uids.append(uid)
         time.sleep(float(delay))
     print('Done!')
-    return uids
+    #return uids
     
 
 def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
@@ -102,23 +103,6 @@ def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:floa
         yield from bp.sleep(float(delay))
     print('Done!')
     return uids
-
-
-def tscan_Rrep(comment:str, prepare_traj:bool=True, **kwargs):
-    if (bool(prepare_traj) == True):
-        RE(prep_traj_plan())
-
-    uid, = RE(execute_trajectory(comment))
-    print('Done!')
-    return uid
-
-
-def tloopscan(comment:str, prepare_traj:bool=True, **kwargs):
-    if (bool(prepare_traj) == True):
-        RE(prep_traj_plan())
-    uid, = RE(execute_loop_trajectory(comment))
-    print('Done!')
-    return uid
 
 
 def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
@@ -149,7 +133,7 @@ def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
         RE(prep_traj_plan())
     uid, = RE(execute_xia_trajectory(comment))
     print('Done!')
-    return [uid]
+    yield uid
 
 
 def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
@@ -179,17 +163,18 @@ def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     :func:`tscanxia`
     """
 
-    uids = []
+    #uids = []
     RE.is_aborted = False
     for i in range(int(n_cycles)):
         if RE.is_aborted:
-            return uids
+            return 'Aborted'
         RE(prep_traj_plan())
         uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
-        uids.append(uid)
+        yield uid
+        #uids.append(uid)
         time.sleep(float(delay))
-
-    return uids
+    print('Done!')
+    #return uids
 
 def tscanxia_plan(comment:str, prepare_traj:bool=True, **kwargs):
     if prepare_traj:
@@ -199,7 +184,7 @@ def tscanxia_plan(comment:str, prepare_traj:bool=True, **kwargs):
     uid = db[-1]['start']['uid']
 	
     print('Done!')
-    return [uid]
+    yield uid
 
 
 def get_offsets(num:int = 10, **kwargs):
@@ -270,7 +255,7 @@ def get_offsets(num:int = 10, **kwargs):
 
     print(uid)
     print('Done!')
-    return [uid]
+    yield uid
 
 def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, **kwargs):
     if type(detector) == str:
@@ -336,7 +321,8 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
 
 
 def sleep_seconds(secs:float=1, **kwargs):
-    return RE(sleep_plan(secs))
+    uid, = RE(sleep_plan(secs))
+    yield uid
 
 
 def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
