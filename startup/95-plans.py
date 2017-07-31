@@ -319,6 +319,7 @@ def execute_trajectory(comment, **metadata):
         # TODO Replace this with actual status object logic.
         yield from bp.clear_checkpoint()
         yield from shutter.open_plan()
+        yield from xia1.start_trigger()
         # this must be a float
         yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
@@ -358,6 +359,7 @@ def execute_trajectory(comment, **metadata):
 
     def final_plan():
         yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from xia1.stop_trigger()
         for flyer in flyers:
             yield from bp.unstage(flyer)
         yield from bp.unstage(hhm)
