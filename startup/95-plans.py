@@ -303,7 +303,7 @@ def prep_traj_plan(delay = 0.25):
 
 
 def execute_trajectory(comment, **metadata):
-    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 
               'plan_name': 'execute_trajectory',
