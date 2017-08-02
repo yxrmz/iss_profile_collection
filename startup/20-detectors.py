@@ -128,8 +128,8 @@ class EncoderFS(Encoder):
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.ignore_sel, 1)
-        while not os.path.isfile(self._full_path):
-            ttime.sleep(.1)
+        #while not os.path.isfile(self._full_path):
+        #    ttime.sleep(.1)
         return NullStatus()
 
     def collect(self):
@@ -141,19 +141,21 @@ class EncoderFS(Encoder):
         print('collect', self.name)
         self._ready_to_collect = False
 
-        now = ttime.time()
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
-        with open(self._full_path, 'r') as f:
-            linecount = len(list(f))
-        chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
-        for chunk_num in range(chunk_count):
-            datum_uid = str(uuid.uuid4())
-            data = {self.name: datum_uid}
-            fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-            yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+        if os.path.isfile(self._full_path):
+            with open(self._full_path, 'r') as f:
+                linecount = len(list(f))
+            chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
+            for chunk_num in range(chunk_count):
+                datum_uid = str(uuid.uuid4())
+                data = {self.name: datum_uid}
+                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
+                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+        else:
+            print('collect {}: File was not created'.format(self.name))
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -251,8 +253,8 @@ class DIFS(DigitalInput):
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.ignore_sel, 1)
-        while not os.path.isfile(self._full_path):
-            ttime.sleep(.1)
+        #while not os.path.isfile(self._full_path):
+        #    ttime.sleep(.1)
         return NullStatus()
 
     def collect(self):
@@ -264,19 +266,21 @@ class DIFS(DigitalInput):
         print('collect', self.name)
         self._ready_to_collect = False
 
-        now = ttime.time()
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
-        with open(self._full_path, 'r') as f:
-            linecount = len(list(f))
-        chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
-        for chunk_num in range(chunk_count):
-            datum_uid = str(uuid.uuid4())
-            data = {self.name: datum_uid}
-            fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-            yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+        if os.path.isfile(self._full_path):
+            with open(self._full_path, 'r') as f:
+                linecount = len(list(f))
+            chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
+            for chunk_num in range(chunk_count):
+                datum_uid = str(uuid.uuid4())
+                data = {self.name: datum_uid}
+                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
+                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+        else:
+            print('collect {}: File was not created'.format(self.name))
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -441,22 +445,24 @@ class AdcFS(Adc):
         print('collect', self.name)
         self._ready_to_collect = False
 
-        now = ttime.time()
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
-        with open(self._full_path, 'r') as f:
-            linecount = 0
-            for ln in f:
-                linecount += 1
+        if os.path.isfile(self._full_path):
+            with open(self._full_path, 'r') as f:
+                linecount = 0
+                for ln in f:
+                    linecount += 1
 
-        chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
-        for chunk_num in range(chunk_count):
-            datum_uid = str(uuid.uuid4())
-            data = {self.name: datum_uid}
-            fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-            yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+            chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
+            for chunk_num in range(chunk_count):
+                datum_uid = str(uuid.uuid4())
+                data = {self.name: datum_uid}
+                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
+                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+        else:
+            print('collect {}: File was not created'.format(self.name))
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
