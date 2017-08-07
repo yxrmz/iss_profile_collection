@@ -309,7 +309,8 @@ def execute_trajectory(comment, **metadata):
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission', 
               'comment': comment, 
-              'trajectory_name': hhm.trajectory_name.value}
+              'trajectory_name': hhm.trajectory_name.value,
+              'angle_offset': str(hhm.angle_offset.value)}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
@@ -406,7 +407,9 @@ def execute_xia_trajectory(comment, **metadata):
               'comment': comment, 
               'xia_max_energy': xia1.mca_max_energy.value,
               'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), 
-              'xia_rois':xia_rois, 'trajectory_name': hhm.trajectory_name.value}
+              'xia_rois':xia_rois, 
+              'trajectory_name': hhm.trajectory_name.value,
+              'angle_offset': str(hhm.angle_offset.value)}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
