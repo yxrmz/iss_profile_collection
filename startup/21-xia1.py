@@ -103,6 +103,12 @@ class XIA(Device):
     netcdf_filenumber = Cpt(EpicsSignal, 'netCDF1:FileNumber')
     netcdf_filenumber_rb = Cpt(EpicsSignal, 'netCDF1:FileNumber_RBV')
 
+    
+    def start_trigger(self):
+        yield from bp.abs_set(pb4.do0.enable, 1, wait=True)
+
+    def stop_trigger(self):
+        yield from bp.abs_set(pb4.do0.enable, 0, wait=True)
 
     def start_mapping_scan(self):
         yield from bp.abs_set(self.collect_mode, 'MCA mapping', wait=True)

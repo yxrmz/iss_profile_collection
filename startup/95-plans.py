@@ -303,13 +303,14 @@ def prep_traj_plan(delay = 0.25):
 
 
 def execute_trajectory(comment, **metadata):
-    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission', 
               'comment': comment, 
-              'trajectory_name': hhm.trajectory_name.value}
+              'trajectory_name': hhm.trajectory_name.value,
+              'angle_offset': str(hhm.angle_offset.value)}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
@@ -319,6 +320,7 @@ def execute_trajectory(comment, **metadata):
         # TODO Replace this with actual status object logic.
         yield from bp.clear_checkpoint()
         yield from shutter.open_plan()
+        yield from xia1.start_trigger()
         # this must be a float
         yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
@@ -358,6 +360,7 @@ def execute_trajectory(comment, **metadata):
 
     def final_plan():
         yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from xia1.stop_trigger()
         for flyer in flyers:
             yield from bp.unstage(flyer)
         yield from bp.unstage(hhm)
@@ -404,7 +407,9 @@ def execute_xia_trajectory(comment, **metadata):
               'comment': comment, 
               'xia_max_energy': xia1.mca_max_energy.value,
               'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), 
-              'xia_rois':xia_rois, 'trajectory_name': hhm.trajectory_name.value}
+              'xia_rois':xia_rois, 
+              'trajectory_name': hhm.trajectory_name.value,
+              'angle_offset': str(hhm.angle_offset.value)}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value

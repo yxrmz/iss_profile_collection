@@ -73,6 +73,8 @@ class HHM(Device):
     fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
     fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
+    angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset')
+
 
 class HHM_FixedExit(PseudoPositioner):
     # do not set values to actual theta!
