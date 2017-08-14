@@ -2,143 +2,9 @@ import inspect
 import bluesky.plans as bp
 import os
 
-def tscan(comment:str, prepare_traj:bool=True, **kwargs):
+def tscan(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
-    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller
-
-    Parameters
-    ----------
-    comment : str
-        Name of the scan - it will be stored in the metadata
-
-    prepare_traj : bool (default = True)
-        Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
-
-
-    Returns
-    -------
-    uid : list(str)
-        List containing the unique id of the scan
-
-
-    See Also
-    --------
-    :func:`tscan_N`
-    """
-
-    if (bool(prepare_traj) == True):
-        RE(prep_traj_plan())
-    uid, = RE(execute_trajectory(comment))
-    print(uid)
-
-    print('Done!')
-    yield uid
-
-def tscan_plan(comment:str, prepare_traj:bool=True, **kwargs):
-    if prepare_traj:
-        yield from prep_traj_plan()
-    #uid = (yield from execute_trajectory(comment))
-    yield from execute_trajectory(comment)
-    uid = db[-1]['start']['uid']
-
-    print('Done!')
-    yield uid
-    
-
-def tscan_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
-    """
-    Trajectory Scan N - Runs the monochromator along the trajectory that is previously loaded in the controller N times
-
-    Parameters
-    ----------
-    comment : str
-        Name of the scan - it will be stored in the metadata
-
-    n_cycles : int (default = 1)
-        Number of times to run the scan automatically
-
-    delay : float (default = 0)
-        Delay in seconds between scans
-
-
-    Returns
-    -------
-    uid : list(str)
-        Lists containing the unique ids of the scans
-
-
-    See Also
-    --------
-    :func:`tscan`
-    """
-
-    #uids = []
-    RE.is_aborted = False
-    for indx in range(int(n_cycles)): 
-        if RE.is_aborted:
-            return 'Aborted'
-        comment_n = comment + ' ' + str(indx + 1)
-        print('Current step: {} / {}'.format(indx + 1, n_cycles))
-        RE(prep_traj_plan())
-        uid, = RE(execute_trajectory(comment_n))
-        yield uid
-        #uids.append(uid)
-        time.sleep(float(delay))
-    print('Done!')
-    #return uids
-    
-
-def tscan_N_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
-    uids = []
-    for indx in range(int(n_cycles)): 
-        comment_n = comment + ' ' + str(indx + 1)
-        print(comment_n) 
-        if prepare_traj:
-            yield from prep_traj_plan()
-        #uid = (yield from execute_trajectory(comment_n))
-        yield from execute_trajectory(comment_n)
-        uid = db[-1]['start']['uid']
-        uids.append(uid)
-			
-        yield from bp.sleep(float(delay))
-    print('Done!')
-    return uids
-
-
-def tscanxia(comment:str, prepare_traj:bool=True, **kwargs):
-    """
-    Trajectory Scan Xia - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA
-
-    Parameters
-    ----------
-    comment : str
-        Name of the scan - it will be stored in the metadata
-
-    prepare_traj : bool (default = True)
-        Boolean to tell the function to automatically run the routine "prepare trajectory" - the trajectory needs to be 'prepared' in the controller before every scan
-
-
-    Returns
-    -------
-    uid : list(str)
-        List containing the unique id of the scan
-
-
-    See Also
-    --------
-    :func:`tscan`
-    """
-
-    if (bool(prepare_traj) == True):
-        RE(prep_traj_plan())
-    uid, = RE(execute_xia_trajectory(comment))
-    print('Done!')
-    yield uid
-
-
-def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
-    """
-    Trajectory Scan XIA N - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA N times
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
 
     Parameters
     ----------
@@ -165,6 +31,66 @@ def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
 
     #uids = []
     RE.is_aborted = False
+    for indx in range(int(n_cycles)): 
+        if RE.is_aborted:
+            return 'Aborted'
+        comment_n = comment + ' ' + str(indx + 1)
+        print('Current step: {} / {}'.format(indx + 1, n_cycles))
+        RE(prep_traj_plan())
+        uid, = RE(execute_trajectory(comment_n))
+        yield uid
+        #uids.append(uid)
+        time.sleep(float(delay))
+    print('Done!')
+    #return uids
+    
+
+def tscan_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+    uids = []
+    for indx in range(int(n_cycles)): 
+        comment_n = comment + ' ' + str(indx + 1)
+        print(comment_n) 
+        if prepare_traj:
+            yield from prep_traj_plan()
+        #uid = (yield from execute_trajectory(comment_n))
+        yield from execute_trajectory(comment_n)
+        uid = db[-1]['start']['uid']
+        uids.append(uid)
+			
+        yield from bp.sleep(float(delay))
+    print('Done!')
+    return uids
+
+
+def tscanxia(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
+    """
+    Trajectory Scan XIA - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA N times
+
+    Parameters
+    ----------
+    comment : str
+        Name of the scan - it will be stored in the metadata
+
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+
+    delay : float (default = 0)
+        Delay in seconds between scans
+
+
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+
+    See Also
+    --------
+    :func:`tscan`
+    """
+
+    #uids = []
+    RE.is_aborted = False
     for i in range(int(n_cycles)):
         if RE.is_aborted:
             return 'Aborted'
@@ -176,16 +102,6 @@ def tscanxia_N(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
         time.sleep(float(delay))
     print('Done!')
     #return uids
-
-def tscanxia_plan(comment:str, prepare_traj:bool=True, **kwargs):
-    if prepare_traj:
-        yield from prep_traj_plan()
-    #uid = (yield from execute_xia_trajectory(comment))
-    yield from execute_xia_trajectory(comment)
-    uid = db[-1]['start']['uid']
-	
-    print('Done!')
-    yield uid
 
 
 def get_offsets(num:int = 10, **kwargs):
