@@ -24,6 +24,7 @@ class BPM(ProsilicaDetector, SingleTrigger):
     counts = Cpt(EpicsSignal, 'Pos:Counts')
     switch_insert = Cpt(EpicsSignalRO, 'Sw:InLim-Sts')
     switch_retract = Cpt(EpicsSignalRO, 'Sw:OutLim-Sts')
+    polarity = 'pos'
 
     def insert(self):
         self.ins.put(1)
@@ -357,6 +358,7 @@ class Adc(Device):
     volt = Cpt(EpicsSignal, '}E-I')
     offset = Cpt(EpicsSignal, '}Offset')
     dev_name = Cpt(EpicsSignal, '}DevName')
+    polarity = 'neg'
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
     enable_rb = Cpt(EpicsSignal, '}Ena-Sts')

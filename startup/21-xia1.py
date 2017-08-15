@@ -28,7 +28,7 @@ class XIA(Device):
     erase_start =      Cpt(EpicsSignal, 'EraseStart')
     erase =            Cpt(EpicsSignal, 'EraseAll')
     acquiring =        Cpt(EpicsSignalRO, 'Acquiring')
-    #acquiring =        Cpt(EpicsSignal,'Acquiring', write_pv='EraseStart', trigger_value = 1)
+    polarity = 'pos'
 
     capt_start_stop =  Cpt(EpicsSignal, 'netCDF1:Capture_RBV', write_pv='netCDF1:Capture')
     pixels_per_run =   Cpt(EpicsSignal, 'PixelsPerRun')

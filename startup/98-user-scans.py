@@ -174,15 +174,38 @@ def get_offsets(num:int = 10, **kwargs):
     print('Done!')
     yield uid
 
-def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, **kwargs):
+def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, find_min_max, retries, **kwargs):
     if type(detector) == str:
-        detector = [eval(detector)]
+        detector = eval(detector)
 
     if type(motor) == str:
         motor = eval(motor)
 
+    print('[General Scan] Starting scan...')
     ax = kwargs.get('ax')
-    return RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
+
+    if find_min_max:
+        over = 0
+        while(not over):
+            RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
+            last_table = db.get_table(db[-1])
+            if detector.polarity == 'pos':
+                index = np.argmax(last_table[det_plot_name])
+            else:
+                index = np.argmin(last_table[det_plot_name])
+            motor.move(last_table[motor.name][index])
+            print('[General Scan] New {} position: {}'.format(motor.name, motor.position))
+            if (num >= 10):
+                if (((index > 0.2 * num) and (index < 0.8 * num)) or retries == 1):
+                    over = 1
+                if retries > 1:
+                    retries -= 1
+            else:
+                over = 1
+        print('[General Scan] {} tuning complete!'.format(motor.name))
+    else:
+        RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
+        print('[General Scan] Done!')
 
 
 def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
