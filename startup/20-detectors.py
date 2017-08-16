@@ -154,10 +154,11 @@ class EncoderFS(Encoder):
                 linecount = len(list(f))
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
-                datum_uid = str(uuid.uuid4())
+                datum_uid = self._reg.register_datum(
+                    self.resource_uid, {'chunk_num': chunk_num})
                 data = {self.name: datum_uid}
-                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+                yield {'data': data,
+                       'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -283,10 +284,12 @@ class DIFS(DigitalInput):
                 linecount = len(list(f))
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
-                datum_uid = str(uuid.uuid4())
+                datum_uid = self._reg.register_datum(self.resource_uid,
+                                                     {'chunk_num': chunk_num})
                 data = {self.name: datum_uid}
-                self._reg.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+
+                yield {'data': data,
+                       'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -467,10 +470,12 @@ class AdcFS(Adc):
 
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
-                datum_uid = str(uuid.uuid4())
+                datum_uid = self._reg.register_datum(self.resource_uid,
+                                                     {'chunk_num': chunk_num})
                 data = {self.name: datum_uid}
-                self._reg.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+
+                yield {'data': data,
+                       'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
 
