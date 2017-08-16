@@ -380,27 +380,17 @@ def execute_xia_trajectory(comment, **metadata):
     flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
     def inner():
         # Setting the name of the file
-        xia1.netcdf_filename.put(comment) #yield from bp.abs_set(xia1.netcdf_filename, comment, wait=True)#
-        next_file_number = xia1.netcdf_filenumber_rb.value #(yield from bp.read(xia1.netcdf_filenumber_rb))#
+        xia1.netcdf_filename.put(comment)
+        next_file_number = xia1.netcdf_filenumber_rb.value
 
         xia_rois = {}
         max_energy = xia1.mca_max_energy.value
         for mca in xia1.read_attrs:
-            if not (eval('xia1.{}.roi0.low.value'.format(mca)) == 0 and eval('xia1.{}.roi0.high.value'.format(mca)) == 0):
-                xia_rois[eval('xia1.{}.roi0.high.name'.format(mca))] = eval('xia1.{}.roi0.high.value'.format(mca)) * max_energy / 2048
-                xia_rois[eval('xia1.{}.roi0.low.name'.format(mca))] = eval('xia1.{}.roi0.low.value'.format(mca)) * max_energy / 2048
+            for roi in range(12):
+                if not (eval('xia1.{}.roi{}.low.value'.format(mca, roi)) < 0 or eval('xia1.{}.roi{}.high.value'.format(mca, roi)) < 0):
+                    xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
+                    xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
 
-            if not (eval('xia1.{}.roi1.low.value'.format(mca)) == 0 and eval('xia1.{}.roi1.high.value'.format(mca)) == 0):
-                xia_rois[eval('xia1.{}.roi1.high.name'.format(mca))] = eval('xia1.{}.roi1.high.value'.format(mca)) * max_energy / 2048
-                xia_rois[eval('xia1.{}.roi1.low.name'.format(mca))] = eval('xia1.{}.roi1.low.value'.format(mca)) * max_energy / 2048
-
-            if not (eval('xia1.{}.roi2.low.value'.format(mca)) == 0 and eval('xia1.{}.roi2.high.value'.format(mca)) == 0):
-                xia_rois[eval('xia1.{}.roi2.high.name'.format(mca))] = eval('xia1.{}.roi2.high.value'.format(mca)) * max_energy / 2048
-                xia_rois[eval('xia1.{}.roi2.low.name'.format(mca))] = eval('xia1.{}.roi2.low.value'.format(mca)) * max_energy / 2048
-
-            if not (eval('xia1.{}.roi3.low.value'.format(mca)) == 0 and eval('xia1.{}.roi3.high.value'.format(mca)) == 0):
-                xia_rois[eval('xia1.{}.roi3.high.name'.format(mca))] = eval('xia1.{}.roi3.high.value'.format(mca)) * max_energy / 2048
-                xia_rois[eval('xia1.{}.roi3.low.name'.format(mca))] = eval('xia1.{}.roi3.low.value'.format(mca)) * max_energy / 2048
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd', 

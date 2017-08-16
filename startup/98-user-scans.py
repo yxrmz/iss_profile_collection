@@ -34,7 +34,10 @@ def tscan(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     for indx in range(int(n_cycles)): 
         if RE.is_aborted:
             return 'Aborted'
-        comment_n = comment + ' ' + str(indx + 1)
+        if n_cycles == 1:
+            comment_n = comment
+        else:
+            comment_n = comment + ' ' + str(indx + 1)
         print('Current step: {} / {}'.format(indx + 1, n_cycles))
         RE(prep_traj_plan())
         uid, = RE(execute_trajectory(comment_n))
@@ -94,9 +97,13 @@ def tscanxia(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     for i in range(int(n_cycles)):
         if RE.is_aborted:
             return 'Aborted'
+        if n_cycles == 1:
+            comment_n = comment
+        else:
+            comment_n = comment + ' ' + str(i + 1)
         print('Current step: {} / {}'.format(i + 1, n_cycles))
         RE(prep_traj_plan())
-        uid, = RE(execute_xia_trajectory(comment + '_' + str(i)))
+        uid, = RE(execute_xia_trajectory(comment_n))
         yield uid
         #uids.append(uid)
         time.sleep(float(delay))

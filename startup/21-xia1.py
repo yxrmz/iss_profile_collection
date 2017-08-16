@@ -5,6 +5,7 @@ class ROI(Device):
     high =              Cpt(EpicsSignal, 'HI')
     sum =               Cpt(EpicsSignal, '')
     net =               Cpt(EpicsSignal, 'N')
+    label =             Cpt(EpicsSignal, 'NM')
 
 class MCA(Device):
     array =             Cpt(EpicsSignal, '')
@@ -14,6 +15,12 @@ class MCA(Device):
     roi3 =              Cpt(ROI, '.R3')
     roi4 =              Cpt(ROI, '.R4')
     roi5 =              Cpt(ROI, '.R5')
+    roi6 =              Cpt(ROI, '.R6')
+    roi7 =              Cpt(ROI, '.R7')
+    roi8 =              Cpt(ROI, '.R8')
+    roi9 =              Cpt(ROI, '.R9')
+    roi10 =             Cpt(ROI, '.R10')
+    roi11 =             Cpt(ROI, '.R11')
             
 
 class XIA(Device):
