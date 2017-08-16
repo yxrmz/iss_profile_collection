@@ -181,7 +181,8 @@ class DigitalOutput(Device):
     dutycycle_sp = Cpt(EpicsSignal, '}DutyCycle-SP')
     default_pol = Cpt(EpicsSignal, '}Dflt-Sel')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reg, **kwargs):
+        self._reg = reg
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
@@ -204,7 +205,8 @@ class DigitalInput(Device):
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reg, **kwargs):
+        self._reg = reg
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
@@ -231,7 +233,7 @@ class DIFS(DigitalInput):
                            "Choose a different DIRECTORY with a shorter path. (I know....)")
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
         self.filepath.put(self._full_path)
-        self.resource_uid = fs.register_resource(
+        self.resource_uid = self._reg.register_resource(
             'PIZZABOX_DI_FILE_TXT',
             DIRECTORY, full_path,
             {'chunk_size': self.chunk_size})
@@ -283,7 +285,7 @@ class DIFS(DigitalInput):
             for chunk_num in range(chunk_count):
                 datum_uid = str(uuid.uuid4())
                 data = {self.name: datum_uid}
-                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
+                self._reg.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
                 yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
@@ -413,7 +415,7 @@ class AdcFS(Adc):
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             self.filepath.put(self._full_path)
-            self.resource_uid = fs.register_resource(
+            self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_AN_FILE_TXT',
                 DIRECTORY, full_path,
                 {'chunk_size': self.chunk_size})
@@ -467,7 +469,7 @@ class AdcFS(Adc):
             for chunk_num in range(chunk_count):
                 datum_uid = str(uuid.uuid4())
                 data = {self.name: datum_uid}
-                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
+                self._reg.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
                 yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
