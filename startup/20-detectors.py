@@ -5,12 +5,12 @@ import time as ttime
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
-from ophyd.areadetector.base import ADComponent as ADCpt, EpicsSignalWithRBV
-from ophyd import DeviceStatus, set_and_wait
+
+from ophyd import set_and_wait, Device
 from bluesky.examples import NullStatus
-import filestore.api as fs
-import signal
-#fs.api.register_handler('PIZZABOX_FILE', PizzaBoxHandler, overwrite=True)
+
+from databroker.assets.handlers_base import HandlerBase
+
 
 class BPM(ProsilicaDetector, SingleTrigger):
     image = Cpt(ImagePlugin, 'image1:')
@@ -36,6 +36,7 @@ class BPM(ProsilicaDetector, SingleTrigger):
         super().__init__(*args, **kwargs)
         self.stage_sigs.clear()  # default stage sigs do not apply
 
+
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
@@ -48,8 +49,10 @@ for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp]:
     bpm.stats1.read_attrs = ['total', 'centroid']
     bpm.stats2.read_attrs = ['total', 'centroid']
 
-tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',name='tc_mask2_4')
-tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',name='tc_mask2_3')
+tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',
+                         name='tc_mask2_4')
+tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',
+                         name='tc_mask2_3')
 
 
 class Encoder(Device):
@@ -78,8 +81,7 @@ class Encoder(Device):
         self._ready_to_collect = False
         if self.connected:
             self.ignore_sel.put(1)
-            #self.filter_dt.put(10000)
-
+            # self.filter_dt.put(10000)
 
 
 class EncoderFS(Encoder):
@@ -184,6 +186,7 @@ class DigitalOutput(Device):
         self._ready_to_collect = False
         if self.connected:
             self.enable.put(0)
+
 
 class DigitalInput(Device):
     """This class defines components but does not implement actual reading.
@@ -510,11 +513,10 @@ class PizzaBoxAnalogFS(Device):
             yield from getattr(self, attr_name).collect()
 
 
-#pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1')
-pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
-pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
+# pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1', reg=db.reg)
+pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name='pba1', reg=db.reg)
+pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name='pba2', reg=db.reg)
 
-import numpy as np
 
 class PizzaBoxEncHandlerTxt:
     encoder_row = namedtuple('encoder_row', ['ts_s', 'ts_ns', 'encoder', 'index', 'state'])
