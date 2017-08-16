@@ -518,8 +518,9 @@ pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name='pba1', reg=db.reg)
 pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name='pba2', reg=db.reg)
 
 
-class PizzaBoxEncHandlerTxt:
-    encoder_row = namedtuple('encoder_row', ['ts_s', 'ts_ns', 'encoder', 'index', 'state'])
+class PizzaBoxEncHandlerTxt(HandlerBase):
+    encoder_row = namedtuple('encoder_row',
+                             ['ts_s', 'ts_ns', 'encoder', 'index', 'state'])
     "Read PizzaBox text files using info from filestore."
     def __init__(self, fpath, chunk_size):
         self.chunk_size = chunk_size
@@ -531,7 +532,8 @@ class PizzaBoxEncHandlerTxt:
         return [self.encoder_row(*(int(v) for v in ln.split()))
                 for ln in self.lines[chunk_num*cs:(chunk_num+1)*cs]]
 
-class PizzaBoxDIHandlerTxt:
+
+class PizzaBoxDIHandlerTxt(HandlerBase):
     di_row = namedtuple('di_row', ['ts_s', 'ts_ns', 'encoder', 'index', 'di'])
     "Read PizzaBox text files using info from filestore."
     def __init__(self, fpath, chunk_size):
@@ -544,7 +546,8 @@ class PizzaBoxDIHandlerTxt:
         return [self.di_row(*(int(v) for v in ln.split()))
                 for ln in self.lines[chunk_num*cs:(chunk_num+1)*cs]]
 
-class PizzaBoxAnHandlerTxt:
+
+class PizzaBoxAnHandlerTxt(HandlerBase):
     encoder_row = namedtuple('encoder_row', ['ts_s', 'ts_ns', 'index', 'adc'])
     "Read PizzaBox text files using info from filestore."
 
