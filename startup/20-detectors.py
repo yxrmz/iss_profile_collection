@@ -567,7 +567,9 @@ class PizzaBoxAnHandlerTxt(HandlerBase):
 
 
 
-
-db.fs.register_handler('PIZZABOX_AN_FILE_TXT', PizzaBoxAnHandlerTxt, overwrite=True)
-db.fs.register_handler('PIZZABOX_ENC_FILE_TXT', PizzaBoxEncHandlerTxt, overwrite=True)
-db.fs.register_handler('PIZZABOX_DI_FILE_TXT', PizzaBoxDIHandlerTxt, overwrite=True)
+db.reg.register_handler('PIZZABOX_AN_FILE_TXT',
+                        PizzaBoxAnHandlerTxt, overwrite=True)
+db.reg.register_handler('PIZZABOX_ENC_FILE_TXT',
+                        PizzaBoxEncHandlerTxt, overwrite=True)
+db.reg.register_handler('PIZZABOX_DI_FILE_TXT',
+                        PizzaBoxDIHandlerTxt, overwrite=True)
