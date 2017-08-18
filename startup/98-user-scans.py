@@ -181,9 +181,10 @@ def get_offsets(num:int = 10, **kwargs):
     print('Done!')
     yield uid
 
-def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, find_min_max, retries, **kwargs):
-    if type(detector) == str:
-        detector = eval(detector)
+def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, rel_stop, num, find_min_max, retries, **kwargs):
+    for index, detector in enumerate(detectors):
+        if type(detector) == str:
+            detectors[index] = eval(detector)
 
     if type(motor) == str:
         motor = eval(motor)
@@ -194,9 +195,9 @@ def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, find_
     if find_min_max:
         over = 0
         while(not over):
-            RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
+            RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, motor.name, ax=ax))#LivePlot(den_name, motor.name, ax=ax))
             last_table = db.get_table(db[-1])
-            if detector.polarity == 'pos':
+            if detector[0].polarity == 'pos':
                 index = np.argmax(last_table[det_plot_name])
             else:
                 index = np.argmin(last_table[det_plot_name])
@@ -211,7 +212,7 @@ def general_scan(detector, det_plot_name, motor, rel_start, rel_stop, num, find_
                 over = 1
         print('[General Scan] {} tuning complete!'.format(motor.name))
     else:
-        RE(general_scan_plan([detector], motor, rel_start, rel_stop, int(num)), LivePlot(det_plot_name, motor.name, ax=ax))
+        RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))#LivePlot(den_name, motor.name, ax=ax))
         print('[General Scan] Done!')
 
 

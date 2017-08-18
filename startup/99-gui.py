@@ -58,7 +58,6 @@ shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe),
                                          (shutter.name, shutter)])
 
 xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds], 
-                                 [tune_mono_pitch , tune_mono_y], 
                                  prep_traj_plan, 
                                  RE, 
                                  db, 

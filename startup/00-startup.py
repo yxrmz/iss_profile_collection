@@ -3,7 +3,7 @@ from ophyd import setup_ophyd
 setup_ophyd()
 
 import sys
-#sys.path.insert(0, './.ipython/') # To be able to import files from .ipython directory
+from pathlib import Path
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
@@ -16,7 +16,12 @@ from bluesky.global_state import gs
 
 RE = gs.RE  # convenience alias
 from historydict import HistoryDict
-RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db') #/home/istavitski/.config/bluesky/bluesky_history.db
+
+try:
+    RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db')
+except Exception as exc:
+    print(exc)
+    RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
 RE.is_aborted = False
 
 # At the end of every run, verify that files were saved and
@@ -48,8 +53,7 @@ from metadataclient.mds import MDS
 #	   'database': 'datastore', 'port': 27017, 'timezone': 'US/Eastern'}, auth=False)
 
 mds = MDS({'host': 'xf08id-ca1.cs.nsls2.local', 'port': 7770,'timezone': 'US/Eastern'})
-		  
-
+		
 db = Broker(mds, FileStore({'host':'xf08id-ca1.cs.nsls2.local', 'port': 27017, 'database':'filestore'}))
 
 
