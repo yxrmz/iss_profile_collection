@@ -195,12 +195,12 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
     if find_min_max:
         over = 0
         while(not over):
-            RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, motor.name, ax=ax))
+            RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
             last_table = db.get_table(db[-1])
-            if detector[0].polarity == 'pos':
-                index = np.argmax(last_table[det_plot_name])
+            if detectors[0].polarity == 'pos':
+                index = np.argmax(last_table[num_name])
             else:
-                index = np.argmin(last_table[det_plot_name])
+                index = np.argmin(last_table[num_name])
             motor.move(last_table[motor.name][index])
             print('[General Scan] New {} position: {}'.format(motor.name, motor.position))
             if (num >= 10):
