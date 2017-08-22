@@ -36,7 +36,7 @@ def energy2theta(energy):
     return np.rad2deg(np.arcsin(12400/energy/2/3.1356))
 
 class HHM(Device):
-    "high heat load monochrometer"
+    "High Heat Load Monochromator"
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
@@ -138,7 +138,16 @@ hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
 
 
 class HRM(Device):
-    "high heat load monochrometer"
+    "High Resolution Monochromator"
+    theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
+
+hrm = HRM('XF:08IDA-OP{Mono:HRM', name='hrm')
+
+
+class HHRM(Device):
+    "High Harmonics Rejection Mirror"
     yu = Cpt(EpicsMotor, 'Mir:HRM:YU}Mtr')
     yd1 = Cpt(EpicsMotor, 'Mir:HRM:YD1}Mtr')
     yd2 = Cpt(EpicsMotor, 'Mir:HRM:YD2}Mtr')
@@ -149,7 +158,7 @@ class HRM(Device):
     y = Cpt(EpicsMotor, 'Mir:HRM:TY}Mtr')
 
 
-hrm = HRM('XF:08IDB-OP{', name='hrm')
+hhrm = HHRM('XF:08IDB-OP{', name='hhrm')
 
 
 class SampleXY(Device):
