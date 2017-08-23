@@ -195,7 +195,8 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
     if find_min_max:
         over = 0
         while(not over):
-            RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
+            uid, = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
+            yield uid
             last_table = db.get_table(db[-1])
             if detectors[0].polarity == 'pos':
                 index = np.argmax(last_table[num_name])
@@ -212,7 +213,8 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
                 over = 1
         print('[General Scan] {} tuning complete!'.format(motor.name))
     else:
-        RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
+        uid, = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
+        yield uid
         print('[General Scan] Done!')
 
 

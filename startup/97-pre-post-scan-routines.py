@@ -20,7 +20,12 @@ def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
 def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Get needed data from db
     uuid = db[uuid]['start']['uid']
-    comment = db[uuid]['start']['comment']
+
+    if 'comment' in db[uuid]['start']:
+        comment = db[uuid]['start']['comment']
+    else:
+        comment = 'General Scan'
+
     year = db[uuid]['start']['year']
     cycle = db[uuid]['start']['cycle']
     proposal = db[uuid]['start']['PROPOSAL']
@@ -71,11 +76,12 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
 
     filenames = {}
     for i in db[uuid]['descriptors']:
-        if 'filename' in i['data_keys'][i['name']]:
-            name = i['name']
-            if 'devname' in i['data_keys'][i['name']]:
-                name = i['data_keys'][i['name']]['devname']
-            filenames[name] = i['data_keys'][i['name']]['filename']
+        if i['name'] in i['data_keys']:
+            if 'filename' in i['data_keys'][i['name']]:
+                name = i['name']
+                if 'devname' in i['data_keys'][i['name']]:
+                    name = i['data_keys'][i['name']]['devname']
+                filenames[name] = i['data_keys'][i['name']]['filename']
     
     fn_html = '<p><b> Files: </b></p>\n<ul>\n'
     for key in filenames.keys():
