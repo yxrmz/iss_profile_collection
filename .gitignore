@@ -6,3 +6,4 @@ startup/tags
 startup/log_eli
 startup/__pycache__/
 db/*
+.idea
