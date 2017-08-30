@@ -17,11 +17,6 @@ class Mirror(Device):
     yaw = Cpt(EpicsMotor, '-Ax:Yaw}Mtr')
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
     
-    def home_motors(self):
-        self.pitch.move(0)
-        self.roll.move(0)
-        self.y.move(0)
-
 
 cm1 = Mirror('XF:08IDA-OP{Mir:1-CM', name='cm1')
 cm2 = Mirror('XF:08IDA-OP{Mir:2-CM', name='cm2')
@@ -36,6 +31,8 @@ def energy2theta(energy):
     return np.rad2deg(np.arcsin(12400/energy/2/3.1356))
 
 class HHM(Device):
+    _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+    _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     "High Heat Load Monochromator"
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
@@ -43,7 +40,7 @@ class HHM(Device):
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
     energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr')
 
-  # The following are related to trajectory motion
+    # The following are related to trajectory motion
     lut_number = Cpt(EpicsSignal, 'MC:06}LUT-Set')
     lut_number_rbv = Cpt(EpicsSignal, 'MC:06}LUT-Read')
     lut_start_transfer = Cpt(EpicsSignal, 'MC:06}TransferLUT')
