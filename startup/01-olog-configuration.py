@@ -1,6 +1,9 @@
+from bluesky.callbacks.olog import logbook_cb_factory
 from functools import partial
 from pyOlog import SimpleOlogClient
-from bluesky.callbacks.olog import logbook_cb_factory
+import queue
+import threading
+from warnings import warn
 
 # Set up the logbook. This configures bluesky's summaries of
 # data acquisition (scan type, ID, etc.).
@@ -10,12 +13,31 @@ simple_olog_client = SimpleOlogClient()
 generic_logbook_func = simple_olog_client.log
 configured_logbook_func = partial(generic_logbook_func, logbooks=LOGBOOKS)
 
+# This is for ophyd.commands.get_logbook, which simply looks for
+# a variable called 'logbook' in the global IPython namespace.
+logbook = simple_olog_client
+
 cb = logbook_cb_factory(configured_logbook_func)
 
-#DICT_OF_TEMPLATES = {'relative_scan': "BLAH",
-#                     'execute_trajectory': "BLERG"}
 
-#cb = logbook_cb_factory(configured_logbook_func,
-#                        desc_template=CUSTOM_DEFAULT_TEMPLATE,
-#                        desc_dispatch=DICT_OF_TEMPLATES)
-RE.subscribe('start', cb)
+
+def submit_to_olog(queue, cb):
+    while True:
+        name, doc = queue.get()  # waits until document is available
+        try:
+            cb(name, doc)
+        except Exception as exc:
+            warn('This olog is giving errors. This will not be logged.'
+                 'Error:' + str(exc))
+
+olog_queue = queue.Queue(maxsize=100)
+olog_thread = threading.Thread(target=submit_to_olog, args=(olog_queue, cb), daemon=True)
+olog_thread.start()
+
+def send_to_olog_queue(name, doc):
+    try:
+        olog_queue.put((name, doc), block=False)
+    except queue.Full:
+        warn('The olog queue is full. This will not be logged.')
+
+RE.subscribe(send_to_olog_queue, 'start')

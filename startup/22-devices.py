@@ -8,7 +8,7 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
 from ophyd.areadetector.base import ADComponent as ADCpt, EpicsSignalWithRBV
 from ophyd import DeviceStatus, set_and_wait
 from bluesky.examples import NullStatus
-import filestore.api as fs
+
 
 class Shutter():
 

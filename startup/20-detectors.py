@@ -76,9 +76,10 @@ class Encoder(Device):
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reg, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
+        self._reg = reg
         if self.connected:
             self.ignore_sel.put(1)
             # self.filter_dt.put(10000)
@@ -103,7 +104,7 @@ class EncoderFS(Encoder):
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             self.filepath.put(self._full_path)
-            self.resource_uid = fs.register_resource(
+            self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_ENC_FILE_TXT',
                 DIRECTORY, full_path,
                 {'chunk_size': self.chunk_size})
@@ -308,15 +309,15 @@ class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
     internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
 
-    enc1 = Cpt(EncoderFS, ':1')
-    enc2 = Cpt(EncoderFS, ':2')
-    enc3 = Cpt(EncoderFS, ':3')
-    enc4 = Cpt(EncoderFS, ':4')
-    di = Cpt(DIFS, ':DI')
-    do0 = Cpt(DigitalOutput, '-DO:0')
-    do1 = Cpt(DigitalOutput, '-DO:1')
-    do2 = Cpt(DigitalOutput, '-DO:2')
-    do3 = Cpt(DigitalOutput, '-DO:3')
+    enc1 = Cpt(EncoderFS, ':1', reg=db.reg)
+    enc2 = Cpt(EncoderFS, ':2', reg=db.reg)
+    enc3 = Cpt(EncoderFS, ':3', reg=db.reg)
+    enc4 = Cpt(EncoderFS, ':4', reg=db.reg)
+    di = Cpt(DIFS, ':DI', reg=db.reg)
+    do0 = Cpt(DigitalOutput, '-DO:0', reg=db.reg)
+    do1 = Cpt(DigitalOutput, '-DO:1', reg=db.reg)
+    do2 = Cpt(DigitalOutput, '-DO:2', reg=db.reg)
+    do3 = Cpt(DigitalOutput, '-DO:3', reg=db.reg)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -401,6 +402,10 @@ class Adc(Device):
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
     chunk_size = 1024
+
+    def __init__(self, *args, reg, **kwargs):
+        self._reg = reg
+        super().__init__(*args, **kwargs)
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
@@ -494,9 +499,9 @@ class AdcFS(Adc):
 class PizzaBoxAnalogFS(Device):
     internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
 
-    adc1 = Cpt(AdcFS, 'ADC:1')
-    adc6 = Cpt(AdcFS, 'ADC:6')
-    adc7 = Cpt(AdcFS, 'ADC:7')
+    adc1 = Cpt(AdcFS, 'ADC:1', reg=db.reg)
+    adc6 = Cpt(AdcFS, 'ADC:6', reg=db.reg)
+    adc7 = Cpt(AdcFS, 'ADC:7', reg=db.reg)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -521,8 +526,8 @@ class PizzaBoxAnalogFS(Device):
 
 
 # pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1', reg=db.reg)
-pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name='pba1', reg=db.reg)
-pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name='pba2', reg=db.reg)
+pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name='pba1')
+pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name='pba2')
 
 
 class PizzaBoxEncHandlerTxt(HandlerBase):
