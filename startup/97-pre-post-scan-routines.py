@@ -281,17 +281,3 @@ def xia_gain_matching(center_energy, scan_range, channel_number):
 def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
     arrays = db.get_table(db[uuid])[graph]
     np.savetxt('/GPFS/xf08id/Sandbox/' + comment, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
-
-
-def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=13000, step=100):
-    table = []
-    for energy in range(start_energy, stop_energy + 1, step):
-        motor.move(energy)
-        time.sleep(0.5)
-        tune_mono_pitch(2, 0.025)
-        tune_mono_y(0.5, 0.01)
-        table.append([energy, hhm.pitch.read()['hhm_pitch']['value'], hhm.y.read()['hhm_y']['value']])
-
-    return table
-
-

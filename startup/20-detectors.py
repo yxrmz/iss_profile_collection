@@ -3,8 +3,7 @@ from collections import namedtuple
 import os
 import time as ttime
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
-                   EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
-                   DeviceStatus)
+                   EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin)
 
 from ophyd import set_and_wait, Device
 from bluesky.examples import NullStatus
@@ -18,10 +17,10 @@ class BPM(ProsilicaDetector, SingleTrigger):
     stats2 = Cpt(StatsPlugin, 'Stats2:')
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
+    counts = Cpt(EpicsSignal, 'Pos:Counts')
     # Dan Allan guessed about the nature of these signals. Fix them if you need them.
     ins = Cpt(EpicsSignal, 'Cmd:In-Cmd')
     ret = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
-    counts = Cpt(EpicsSignal, 'Pos:Counts')
     switch_insert = Cpt(EpicsSignalRO, 'Sw:InLim-Sts')
     switch_retract = Cpt(EpicsSignalRO, 'Sw:OutLim-Sts')
     polarity = 'pos'
