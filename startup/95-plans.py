@@ -552,17 +552,19 @@ def wait_filter_in_place(status_pv):
             yield from bp.sleep(.1)
 
 
-def prepare_bl_plan(energy: int = -1, debug=False):
+def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
     if debug:
         print('[Prepare BL] Running Prepare Beamline in Debug Mode! (Not moving anything)')
 
     energy = int(energy)
+    curr_energy = energy
     if energy < 0:
-        curr_energy = (yield from bp.read(hhm.energy))[hhm.energy.name]['value']
-    else:
-        curr_energy = energy
+        ret = (yield from bp.read(hhm.energy))
+        if ret is not None:
+            curr_energy = ret[hhm.energy.name]['value']
 
-    print('[Prepare BL] Setting up the beamline to {} eV'.format(curr_energy))
+    if print_messages:
+        print('[Prepare BL] Setting up the beamline to {} eV'.format(curr_energy))
 
     curr_range = [ran for ran in prepare_bl_def[0] if
                   ran['energy_end'] > 8000 >= ran['energy_start']]
@@ -572,12 +574,14 @@ def prepare_bl_plan(energy: int = -1, debug=False):
 
     curr_range = curr_range[0]
     pv_he = curr_range['pvs']['IC Gas He']['object']
-    print('[Prepare BL] Setting HE to {}'.format(curr_range['pvs']['IC Gas He']['value']))
+    if print_messages:
+        print('[Prepare BL] Setting HE to {}'.format(curr_range['pvs']['IC Gas He']['value']))
     if not debug:
         yield from bp.mv(pv_he, curr_range['pvs']['IC Gas He']['value'])
 
     pv_n2 = curr_range['pvs']['IC Gas N2']['object']
-    print('[Prepare BL] Setting N2 to {}'.format(curr_range['pvs']['IC Gas N2']['value']))
+    if print_messages:
+        print('[Prepare BL] Setting N2 to {}'.format(curr_range['pvs']['IC Gas N2']['value']))
     if not debug:
         yield from bp.mv(pv_n2, curr_range['pvs']['IC Gas N2']['value'])
 
@@ -585,18 +589,33 @@ def prepare_bl_plan(energy: int = -1, debug=False):
     # For now if you increase the voltage (any values), we will have the delay. 2 minutes
 
     pv_i0_volt = curr_range['pvs']['I0 Voltage']['object']
-    old_i0 = (yield from bp.read(pv_i0_volt))[pv_i0_volt.name]['value']
-    print('[Prepare BL] Old I0 Voltage: {} | New I0 Voltage: {}'.format(old_i0,
+    ret = (yield from bp.read(pv_i0_volt))
+    if ret is not None:
+        old_i0 = ret[pv_i0_volt.name]['value']
+    else:
+        old_i0 = 0
+    if print_messages:
+        print('[Prepare BL] Old I0 Voltage: {} | New I0 Voltage: {}'.format(old_i0,
                                                                         curr_range['pvs']['I0 Voltage']['value']))
 
     pv_it_volt = curr_range['pvs']['It Voltage']['object']
-    old_it = (yield from bp.read(pv_it_volt))[pv_it_volt.name]['value']
-    print('[Prepare BL] Old It Voltage: {} | New It Voltage: {}'.format(old_it,
+    ret = (yield from bp.read(pv_it_volt))
+    if ret is not None:
+        old_it = ret[pv_it_volt.name]['value']
+    else:
+        old_it = 0
+    if print_messages:
+        print('[Prepare BL] Old It Voltage: {} | New It Voltage: {}'.format(old_it,
                                                                         curr_range['pvs']['It Voltage']['value']))
 
     pv_ir_volt = curr_range['pvs']['Ir Voltage']['object']
-    old_ir = (yield from bp.read(pv_ir_volt))[pv_ir_volt.name]['value']
-    print('[Prepare BL] Old Ir Voltage: {} | New Ir Voltage: {}'.format(old_ir,
+    ret = (yield from bp.read(pv_ir_volt))
+    if ret is not None:
+        old_ir = ret[pv_ir_volt.name]['value']
+    else:
+        old_ir = 0
+    if print_messages:
+        print('[Prepare BL] Old Ir Voltage: {} | New Ir Voltage: {}'.format(old_ir,
                                                                         curr_range['pvs']['Ir Voltage']['value']))
 
     # check if bpm_cm will move
@@ -608,15 +627,22 @@ def prepare_bl_plan(energy: int = -1, debug=False):
     elif new_cm_value == 'IN':
         pv = cm['object'].switch_insert
     yield from bp.sleep(0.1)
-    if (yield from bp.read(pv))[pv.name]['value'] == 0:
-        close_shutter = 1
+    ret = (yield from bp.read(pv))
+    if ret is not None:
+        if ret[pv.name]['value'] == 0:
+            close_shutter = 1
 
     # check if filtebox will move
     mv_fb = 0
     fb_value = prepare_bl_def[1]['FB Positions'][curr_range['pvs']['Filterbox Pos']['value'] - 1]
     pv_fb_motor = curr_range['pvs']['Filterbox Pos']['object']
     yield from bp.sleep(0.1)
-    curr_fb_value = (yield from bp.read(pv_fb_motor))[pv_fb_motor.name]['value']
+    ret = (yield from bp.read(pv_fb_motor))
+    if ret is not None:
+        curr_fb_value = ret[pv_fb_motor.name]['value']
+    else:
+        curr_fb_value = -1
+
     if abs(fb_value - curr_fb_value) > 20 * (10 ** (-pv_fb_motor.precision)):
         close_shutter = 1
         mv_fb = 1
@@ -626,7 +652,8 @@ def prepare_bl_plan(energy: int = -1, debug=False):
         raise Exception("Timeout")
 
     if close_shutter:
-        print('[Prepare BL] Closing FE Shutter...')
+        if print_messages:
+            print('[Prepare BL] Closing FE Shutter...')
         if not debug:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(6)
@@ -637,25 +664,31 @@ def prepare_bl_plan(energy: int = -1, debug=False):
                 return
 
             tries = 3
-            while (yield from bp.read(shutter_fe.state))[shutter_fe.state.name]['value'] != 1:
-                yield from bp.sleep(0.1)
-                if tries:
-                    yield from shutter_fe.close_plan()
-                    tries -= 1
+            ret = (yield from bp.read(shutter_fe.state))
+            if ret is not None:
+                while ret[shutter_fe.state.name]['value'] != 1:
+                    yield from bp.sleep(0.1)
+                    if tries:
+                        yield from shutter_fe.close_plan()
+                        tries -= 1
+                    ret = (yield from bp.read(shutter_fe.state))
 
             signal.alarm(0)
-        print('[Prepare BL] FE Shutter closed')
+        if print_messages:
+            print('[Prepare BL] FE Shutter closed')
 
     yield from bp.sleep(0.1)
     fb_sts_pv = curr_range['pvs']['Filterbox Pos']['STS PVS'][curr_range['pvs']['Filterbox Pos']['value'] - 1]
     if mv_fb:
-        print('[Prepare BL] Moving Filterbox to {}'.format(fb_value))
+        if print_messages:
+            print('[Prepare BL] Moving Filterbox to {}'.format(fb_value))
         if not debug:
             yield from bp.abs_set(pv_fb_motor, fb_value, group='prepare_bl')
 
     pv_hhrm_hor = curr_range['pvs']['HHRM Hor Trans']['object']
     yield from bp.sleep(0.1)
-    print('[Prepare BL] Moving HHRM Horizontal to {}'.format(curr_range['pvs']['HHRM Hor Trans']['value']))
+    if print_messages:
+        print('[Prepare BL] Moving HHRM Horizontal to {}'.format(curr_range['pvs']['HHRM Hor Trans']['value']))
     if not debug:
         yield from bp.abs_set(pv_hhrm_hor, curr_range['pvs']['HHRM Hor Trans']['value'], group='prepare_bl')
 
@@ -669,7 +702,8 @@ def prepare_bl_plan(energy: int = -1, debug=False):
             pv_read = bpm['object'].switch_retract
         try:
             if pv:
-                print('[Prepare BL] Moving {} {}'.format(bpm['name'], bpm['value']))
+                if print_messages:
+                    print('[Prepare BL] Moving {} {}'.format(bpm['name'], bpm['value']))
                 for i in range(3):
                     if not debug:
                         yield from bp.abs_set(pv_set, 1)
@@ -682,7 +716,8 @@ def prepare_bl_plan(energy: int = -1, debug=False):
         yield from wait_filter_in_place(fb_sts_pv)
         #while fb_sts_pv.value != 1:
         #    pass
-        print('[Prepare BL] Opening shutter...')
+        if print_messages:
+            print('[Prepare BL] Opening shutter...')
         if not debug:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(6)
@@ -693,21 +728,26 @@ def prepare_bl_plan(energy: int = -1, debug=False):
                 return
 
             tries = 3
-            while (yield from bp.read(shutter_fe.state))[shutter_fe.state.name]['value'] != 1:
-                yield from bp.sleep(0.1)
-                if tries:
-                    yield from shutter_fe.open_plan()
-                    tries -= 1
+            ret = (yield from bp.read(shutter_fe.state))
+            if ret is not None:
+                while ret[shutter_fe.state.name]['value'] != 0:
+                    yield from bp.sleep(0.1)
+                    if tries:
+                        yield from shutter_fe.open_plan()
+                        tries -= 1
+                    ret = (yield from bp.read(shutter_fe.state))
 
             signal.alarm(0)
-        print('[Prepare BL] FE Shutter open')
+        if print_messages:
+            print('[Prepare BL] FE Shutter open')
 
     if curr_range['pvs']['I0 Voltage']['value'] - old_i0 > 2 or \
             curr_range['pvs']['It Voltage']['value'] - old_it > 2 or \
             curr_range['pvs']['Ir Voltage']['value'] - old_ir > 2:
         old_time = ttime.time()
         wait_time = 120
-        print('[Prepare BL] Waiting for gas ({}s)...'.format(wait_time))
+        if print_messages:
+            print('[Prepare BL] Waiting for gas ({}s)...'.format(wait_time))
         percentage = 0
         if not debug:
             while ttime.time() - old_time < wait_time:  # 120 seconds
@@ -717,11 +757,13 @@ def prepare_bl_plan(energy: int = -1, debug=False):
                     percentage += 0.1
                 yield from bp.sleep(0.1)
         print('[Prepare BL] 100% ({:.1f}s)'.format(wait_time))
-        print('[Prepare BL] Done waiting for gas...')
+        if print_messages:
+            print('[Prepare BL] Done waiting for gas...')
 
-    print('[Prepare BL] Setting i0 {}'.format(curr_range['pvs']['I0 Voltage']['value']))
-    print('[Prepare BL] Setting it {}'.format(curr_range['pvs']['It Voltage']['value']))
-    print('[Prepare BL] Setting ir {}'.format(curr_range['pvs']['Ir Voltage']['value']))
+    if print_messages:
+        print('[Prepare BL] Setting i0 {}'.format(curr_range['pvs']['I0 Voltage']['value']))
+        print('[Prepare BL] Setting it {}'.format(curr_range['pvs']['It Voltage']['value']))
+        print('[Prepare BL] Setting ir {}'.format(curr_range['pvs']['Ir Voltage']['value']))
     if not debug:
         yield from bp.abs_set(pv_i0_volt, curr_range['pvs']['I0 Voltage']['value'], group='prepare_bl')
         yield from bp.abs_set(pv_it_volt, curr_range['pvs']['It Voltage']['value'], group='prepare_bl')
@@ -729,11 +771,13 @@ def prepare_bl_plan(energy: int = -1, debug=False):
 
     yield from bp.sleep(0.1)
 
-    print('[Prepare BL] Waiting for everything to be in position...')
+    if print_messages:
+        print('[Prepare BL] Waiting for everything to be in position...')
     if not debug:
         yield from bp.wait(group='prepare_bl')
-    print('[Prepare BL] Everything seems to be in position')
-    print('[Prepare BL] Beamline preparation done!')
+    if print_messages:
+        print('[Prepare BL] Everything seems to be in position')
+        print('[Prepare BL] Beamline preparation done!')
 
 #    yield from bp.mv(hhm.energy, E)
 #    yield from bp.mv(other_thing, f(E))
