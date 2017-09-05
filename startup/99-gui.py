@@ -98,8 +98,9 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds],
                                  det_dict,
                                  motors_list,
                                  general_scan,
-                                 write_html_log = write_html_log,
-                                 auto_tune_elements = auto_tune_elements)
+                                 write_html_log=write_html_log,
+                                 auto_tune_elements=auto_tune_elements,
+                                 prepare_bl=[prepare_bl_plan, prepare_bl_def])
 
 
 def xlive():
