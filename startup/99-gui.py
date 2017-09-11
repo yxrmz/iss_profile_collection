@@ -89,9 +89,14 @@ shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe),
                                          (shutter_ph.name, shutter_ph),
                                          (shutter.name, shutter)])
 
+ic_amplifiers = {'i0_amp': i0_amp,
+                 'it_amp': it_amp,
+                 'ir_amp': ir_amp,
+                 'iff_amp': iff_amp}
+
 xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds], 
                                  prep_traj_plan, 
-                                 RE, 
+                                 RE,
                                  db, 
                                  hhm, 
                                  shutters_dict,
@@ -99,7 +104,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds],
                                  motors_list,
                                  general_scan,
                                  write_html_log = write_html_log,
-                                 auto_tune_elements = auto_tune_elements)
+                                 auto_tune_elements = auto_tune_elements,
+                                 ic_amplifiers = ic_amplifiers)
 
 
 def xlive():

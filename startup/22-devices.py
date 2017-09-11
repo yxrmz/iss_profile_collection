@@ -1,16 +1,10 @@
-import uuid
-from collections import namedtuple
-import os
-import time as ttime
-from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
+from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
-from ophyd.areadetector.base import ADComponent as ADCpt, EpicsSignalWithRBV
-from ophyd import DeviceStatus, set_and_wait
-from bluesky.examples import NullStatus
-import filestore.api as fs
+import bluesky.plans as bp
 
-class Shutter():
+
+class Shutter(Device):
 
     def __init__(self, name):
         self.name = name
@@ -62,6 +56,7 @@ class Shutter():
 shutter = Shutter(name = 'SP Shutter')
 shutter.shutter_type = 'SP'
 
+
 class EPS_Shutter(Device):
     state = Cpt(EpicsSignal, 'Pos-Sts')
     cls = Cpt(EpicsSignal, 'Cmd:Cls-Cmd')
@@ -83,3 +78,77 @@ shutter_fe = EPS_Shutter('XF:08ID-PPS{Sh:FE}', name = 'FE Shutter')
 shutter_fe.shutter_type = 'FE'
 shutter_ph = EPS_Shutter('XF:08IDA-PPS{PSh}', name = 'PH Shutter')
 shutter_ph.shutter_type = 'PH'
+
+
+class ICAmplifier(Device):
+    #low_noise_gain = Cpt(EpicsSignal, 'LN}I0')
+
+    def __init__(self, *args, gain_0, gain_1, gain_2, hspeed_bit, bw_10mhz_bit, bw_1mhz_bit, lnoise, hspeed, bwidth, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gain_0 = EpicsSignal(self.prefix + gain_0, name=self.name + '_gain_0')
+        self.gain_1 = EpicsSignal(self.prefix + gain_1, name=self.name + '_gain_1')
+        self.gain_2 = EpicsSignal(self.prefix + gain_2, name=self.name + '_gain_2')
+        self.hspeed_bit = EpicsSignal(self.prefix + hspeed_bit, name=self.name + '_hspeed_bit')
+        self.bw_10mhz_bit = EpicsSignal(self.prefix + bw_10mhz_bit, name=self.name + '_bw_10mhz_bit')
+        self.bw_1mhz_bit = EpicsSignal(self.prefix + bw_1mhz_bit, name=self.name + '_bw_1mhz_bit')
+        self.low_noise_gain = EpicsSignal(self.prefix + lnoise, name=self.name + '_lnoise')
+        self.high_speed_gain = EpicsSignal(self.prefix + hspeed, name=self.name + '_hspeed')
+        self.band_width = EpicsSignal(self.prefix + bwidth, name=self.name + '_bwidth')
+
+    def set_gain(self, value: str, high_speed: bool):
+
+        val = int(value[-1]) - 2
+        if high_speed:
+            val -= 1
+            self.low_noise_gain.put(0)
+            self.high_speed_gain.put(value)
+            self.hspeed_bit.put(1)
+        else:
+            self.low_noise_gain.put(value)
+            self.high_speed_gain.put(0)
+            self.hspeed_bit.put(0)
+
+        self.gain_0.put((val >> 0) & 1)
+        self.gain_1.put((val >> 1) & 1)
+        self.gain_2.put((val >> 2) & 1)
+
+    def set_gain_plan(self, value: str, high_speed: bool):
+        val = int(value[-1]) - 2
+        if high_speed:
+            val -= 1
+            yield from bp.abs_set(self.low_noise_gain, 0)
+            yield from bp.abs_set(self.high_speed_gain, value)
+            yield from bp.abs_set(self.hspeed_bit, 1)
+        else:
+            yield from bp.abs_set(self.low_noise_gain, value)
+            yield from bp.abs_set(self.high_speed_gain, 0)
+            yield from bp.abs_set(self.hspeed_bit, 0)
+
+        yield from bp.abs_set(self.gain_0, (val >> 0) & 1)
+        yield from bp.abs_set(self.gain_1, (val >> 1) & 1)
+        yield from bp.abs_set(self.gain_2, (val >> 2) & 1)
+
+    def get_gain(self):
+        if self.low_noise_gain.value == 0:
+            return [self.high_speed_gain.enum_strs[self.high_speed_gain.value], 1]
+        elif self.high_speed_gain.value == 0:
+            return [self.low_noise_gain.enum_strs[self.low_noise_gain.value], 0]
+        else:
+            return ['0', 0]
+
+
+i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',
+                     gain_2='ES-DO}2_8_2', hspeed_bit='ES-DO}2_8_3', bw_10mhz_bit='ES-DO}2_8_4', bw_1mhz_bit='ES-DO}2_8_5',
+                     lnoise='Amp-LN}I0', hspeed='Amp-HS}I0', bwidth='Amp-BW}I0', name='i0_amp')
+
+it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_9_0', gain_1='ES-DO}2_9_1',
+                     gain_2='ES-DO}2_9_2', hspeed_bit='ES-DO}2_9_3', bw_10mhz_bit='ES-DO}2_9_4', bw_1mhz_bit='ES-DO}2_9_5',
+                     lnoise='Amp-LN}It', hspeed='Amp-HS}It', bwidth='Amp-BW}It', name='it_amp')
+
+ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_10_0', gain_1='ES-DO}2_10_1',
+                     gain_2='ES-DO}2_10_2', hspeed_bit='ES-DO}2_10_3', bw_10mhz_bit='ES-DO}2_10_4', bw_1mhz_bit='ES-DO}2_10_5',
+                     lnoise='Amp-LN}Ir', hspeed='Amp-HS}Ir', bwidth='Amp-BW}Ir', name='ir_amp')
+
+iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_11_0', gain_1='ES-DO}2_11_1',
+                     gain_2='ES-DO}2_11_2', hspeed_bit='ES-DO}2_11_3', bw_10mhz_bit='ES-DO}2_11_4', bw_1mhz_bit='ES-DO}2_11_5',
+                     lnoise='Amp-LN}If', hspeed='Amp-HS}If', bwidth='Amp-BW}If', name='iff_amp')
