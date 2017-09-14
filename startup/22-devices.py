@@ -97,14 +97,21 @@ class ICAmplifier(Device):
 
     def set_gain(self, value: str, high_speed: bool):
 
+        if hasattr(value, 'decode'):
+            value = value.decode('utf-8')
+
         val = int(value[-1]) - 2
+        if not ((high_speed and (1 <= val < 7)) or (not high_speed and (0 <= val < 6))):
+            print('{} invalid value. Ignored...'.format(self.name))
+            return 'Aborted'
+
         if high_speed:
             val -= 1
             self.low_noise_gain.put(0)
-            self.high_speed_gain.put(value)
+            self.high_speed_gain.put(val + 1)
             self.hspeed_bit.put(1)
         else:
-            self.low_noise_gain.put(value)
+            self.low_noise_gain.put(val + 1)
             self.high_speed_gain.put(0)
             self.hspeed_bit.put(0)
 
@@ -113,14 +120,22 @@ class ICAmplifier(Device):
         self.gain_2.put((val >> 2) & 1)
 
     def set_gain_plan(self, value: str, high_speed: bool):
+
+        if hasattr(value, 'decode'):
+            value = value.decode('utf-8')
+
         val = int(value[-1]) - 2
+        if not ((high_speed and (1 <= val < 7)) or (not high_speed and (0 <= val < 6))):
+            print('{} invalid value. Ignored...'.format(self.name))
+            return 'Aborted'
+
         if high_speed:
             val -= 1
             yield from bp.abs_set(self.low_noise_gain, 0)
-            yield from bp.abs_set(self.high_speed_gain, value)
+            yield from bp.abs_set(self.high_speed_gain, val + 1)
             yield from bp.abs_set(self.hspeed_bit, 1)
         else:
-            yield from bp.abs_set(self.low_noise_gain, value)
+            yield from bp.abs_set(self.low_noise_gain, val + 1)
             yield from bp.abs_set(self.high_speed_gain, 0)
             yield from bp.abs_set(self.hspeed_bit, 0)
 
