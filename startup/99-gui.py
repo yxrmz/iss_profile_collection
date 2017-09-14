@@ -53,6 +53,7 @@ motors_list = [slits.v_gap,
                hrm.y,
                huber_stage.y,
                huber_stage.pitch,
+               huber_stage.z,
                xbic.dac1,
                xbic.dac2]
 
