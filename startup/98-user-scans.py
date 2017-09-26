@@ -111,7 +111,7 @@ def tscanxia(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     #return uids
 
 
-def get_offsets(num:int = 10, **kwargs):
+def get_offsets(num:int = 20, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
