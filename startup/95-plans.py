@@ -6,19 +6,19 @@ from isstools.conversions import xray
 
 
 
-def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba1.adc7], comment='', **metadata):
+def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba1.adc7], name='', **metadata):
     """
     Example
     -------
     >>> RE(energy_scan(11350, 11450, 2))
     """
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'step scan', 'comment': comment}
+        md = {'plan_args': {}, 'plan_name': 'step scan', 'name': name}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
     # Start with a step scan.
-    plan = bp.scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'comment': comment})
+    plan = bp.scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'name': name})
     # Wrap it in a fly scan with the Pizza Box.
     plan = bp.fly_during_wrapper(plan, flyers)
     # Working around a bug in fly_during_wrapper, stage and unstage the pizza box manually.
@@ -32,7 +32,7 @@ def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba1.adc7], comme
     yield from plan
 
 
-def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
+def energy_multiple_scans(start, stop, repeats, name='', **metadata):
     """
     Example
     -------
@@ -40,7 +40,7 @@ def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
     """
     flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'comment': comment}
+        md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'name': name}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 
@@ -70,7 +70,7 @@ def energy_multiple_scans(start, stop, repeats, comment='', **metadata):
 
 
 
-def get_offsets_plan(detectors, num = 1, comment = '', **metadata):
+def get_offsets_plan(detectors, num = 1, name = '', **metadata):
     """
     Example
     -------
@@ -79,7 +79,7 @@ def get_offsets_plan(detectors, num = 1, comment = '', **metadata):
 
     flyers = detectors 
 
-    plan = bp.count(flyers, num, md={'plan_name': 'get_offset', 'comment': comment}, delay = 0.5)
+    plan = bp.count(flyers, num, md={'plan_name': 'get_offset', 'name': name}, delay = 0.5)
 
     def set_offsets():
         for flyer in flyers:
@@ -90,7 +90,7 @@ def get_offsets_plan(detectors, num = 1, comment = '', **metadata):
 
 
 
-def tune(detectors, motor, start, stop, num, comment='', **metadata):
+def tune(detectors, motor, start, stop, num, name='', **metadata):
     """
     Example
     -------
@@ -99,7 +99,7 @@ def tune(detectors, motor, start, stop, num, comment='', **metadata):
 
     flyers = detectors 
 
-    plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'comment': comment})
+    plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'name': name})
     
     if hasattr(flyers[0], 'kickoff'):
         plan = bp.fly_during_wrapper(plan, flyers)
@@ -131,7 +131,7 @@ def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, pr
     return grid[::-1], integration_times
     #return np.append(np.append(preedge, edge), postedge)
 
-def step_list_plan(detectors, motor, positions_grid, comment = ''):
+def step_list_plan(detectors, motor, positions_grid, name = ''):
     """
     Example
     -------
@@ -140,7 +140,7 @@ def step_list_plan(detectors, motor, positions_grid, comment = ''):
     >>> RE(step_list_plan([xia1, pba1.adc7], hhm.theta, Ni_positions_grid), LivePlot('xia1_mca1_roi0_sum', 'hhm_theta'))
     """
     
-    plan = bp.list_scan(detectors, motor, list(positions_grid), md={'comment': comment, 'plan_name': 'step_list_plan'})
+    plan = bp.list_scan(detectors, motor, list(positions_grid), md={'name': name, 'plan_name': 'step_list_plan'})
     
     flyers = []
     for det in detectors:
@@ -233,11 +233,11 @@ def sampleXY_plan(detectors, motor, start, stop, num):
     yield from plan
 
 
-def pb_scan_plan(detectors, motor, scan_center, scan_range, comment = ''):
+def pb_scan_plan(detectors, motor, scan_center, scan_range, name = ''):
 
     flyers = detectors
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'pb_scan','experiment': 'pb_scan', 'comment': comment}
+        md = {'plan_args': {}, 'plan_name': 'pb_scan','experiment': 'pb_scan', 'name': name}
         #md.update(**metadata)
         yield from bp.open_run(md=md)
         yield from bp.sleep(.4)
@@ -302,13 +302,13 @@ def prep_traj_plan(delay = 0.25):
     yield from bp.sleep(delay)
 
 
-def execute_trajectory(comment, **metadata):
+def execute_trajectory(name, **metadata):
     flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission', 
-              'comment': comment, 
+              'name': name, 
               'trajectory_name': hhm.trajectory_name.value,
               'angle_offset': str(hhm.angle_offset.value)}
         for flyer in flyers:
@@ -376,11 +376,11 @@ def execute_trajectory(comment, **metadata):
 
 
 
-def execute_xia_trajectory(comment, **metadata):
+def execute_xia_trajectory(name, **metadata):
     flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
     def inner():
         # Setting the name of the file
-        xia1.netcdf_filename.put(comment)
+        xia1.netcdf_filename.put(name)
         next_file_number = xia1.netcdf_filenumber_rb.value
 
         xia_rois = {}
@@ -394,9 +394,9 @@ def execute_xia_trajectory(comment, **metadata):
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd', 
-              'comment': comment, 
+              'name': name, 
               'xia_max_energy': xia1.mca_max_energy.value,
-              'xia_filename': '{}_{:03}.nc'.format(comment, next_file_number), 
+              'xia_filename': '{}_{:03}.nc'.format(name, next_file_number), 
               'xia_rois':xia_rois, 
               'trajectory_name': hhm.trajectory_name.value,
               'angle_offset': str(hhm.angle_offset.value)}
@@ -409,11 +409,11 @@ def execute_xia_trajectory(comment, **metadata):
         # TODO Replace this with actual status object logic.
         yield from bp.clear_checkpoint()
 
-        name = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
-        name = name[0:len(name) - 1]
-        while(name != comment):
-            name = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
-            name = name[0:len(name) - 1]
+        fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
+        fname = fname[0:len(fname) - 1]
+        while(fname != name):
+            fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
+            fname = name[0:len(fname) - 1]
             yield from bp.sleep(.05)
        
         yield from shutter.open_plan()
@@ -480,11 +480,11 @@ def execute_xia_trajectory(comment, **metadata):
     return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()), flyers))
 
 
-def execute_loop_trajectory(comment, **metadata):
+def execute_loop_trajectory(name, **metadata):
 
     flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
-        md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'comment': comment, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
+        md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'name': name, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)
         yield from bp.open_run(md=md)
 

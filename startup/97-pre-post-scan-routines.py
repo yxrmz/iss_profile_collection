@@ -6,25 +6,14 @@ from scipy.optimize import curve_fit
 from isstools.xasdata import xasdata
 
 
-def create_user_folder(uuid, comment, parser, path='/GPFS/xf08id/User Data/'):
-    print('Creating directory...')
-
-    path = path + RE.md['year'] + '.' + RE.md['cycle'] + '.' + RE.md['PROPOSAL'] + '/'
-    if(not os.path.exists(path)):
-        os.makedirs(path)
-        call(['setfacl', '-m', 'g:iss-staff:rwx', path])
-        call(['chmod', '770', path])
-
-    return parser.export_trace(comment, filepath = path, uid = uuid)
-
 def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Get needed data from db
     uuid = db[uuid]['start']['uid']
 
-    if 'comment' in db[uuid]['start']:
-        comment = db[uuid]['start']['comment']
+    if 'name' in db[uuid]['start']:
+        scan_name = db[uuid]['start']['name']
     else:
-        comment = 'General Scan'
+        scan_name = 'General Scan'
 
     year = db[uuid]['start']['year']
     cycle = db[uuid]['start']['cycle']
@@ -51,12 +40,12 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
         call(['setfacl', '-m', 'g:iss-staff:rwx', snapshots_path])
         call(['chmod', '770', snapshots_path])
 
-    file_path = 'snapshots/{}.png'.format(comment)
+    file_path = 'snapshots/{}.png'.format(scan_name)
     fn = log_path + file_path
     repeat = 1
     while(os.path.isfile(fn)):
         repeat += 1
-        file_path = 'snapshots/{}-{}.png'.format(comment, repeat)
+        file_path = 'snapshots/{}-{}.png'.format(scan_name, repeat)
         fn = log_path + file_path
 
     # Save figure
@@ -67,6 +56,7 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Create or update the html file
     relative_path = './' + file_path
     
+    comment = '<p><b> Comment: </b> {} </p>'.format(db[uuid]['start']['comment'])
     start_timestamp = db[uuid]['start']['time']
     stop_timestamp = db[uuid]['stop']['time']
     time_stamp_start='<p><b> Scan start: </b> {} </p>\n'.format(datetime.fromtimestamp(start_timestamp).strftime('%m/%d/%Y    %H:%M:%S'))
@@ -88,7 +78,7 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
         fn_html += '  <li><b>{}:</b> {}</ln>\n'.format(key, filenames[key])
     fn_html += '</ul>\n'
     
-    image = '<img src="{}" alt="{}" height="447" width="610">\n'.format(fn, comment)
+    image = '<img src="{}" alt="{}" height="447" width="610">\n'.format(fn, scan_name)
 
     if(not os.path.isfile(log_path + 'log.html')):
         create_file = open(log_path + 'log.html', "w")
@@ -105,7 +95,8 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
 
     for indx,line in enumerate(lines):
         if indx is 1:
-            text_file.write('<header><h2> {} </h2></header>\n'.format(comment))
+            text_file.write('<header><h2> {} </h2></header>\n'.format(scan_name))
+            text_file.write(comment)
             text_file.write(uuid_html)
             text_file.write(fn_html)
             text_file.write(time_stamp_start)
@@ -278,9 +269,9 @@ def xia_gain_matching(center_energy, scan_range, channel_number):
 
 
 
-def generate_xia_file(uuid, comment, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
+def generate_xia_file(uuid, name, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
     arrays = db.get_table(db[uuid])[graph]
-    np.savetxt('/GPFS/xf08id/Sandbox/' + comment, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
+    np.savetxt('/GPFS/xf08id/Sandbox/' + name, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
 
 
 def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=13000, step=100):
