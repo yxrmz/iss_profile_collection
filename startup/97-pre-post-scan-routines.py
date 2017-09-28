@@ -56,7 +56,10 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Create or update the html file
     relative_path = './' + file_path
     
-    comment = '<p><b> Comment: </b> {} </p>'.format(db[uuid]['start']['comment'])
+    comment = ''
+    if 'comment' in db[uuid]['start']:
+        comment = db[uuid]['start']['comment']
+    comment = '<p><b> Comment: </b> {} </p>'.format(comment)
     start_timestamp = db[uuid]['start']['time']
     stop_timestamp = db[uuid]['stop']['time']
     time_stamp_start='<p><b> Scan start: </b> {} </p>\n'.format(datetime.fromtimestamp(start_timestamp).strftime('%m/%d/%Y    %H:%M:%S'))
