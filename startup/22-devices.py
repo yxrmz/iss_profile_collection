@@ -83,7 +83,7 @@ shutter_ph.shutter_type = 'PH'
 class ICAmplifier(Device):
     #low_noise_gain = Cpt(EpicsSignal, 'LN}I0')
 
-    def __init__(self, *args, gain_0, gain_1, gain_2, hspeed_bit, bw_10mhz_bit, bw_1mhz_bit, lnoise, hspeed, bwidth, **kwargs):
+    def __init__(self, *args, gain_0, gain_1, gain_2, hspeed_bit, bw_10mhz_bit, bw_1mhz_bit, lnoise, hspeed, bwidth, par = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.gain_0 = EpicsSignal(self.prefix + gain_0, name=self.name + '_gain_0')
         self.gain_1 = EpicsSignal(self.prefix + gain_1, name=self.name + '_gain_1')
@@ -94,6 +94,7 @@ class ICAmplifier(Device):
         self.low_noise_gain = EpicsSignal(self.prefix + lnoise, name=self.name + '_lnoise')
         self.high_speed_gain = EpicsSignal(self.prefix + hspeed, name=self.name + '_hspeed')
         self.band_width = EpicsSignal(self.prefix + bwidth, name=self.name + '_bwidth')
+        self.par = par
 
     def set_gain(self, value: str, high_speed: bool):
 
