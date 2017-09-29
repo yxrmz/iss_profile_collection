@@ -2,13 +2,13 @@ import inspect
 import bluesky.plans as bp
 import os
 
-def tscan(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
 
     Parameters
     ----------
-    comment : str
+    name : str
         Name of the scan - it will be stored in the metadata
 
     n_cycles : int (default = 1)
@@ -35,12 +35,12 @@ def tscan(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
         if RE.is_aborted:
             return 'Aborted'
         if n_cycles == 1:
-            comment_n = comment
+            name_n = name
         else:
-            comment_n = comment + ' ' + str(indx + 1)
+            name_n = name + ' ' + str(indx + 1)
         print('Current step: {} / {}'.format(indx + 1, n_cycles))
         RE(prep_traj_plan())
-        uid, = RE(execute_trajectory(comment_n))
+        uid, = RE(execute_trajectory(name_n, comment=comment))
         yield uid
         #uids.append(uid)
         time.sleep(float(delay))
@@ -48,15 +48,15 @@ def tscan(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     #return uids
     
 
-def tscan_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan_plan(name:str, comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
     for indx in range(int(n_cycles)): 
-        comment_n = comment + ' ' + str(indx + 1)
-        print(comment_n) 
+        name_n = name + ' ' + str(indx + 1)
+        print(name_n) 
         if prepare_traj:
             yield from prep_traj_plan()
-        #uid = (yield from execute_trajectory(comment_n))
-        yield from execute_trajectory(comment_n)
+        #uid = (yield from execute_trajectory(name_n))
+        yield from execute_trajectory(name_n, comment=comment)
         uid = db[-1]['start']['uid']
         uids.append(uid)
 			
@@ -65,13 +65,13 @@ def tscan_plan(comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=
     return uids
 
 
-def tscanxia(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
+def tscanxia(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """
     Trajectory Scan XIA - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA N times
 
     Parameters
     ----------
-    comment : str
+    name : str
         Name of the scan - it will be stored in the metadata
 
     n_cycles : int (default = 1)
@@ -98,12 +98,12 @@ def tscanxia(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
         if RE.is_aborted:
             return 'Aborted'
         if n_cycles == 1:
-            comment_n = comment
+            name_n = name
         else:
-            comment_n = comment + ' ' + str(i + 1)
+            name_n = name + ' ' + str(i + 1)
         print('Current step: {} / {}'.format(i + 1, n_cycles))
         RE(prep_traj_plan())
-        uid, = RE(execute_xia_trajectory(comment_n))
+        uid, = RE(execute_xia_trajectory(name_n, comment=comment))
         yield uid
         #uids.append(uid)
         time.sleep(float(delay))
@@ -111,7 +111,7 @@ def tscanxia(comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     #return uids
 
 
-def get_offsets(num:int = 10, **kwargs):
+def get_offsets(num:int = 20, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -150,7 +150,7 @@ def get_offsets(num:int = 10, **kwargs):
     for index, adc in enumerate(adcs):
         key = '{}_volt'.format(adc.name)
         array = df[key]
-        offset = np.mean(df[key][1:int(num)])
+        offset = np.mean(df[key][2:int(num)])
 
         arrays.append(array)
         offsets.append(offset)
@@ -218,13 +218,13 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
         print('[General Scan] Done!')
 
 
-def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
+def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
     '''
     xia_step_scan - Runs the monochromator along the trajectory defined in the parameters. Gets data from the XIA and the ion chambers after each step. 
 
     Parameters
     ----------
-    comment : str
+    name : str
         Name of the scan - it will be stored in the metadata
         Other parameters: TODO
 
@@ -249,12 +249,12 @@ def xia_step_scan(comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:
 
     ax = kwargs.get('ax')
     if ax is not None:
-        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, comment), LivePlot(xia1.mca1.roi0.sum.name, hhm.theta.name, ax=ax))
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, name), LivePlot(xia1.mca1.roi0.sum.name, hhm.theta.name, ax=ax))
     else:
-        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, comment))
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, name))
 
     path = '/GPFS/xf08id/User Data/{}.{}.{}/'.format(db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['PROPOSAL'])
-    filename = parse_xia_step_scan(uid, comment, path)
+    filename = parse_xia_step_scan(uid, name, path)
 
     ax.cla()
     plot_xia_step_scan(uid, ax=ax) 
@@ -320,11 +320,11 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
             print('done napping, starting taking the scan')
             if testing is not True:
                 if simulation is not True:
-                    tscan_comment = samplelist[i]+'_'+str(runnum+runnum_start).zfill(3)
+                    tscan_name = samplelist[i]+'_'+str(runnum+runnum_start).zfill(3)
                     if usexia is False:
-                        uid = tscan(tscan_comment)[0]
+                        uid = tscan(tscan_name)[0]
                     else:
-                        uid = tscanxia(tscan_comment)[0]
+                        uid = tscanxia(tscan_name)[0]
 
             print('done taking the current scan')
 
@@ -333,7 +333,7 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
                                '{}.txt'.format(db[uid]['start']['year'],
                                                db[uid]['start']['cycle'],
                                                db[uid]['start']['PROPOSAL'],
-                                               db[uid]['start']['comment'])
+                                               db[uid]['start']['name'])
     
             gen_parser.load(uid)
             key_base = 'i0'

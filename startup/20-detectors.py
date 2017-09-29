@@ -2,10 +2,10 @@ import uuid
 from collections import namedtuple
 import os
 import time as ttime
-from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt,
-                   EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin)
-
-from ophyd import set_and_wait, Device
+from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
+                   EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
+                   DeviceStatus)
+from ophyd import DeviceStatus, set_and_wait
 from bluesky.examples import NullStatus
 
 from databroker.assets.handlers_base import HandlerBase
@@ -41,9 +41,9 @@ bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
-bpm_sp = BPM('XF:08IDB-BI{BPM:SP}', name='bpm_sp')
+bpm_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
 
-for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp]:
+for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1]:
     bpm.read_attrs = ['stats1', 'stats2']
     bpm.stats1.read_attrs = ['total', 'centroid']
     bpm.stats2.read_attrs = ['total', 'centroid']
