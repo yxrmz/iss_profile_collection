@@ -622,18 +622,37 @@ lut_offsets = {
               }
 
 
-def set_gains_and_offsets(*args, high_speed = False):
-    if len(args) % 2:
-        args = args[:-1]
+def set_gains_and_offsets_plan(*args):
+    """
+    Parameters
+    ----------
+    Groups of three parameters: amplifier, gain, hs
 
-    for ic, val in zip([ic for index, ic in enumerate(args) if not index % 2], [val for index, val in enumerate(args) if index % 2]):
-        #yield from ic.set_gain_plan(val, high_speed)
-        print('set ic gain: {}, {}'.format(val, high_speed))
-        if high_speed:
-           hs = 'hs'
+    Example: set_gains_and_offsets(i0_amp, '10^5', False, it_amp, '10^4', False, iff_amp, '10_5', True)
+    """
+
+    mod = len(args) % 3
+    if mod:
+        args = args[:-mod]
+
+    for ic, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0], 
+                       [val for index, val in enumerate(args) if index % 3 == 1], 
+                       [hs for index, hs in enumerate(args) if index % 3 == 2]):
+        #yield from ic.set_gain_plan(val, hs)
+
+        if type(ic) != ICAmplifier:
+            raise Exception('Wrong type: {} - it should be ICAmplifier'.format(type(ic)))
+        if type(val) != str:
+            raise Exception('Wrong type: {} - it should be str'.format(type(val)))
+        if type(hs) != bool:
+            raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
+
+        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.value, val, hs))
+        if hs:
+           hs_str = 'hs'
         else:
-           hs = 'ln'
-        #yield from bp.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs][val])
-        print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs][val]))
+           hs_str = 'ln'
+        #yield from bp.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs_str][val])
+        print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs_str][val]))
 
 
