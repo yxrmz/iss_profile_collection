@@ -96,12 +96,9 @@ class ICAmplifier(Device):
         self.band_width = EpicsSignal(self.prefix + bwidth, name=self.name + '_bwidth')
         self.par = par
 
-    def set_gain(self, value: str, high_speed: bool):
+    def set_gain(self, value: int, high_speed: bool):
 
-        if hasattr(value, 'decode'):
-            value = value.decode('utf-8')
-
-        val = int(value[-1]) - 2
+        val = int(value) - 2
         if not ((high_speed and (1 <= val < 7)) or (not high_speed and (0 <= val < 6))):
             print('{} invalid value. Ignored...'.format(self.name))
             return 'Aborted'
@@ -120,12 +117,9 @@ class ICAmplifier(Device):
         self.gain_1.put((val >> 1) & 1)
         self.gain_2.put((val >> 2) & 1)
 
-    def set_gain_plan(self, value: str, high_speed: bool):
+    def set_gain_plan(self, value: int, high_speed: bool):
 
-        if hasattr(value, 'decode'):
-            value = value.decode('utf-8')
-
-        val = int(value[-1]) - 2
+        val = int(value) - 2
         if not ((high_speed and (1 <= val < 7)) or (not high_speed and (0 <= val < 6))):
             print('{} invalid value. Ignored...'.format(self.name))
             return 'Aborted'
