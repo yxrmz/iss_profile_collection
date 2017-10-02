@@ -275,6 +275,12 @@ def sleep_seconds(secs:float=1, **kwargs):
     yield uid
 
 
+def set_gains_and_offsets(i0_gain:str='10^4', it_gain:str='10^4', iff_gain:str='10^4',
+                          ir_gain:str='10^4', hs:bool=False):
+    set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs)
+    #RE()
+
+
 def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
 
     '''
