@@ -277,7 +277,7 @@ def generate_xia_file(uuid, name, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_
     np.savetxt('/GPFS/xf08id/Sandbox/' + name, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
 
 
-def generate_tune_table(motor=hhm_en.energy, start_energy=5000, stop_energy=13000, step=100):
+def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, step=100):
     table = []
     for energy in range(start_energy, stop_energy + 1, step):
         motor.move(energy)
