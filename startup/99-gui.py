@@ -118,7 +118,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds],
                                  general_scan,
                                  write_html_log = write_html_log,
                                  auto_tune_elements = auto_tune_elements,
-                                 ic_amplifiers = ic_amplifiers)
+                                 ic_amplifiers = ic_amplifiers,
+                                 set_gains_offsets = set_gains_and_offsets)
 
 
 def xlive():
