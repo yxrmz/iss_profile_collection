@@ -273,7 +273,7 @@ def prep_trajectory(delay = 1):
         ttime.sleep(.1)
     ttime.sleep(delay)
 
-def prep_traj_plan(delay = 0.25):
+def prep_traj_plan(delay = 0.1):
     yield from bp.abs_set(hhm.prepare_trajectory, '1', wait=True)
 
     # Poll the trajectory ready pv
@@ -300,6 +300,21 @@ def prep_traj_plan(delay = 0.25):
             break
 
     yield from bp.sleep(delay)
+
+    curr_energy = (yield from bp.read(hhm.energy))
+
+    if curr_energy is None:
+        return
+        raise Exception('Could not read current energy')
+
+    curr_energy = curr_energy['hhm_energy']['value']
+    print('Curr Energy: {}'.format(curr_energy))
+    if curr_energy >= 12000:
+        print('>12000')
+        yield from bp.mv(hhm.energy, curr_energy + 100)
+        yield from bp.sleep(1)
+        print('1')
+        yield from bp.mv(hhm.energy, curr_energy)
 
 
 def execute_trajectory(name, **metadata):
