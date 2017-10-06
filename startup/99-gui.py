@@ -37,9 +37,9 @@ motors_dict = {'slits_v_gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
                'hrm_y': {'name': hrm.y.name, 'object': hrm.y},
                'huber_stage_y': {'name': huber_stage.y.name, 'object': huber_stage.y},
                'huber_stage_pitch': {'name': huber_stage.pitch.name, 'object': huber_stage.pitch},
-               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z},
-               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
-               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
+               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z}
+#               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
+#               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
 
 motors_list = [slits.v_gap,
@@ -65,38 +65,45 @@ motors_list = [slits.v_gap,
                hrm.y,
                huber_stage.y,
                huber_stage.pitch,
-               huber_stage.z,
-               xbic.dac1,
-               xbic.dac2]
+               huber_stage.z]
+               #xbic.dac1,
+               #xbic.dac2]
 
-auto_tune_elements = [{'name' : hhm.pitch.name,
-                      'object' : hhm.pitch,
-                      'scan_range' : 5,
-                      'step_size' : 0.025,#0.25,
-                      'max_retries' : 3,#1,
-                      #'step_size' : 0.25,
-                      #'max_retries' : 1,
-                      'detector_name' : bpm_fm.name,
-                      'detector_signame' : bpm_fm.stats1.total.name},
-                      {'name' : hhm.y.name,
-                      'object' : hhm.y,
-                      'scan_range' : 1,
-                      'step_size' : 0.025,#0.25,
-                      'max_retries' : 3,#1,
-                      #'step_size' : 0.25,
-                      #'max_retries' : 1,
-                      'detector_name' : bpm_fm.name,
-                      'detector_signame' : bpm_fm.stats1.total.name},
-                      {'name' : hrm.y.name,
-                      'object' : hrm.y,
-                      'scan_range' : 1,
-                      'step_size' : 0.025,#0.25,
-                      'max_retries' : 3,#1,
-                      #'step_size' : 0.25,
-                      #'max_retries' : 1,
-                      'detector_name' : i0.name,
-                      'detector_signame' : i0.volt.name}
-                     ]
+auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
+                               'motor' : bpm_fm.ins,
+                               'read_back' : bpm_fm.switch_insert,
+                               'tries' : 3,
+                               'value' : 1}
+                             ],
+              'post_elements':[{'name' : bpm_fm.name,
+                                'motor' : bpm_fm.ret,
+                                'read_back' : bpm_fm.switch_retract,
+                                'tries' : 3,
+                                'value' : 1}
+                              ],
+              'elements':[{'name' : hhm.pitch.name,
+                           'object' : hhm.pitch,
+                           'scan_range' : 5,
+                           'step_size' : 0.025,#0.25,
+                           'max_retries' : 3,#1,
+                           'detector_name' : bpm_fm.name,
+                           'detector_signame' : bpm_fm.stats1.total.name},
+                           {'name' : hhm.y.name,
+                           'object' : hhm.y,
+                           'scan_range' : 1,
+                           'step_size' : 0.025,#0.25,
+                           'max_retries' : 3,#1,
+                           'detector_name' : bpm_fm.name,
+                           'detector_signame' : bpm_fm.stats1.total.name},
+                           {'name' : hhrm.y.name,
+                           'object' : hhrm.y,
+                           'scan_range' : 1,
+                           'step_size' : 0.025,#0.25,
+                           'max_retries' : 3,#1,
+                           'detector_name' : i0.dev_name.value,
+                           'detector_signame' : i0.volt.name}
+                          ]
+           }
 
 shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe), 
                                          (shutter_ph.name, shutter_ph),
@@ -117,8 +124,9 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds],
                                  motors_dict,
                                  general_scan,
                                  write_html_log = write_html_log,
-                                 auto_tune_elements = auto_tune_elements,
-                                 ic_amplifiers = ic_amplifiers)
+                                 auto_tune_elements = auto_tune,
+                                 ic_amplifiers = ic_amplifiers,
+                                 set_gains_offsets = set_gains_and_offsets)
 
 
 def xlive():

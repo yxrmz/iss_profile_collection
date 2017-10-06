@@ -169,10 +169,13 @@ def get_offsets(num:int = 20, **kwargs):
         for index, adc in enumerate(adcs):
             print('Mean ({}) = {}'.format(adc.dev_name.value, offsets[index]))
 
-            if offsets[index] > -0.04:
-                print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
-            elif offsets[index] <= -0.04 and offsets[index] > -0.4:
-                print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
+            saturation = adc.dev_saturation.value
+
+            if adc.polarity == 'neg':
+                if offsets[index] > saturation/100:
+                    print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
+                elif offsets[index] <= saturation/100 and offsets[index] > saturation/10:
+                    print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
         print('-' * 30)
         print(print_message[:-1])
         print('-' * 30)
@@ -273,6 +276,18 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
 def sleep_seconds(secs:float=1, **kwargs):
     uid, = RE(sleep_plan(secs))
     yield uid
+
+
+def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
+                          ir_gain:int=5, hs:bool=False):
+    i0_gain = int(i0_gain)
+    it_gain = int(it_gain)
+    iff_gain = int(iff_gain)
+    ir_gain = int(ir_gain)
+    if type(hs) == str:
+        hs = hs == 'True'
+
+    RE(set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs))
 
 
 def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):

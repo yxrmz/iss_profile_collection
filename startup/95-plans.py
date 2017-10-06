@@ -275,8 +275,7 @@ def prep_trajectory(delay = 1):
         ttime.sleep(.1)
     ttime.sleep(delay)
 
-
-def prep_traj_plan(delay = 0.25):
+def prep_traj_plan(delay = 0.1):
     yield from bp.abs_set(hhm.prepare_trajectory, '1', wait=True)
 
     # Poll the trajectory ready pv
@@ -303,6 +302,21 @@ def prep_traj_plan(delay = 0.25):
             break
 
     yield from bp.sleep(delay)
+
+    curr_energy = (yield from bp.read(hhm.energy))
+
+    if curr_energy is None:
+        return
+        raise Exception('Could not read current energy')
+
+    curr_energy = curr_energy['hhm_energy']['value']
+    print('Curr Energy: {}'.format(curr_energy))
+    if curr_energy >= 12000:
+        print('>12000')
+        yield from bp.mv(hhm.energy, curr_energy + 100)
+        yield from bp.sleep(1)
+        print('1')
+        yield from bp.mv(hhm.energy, curr_energy)
 
 
 def execute_trajectory(name, **metadata):
@@ -794,74 +808,74 @@ def sleep_plan(sleep_time, **metadata):
 lut_offsets = {
                'i0':{
                      'ln':{
-                           '10^2': -0.06645569368421053,
-                           '10^3': -0.06640107894736844,
-                           '10^4': -0.06637296842105264,
-                           '10^5': -0.06638662210526317,
-                           '10^6': -0.06640549631578947,
-                           '10^7': -0.06617458842105263
+                           '2': -0.06645569368421053,
+                           '3': -0.06640107894736844,
+                           '4': -0.06637296842105264,
+                           '5': -0.06638662210526317,
+                           '6': -0.06640549631578947,
+                           '7': -0.06617458842105263
                           },
                      'hs':{
-                           '10^3': -0.04026150210526316,
-                           '10^4': -0.03990208894736842,
-                           '10^5': -0.03964066105263159,
-                           '10^6': -0.03969447263157895,
-                           '10^7': -0.03963704684210526,
-                           '10^8': -0.035940111052631576
+                           '3': -0.04026150210526316,
+                           '4': -0.03990208894736842,
+                           '5': -0.03964066105263159,
+                           '6': -0.03969447263157895,
+                           '7': -0.03963704684210526,
+                           '8': -0.035940111052631576
                           }
                     },
                'it':{
                      'ln':{
-                           '10^2': -0.08072941578947367,
-                           '10^3': -0.0821305247368421,
-                           '10^4': -0.08204257894736844,
-                           '10^5': -0.08158638526315788,
-                           '10^6': -0.07702966894736843,
-                           '10^7': -0.031005107368421055
+                           '2': -0.08072941578947367,
+                           '3': -0.0821305247368421,
+                           '4': -0.08204257894736844,
+                           '5': -0.08158638526315788,
+                           '6': -0.07702966894736843,
+                           '7': -0.031005107368421055
                           },
                      'hs':{
-                           '10^3': -0.03974386684210526,
-                           '10^4': -0.052516085263157895,
-                           '10^5': -0.051755896315789474,
-                           '10^6': -0.047226487368421055,
-                           '10^7': -0.0021817784210526312,
-                           '10^8': 0.4464437489473684
+                           '3': -0.03974386684210526,
+                           '4': -0.052516085263157895,
+                           '5': -0.051755896315789474,
+                           '6': -0.047226487368421055,
+                           '7': -0.0021817784210526312,
+                           '8': 0.4464437489473684
                           }
                     },
                'iff':{
                      'ln':{
-                           '10^2': -0.09427186263157893,
-                           '10^3': -0.09435097368421054,
-                           '10^4': -0.09431081578947369,
-                           '10^5': -0.09429394947368422,
-                           '10^6': -0.09429595736842106,
-                           '10^7': -0.09408191578947321
+                           '2': -0.09427186263157893,
+                           '3': -0.09435097368421054,
+                           '4': -0.09431081578947369,
+                           '5': -0.09429394947368422,
+                           '6': -0.09429595736842106,
+                           '7': -0.09408191578947321
                           },
                      'hs':{
-                           '10^3': -0.06404622,
-                           '10^4': -0.0648802994736842,
-                           '10^5': -0.0645983910526316,
-                           '10^6': -0.06455662684210525,
-                           '10^7': -0.06442410578947368,
-                           '10^8': -0.06138334999999999
+                           '3': -0.06404622,
+                           '4': -0.0648802994736842,
+                           '5': -0.0645983910526316,
+                           '6': -0.06455662684210525,
+                           '7': -0.06442410578947368,
+                           '8': -0.06138334999999999
                           }
                     },
                'ir':{
                      'ln':{
-                           '10^2': -0.03500884947368421,
-                           '10^3': -0.032811811052631576,
-                           '10^4': -0.03258491894736841,
-                           '10^5': -0.03255158789473684,
-                           '10^6': -0.03523774947368421,
-                           '10^7': -0.13698379947368422
+                           '2': -0.03500884947368421,
+                           '3': -0.032811811052631576,
+                           '4': -0.03258491894736841,
+                           '5': -0.03255158789473684,
+                           '6': -0.03523774947368421,
+                           '7': -0.13698379947368422
                           },
                      'hs':{
-                           '10^3': -0.03492451789473684,
-                           '10^4': -0.03301139578947368,
-                           '10^5': -0.032817433157894725,
-                           '10^6': -0.03279735421052631,
-                           '10^7': -0.035501988421052635,
-                           '10^8': -0.13801103842105264
+                           '3': -0.03492451789473684,
+                           '4': -0.03301139578947368,
+                           '5': -0.032817433157894725,
+                           '6': -0.03279735421052631,
+                           '7': -0.035501988421052635,
+                           '8': -0.13801103842105264
                           }
                     }
               }
@@ -873,7 +887,7 @@ def set_gains_and_offsets_plan(*args):
     ----------
     Groups of three parameters: amplifier, gain, hs
 
-    Example: set_gains_and_offsets(i0_amp, '10^5', False, it_amp, '10^4', False, iff_amp, '10_5', True)
+    Example: set_gains_and_offsets(i0_amp, 5, False, it_amp, 4, False, iff_amp, 5, True)
     """
 
     mod = len(args) % 3
@@ -883,12 +897,12 @@ def set_gains_and_offsets_plan(*args):
     for ic, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0], 
                        [val for index, val in enumerate(args) if index % 3 == 1], 
                        [hs for index, hs in enumerate(args) if index % 3 == 2]):
-        #yield from ic.set_gain_plan(val, hs)
+        yield from ic.set_gain_plan(val, hs)
 
         if type(ic) != ICAmplifier:
             raise Exception('Wrong type: {} - it should be ICAmplifier'.format(type(ic)))
-        if type(val) != str:
-            raise Exception('Wrong type: {} - it should be str'.format(type(val)))
+        if type(val) != int:
+            raise Exception('Wrong type: {} - it should be int'.format(type(val)))
         if type(hs) != bool:
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
@@ -897,7 +911,7 @@ def set_gains_and_offsets_plan(*args):
            hs_str = 'hs'
         else:
            hs_str = 'ln'
-        #yield from bp.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs_str][val])
-        print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs_str][val]))
+        yield from bp.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs_str][str(val)])
+        print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs_str][str(val)]))
 
 

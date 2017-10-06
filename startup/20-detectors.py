@@ -35,13 +35,24 @@ class BPM(ProsilicaDetector, SingleTrigger):
         super().__init__(*args, **kwargs)
         self.stage_sigs.clear()  # default stage sigs do not apply
 
+class CAMERA(ProsilicaDetector, SingleTrigger):
+    image = Cpt(ImagePlugin, 'image1:')
+    stats1 = Cpt(StatsPlugin, 'Stats1:')
+    stats2 = Cpt(StatsPlugin, 'Stats2:')
+    roi1 = Cpt(ROIPlugin, 'ROI1:')
+    roi2 = Cpt(ROIPlugin, 'ROI2:')
+    polarity = 'pos'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage_sigs.clear()  # default stage sigs do not apply
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
-bpm_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
+bpm_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
 
 for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1]:
     bpm.read_attrs = ['stats1', 'stats2']
@@ -306,7 +317,7 @@ class DIFS(DigitalInput):
 
 class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
-    internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
+    #internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
 
     enc1 = Cpt(EncoderFS, ':1', reg=db.reg)
     enc2 = Cpt(EncoderFS, ':2', reg=db.reg)
@@ -321,7 +332,6 @@ class PizzaBoxFS(Device):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # must use internal timestamps or no bytes are written
-        # self.stage_sigs[self.internal_ts_sel] = 1
 
     def kickoff(self):
         "Call encoder.kickoff() for every encoder."
@@ -345,7 +355,6 @@ class PizzaBoxFS(Device):
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')
 pb2 = PizzaBoxFS('XF:08IDA-CT{Enc02', name = 'pb2')
 pb4 = PizzaBoxFS('XF:08IDA-CT{Enc04', name = 'pb4') #PB inside hutch B (for now)
-#pbb1 = PizzaBoxFS('XF:08IDB-CT{Enc01', name = 'pbb1')#PB inside hutch B (for now)
 pb5 = PizzaBoxFS('XF:08IDA-CT{Enc05', name = 'pb5')
 pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
@@ -368,6 +377,7 @@ class Adc(Device):
     volt = Cpt(EpicsSignal, '}E-I')
     offset = Cpt(EpicsSignal, '}Offset')
     dev_name = Cpt(EpicsSignal, '}DevName')
+    dev_saturation = Cpt(EpicsSignal, '}DevSat')
     polarity = 'neg'
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
@@ -496,7 +506,7 @@ class AdcFS(Adc):
 
 
 class PizzaBoxAnalogFS(Device):
-    internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
+    #internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
 
     adc1 = Cpt(AdcFS, 'ADC:1', reg=db.reg)
     adc6 = Cpt(AdcFS, 'ADC:6', reg=db.reg)
@@ -524,9 +534,14 @@ class PizzaBoxAnalogFS(Device):
             yield from getattr(self, attr_name).collect()
 
 
+<<<<<<< HEAD
 # pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1', reg=db.reg)
 pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name='pba1')
 pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name='pba2')
+=======
+pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
+pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
+>>>>>>> master
 
 
 class PizzaBoxEncHandlerTxt(HandlerBase):
