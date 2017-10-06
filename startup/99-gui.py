@@ -37,9 +37,9 @@ motors_dict = {'slits_v_gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
                'hrm_y': {'name': hrm.y.name, 'object': hrm.y},
                'huber_stage_y': {'name': huber_stage.y.name, 'object': huber_stage.y},
                'huber_stage_pitch': {'name': huber_stage.pitch.name, 'object': huber_stage.pitch},
-               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z},
-               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
-               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
+               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z}
+#               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
+#               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
 
 motors_list = [slits.v_gap,
@@ -65,9 +65,9 @@ motors_list = [slits.v_gap,
                hrm.y,
                huber_stage.y,
                huber_stage.pitch,
-               huber_stage.z,
-               xbic.dac1,
-               xbic.dac2]
+               huber_stage.z]
+               #xbic.dac1,
+               #xbic.dac2]
 
 auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
                                'motor' : bpm_fm.ins,

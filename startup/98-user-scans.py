@@ -169,10 +169,13 @@ def get_offsets(num:int = 20, **kwargs):
         for index, adc in enumerate(adcs):
             print('Mean ({}) = {}'.format(adc.dev_name.value, offsets[index]))
 
-            if offsets[index] > -0.04:
-                print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
-            elif offsets[index] <= -0.04 and offsets[index] > -0.4:
-                print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
+            saturation = adc.dev_saturation.value
+
+            if adc.polarity == 'neg':
+                if offsets[index] > saturation/100:
+                    print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
+                elif offsets[index] <= saturation/100 and offsets[index] > saturation/10:
+                    print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
         print('-' * 30)
         print(print_message[:-1])
         print('-' * 30)
