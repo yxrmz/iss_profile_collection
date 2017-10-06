@@ -56,6 +56,7 @@ bpm_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
 
 for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1]:
     bpm.read_attrs = ['stats1', 'stats2']
+    bpm.image.read_attrs = ['array_data']
     bpm.stats1.read_attrs = ['total', 'centroid']
     bpm.stats2.read_attrs = ['total', 'centroid']
 
