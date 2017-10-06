@@ -533,16 +533,8 @@ class PizzaBoxAnalogFS(Device):
         for attr_name in ['adc1']: #, 'adc2', 'adc3', 'adc4']:
             yield from getattr(self, attr_name).collect()
 
-
-<<<<<<< HEAD
-# pba1 = PizzaBoxAnalogFS('XF:08IDA-CT{', name = 'pba1', reg=db.reg)
-pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name='pba1')
-pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name='pba2')
-=======
 pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
 pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
->>>>>>> master
-
 
 class PizzaBoxEncHandlerTxt(HandlerBase):
     encoder_row = namedtuple('encoder_row',
