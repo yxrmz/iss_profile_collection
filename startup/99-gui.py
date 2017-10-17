@@ -15,7 +15,7 @@ det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],
             pba2.adc7:['pba2_adc7_volt'],
             xia1: xia_list}
 
-motors_dict = {'slits_v_gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
+motors_dict = {'B1 Slit vertical gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
                'slits_v_pos': {'name': slits.v_pos.name, 'object': slits.v_pos},
                'slits_hor_in': {'name': slits.hor_in.name, 'object': slits.hor_in},
                'slits_hor_out': {'name': slits.hor_out.name, 'object': slits.hor_out},
@@ -41,6 +41,11 @@ motors_dict = {'slits_v_gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
 #               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
+
+
+
+
+
 
 motors_list = [slits.v_gap,
                slits.v_pos,

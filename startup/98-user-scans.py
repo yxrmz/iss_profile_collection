@@ -111,7 +111,7 @@ def tscanxia(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     #return uids
 
 
-def get_offsets(num:int = 20, **kwargs):
+def get_offsets(num:int = 20, *args, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -132,7 +132,10 @@ def get_offsets(num:int = 20, **kwargs):
     :func:`tscan`
     """
 
-    adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    adcs = list(args)
+    if not len(adcs):
+        adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    print(adcs)
 
     old_avers = []
     for adc in adcs:
