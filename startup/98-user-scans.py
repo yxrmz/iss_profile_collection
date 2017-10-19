@@ -132,10 +132,12 @@ def get_offsets(num:int = 20, *args, **kwargs):
     :func:`tscan`
     """
 
+    # Close photon shutter:
+    shutter_ph.close()
+
     adcs = list(args)
     if not len(adcs):
         adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
-    print(adcs)
 
     old_avers = []
     for adc in adcs:
@@ -182,6 +184,8 @@ def get_offsets(num:int = 20, *args, **kwargs):
         print('-' * 30)
         print(print_message[:-1])
         print('-' * 30)
+
+    shutter_ph.open()
 
     print(uid)
     print('Done!')
