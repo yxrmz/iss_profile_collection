@@ -23,7 +23,7 @@ RE.preprocessors.append(sd)
 # Add a progress bar.
 from bluesky.utils import ProgressBarManager
 pbar_manager = ProgressBarManager()
-RE.waiting_hook = pbar_manager
+#RE.waiting_hook = pbar_manager
 
 # Register bluesky IPython magics.
 from bluesky.magics import BlueskyMagics

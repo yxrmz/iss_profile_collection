@@ -277,8 +277,8 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
 
 
 def sleep_seconds(secs:float=1, **kwargs):
-    uid, = RE(sleep_plan(secs))
-    yield uid
+    RE(sleep_plan(secs))
+    yield None
 
 
 def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,

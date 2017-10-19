@@ -68,7 +68,7 @@ class HHM(Device):
     fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
     fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
-    angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
+    angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset')
 
 
 hhm = HHM('XF:08IDA-OP{', name='hhm')

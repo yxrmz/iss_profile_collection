@@ -779,18 +779,34 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
         print('[Prepare BL] Setting it {}'.format(curr_range['pvs']['It Voltage']['value']))
         print('[Prepare BL] Setting ir {}'.format(curr_range['pvs']['Ir Voltage']['value']))
     if not debug:
-        yield from bp.abs_set(pv_i0_volt, curr_range['pvs']['I0 Voltage']['value'], group='prepare_bl')
-        yield from bp.abs_set(pv_it_volt, curr_range['pvs']['It Voltage']['value'], group='prepare_bl')
-        yield from bp.abs_set(pv_ir_volt, curr_range['pvs']['Ir Voltage']['value'], group='prepare_bl')
+        pv_i0_volt._put_complete = True
+        pv_it_volt._put_complete = True
+        pv_ir_volt._put_complete = True
+        yield from bp.abs_set(pv_i0_volt, curr_range['pvs']['I0 Voltage']['value'])#, group='prepare_bl')
+        yield from bp.abs_set(pv_it_volt, curr_range['pvs']['It Voltage']['value'])#, group='prepare_bl')
+        yield from bp.abs_set(pv_ir_volt, curr_range['pvs']['Ir Voltage']['value'])#, group='prepare_bl')
 
     yield from bp.sleep(0.1)
 
     if print_messages:
         print('[Prepare BL] Waiting for everything to be in position...')
     if not debug:
+        while abs(abs(pv_i0_volt.value) - abs(
+                curr_range['pvs']['I0 Voltage']['value'])) > 10 ** -pv_i0_volt.precision * 100 or abs(
+                        abs(pv_it_volt.value) - abs(
+                        curr_range['pvs']['It Voltage']['value'])) > 10 ** -pv_it_volt.precision * 100 or abs(
+                        abs(pv_ir_volt.value) - abs(
+                        curr_range['pvs']['Ir Voltage']['value'])) > 10 ** -pv_ir_volt.precision * 100:
+            yield from bp.sleep(0.1)
         yield from bp.wait(group='prepare_bl')
     if print_messages:
         print('[Prepare BL] Everything seems to be in position')
+        print('[Prepare BL] Setting energy to {}'.format(curr_energy))
+
+    if not debug:
+        yield from bp.abs_set(hhm.energy, curr_energy, wait=True)
+
+    if print_messages:
         print('[Prepare BL] Beamline preparation done!')
 
 #    yield from bp.mv(hhm.energy, E)
@@ -802,7 +818,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
 
 
 def sleep_plan(sleep_time, **metadata):
-    yield from bp.sleep(float(sleep_time))
+    return (yield from bp.sleep(float(sleep_time)))
 
 
 lut_offsets = {
