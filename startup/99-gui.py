@@ -42,38 +42,6 @@ motors_dict = {'B1 Slit vertical gap': {'name': slits.v_gap.name, 'object': slit
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
 
-
-
-
-
-
-motors_list = [slits.v_gap,
-               slits.v_pos,
-               slits.hor_in,
-               slits.hor_out,
-               samplexy.x,
-               samplexy.y,
-               hhm.theta,
-               hhm.energy,
-               hhm.y,
-               hhm.pitch,
-               hhm.roll,
-               hhrm.yu,
-               hhrm.yd1,
-               hhrm.yd2,
-               hhrm.mir_pitch,
-               hhrm.hor_translation,
-               hhrm.table_pitch,
-               hhrm.y,
-               hrm.theta,
-               hrm.pitch,
-               hrm.y,
-               huber_stage.y,
-               huber_stage.pitch,
-               huber_stage.z]
-               #xbic.dac1,
-               #xbic.dac2]
-
 auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
                                'motor' : bpm_fm.ins,
                                'read_back' : bpm_fm.switch_insert,
