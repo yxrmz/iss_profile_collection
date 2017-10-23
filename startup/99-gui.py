@@ -1,6 +1,8 @@
 import isstools.gui
 import collections
 import atexit
+from bluesky.examples import motor
+motor.move = motor.set
 
 det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'], 
             bpm_cm:['bpm_cm_stats1_total','bpm_cm_stats2_total'],
@@ -37,7 +39,8 @@ motors_dict = {'B1 Slit vertical gap': {'name': slits.v_gap.name, 'object': slit
                'hrm_y': {'name': hrm.y.name, 'object': hrm.y},
                'huber_stage_y': {'name': huber_stage.y.name, 'object': huber_stage.y},
                'huber_stage_pitch': {'name': huber_stage.pitch.name, 'object': huber_stage.pitch},
-               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z}
+               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z},
+               'Dummy Motor': {'name': motor.name, 'object': motor}
 #               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
