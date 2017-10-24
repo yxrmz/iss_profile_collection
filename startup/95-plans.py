@@ -322,12 +322,15 @@ def prep_traj_plan(delay = 0.1):
 def execute_trajectory(name, **metadata):
     flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
-        md = {'plan_args': {}, 
+        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+        md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
-              'experiment': 'transmission', 
-              'name': name, 
+              'experiment': 'transmission',
+              'name': name,
+              'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
-              'angle_offset': str(hhm.angle_offset.value)}
+              'element': curr_traj.elem.value,
+              'edge': curr_traj.edge.value}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
@@ -406,6 +409,7 @@ def execute_xia_trajectory(name, **metadata):
                     xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
                     xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
 
+        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd', 
@@ -413,8 +417,10 @@ def execute_xia_trajectory(name, **metadata):
               'xia_max_energy': xia1.mca_max_energy.value,
               'xia_filename': '{}_{:03}.nc'.format(name, next_file_number), 
               'xia_rois':xia_rois, 
+              'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
-              'angle_offset': str(hhm.angle_offset.value)}
+              'element': curr_traj.elem.value,
+              'edge': curr_traj.edge.value}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value

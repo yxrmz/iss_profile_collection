@@ -28,6 +28,12 @@ def fix_exit_trig_formula(theta):
 def energy2theta(energy):
     return np.rad2deg(np.arcsin(12400/energy/2/3.1356))
 
+
+class HHMTrajDesc(Device):
+    filename = Cpt(EpicsSignal, '-Name')
+    elem = Cpt(EpicsSignal, '-Elem')
+    edge = Cpt(EpicsSignal, '-Edge')
+
 class HHM(Device):
     _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
@@ -60,6 +66,16 @@ class HHM(Device):
     trajectory_running = Cpt(EpicsSignal,'MC:06}TrajRunning', write_pv='MC:06}TrajRunning-Set')
     trajectory_progress = Cpt(EpicsSignal,'MC:06}TrajProgress')
     trajectory_name = Cpt(EpicsSignal, 'MC:06}TrajFilename')
+
+    traj1 = Cpt(HHMTrajDesc, 'MC:06}Traj:1')
+    traj2 = Cpt(HHMTrajDesc, 'MC:06}Traj:2')
+    traj3 = Cpt(HHMTrajDesc, 'MC:06}Traj:3')
+    traj4 = Cpt(HHMTrajDesc, 'MC:06}Traj:4')
+    traj5 = Cpt(HHMTrajDesc, 'MC:06}Traj:5')
+    traj6 = Cpt(HHMTrajDesc, 'MC:06}Traj:6')
+    traj7 = Cpt(HHMTrajDesc, 'MC:06}Traj:7')
+    traj8 = Cpt(HHMTrajDesc, 'MC:06}Traj:8')
+    traj9 = Cpt(HHMTrajDesc, 'MC:06}Traj:9')
 
     fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
     fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
