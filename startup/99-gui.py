@@ -4,7 +4,9 @@ import atexit
 from bluesky.examples import motor
 motor.move = motor.set
 
-det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'], 
+
+
+detector_dictionary = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],
             bpm_cm:['bpm_cm_stats1_total','bpm_cm_stats2_total'],
             bpm_bt1:['bpm_bt1_stats1_total','bpm_bt1_stats2_total'],
             bpm_bt2:['bpm_bt2_stats1_total','bpm_bt2_stats2_total'],
@@ -17,7 +19,7 @@ det_dict = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],
             pba2.adc7:['pba2_adc7_volt'],
             xia1: xia_list}
 
-motors_dict = {'B1 Slit vertical gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
+motors_dictionary = {'B1 Slit vertical gap': {'name': slits.v_gap.name, 'object': slits.v_gap},
                'slits_v_pos': {'name': slits.v_pos.name, 'object': slits.v_pos},
                'slits_hor_in': {'name': slits.hor_in.name, 'object': slits.hor_in},
                'slits_hor_out': {'name': slits.hor_out.name, 'object': slits.hor_out},
@@ -81,7 +83,7 @@ auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
                           ]
            }
 
-shutters_dict = collections.OrderedDict([(shutter_fe.name, shutter_fe), 
+shutters_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
                                          (shutter_ph.name, shutter_ph),
                                          (shutter.name, shutter)])
 
@@ -94,10 +96,11 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds],
                                  prep_traj_plan, 
                                  RE,
                                  db, 
-                                 hhm, 
-                                 shutters_dict,
-                                 det_dict,
-                                 motors_dict,
+                                 nsls_ii,
+                                 hhm,
+                                 shutters_dictionary,
+                                 detector_dictionary,
+                                 motors_dictionary,
                                  general_scan,
                                  write_html_log = write_html_log,
                                  auto_tune_elements = auto_tune,
