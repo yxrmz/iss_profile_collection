@@ -587,7 +587,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
         print('[Prepare BL] Setting up the beamline to {} eV'.format(curr_energy))
 
     curr_range = [ran for ran in prepare_bl_def[0] if
-                  ran['energy_end'] > 8000 >= ran['energy_start']]
+                  ran['energy_end'] > curr_energy >= ran['energy_start']]
     if not len(curr_range):
         print('Current energy is not valid. :( Aborted.')
         return
