@@ -1,11 +1,7 @@
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.dates as md
 import math
-import csv
-import databroker as data
-import datamuxer
 from isstools.xasdata import xasdata
 from isstools.xiaparser import xiaparser
 

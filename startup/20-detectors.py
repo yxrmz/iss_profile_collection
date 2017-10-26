@@ -7,9 +7,9 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    DeviceStatus)
 from ophyd import DeviceStatus, set_and_wait
 from bluesky.examples import NullStatus
-import filestore.api as fs
-import signal
-#fs.api.register_handler('PIZZABOX_FILE', PizzaBoxHandler, overwrite=True)
+
+from databroker.assets.handlers_base import HandlerBase
+
 
 class BPM(ProsilicaDetector, SingleTrigger):
     image = Cpt(ImagePlugin, 'image1:')
@@ -17,6 +17,7 @@ class BPM(ProsilicaDetector, SingleTrigger):
     stats2 = Cpt(StatsPlugin, 'Stats2:')
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
+    counts = Cpt(EpicsSignal, 'Pos:Counts')
     # Dan Allan guessed about the nature of these signals. Fix them if you need them.
     ins = Cpt(EpicsSignal, 'Cmd:In-Cmd')
     ret = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
@@ -55,11 +56,14 @@ bpm_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
 
 for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1]:
     bpm.read_attrs = ['stats1', 'stats2']
+    bpm.image.read_attrs = ['array_data']
     bpm.stats1.read_attrs = ['total', 'centroid']
     bpm.stats2.read_attrs = ['total', 'centroid']
 
-tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',name='tc_mask2_4')
-tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',name='tc_mask2_3')
+tc_mask2_4 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_4-I',
+                         name='tc_mask2_4')
+tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',
+                         name='tc_mask2_3')
 
 
 class Encoder(Device):
@@ -83,19 +87,19 @@ class Encoder(Device):
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reg, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
+        self._reg = reg
         if self.connected:
             self.ignore_sel.put(1)
-            #self.filter_dt.put(10000)
-            
+            # self.filter_dt.put(10000)
 
 
 class EncoderFS(Encoder):
     "Encoder Device, when read, returns references to data in filestore."
     chunk_size = 1024
-    
+
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
@@ -111,9 +115,10 @@ class EncoderFS(Encoder):
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             self.filepath.put(self._full_path)
-            self.resource_uid = fs.insert_resource('PIZZABOX_ENC_FILE_TXT', full_path,
-                                                   {'chunk_size': self.chunk_size},
-                                                   root=DIRECTORY)
+            self.resource_uid = self._reg.register_resource(
+                'PIZZABOX_ENC_FILE_TXT',
+                DIRECTORY, full_path,
+                {'chunk_size': self.chunk_size})
 
             super().stage()
 
@@ -126,7 +131,7 @@ class EncoderFS(Encoder):
         print('kickoff', self.name)
         self._ready_to_collect = True
         "Start writing data into the file."
-        
+
         set_and_wait(self.ignore_sel, 0)
 
         # Return a 'status object' that immediately reports we are 'done' ---
@@ -161,10 +166,11 @@ class EncoderFS(Encoder):
                 linecount = len(list(f))
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
-                datum_uid = str(uuid.uuid4())
+                datum_uid = self._reg.register_datum(
+                    self.resource_uid, {'chunk_num': chunk_num})
                 data = {self.name: datum_uid}
-                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+                yield {'data': data,
+                       'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -172,10 +178,10 @@ class EncoderFS(Encoder):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 
+                     {'filename': self._full_path,
                       'devname': self.dev_name.value,
-                      'source': 'pizzabox-enc-file', 
-                      'external': 'FILESTORE:', 
+                      'source': 'pizzabox-enc-file',
+                      'external': 'FILESTORE:',
                       'shape': [1024, 5],
                       'dtype': 'array'}}}
 
@@ -188,11 +194,13 @@ class DigitalOutput(Device):
     dutycycle_sp = Cpt(EpicsSignal, '}DutyCycle-SP')
     default_pol = Cpt(EpicsSignal, '}Dflt-Sel')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reg, **kwargs):
+        self._reg = reg
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
             self.enable.put(0)
+
 
 class DigitalInput(Device):
     """This class defines components but does not implement actual reading.
@@ -210,7 +218,8 @@ class DigitalInput(Device):
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reg, **kwargs):
+        self._reg = reg
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
@@ -221,7 +230,7 @@ class DigitalInput(Device):
 class DIFS(DigitalInput):
     "Encoder Device, when read, returns references to data in filestore."
     chunk_size = 1024
-    
+
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
@@ -237,9 +246,10 @@ class DIFS(DigitalInput):
                            "Choose a different DIRECTORY with a shorter path. (I know....)")
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
         self.filepath.put(self._full_path)
-        self.resource_uid = fs.insert_resource('PIZZABOX_DI_FILE_TXT', full_path,
-                                               {'chunk_size': self.chunk_size},
-                                               root=DIRECTORY)
+        self.resource_uid = self._reg.register_resource(
+            'PIZZABOX_DI_FILE_TXT',
+            DIRECTORY, full_path,
+            {'chunk_size': self.chunk_size})
 
         super().stage()
 
@@ -251,7 +261,7 @@ class DIFS(DigitalInput):
         print('kickoff', self.name)
         self._ready_to_collect = True
         "Start writing data into the file."
-        
+
         set_and_wait(self.ignore_sel, 0)
 
         # Return a 'status object' that immediately reports we are 'done' ---
@@ -286,10 +296,12 @@ class DIFS(DigitalInput):
                 linecount = len(list(f))
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
-                datum_uid = str(uuid.uuid4())
+                datum_uid = self._reg.register_datum(self.resource_uid,
+                                                     {'chunk_num': chunk_num})
                 data = {self.name: datum_uid}
-                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+
+                yield {'data': data,
+                       'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -297,10 +309,10 @@ class DIFS(DigitalInput):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 
+                     {'filename': self._full_path,
                       'devname': self.dev_name.value,
-                      'source': 'pizzabox-di-file', 
-                      'external': 'FILESTORE:', 
+                      'source': 'pizzabox-di-file',
+                      'external': 'FILESTORE:',
                       'shape': [1024, 5],
                       'dtype': 'array'}}}
 
@@ -308,15 +320,15 @@ class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
     #internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
 
-    enc1 = Cpt(EncoderFS, ':1')
-    enc2 = Cpt(EncoderFS, ':2')
-    enc3 = Cpt(EncoderFS, ':3')
-    enc4 = Cpt(EncoderFS, ':4')
-    di = Cpt(DIFS, ':DI')
-    do0 = Cpt(DigitalOutput, '-DO:0')
-    do1 = Cpt(DigitalOutput, '-DO:1')
-    do2 = Cpt(DigitalOutput, '-DO:2')
-    do3 = Cpt(DigitalOutput, '-DO:3')
+    enc1 = Cpt(EncoderFS, ':1', reg=db.reg)
+    enc2 = Cpt(EncoderFS, ':2', reg=db.reg)
+    enc3 = Cpt(EncoderFS, ':3', reg=db.reg)
+    enc4 = Cpt(EncoderFS, ':4', reg=db.reg)
+    di = Cpt(DIFS, ':DI', reg=db.reg)
+    do0 = Cpt(DigitalOutput, '-DO:0', reg=db.reg)
+    do1 = Cpt(DigitalOutput, '-DO:1', reg=db.reg)
+    do2 = Cpt(DigitalOutput, '-DO:2', reg=db.reg)
+    do3 = Cpt(DigitalOutput, '-DO:3', reg=db.reg)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -339,7 +351,7 @@ class PizzaBoxFS(Device):
         for attr_name in ['enc1', 'enc2', 'enc3', 'enc4']:
             yield from getattr(self, attr_name).collect()
 
- 
+
 
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')
 pb2 = PizzaBoxFS('XF:08IDA-CT{Enc02', name = 'pb2')
@@ -400,7 +412,11 @@ class Adc(Device):
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
     chunk_size = 1024
-    
+
+    def __init__(self, *args, reg, **kwargs):
+        self._reg = reg
+        super().__init__(*args, **kwargs)
+
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
@@ -417,10 +433,11 @@ class AdcFS(Adc):
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             self.filepath.put(self._full_path)
-            self.resource_uid = fs.insert_resource('PIZZABOX_AN_FILE_TXT', full_path,
-                                                   {'chunk_size': self.chunk_size},
-                                                   root=DIRECTORY)
-    
+            self.resource_uid = self._reg.register_resource(
+                'PIZZABOX_AN_FILE_TXT',
+                DIRECTORY, full_path,
+                {'chunk_size': self.chunk_size})
+
             super().stage()
 
     def unstage(self):
@@ -446,7 +463,7 @@ class AdcFS(Adc):
         # Stop adding new data to the file.
         set_and_wait(self.enable_sel, 1)
         return NullStatus()
-    
+
     def collect(self):
         """
         Record a 'datum' document in the filestore database for each encoder.
@@ -468,10 +485,12 @@ class AdcFS(Adc):
 
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
-                datum_uid = str(uuid.uuid4())
+                datum_uid = self._reg.register_datum(self.resource_uid,
+                                                     {'chunk_num': chunk_num})
                 data = {self.name: datum_uid}
-                fs.insert_datum(self.resource_uid, datum_uid, {'chunk_num': chunk_num})
-                yield {'data': data, 'timestamps': {key: now for key in data}, 'time': now}
+
+                yield {'data': data,
+                       'timestamps': {key: now for key in data}, 'time': now}
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -479,10 +498,10 @@ class AdcFS(Adc):
         # TODO Return correct shape (array dims)
         now = ttime.time()
         return {self.name: {self.name:
-                     {'filename': self._full_path, 
+                     {'filename': self._full_path,
                       'devname': self.dev_name.value,
-                      'source': 'pizzabox-adc-file', 
-                      'external': 'FILESTORE:', 
+                      'source': 'pizzabox-adc-file',
+                      'external': 'FILESTORE:',
                       'shape': [5,],
                       'dtype': 'array'}}}
 
@@ -490,14 +509,15 @@ class AdcFS(Adc):
 class PizzaBoxAnalogFS(Device):
     #internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
 
-    adc1 = Cpt(AdcFS, 'ADC:1')
-    adc6 = Cpt(AdcFS, 'ADC:6')
-    adc7 = Cpt(AdcFS, 'ADC:7')
+    adc1 = Cpt(AdcFS, 'ADC:1', reg=db.reg)
+    adc6 = Cpt(AdcFS, 'ADC:6', reg=db.reg)
+    adc7 = Cpt(AdcFS, 'ADC:7', reg=db.reg)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # must use internal timestamps or no bytes are written
-    
+        # self.stage_sigs[self.internal_ts_sel] = 1
+
     def kickoff(self):
         "Call encoder.kickoff() for every encoder."
         for attr_name in ['adc1']: #, 'adc2', 'adc3', 'adc4']:
@@ -514,14 +534,12 @@ class PizzaBoxAnalogFS(Device):
         for attr_name in ['adc1']: #, 'adc2', 'adc3', 'adc4']:
             yield from getattr(self, attr_name).collect()
 
-
 pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
 pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
 
-import numpy as np
-
-class PizzaBoxEncHandlerTxt:
-    encoder_row = namedtuple('encoder_row', ['ts_s', 'ts_ns', 'encoder', 'index', 'state'])
+class PizzaBoxEncHandlerTxt(HandlerBase):
+    encoder_row = namedtuple('encoder_row',
+                             ['ts_s', 'ts_ns', 'encoder', 'index', 'state'])
     "Read PizzaBox text files using info from filestore."
     def __init__(self, fpath, chunk_size):
         self.chunk_size = chunk_size
@@ -533,7 +551,8 @@ class PizzaBoxEncHandlerTxt:
         return [self.encoder_row(*(int(v) for v in ln.split()))
                 for ln in self.lines[chunk_num*cs:(chunk_num+1)*cs]]
 
-class PizzaBoxDIHandlerTxt:
+
+class PizzaBoxDIHandlerTxt(HandlerBase):
     di_row = namedtuple('di_row', ['ts_s', 'ts_ns', 'encoder', 'index', 'di'])
     "Read PizzaBox text files using info from filestore."
     def __init__(self, fpath, chunk_size):
@@ -546,7 +565,8 @@ class PizzaBoxDIHandlerTxt:
         return [self.di_row(*(int(v) for v in ln.split()))
                 for ln in self.lines[chunk_num*cs:(chunk_num+1)*cs]]
 
-class PizzaBoxAnHandlerTxt:
+
+class PizzaBoxAnHandlerTxt(HandlerBase):
     encoder_row = namedtuple('encoder_row', ['ts_s', 'ts_ns', 'index', 'adc'])
     "Read PizzaBox text files using info from filestore."
 
@@ -557,14 +577,16 @@ class PizzaBoxAnHandlerTxt:
             self.lines = list(f)
 
     def __call__(self, chunk_num):
-        
+
         cs = self.chunk_size
         return [self.encoder_row(*(int(v, base=b) for v, b in zip(ln.split(), self.bases)))
                 for ln in self.lines[chunk_num*cs:(chunk_num+1)*cs]]
 
-    
 
 
-db.fs.register_handler('PIZZABOX_AN_FILE_TXT', PizzaBoxAnHandlerTxt, overwrite=True)
-db.fs.register_handler('PIZZABOX_ENC_FILE_TXT', PizzaBoxEncHandlerTxt, overwrite=True)
-db.fs.register_handler('PIZZABOX_DI_FILE_TXT', PizzaBoxDIHandlerTxt, overwrite=True)
+db.reg.register_handler('PIZZABOX_AN_FILE_TXT',
+                        PizzaBoxAnHandlerTxt, overwrite=True)
+db.reg.register_handler('PIZZABOX_ENC_FILE_TXT',
+                        PizzaBoxEncHandlerTxt, overwrite=True)
+db.reg.register_handler('PIZZABOX_DI_FILE_TXT',
+                        PizzaBoxDIHandlerTxt, overwrite=True)

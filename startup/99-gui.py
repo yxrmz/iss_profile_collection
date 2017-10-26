@@ -1,6 +1,8 @@
 import isstools.gui
 import collections
 import atexit
+from bluesky.examples import motor
+motor.move = motor.set
 
 
 
@@ -39,7 +41,8 @@ motors_dictionary = {'B1 Slit vertical gap': {'name': slits.v_gap.name, 'object'
                'hrm_y': {'name': hrm.y.name, 'object': hrm.y},
                'huber_stage_y': {'name': huber_stage.y.name, 'object': huber_stage.y},
                'huber_stage_pitch': {'name': huber_stage.pitch.name, 'object': huber_stage.pitch},
-               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z}
+               'huber_stage_z': {'name': huber_stage.z.name, 'object': huber_stage.z},
+               'Dummy Motor': {'name': motor.name, 'object': motor}
 #               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
@@ -102,7 +105,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds],
                                  write_html_log = write_html_log,
                                  auto_tune_elements = auto_tune,
                                  ic_amplifiers = ic_amplifiers,
-                                 set_gains_offsets = set_gains_and_offsets)
+                                 set_gains_offsets = set_gains_and_offsets,
+                                 prepare_bl = [prepare_bl_plan, prepare_bl_def])
 
 
 def xlive():
