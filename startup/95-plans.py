@@ -1,7 +1,8 @@
 import bluesky as bs
 import bluesky.plans as bp
 import time as ttime
-# import PyQt4.QtCore
+from subprocess import call
+import os
 from isstools.conversions import xray
 import signal
 
@@ -393,6 +394,119 @@ def execute_trajectory(name, **metadata):
     return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
                                               flyers))
 
+def execute_camera_trajectory(name, **metadata):
+    flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    def inner():
+        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+
+        ret = (yield from bp.read(bpm_ms1.tiff_filenumber))
+        if ret is None:
+            raise Exception("Cannot read bpm_ms1 settings")
+        else:
+            tiff_filenumber = ret[bpm_ms1.tiff_filenumber.name]['value']
+
+        new_folder = '/GPFS/xf08id/bpm_cameras_images/{}-{}/'.format(name, tiff_filenumber)
+        if not os.path.exists(new_folder):
+            os.makedirs(new_folder)
+            call(['setfacl', '-m', 'g:iss-staff:rwx', new_folder])
+            call(['chmod', '777', new_folder])
+
+        yield from bp.sleep(0.25)
+        #yield from bp.abs_set(bpm_ms1.tiff_filepath, new_folder)
+        bpm_ms1.tiff_filepath.put(new_folder)
+        yield from bp.sleep(0.5)
+
+        ret = (yield from bp.read(bpm_ms1.tiff_filepath))
+        if ret is None:
+            raise Exception("Cannot read bpm_ms1 settings")
+        else:
+            tiff_filepath = ret[bpm_ms1.tiff_filepath.name]['value']
+
+        ret = (yield from bp.read(bpm_ms1.tiff_filename))
+        if ret is None:
+            raise Exception("Cannot read bpm_ms1 settings")
+        else:
+            tiff_filename = ret[bpm_ms1.tiff_filename.name]['value']
+
+        ret = (yield from bp.read(bpm_ms1.tiff_filefmt))
+        if ret is None:
+            raise Exception("Cannot read bpm_ms1 settings")
+        else:
+            tiff_filefmt = ret[bpm_ms1.tiff_filefmt.name]['value']
+
+        md = {'plan_args': {},
+              'plan_name': 'execute_trajectory',
+              'experiment': 'transmission',
+              'name': name,
+              'images_dir': ''.join(chr(i) for i in tiff_filepath)[:-1],
+              'images_name': ''.join(chr(i) for i in tiff_filename)[:-1],
+              'images_name_fmt': ''.join(chr(i) for i in tiff_filefmt)[:-1],
+              'first_image_number': tiff_filenumber,
+              'angle_offset': str(hhm.angle_offset.value),
+              'trajectory_name': hhm.trajectory_name.value,
+              'element': curr_traj.elem.value,
+              'edge': curr_traj.edge.value}
+        for flyer in flyers:
+            if hasattr(flyer, 'offset'):
+                md['{} offset'.format(flyer.name)] = flyer.offset.value
+        md.update(**metadata)
+        yield from bp.open_run(md=md)
+
+        # TODO Replace this with actual status object logic.
+        yield from bp.clear_checkpoint()
+        yield from shutter.open_plan()
+        yield from xia1.start_trigger()
+        # this must be a float
+        yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
+        # this must be a string
+        yield from bp.abs_set(hhm.start_trajectory, '1', wait=True)
+
+        # this should be replaced by a status object
+        def poll_the_traj_plan():
+            while True:
+                ret = (yield from bp.read(hhm.trajectory_running))
+                if ret is None:
+                    break
+                is_running = ret['hhm_trajectory_running']['value']
+
+                if is_running:
+                    break
+                else:
+                    yield from bp.sleep(.1)
+
+            while True:
+                ret = (yield from bp.read(hhm.trajectory_running))
+                if ret is None:
+                    break
+                is_running = ret['hhm_trajectory_running']['value']
+
+                if is_running:
+                    yield from bp.sleep(.05)
+                else:
+                    break
+
+
+        yield from bp.finalize_wrapper(poll_the_traj_plan(), 
+                                       bp.pchain(shutter.close_plan(), 
+                                                 bp.abs_set(hhm.stop_trajectory, 
+                                                            '1', wait=True)))
+
+        yield from bp.close_run()
+
+    def final_plan():
+        yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from xia1.stop_trigger()
+        for flyer in flyers:
+            yield from bp.unstage(flyer)
+        yield from bp.unstage(hhm)
+
+    for flyer in flyers:
+        yield from bp.stage(flyer)
+
+    yield from bp.stage(hhm)
+
+    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+                                              flyers))
 
 def execute_xia_trajectory(name, **metadata):
     flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
