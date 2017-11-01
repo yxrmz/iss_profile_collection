@@ -92,7 +92,7 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'ir_amp': ir_amp,
                  'iff_amp': iff_amp}
 
-xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, get_offsets, sleep_seconds], 
+xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_seconds], 
                                  prep_traj_plan, 
                                  RE,
                                  db, 
