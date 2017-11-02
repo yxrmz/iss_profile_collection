@@ -47,6 +47,9 @@ motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
 
+sample_stages = [{'x': samplexy.x.name, 'y': samplexy.y.name},
+                 {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
+
 auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
                                'motor' : bpm_fm.ins,
                                'read_back' : bpm_fm.switch_insert,
@@ -106,7 +109,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_
                                  auto_tune_elements = auto_tune,
                                  ic_amplifiers = ic_amplifiers,
                                  set_gains_offsets = set_gains_and_offsets,
-                                 prepare_bl = [prepare_bl_plan, prepare_bl_def])
+                                 prepare_bl = [prepare_bl_plan, prepare_bl_def],
+                                 sample_stages = sample_stages)
 
 
 def xlive():
