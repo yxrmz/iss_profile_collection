@@ -321,7 +321,8 @@ def prep_traj_plan(delay = 0.1):
 
 
 def execute_trajectory(name, **metadata):
-    flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {},
@@ -341,7 +342,7 @@ def execute_trajectory(name, **metadata):
         # TODO Replace this with actual status object logic.
         yield from bp.clear_checkpoint()
         yield from shutter.open_plan()
-        yield from xia1.start_trigger()
+        #yield from xia1.start_trigger()
         # this must be a float
         yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
@@ -381,7 +382,7 @@ def execute_trajectory(name, **metadata):
 
     def final_plan():
         yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
-        yield from xia1.stop_trigger()
+        #yield from xia1.stop_trigger()
         for flyer in flyers:
             yield from bp.unstage(flyer)
         yield from bp.unstage(hhm)
