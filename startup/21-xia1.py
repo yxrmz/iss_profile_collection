@@ -122,6 +122,7 @@ class XIA(Device):
         #self.collect_mode.put('MCA mapping')
         yield from bp.sleep(.25)
         #ttime.sleep(0.25)
+        yield from bp.abs_set(pb4.do0.dutycycle_sp, 50, wait=True)
         yield from bp.abs_set(self.capt_start_stop, 1, wait=True)
         #self.capt_start_stop.put(1)
         yield from bp.abs_set(self.erase_start, 1, wait=True)
