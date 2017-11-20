@@ -90,6 +90,10 @@ class EPS_Shutter(Device):
     state = Cpt(EpicsSignal, 'Pos-Sts')
     cls = Cpt(EpicsSignal, 'Cmd:Cls-Cmd')
     opn = Cpt(EpicsSignal, 'Cmd:Opn-Cmd')
+    error = Cpt(EpicsSignal,'Err-Sts')
+    permit = Cpt(EpicsSignal, 'Permit:Enbl-Sts')
+    enabled = Cpt(EpicsSignal, 'Enbl-Sts')
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
