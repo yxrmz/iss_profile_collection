@@ -791,14 +791,14 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
             print('[Prepare BL] Closing FE Shutter...')
         if not debug:
             signal.signal(signal.SIGALRM, handler)
-            signal.alarm(6)
+            signal.alarm(12)
             try:
                 yield from shutter_fe.close_plan()
             except Exception as exc:
                 print('[Prepare BL] Timeout! Could not close FE Shutter. Aborting! (Try once again, maybe?)')
                 return
 
-            tries = 3
+            tries = 10
             ret = (yield from bp.read(shutter_fe.state))
             if ret is not None:
                 while ret[shutter_fe.state.name]['value'] != 1:
@@ -855,14 +855,14 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
             print('[Prepare BL] Opening shutter...')
         if not debug:
             signal.signal(signal.SIGALRM, handler)
-            signal.alarm(6)
+            signal.alarm(12)
             try:
                 yield from shutter_fe.open_plan()
             except Exception as exc:
                 print('[Prepare BL] Timeout! Could not open FE Shutter. Aborting! (Try once again, maybe?)')
                 return
 
-            tries = 3
+            tries = 10
             ret = (yield from bp.read(shutter_fe.state))
             if ret is not None:
                 while ret[shutter_fe.state.name]['value'] != 0:
