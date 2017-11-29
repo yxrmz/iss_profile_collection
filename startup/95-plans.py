@@ -829,6 +829,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
 
     bpm_pvs = []
     for bpm in curr_range['pvs']['BPMs']:
+        exposure_time = bpm['exposure_time']
         if bpm['value'] == 'IN':
             pv_set = bpm['object'].ins
             pv_read = bpm['object'].switch_insert
@@ -841,6 +842,8 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                     print('[Prepare BL] Moving {} {}'.format(bpm['name'], bpm['value']))
                 for i in range(3):
                     if not debug:
+                        if exposure_time > 0:
+                            yield from bp.abs_set(bpm['object'].exp_time, exposure_time)
                         yield from bp.abs_set(pv_set, 1)
                     yield from bp.sleep(0.1)
                 bpm_pvs.append([pv_set, pv_read])

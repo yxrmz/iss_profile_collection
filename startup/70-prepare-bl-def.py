@@ -48,26 +48,31 @@ prepare_bl_def = [
                     {
                         "name": bpm_cm.name,
                         "object": bpm_cm,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_fm.name,
                         "object": bpm_fm,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_bt1.name,
                         "object": bpm_bt1,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_bt2.name,
                         "object": bpm_bt2,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_es.name,
                         "object": bpm_es,
+                        "exposure_time": -1,
                         "value": "IN"
                     }
                 ]
@@ -121,26 +126,31 @@ prepare_bl_def = [
                     {
                         "name": bpm_cm.name,
                         "object": bpm_cm,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_fm.name,
                         "object": bpm_fm,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_bt1.name,
                         "object": bpm_bt1,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_bt2.name,
                         "object": bpm_bt2,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_es.name,
                         "object": bpm_es,
+                        "exposure_time": -1,
                         "value": "IN"
                     }
                 ]
@@ -194,26 +204,31 @@ prepare_bl_def = [
                     {
                         "name": bpm_cm.name,
                         "object": bpm_cm,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_fm.name,
                         "object": bpm_fm,
+                        "exposure_time": -1,
                         "value": "IN"
                     },
                     {
                         "name": bpm_bt1.name,
                         "object": bpm_bt1,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_bt2.name,
                         "object": bpm_bt2,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_es.name,
                         "object": bpm_es,
+                        "exposure_time": -1,
                         "value": "IN"
                     }
                 ]
@@ -267,26 +282,31 @@ prepare_bl_def = [
                     {
                         "name": bpm_cm.name,
                         "object": bpm_cm,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_fm.name,
                         "object": bpm_fm,
+                        "exposure_time": -1,
                         "value": "IN"
                     },
                     {
                         "name": bpm_bt1.name,
                         "object": bpm_bt1,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_bt2.name,
                         "object": bpm_bt2,
+                        "exposure_time": -1,
                         "value": "OUT"
                     },
                     {
                         "name": bpm_es.name,
                         "object": bpm_es,
+                        "exposure_time": -1,
                         "value": "IN"
                     }
                 ]
