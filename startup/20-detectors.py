@@ -18,6 +18,7 @@ class BPM(ProsilicaDetector, SingleTrigger):
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
     counts = Cpt(EpicsSignal, 'Pos:Counts')
+    exp_time = Cpt(EpicsSignal, 'cam1:AcquireTime_RBV', write_pv='cam1:AcquireTime')
     # Dan Allan guessed about the nature of these signals. Fix them if you need them.
     ins = Cpt(EpicsSignal, 'Cmd:In-Cmd')
     ret = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
@@ -41,6 +42,7 @@ class CAMERA(ProsilicaDetector, SingleTrigger):
     stats2 = Cpt(StatsPlugin, 'Stats2:')
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
+    exp_time = Cpt(EpicsSignal, 'cam1:AcquireTime_RBV', write_pv='cam1:AcquireTime')
     polarity = 'pos'
     tiff_filepath = Cpt(EpicsSignal, 'TIFF1:FilePath_RBV', write_pv='TIFF1:FilePath')
     tiff_filename = Cpt(EpicsSignal, 'TIFF1:FileName_RBV', write_pv='TIFF1:FileName')
