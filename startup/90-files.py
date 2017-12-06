@@ -5,7 +5,7 @@ import math
 from isstools.xasdata import xasdata
 from isstools.xiaparser import xiaparser
 
-gen_parser = xasdata.XASdataGeneric(db)
+gen_parser = xasdata.XASdataGeneric(hhm.pulses_per_deg, db)
 
 xia_parser = xiaparser.xiaparser()
 smbclient = xiaparser.smbclient()

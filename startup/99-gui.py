@@ -1,6 +1,10 @@
 import isstools.gui
 import collections
 import atexit
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 from bluesky.examples import motor
 motor.move = motor.set
 

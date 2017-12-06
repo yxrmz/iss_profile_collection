@@ -916,11 +916,11 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
         print('[Prepare BL] Waiting for everything to be in position...')
     if not debug:
         while abs(abs(pv_i0_volt.value) - abs(
-                curr_range['pvs']['I0 Voltage']['value'])) > 10 ** -pv_i0_volt.precision * 2000 or abs(
+                curr_range['pvs']['I0 Voltage']['value'])) > (10 ** -pv_i0_volt.precision) * 2000 or abs(
                         abs(pv_it_volt.value) - abs(
-                        curr_range['pvs']['It Voltage']['value'])) > 10 ** -pv_it_volt.precision * 2000 or abs(
+                        curr_range['pvs']['It Voltage']['value'])) > (10 ** -pv_it_volt.precision) * 2000 or abs(
                         abs(pv_ir_volt.value) - abs(
-                        curr_range['pvs']['Ir Voltage']['value'])) > 10 ** -pv_ir_volt.precision * 2000:
+                        curr_range['pvs']['Ir Voltage']['value'])) > (10 ** -pv_ir_volt.precision) * 2000:
             yield from bp.sleep(0.1)
         yield from bp.wait(group='prepare_bl')
     if print_messages:

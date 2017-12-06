@@ -22,8 +22,10 @@ fm = Mirror('XF:08IDA-OP{Mir:FM', name='fm')
 
 h = 20 # mm
 
+
 def fix_exit_trig_formula(theta):
     return h/(2*np.cos(np.deg2rad(theta)))
+
 
 def energy2theta(energy):
     return np.rad2deg(np.arcsin(12400/energy/2/3.1356))
@@ -34,15 +36,21 @@ class HHMTrajDesc(Device):
     elem = Cpt(EpicsSignal, '-Elem')
     edge = Cpt(EpicsSignal, '-Edge')
 
+
 class HHM(Device):
     _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     "High Heat Load Monochromator"
+    ip = '10.8.2.86'
+    traj_filepath = '/GPFS/xf08id/trajectory/'
+
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
     energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr')
+
+    main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 
     # The following are related to trajectory motion
     lut_number = Cpt(EpicsSignal, 'MC:06}LUT-Set')
@@ -85,6 +93,10 @@ class HHM(Device):
     fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pulses_per_deg = 1/self.main_motor_res.value
 
 
 hhm = HHM('XF:08IDA-OP{', name='hhm')
