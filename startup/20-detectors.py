@@ -11,7 +11,7 @@ from bluesky.examples import NullStatus
 from databroker.assets.handlers_base import HandlerBase
 
 
-class BPM(ProsilicaDetector, SingleTrigger):
+class BPM(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
     stats1 = Cpt(StatsPlugin, 'Stats1:')
     stats2 = Cpt(StatsPlugin, 'Stats2:')
@@ -34,9 +34,10 @@ class BPM(ProsilicaDetector, SingleTrigger):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stage_sigs.clear()  # default stage sigs do not apply
+        self.stage_sigs['cam.image_mode'] = 'Single'
+        #self.stage_sigs.clear()  # default stage sigs do not apply
 
-class CAMERA(ProsilicaDetector, SingleTrigger):
+class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
     stats1 = Cpt(StatsPlugin, 'Stats1:')
     stats2 = Cpt(StatsPlugin, 'Stats2:')
@@ -51,7 +52,8 @@ class CAMERA(ProsilicaDetector, SingleTrigger):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stage_sigs.clear()  # default stage sigs do not apply
+        self.stage_sigs['cam.image_mode'] = 'Single'
+        #self.stage_sigs.clear()  # default stage sigs do not apply
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
