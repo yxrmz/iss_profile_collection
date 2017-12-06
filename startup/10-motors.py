@@ -35,6 +35,7 @@ class HHMTrajDesc(Device):
     filename = Cpt(EpicsSignal, '-Name')
     elem = Cpt(EpicsSignal, '-Elem')
     edge = Cpt(EpicsSignal, '-Edge')
+    e0 = Cpt(EpicsSignal, '-E0')
 
 
 class HHM(Device):
