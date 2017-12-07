@@ -332,7 +332,8 @@ def execute_trajectory(name, **metadata):
               'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
-              'edge': curr_traj.edge.value}
+              'edge': curr_traj.edge.value,
+              'e0': curr_traj.e0.value}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
@@ -446,7 +447,8 @@ def execute_camera_trajectory(name, **metadata):
               'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
-              'edge': curr_traj.edge.value}
+              'edge': curr_traj.edge.value,
+              'e0': curr_traj.e0.value}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
@@ -535,7 +537,8 @@ def execute_xia_trajectory(name, **metadata):
               'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
-              'edge': curr_traj.edge.value}
+              'edge': curr_traj.edge.value,
+              'e0': curr_traj.e0.value}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
