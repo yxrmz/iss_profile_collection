@@ -1,13 +1,13 @@
 import uuid
 from databroker import Broker
 import time
-import numpy as np
-import os
 import os.path as op
 import jsonschema
 from event_model import DocumentNames, schemas
 from databroker.assets.handlers_base import HandlerBase
 from collections import namedtuple
+import pandas as pd
+import h5py
 
 from pathlib import Path
 
@@ -109,8 +109,34 @@ def store_results_databroker(md, parent_uid, db, stream_name, filepath, root=Non
         db.insert('event', event_doc)
     db.insert('stop', stop_doc)
 
+
+class SpectroscopyInterpHandler(HandlerBase):
+    def __init__(self, fpath, chunk_size):
+        self.chunk_size = chunk_size
+
+        f = h5py.File(fpath, mode='r')
+        df = pd.DataFrame({key: value for key, value in zip(f.keys(), f.values())})
+        keys = list(df.keys())
+        linecount = len(df)
+        f.close()
+
+        if '1' in keys:
+            keys[keys.index('1')] = 'Ones'
+        self.row = namedtuple('row', keys)
+        self.array = df.values
+
+        # with open(fpath, 'r') as f:
+        #    self.lines = np.array(list(f))[lines_header:]
+
+    def __call__(self, chunk_num):
+        cs = self.chunk_size
+        return {field: val for field, val in
+                zip(self.row._fields, self.array[chunk_num * cs:(chunk_num + 1) * cs, :].transpose())}
+
+
 md = dict(sample_name = "foo", user="Bruno")
 db_analysis = Broker.named("iss-analysis")
+db_analysis.reg.register_handler('ISS-interpolated', SpectroscopyInterpHandler, overwrite=True)
 rootpath = '/GPFS/xf08id'
 filepath = 'User Data'
 
@@ -123,7 +149,6 @@ filepath = 'User Data'
 #                         root=rootpath)
 
 # Retrieving data:
-#db_analysis.reg.register_handler('ISS-interpolated', SpectroscopyInterpHandler, overwrite=True)
 #hdr = db_analysis[-1]
 #dd = [_['data'] for _ in db_analysis.get_events(hdr, stream_name='interpolated', fill=True)]
 #result = {}
