@@ -86,7 +86,7 @@ class Encoder(Device):
     index_array = Cpt(EpicsSignal, '}Cnt:Index_Bin_')
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     # The '$' in the PV allows us to write 40 chars instead of 20.
-    filepath = Cpt(EpicsSignal, '}ID:File.VAL$', string=True)
+    filepath = Cpt(EpicsSignal, '}ID:File.VAL', string=True)
     dev_name = Cpt(EpicsSignal, '}DevName')
 
     filter_dy = Cpt(EpicsSignal, '}Fltr:dY-SP')
@@ -221,7 +221,7 @@ class DigitalInput(Device):
     index_array = Cpt(EpicsSignal, '}Cnt:Index_Bin_')
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     # The '$' in the PV allows us to write 40 chars instead of 20.
-    filepath = Cpt(EpicsSignal, '}ID:File.VAL$', string=True)
+    filepath = Cpt(EpicsSignal, '}ID:File.VAL', string=True)
     dev_name = Cpt(EpicsSignal, '}DevName')
 
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
@@ -373,7 +373,7 @@ pb9 = PizzaBoxFS('XF:08IDA-CT{Enc09', name = 'pb9')
 class Adc(Device):
     file_size = Cpt(EpicsSignal, '}FileSize')
     reset = Cpt(EpicsSignal, '}Rst-Cmd')
-    filepath = Cpt(EpicsSignal, '}ID:File.VAL$', string=True)
+    filepath = Cpt(EpicsSignal, '}ID:File.VAL', string=True)
     sec_array = Cpt(EpicsSignal, '}T:sec_Bin_')
     nsec_array = Cpt(EpicsSignal, '}T:nsec_Bin_')
     #pos_array = Cpt(EpicsSignal, '}Cnt:Pos_Bin_')
