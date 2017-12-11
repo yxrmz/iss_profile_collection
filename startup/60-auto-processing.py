@@ -16,12 +16,13 @@ context = zmq.Context()
 sender = context.socket(zmq.PUB)
 sender.bind("tcp://*:5562")
 
-def create_ret(scan_type, uid, process_type, data, requester):
+def create_ret(scan_type, uid, process_type, data, metadata, requester):
     ret = {'type':scan_type,
            'uid': uid,
            'processing_ret':{
                              'type':process_type,
-                             'data':data
+                             'data':data,
+                             'metadata': metadata
                             }
           }
 
@@ -97,14 +98,14 @@ class ScanProcessor(CallbackBase):
 
                 requester = socket.gethostname()
                 ret = create_ret('spectroscopy', current_uid, 'interpolate', self.gen_parser.interp_df.to_json(),
-                                 requester)
+                                 md, requester)
                 self.sender.send(ret)
                 print('Done with the interpolation!')
 
                 e0 = int(md['e0'])
                 bin_df = self.gen_parser.bin(e0, e0 - 30, e0 + 50, 10, 0.2, 0.04)
                 self.gen_parser.data_manager.export_dat(current_filepath[:-5]+'.hdf5')
-                ret = create_ret('spectroscopy', current_uid, 'bin', bin_df.to_json(), requester)
+                ret = create_ret('spectroscopy', current_uid, 'bin', bin_df.to_json(), md, requester)
                 self.sender.send(ret)
                 print('Done with the binning!')
 
