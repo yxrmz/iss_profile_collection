@@ -13,8 +13,8 @@ import zmq
 import socket
 
 context = zmq.Context()
-sender = context.socket(zmq.PUB)
-sender.bind("tcp://*:5562")
+sender = context.socket(zmq.PUSH)
+sender.connect("tcp://xf08id-srv1:5559")
 
 def create_ret(scan_type, uid, process_type, data, metadata, requester):
     ret = {'type':scan_type,
@@ -50,23 +50,28 @@ class CallbackBase:
         pass
 
 
-class ScanProcessor(CallbackBase):
-    def __init__(self, gen_parser, xia_parser, db, beamline_gpfs_path, zmq_sender, *args, **kwargs):
+class ProcessingRequester(CallbackBase):
+    def __init__(self, db, zmq_sender, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gen_parser = gen_parser
-        self.xia_parser = xia_parser
-        self.db = db
-        self.md = {}
-        self.user_data_path = Path(beamline_gpfs_path) / Path('User Data')
-        self.xia_data_path = Path(beamline_gpfs_path) / Path('xia_files')
         self.sender = zmq_sender
+        self.requester = socket.gethostname()
+        self.db = db
 
     def start(self, doc):
         pass
 
     def stop(self, doc):
         self.md = self.db[doc['run_start']]['start']
-        self.process(self.md)
+        req = {'uid': self.md['uid'],
+               'requester': self.requester,
+               'type': 'spectroscopy',
+               'processing_info': {
+                   'type': 'interpolate',
+                   'interp_base': 'i0'
+               }
+              }
+        self.sender.send_string(json.dumps(req))
+        #self.process(self.md)
 
     def process(self, md={}):
         print('starting processing!')
@@ -77,7 +82,7 @@ class ScanProcessor(CallbackBase):
                                              md['cycle'],
                                              md['PROPOSAL'])
         current_filepath = Path(current_path) / Path(md['name'])
-        current_filepath = ScanProcessor.get_new_filepath(str(current_filepath) + '.hdf5')
+        current_filepath = ProcessingRequester.get_new_filepath(str(current_filepath) + '.hdf5')
         current_uid = md['uid']
         self.gen_parser.load(current_uid)
 
@@ -101,13 +106,6 @@ class ScanProcessor(CallbackBase):
                                  md, requester)
                 self.sender.send(ret)
                 print('Done with the interpolation!')
-
-                e0 = int(md['e0'])
-                bin_df = self.gen_parser.bin(e0, e0 - 30, e0 + 50, 10, 0.2, 0.04)
-                self.gen_parser.data_manager.export_dat(current_filepath[:-5]+'.hdf5')
-                ret = create_ret('spectroscopy', current_uid, 'bin', bin_df.to_json(), md, requester)
-                self.sender.send(ret)
-                print('Done with the binning!')
 
                 #store_results_databroker(md,
                 #                         parent_uid,
@@ -200,13 +198,13 @@ class ScanProcessor(CallbackBase):
         current_user_dir = Path(f"{year}.{cycle}.{proposal}")
 
         user_data_path = Path(user_data_path) / current_user_dir
-        ScanProcessor.create_dir(user_data_path)
+        ProcessingRequester.create_dir(user_data_path)
 
         log_path = user_data_path / Path('log')
-        ScanProcessor.create_dir(log_path)
+        ProcessingRequester.create_dir(log_path)
 
         snapshots_path = log_path / Path('snapshots')
-        ScanProcessor.create_dir(snapshots_path)
+        ProcessingRequester.create_dir(snapshots_path)
 
         return user_data_path
 
@@ -233,5 +231,5 @@ class ScanProcessor(CallbackBase):
 gen_parser = xasdata.XASdataGeneric(hhm.pulses_per_deg, db, db_analysis)
 xia_parser = xiaparser.xiaparser()
 
-processor = ScanProcessor(gen_parser, xia_parser, db, '/GPFS/xf08id/', sender)
+processor = ProcessingRequester(db, sender)
 processor_subscribe_id = RE.subscribe(processor)
