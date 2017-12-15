@@ -114,7 +114,8 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_
                                  ic_amplifiers = ic_amplifiers,
                                  set_gains_offsets = set_gains_and_offsets,
                                  prepare_bl = [prepare_bl_plan, prepare_bl_def],
-                                 sample_stages = sample_stages)
+                                 sample_stages = sample_stages,
+                                 processing_sender = sender)
 
 
 def xlive():

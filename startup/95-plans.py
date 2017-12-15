@@ -324,11 +324,13 @@ def execute_trajectory(name, **metadata):
     #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     def inner():
+        interp_fn = f"{rootpath}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission',
               'name': name,
+              'interp_filename': interp_fn,
               'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
@@ -436,10 +438,12 @@ def execute_camera_trajectory(name, **metadata):
         else:
             tiff_filefmt = ret[bpm_ms1.tiff_filefmt.name]['value']
 
+        interp_fn = f"{rootpath}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission',
               'name': name,
+              'interp_filename': interp_fn,
               'images_dir': ''.join(chr(i) for i in tiff_filepath)[:-1],
               'images_name': ''.join(chr(i) for i in tiff_filename)[:-1],
               'images_name_fmt': ''.join(chr(i) for i in tiff_filefmt)[:-1],
@@ -526,11 +530,13 @@ def execute_xia_trajectory(name, **metadata):
                     xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
                     xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
 
+        interp_fn = f"{rootpath}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd', 
-              'name': name, 
+              'name': name,
+              'interp_filename': interp_fn,
               'xia_max_energy': xia1.mca_max_energy.value,
               'xia_filename': '{}_{:03}.nc'.format(name, next_file_number), 
               'xia_rois':xia_rois, 
