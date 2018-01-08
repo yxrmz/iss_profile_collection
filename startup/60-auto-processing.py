@@ -14,7 +14,7 @@ import socket
 
 context = zmq.Context()
 sender = context.socket(zmq.PUSH)
-sender.connect("tcp://xf08id-srv1:5559")
+sender.connect("tcp://xf08id-srv2:5559")
 
 def create_ret(scan_type, uid, process_type, data, metadata, requester):
     ret = {'type':scan_type,
