@@ -135,6 +135,7 @@ class SampleXY(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
 
 samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
+giantxy = SampleXY('XF:08IDB-OP{PPMAC:Stage', name'giantxy')
 
 
 class FilterBox(Device):

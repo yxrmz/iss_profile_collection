@@ -29,6 +29,8 @@ motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1
                'slits_hor_out': {'name': slits.hor_out.name,'description':'B1 Slit Horisontal Outboard Position', 'object': slits.hor_out},
                'samplexy_x': {'name': samplexy.x.name, 'description':'B2 Sample Stage X','object': samplexy.x},
                'samplexy_y': {'name': samplexy.y.name, 'description':'B2 Sample Stage Y','object': samplexy.y},
+               'giantxy_x': {'name': giantxy.x.name, 'description':'B2 Giant Stage X','object': giantxy.x},
+               'giantxy_y': {'name': giantxy.y.name, 'description':'B2 Giant Stage Y','object': giantxy.y},
                'hhm_theta': {'name': hhm.theta.name,'description':'A Monochromator Theta', 'object': hhm.theta},
                'hhm_energy': {'name': hhm.energy.name, 'description':'A Monochromator Energy','object': hhm.energy},
                'hhm_y': {'name': hhm.y.name,'description':'A Monochromator Y', 'object': hhm.y},
@@ -51,7 +53,8 @@ motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
               }
 
-sample_stages = [{'x': samplexy.x.name, 'y': samplexy.y.name},
+sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
+                 {'x': samplexy.x.name, 'y': samplexy.y.name},
                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
 auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
