@@ -10,18 +10,18 @@ motor.move = motor.set
 
 
 
-detector_dictionary = {bpm_fm:['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],
-            bpm_cm:['bpm_cm_stats1_total','bpm_cm_stats2_total'],
-            bpm_bt1:['bpm_bt1_stats1_total','bpm_bt1_stats2_total'],
-            bpm_bt2:['bpm_bt2_stats1_total','bpm_bt2_stats2_total'],
-            bpm_es:['bpm_es_stats1_total','bpm_es_stats2_total'],
-            pb9.enc1:['pb9_enc1_pos_I'],
-            it:['pba1_adc1_volt'],
-            iff:['pba1_adc6_volt'],
-            i0:['pba1_adc7_volt'],
-            ir:['pba2_adc6_volt'],
-            pba2.adc7:['pba2_adc7_volt'],
-            xia1: xia_list}
+detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
+            bpm_cm.name: {'obj': bpm_cm, 'elements': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
+            bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
+            bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
+            bpm_es.name: {'obj': bpm_es, 'elements':['bpm_es_stats1_total','bpm_es_stats2_total']},
+            pb9.enc1.name: {'obj': pb9.enc1, 'elements': ['pb9_enc1_pos_I']},
+            it.name: {'obj': it, 'elements': ['pba1_adc1_volt']},
+            iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
+            i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt']},
+            ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
+            pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
+            xia1.name: {'obj': xia1, 'elements': xia_list}}
 
 motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
                'slits_v_pos': {'name': slits.v_pos.name, 'description':'B1 Slit Vertical Position','object': slits.v_pos},
