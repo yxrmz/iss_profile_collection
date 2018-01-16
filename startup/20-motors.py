@@ -95,12 +95,13 @@ class HHM(Device):
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.pulses_per_deg = 1/self.main_motor_res.value
+        self.enc = enc
 
 
-hhm = HHM('XF:08IDA-OP{', name='hhm')
+hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
 hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 
 hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
