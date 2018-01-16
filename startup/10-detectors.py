@@ -369,6 +369,7 @@ pb5 = PizzaBoxFS('XF:08IDA-CT{Enc05', name = 'pb5')
 pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
 pb9 = PizzaBoxFS('XF:08IDA-CT{Enc09', name = 'pb9')
+pb9.enc1.pulses_per_deg = 360000
 
 class Adc(Device):
     file_size = Cpt(EpicsSignal, '}FileSize')
