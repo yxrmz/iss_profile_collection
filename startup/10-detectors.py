@@ -365,11 +365,11 @@ class PizzaBoxFS(Device):
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')
 pb2 = PizzaBoxFS('XF:08IDA-CT{Enc02', name = 'pb2')
 pb4 = PizzaBoxFS('XF:08IDA-CT{Enc04', name = 'pb4') #PB inside hutch B (for now)
-pb4.enc1.pulses_per_deg = 360000
 pb5 = PizzaBoxFS('XF:08IDA-CT{Enc05', name = 'pb5')
 pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
 pb9 = PizzaBoxFS('XF:08IDA-CT{Enc09', name = 'pb9')
+pb9.enc1.pulses_per_deg = 360000
 
 class Adc(Device):
     file_size = Cpt(EpicsSignal, '}FileSize')
