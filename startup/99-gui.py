@@ -1,4 +1,5 @@
 import isstools.gui
+from isstools import Xview;
 import collections
 import atexit
 import requests
@@ -126,8 +127,13 @@ def xlive():
 
 xlive()
 
-def cleaning():
-    if xlive_gui.piezo_thread.isRunning():
-        xlive_gui.toggle_piezo_fb(0)
+xview_gui = Xview.GUI(hhm.pulses_per_deg, db=db)
+def xview():
+    xview_gui.show()
 
-atexit.register(cleaning)
+
+#def cleaning():
+#    if xlive_gui.piezo_thread.isRunning():
+#        xlive_gui.toggle_piezo_fb(0)
+
+#atexit.register(cleaning)
