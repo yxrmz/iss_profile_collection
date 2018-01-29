@@ -1,4 +1,5 @@
 import isstools.gui
+#from isstools import Xview;
 import collections
 import atexit
 import requests
@@ -20,7 +21,7 @@ detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_
             iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
             i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt']},
             ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
-            pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
+            #pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
             xia1.name: {'obj': xia1, 'elements': xia_list}}
 
 motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
@@ -117,16 +118,23 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_
                                  ic_amplifiers = ic_amplifiers,
                                  set_gains_offsets = set_gains_and_offsets,
                                  prepare_bl = [prepare_bl_plan, prepare_bl_def],
-                                 sample_stages = sample_stages)
+                                 sample_stages = sample_stages,
+                                 processing_sender = sender)
 
 
 def xlive():
     xlive_gui.show()
 
 xlive()
+print('go')
 
-def cleaning():
-    if xlive_gui.piezo_thread.isRunning():
-        xlive_gui.toggle_piezo_fb(0)
+#xview_gui = Xview.GUI(hhm.pulses_per_deg, db=db)
+#def xview():
+#    xview_gui.show()
 
-atexit.register(cleaning)
+
+#def cleaning():
+#    if xlive_gui.piezo_thread.isRunning():
+#        xlive_gui.toggle_piezo_fb(0)
+
+#atexit.register(cleaning)
