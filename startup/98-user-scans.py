@@ -40,7 +40,7 @@ def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
             name_n = name + ' ' + str(indx + 1)
         print('Current step: {} / {}'.format(indx + 1, n_cycles))
         RE(prep_traj_plan())
-        uid, = RE(execute_trajectory(name_n, comment=comment))
+        uid = RE(execute_trajectory(name_n, comment=comment))
         yield uid
         #uids.append(uid)
         time.sleep(float(delay))

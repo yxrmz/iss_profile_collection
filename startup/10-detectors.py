@@ -118,12 +118,15 @@ class EncoderFS(Encoder):
             rpath = 'pizza_box_data'
             filename = 'en_' + str(uuid.uuid4())[:6]
             full_path = os.path.join(rpath, filename)
+            print('going')
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             if len(self._full_path) > 40:
                 raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
+            print(self._full_path)
             self.filepath.put(self._full_path)
+
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_ENC_FILE_TXT',
                 DIRECTORY, full_path,
@@ -432,7 +435,7 @@ class AdcFS(Adc):
 
 
         if(self.connected):
-            print(self.name, 'stage')
+            print(self.name, 'is staging')
             DIRECTORY = '/GPFS/xf08id/'
             rpath = 'pizza_box_data'
             filename = 'an_' + str(uuid.uuid4())[:6]
@@ -442,12 +445,13 @@ class AdcFS(Adc):
                 raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
+            print(self._full_path)
             self.filepath.put(self._full_path)
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_AN_FILE_TXT',
                 DIRECTORY, full_path,
                 {'chunk_size': self.chunk_size})
-
+            print(self.name, 'staging complete')
             super().stage()
 
     def unstage(self):
@@ -480,7 +484,7 @@ class AdcFS(Adc):
 
         Return a dictionary with references to these documents.
         """
-        print('collect', self.name)
+        print('collecting', self.name)
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
@@ -488,11 +492,11 @@ class AdcFS(Adc):
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
         if os.path.isfile(self._full_path):
+            print(self._full_path)
             with open(self._full_path, 'r') as f:
                 linecount = 0
                 for ln in f:
                     linecount += 1
-
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
                 datum_uid = self._reg.register_datum(self.resource_uid,
