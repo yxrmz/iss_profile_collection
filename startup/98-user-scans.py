@@ -44,7 +44,7 @@ def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
         yield uid
         #uids.append(uid)
         time.sleep(float(delay))
-    print('Done!')
+    print('Scan is complete!')
     #return uids
     
 
@@ -61,7 +61,7 @@ def tscan_plan(name:str, comment:str, prepare_traj:bool=True, n_cycles:int=1, de
         uids.append(uid)
 			
         yield from bp.sleep(float(delay))
-    print('Done!')
+    print('Scan is complete!')
     return uids
 
 

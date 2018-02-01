@@ -113,18 +113,17 @@ class EncoderFS(Encoder):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
         if(self.connected):
-            print(self.name, 'stage')
+            print('Staging of {} starting'.format(self.name))
             DIRECTORY = '/GPFS/xf08id/'
             rpath = 'pizza_box_data'
             filename = 'en_' + str(uuid.uuid4())[:6]
             full_path = os.path.join(rpath, filename)
-            print('going')
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             if len(self._full_path) > 40:
                 raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-            print(self._full_path)
+            # print(self._full_path)
             self.filepath.put(self._full_path)
 
             self.resource_uid = self._reg.register_resource(
@@ -133,6 +132,7 @@ class EncoderFS(Encoder):
                 {'chunk_size': self.chunk_size})
 
             super().stage()
+            print('Staging of {} complete'.format(self.name))
 
     def unstage(self):
         if(self.connected):
@@ -151,7 +151,7 @@ class EncoderFS(Encoder):
         return NullStatus()
 
     def complete(self):
-        print('complete', self.name, '| filepath', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -166,7 +166,7 @@ class EncoderFS(Encoder):
 
         Return a dictionary with references to these documents.
         """
-        print('collect', self.name)
+        print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
@@ -183,8 +183,9 @@ class EncoderFS(Encoder):
                 data = {self.name: datum_uid}
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
+            print('Collect of {} complete'.format(self.name))
         else:
-            print('collect {}: File was not created'.format(self.name))
+            print('Collect {}: File was not created'.format(self.name))
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -246,16 +247,15 @@ class DIFS(DigitalInput):
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
-
-        print(self.name, 'stage')
+        print('Staging of {} starting'.format(self.name))
         DIRECTORY = '/GPFS/xf08id/'
         rpath = 'pizza_box_data'
         filename = 'di_' + str(uuid.uuid4())[:6]
         full_path = os.path.join(rpath, filename)
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
         if len(self._full_path) > 40:
-            raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
-                           "Choose a different DIRECTORY with a shorter path. (I know....)")
+            raise RuntimeError("EPICS filepath is limited to 80 characters. "
+                           "Choose a DIRECTORY with a shorter path")
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
         self.filepath.put(self._full_path)
         self.resource_uid = self._reg.register_resource(
@@ -264,6 +264,7 @@ class DIFS(DigitalInput):
             {'chunk_size': self.chunk_size})
 
         super().stage()
+        print('Staging of {} complete'.format(self.name))
 
     def unstage(self):
         set_and_wait(self.ignore_sel, 1)
@@ -281,7 +282,7 @@ class DIFS(DigitalInput):
         return NullStatus()
 
     def complete(self):
-        print('complete', self.name, '| filepath', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -296,7 +297,7 @@ class DIFS(DigitalInput):
 
         Return a dictionary with references to these documents.
         """
-        print('collect', self.name)
+        print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
@@ -314,6 +315,7 @@ class DIFS(DigitalInput):
 
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
+            print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -435,23 +437,23 @@ class AdcFS(Adc):
 
 
         if(self.connected):
-            print(self.name, 'is staging')
+            print( 'Staging of {} starting'.format(self.name))
             DIRECTORY = '/GPFS/xf08id/'
             rpath = 'pizza_box_data'
             filename = 'an_' + str(uuid.uuid4())[:6]
             full_path = os.path.join(rpath, filename)
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             if len(self._full_path) > 40:
-                raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
-                               "Choose a different DIRECTORY with a shorter path. (I know....)")
+                raise RuntimeError("EPICS filepath is limited to 80 characters. "
+                                   "Choose a DIRECTORY with a shorter path")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-            print(self._full_path)
+            #print(self._full_path) Eli 2018-01-30
             self.filepath.put(self._full_path)
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_AN_FILE_TXT',
                 DIRECTORY, full_path,
                 {'chunk_size': self.chunk_size})
-            print(self.name, 'staging complete')
+            print('Staging of {} complete'.format(self.name))
             super().stage()
 
     def unstage(self):
@@ -463,15 +465,13 @@ class AdcFS(Adc):
         print('kickoff', self.name)
         self._ready_to_collect = True
         "Start writing data into the file."
-
         set_and_wait(self.enable_sel, 0)
-
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
         return NullStatus()
 
     def complete(self):
-        print('complete', self.name, '| filepath', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -484,7 +484,7 @@ class AdcFS(Adc):
 
         Return a dictionary with references to these documents.
         """
-        print('collecting', self.name)
+        print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
@@ -492,7 +492,6 @@ class AdcFS(Adc):
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
         if os.path.isfile(self._full_path):
-            print(self._full_path)
             with open(self._full_path, 'r') as f:
                 linecount = 0
                 for ln in f:
@@ -505,6 +504,7 @@ class AdcFS(Adc):
 
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
+            print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
 
