@@ -126,7 +126,7 @@ def xlive():
     xlive_gui.show()
 
 xlive()
-print('go')
+print('Startup complete')
 
 #xview_gui = Xview.GUI(hhm.pulses_per_deg, db=db)
 #def xview():
