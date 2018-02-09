@@ -1,6 +1,8 @@
 import uuid
 from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 import os
+import shutil
 import time as ttime
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
@@ -124,7 +126,17 @@ class EncoderFS(Encoder):
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             # print(self._full_path)
-            self.filepath.put(self._full_path)
+            #
+            # FIXME: Quick TEMPORARY fix for beamline disaster
+            # we are writing the file to a temp directory in the ioc and
+            # then moving it to the GPFS system.
+            #
+            ioc_file_root = '/home/softioc/tmp/'
+            self._ioc_full_path = os.path.join(ioc_file_root, filename)
+            self._filename = filename
+
+            #self.filepath.put(self._full_path)   # commented out during disaster
+            self.filepath.put(self._ioc_full_path)
 
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_ENC_FILE_TXT',
@@ -173,6 +185,16 @@ class EncoderFS(Encoder):
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
+
+        workstation_file_root = '/mnt/xf08ida-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
                 linecount = len(list(f))
@@ -184,6 +206,7 @@ class EncoderFS(Encoder):
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
             print('Collect of {} complete'.format(self.name))
+
         else:
             print('Collect {}: File was not created'.format(self.name))
 
@@ -257,7 +280,19 @@ class DIFS(DigitalInput):
             raise RuntimeError("EPICS filepath is limited to 80 characters. "
                            "Choose a DIRECTORY with a shorter path")
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-        self.filepath.put(self._full_path)
+
+        #
+        # FIXME: Quick TEMPORARY fix for beamline disaster
+        # we are writing the file to a temp directory in the ioc and
+        # then moving it to the GPFS system.
+        #
+        ioc_file_root = '/home/softioc/tmp/'
+        self._ioc_full_path = os.path.join(ioc_file_root, filename)
+        self._filename = filename
+
+        # self.filepath.put(self._full_path)   # commented out during disaster
+        self.filepath.put(self._ioc_full_path)
+
         self.resource_uid = self._reg.register_resource(
             'PIZZABOX_DI_FILE_TXT',
             DIRECTORY, full_path,
@@ -304,6 +339,16 @@ class DIFS(DigitalInput):
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
+
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
                 linecount = len(list(f))
@@ -423,13 +468,13 @@ class Adc(Device):
         #signal.alarm(0)
 
 
-
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
     chunk_size = 1024
 
     def __init__(self, *args, reg, **kwargs):
         self._reg = reg
+        self.file_move_executor = ThreadPoolExecutor(max_workers=2)
         super().__init__(*args, **kwargs)
 
     def stage(self):
@@ -448,7 +493,20 @@ class AdcFS(Adc):
                                    "Choose a DIRECTORY with a shorter path")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             #print(self._full_path) Eli 2018-01-30
-            self.filepath.put(self._full_path)
+            #
+            # FIXME: Quick TEMPORARY fix for beamline disaster
+            # we are writing the file to a temp directory in the ioc and
+            # then moving it to the GPFS system.
+            #
+            ioc_file_root = '/home/softioc/tmp/'
+            self._ioc_full_path = os.path.join(ioc_file_root, filename)
+            self._filename = filename
+
+            print("Temp IOC filename:" + self._ioc_full_path)
+
+            #self.filepath.put(self._full_path)   # commented out during disaster
+            self.filepath.put(self._ioc_full_path)
+
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_AN_FILE_TXT',
                 DIRECTORY, full_path,
@@ -491,6 +549,15 @@ class AdcFS(Adc):
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
+
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        stat = shutil.copy(workstation_full_path, self._full_path)
+
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
                 linecount = 0
