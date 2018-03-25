@@ -1,5 +1,6 @@
 import isstools.gui
-from isstools import Xview;
+from isstools import Xview
+
 import collections
 import atexit
 import requests
@@ -106,7 +107,7 @@ ic_amplifiers = {'i0_amp': i0_amp,
 xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_seconds], 
                                  prep_traj_plan, 
                                  RE,
-                                 db, 
+                                 db,
                                  nsls_ii,
                                  hhm,
                                  shutters_dictionary,
@@ -125,9 +126,10 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_
 def xlive():
     xlive_gui.show()
 
-xlive()
+#xlive()
 
-xview_gui = Xview.GUI(hhm.pulses_per_deg, db=db)
+xview_gui = Xview.XviewGui(iss_mono_pulses_per_deg, db=db)
+
 def xview():
     xview_gui.show()
 

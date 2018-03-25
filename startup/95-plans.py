@@ -940,7 +940,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
         yield from bp.abs_set(hhm.energy, curr_energy, wait=True)
 
     if print_messages:
-        print('[Prepare BL] Beamline preparation done!')
+        print('[Prepare BL] Beamline preparation complete!')
 
 #    yield from bp.mv(hhm.energy, E)
 #    yield from bp.mv(other_thing, f(E))

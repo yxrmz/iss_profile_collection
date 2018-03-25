@@ -5,7 +5,7 @@ setup_ophyd()
 # Set up a RunEngine and use metadata backed by a sqlite file.
 from bluesky import RunEngine
 from bluesky.utils import get_history
-RE = RunEngine(get_history())
+RE = RunEngine({})
 
 # Set up a Broker.
 from databroker import Broker
@@ -21,6 +21,9 @@ sd = SupplementalData()
 RE.preprocessors.append(sd)
 
 # Add a progress bar.
+from timeit import default_timer as timer
+
+start = timer()
 from bluesky.utils import ProgressBarManager
 pbar_manager = ProgressBarManager()
 #RE.waiting_hook = pbar_manager
@@ -73,8 +76,10 @@ from pathlib import Path
 from historydict import HistoryDict
 
 try:
-    RE.md = HistoryDict('/GPFS/xf08id/metadata/bluesky_history.db')
+    RE.md = HistoryDict('/nsls2/xf08id/metadata/bluesky_history.db')
+    print('gpfs')
 except Exception as exc:
+    print('local')
     print(exc)
     RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
 RE.is_aborted = False
@@ -90,11 +95,17 @@ RE.is_aborted = False
 def ensure_proposal_id(md):
     if 'proposal_id' not in md:
         raise ValueError("You forgot the proposal_id.")
-
-
+print('1111')
+stop1 = timer()
 # Set up default metadata.
 RE.md['group'] = 'iss'
 RE.md['beamline_id'] = 'ISS'
 RE.md['proposal_id'] = None
+stop2 = timer()
 RE.md_validator = ensure_proposal_id
+stop3 = timer()
+print(stop1-start)
+print(stop2 - start)
+print(stop3 - start)
 
+print('00 done')
