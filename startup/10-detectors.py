@@ -1,6 +1,8 @@
 import uuid
 from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor
 import os
+import shutil
 import time as ttime
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
@@ -113,7 +115,7 @@ class EncoderFS(Encoder):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
         if(self.connected):
-            print(self.name, 'stage')
+            print('Staging of {} starting'.format(self.name))
             DIRECTORY = '/GPFS/xf08id/'
             rpath = 'pizza_box_data'
             filename = 'en_' + str(uuid.uuid4())[:6]
@@ -123,13 +125,26 @@ class EncoderFS(Encoder):
                 raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
                                "Choose a different DIRECTORY with a shorter path. (I know....)")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-            self.filepath.put(self._full_path)
+            # print(self._full_path)
+            #
+            # FIXME: Quick TEMPORARY fix for beamline disaster
+            # we are writing the file to a temp directory in the ioc and
+            # then moving it to the GPFS system.
+            #
+            ioc_file_root = '/home/softioc/tmp/'
+            self._ioc_full_path = os.path.join(ioc_file_root, filename)
+            self._filename = filename
+
+            #self.filepath.put(self._full_path)   # commented out during disaster
+            self.filepath.put(self._ioc_full_path)
+
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_ENC_FILE_TXT',
                 DIRECTORY, full_path,
                 {'chunk_size': self.chunk_size})
 
             super().stage()
+            print('Staging of {} complete'.format(self.name))
 
     def unstage(self):
         if(self.connected):
@@ -148,7 +163,7 @@ class EncoderFS(Encoder):
         return NullStatus()
 
     def complete(self):
-        print('complete', self.name, '| filepath', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -163,13 +178,23 @@ class EncoderFS(Encoder):
 
         Return a dictionary with references to these documents.
         """
-        print('collect', self.name)
+        print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
+
+        workstation_file_root = '/mnt/xf08ida-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
                 linecount = len(list(f))
@@ -180,8 +205,10 @@ class EncoderFS(Encoder):
                 data = {self.name: datum_uid}
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
+            print('Collect of {} complete'.format(self.name))
+
         else:
-            print('collect {}: File was not created'.format(self.name))
+            print('Collect {}: File was not created'.format(self.name))
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -243,24 +270,36 @@ class DIFS(DigitalInput):
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
-
-        print(self.name, 'stage')
+        print('Staging of {} starting'.format(self.name))
         DIRECTORY = '/GPFS/xf08id/'
         rpath = 'pizza_box_data'
         filename = 'di_' + str(uuid.uuid4())[:6]
         full_path = os.path.join(rpath, filename)
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
         if len(self._full_path) > 40:
-            raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
-                           "Choose a different DIRECTORY with a shorter path. (I know....)")
+            raise RuntimeError("EPICS filepath is limited to 80 characters. "
+                           "Choose a DIRECTORY with a shorter path")
         self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-        self.filepath.put(self._full_path)
+
+        #
+        # FIXME: Quick TEMPORARY fix for beamline disaster
+        # we are writing the file to a temp directory in the ioc and
+        # then moving it to the GPFS system.
+        #
+        ioc_file_root = '/home/softioc/tmp/'
+        self._ioc_full_path = os.path.join(ioc_file_root, filename)
+        self._filename = filename
+
+        # self.filepath.put(self._full_path)   # commented out during disaster
+        self.filepath.put(self._ioc_full_path)
+
         self.resource_uid = self._reg.register_resource(
             'PIZZABOX_DI_FILE_TXT',
             DIRECTORY, full_path,
             {'chunk_size': self.chunk_size})
 
         super().stage()
+        print('Staging of {} complete'.format(self.name))
 
     def unstage(self):
         set_and_wait(self.ignore_sel, 1)
@@ -278,7 +317,7 @@ class DIFS(DigitalInput):
         return NullStatus()
 
     def complete(self):
-        print('complete', self.name, '| filepath', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -293,13 +332,23 @@ class DIFS(DigitalInput):
 
         Return a dictionary with references to these documents.
         """
-        print('collect', self.name)
+        print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
+
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
                 linecount = len(list(f))
@@ -311,6 +360,7 @@ class DIFS(DigitalInput):
 
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
+            print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
 
@@ -418,13 +468,13 @@ class Adc(Device):
         #signal.alarm(0)
 
 
-
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
     chunk_size = 1024
 
     def __init__(self, *args, reg, **kwargs):
         self._reg = reg
+        self.file_move_executor = ThreadPoolExecutor(max_workers=2)
         super().__init__(*args, **kwargs)
 
     def stage(self):
@@ -432,22 +482,36 @@ class AdcFS(Adc):
 
 
         if(self.connected):
-            print(self.name, 'stage')
+            print( 'Staging of {} starting'.format(self.name))
             DIRECTORY = '/GPFS/xf08id/'
             rpath = 'pizza_box_data'
             filename = 'an_' + str(uuid.uuid4())[:6]
             full_path = os.path.join(rpath, filename)
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
             if len(self._full_path) > 40:
-                raise RuntimeError("Stupidly, EPICS limits the file path to 80 characters. "
-                               "Choose a different DIRECTORY with a shorter path. (I know....)")
+                raise RuntimeError("EPICS filepath is limited to 80 characters. "
+                                   "Choose a DIRECTORY with a shorter path")
             self._full_path = os.path.join(DIRECTORY, full_path)  # stash for future reference
-            self.filepath.put(self._full_path)
+            #print(self._full_path) Eli 2018-01-30
+            #
+            # FIXME: Quick TEMPORARY fix for beamline disaster
+            # we are writing the file to a temp directory in the ioc and
+            # then moving it to the GPFS system.
+            #
+            ioc_file_root = '/home/softioc/tmp/'
+            self._ioc_full_path = os.path.join(ioc_file_root, filename)
+            self._filename = filename
+
+            print("Temp IOC filename:" + self._ioc_full_path)
+
+            #self.filepath.put(self._full_path)   # commented out during disaster
+            self.filepath.put(self._ioc_full_path)
+
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_AN_FILE_TXT',
                 DIRECTORY, full_path,
                 {'chunk_size': self.chunk_size})
-
+            print('Staging of {} complete'.format(self.name))
             super().stage()
 
     def unstage(self):
@@ -459,15 +523,13 @@ class AdcFS(Adc):
         print('kickoff', self.name)
         self._ready_to_collect = True
         "Start writing data into the file."
-
         set_and_wait(self.enable_sel, 0)
-
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
         return NullStatus()
 
     def complete(self):
-        print('complete', self.name, '| filepath', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -480,19 +542,27 @@ class AdcFS(Adc):
 
         Return a dictionary with references to these documents.
         """
-        print('collect', self.name)
+        print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
+
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        stat = shutil.copy(workstation_full_path, self._full_path)
+
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
                 linecount = 0
                 for ln in f:
                     linecount += 1
-
             chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
             for chunk_num in range(chunk_count):
                 datum_uid = self._reg.register_datum(self.resource_uid,
@@ -501,6 +571,7 @@ class AdcFS(Adc):
 
                 yield {'data': data,
                        'timestamps': {key: now for key in data}, 'time': now}
+            print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
 

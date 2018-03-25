@@ -1,6 +1,5 @@
 import isstools.gui
 from isstools import Xview
-
 import collections
 import atexit
 import requests
@@ -22,7 +21,7 @@ detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_
             iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
             i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt']},
             ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
-            pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
+            #pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
             xia1.name: {'obj': xia1, 'elements': xia_list}}
 
 motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
@@ -126,12 +125,18 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_
 def xlive():
     xlive_gui.show()
 
-#xlive()
+
+
 
 xview_gui = Xview.XviewGui(iss_mono_pulses_per_deg, db=db)
 
 def xview():
     xview_gui.show()
+
+xlive()
+print('Startup complete')
+
+
 
 
 #def cleaning():
