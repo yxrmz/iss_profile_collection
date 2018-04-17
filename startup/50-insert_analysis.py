@@ -12,6 +12,7 @@ from collections import namedtuple
 
 from pathlib import Path
 
+import os
 import pandas as pd
 import h5py
 
@@ -80,11 +81,11 @@ class HDF5DFHandler(HandlerBase):
         To get data, one calls this initialized object with the corresponding
         key.
     '''
-    def __init__(self, fpath):
-        self._fpath = fpath
+    def __init__(self, rpath):
+        self._rpath = rpath
 
     def __call__(self, key):
-        return pd.read_hdf(self._fpath, key)
+        return pd.read_hdf(self._rpath, key)
 
 class HDF5DFWriter(HandlerBase):
     ''' Pandas dataframe writer
@@ -94,19 +95,19 @@ class HDF5DFWriter(HandlerBase):
         A dictionary of data is supplied for writing.
         The call should return the arguments necessary for the file handler.
     '''
-    def __init__(self, fpath):
+    def __init__(self, rpath):
         '''
             resource_func : callable
                 returns resource kwargs for retrieval
         '''
-        self.fpath = fpath
+        self.rpath = rpath
 
     def __call__(self, data_dict):
         '''
             Assumes data frames given.
         '''
         for key, df in data_dict.items():
-            df.to_hdf(self.fpath, key, mode='a')
+            df.to_hdf(self.rpath, key, mode='a')
         return dict(key=key)
 
 
@@ -124,14 +125,14 @@ def make_resource_hdf5dfwriter(docs, data_key, root=""):
     # but could access the descriptors or other
     md = docs['start']
     now = datetime.datetime.now()
-    fpath = root + "/" + md['cycle'] + "/" + md['proposal'] + "/"
-    fpath = fpath + str(uuid.uuid4()) + ".h5"
+    rpath = root + "/" + md['cycle'] + "/" + md['proposal'] + "/"
+    rpath = rpath + str(uuid.uuid4()) + ".h5"
     # check if exists and create
-    directory = os.path.dirname(fpath)
+    directory = os.path.dirname(rpath)
     print("making sure {} exists".format(directory))
     os.makedirs(directory, exist_ok=True)
-    print("file paht is {}".format(fpath))
-    return dict(fpath=fpath)
+    print("file paht is {}".format(rpath))
+    return dict(rpath=rpath)
 
 
 ISSANALYSISROOT = "/home/xf08id/nsls2/data"
@@ -241,14 +242,15 @@ def ingest(data_dicts, md={}, external_writers={}):
                     docs= dict(start=start_doc, descriptor=descriptor_doc, event=event_doc)
                     resource_kwargs = writer_resource_func(docs=docs, data_key=key, **writer_resource_func_kwargs)
                     print("got resource kwargs {}".format(resource_kwargs))
-                    resource_path = resource_kwargs.get('fpath', '')
+                    # Pop this one since it's assumed to be passed as first arg
+                    resource_path = resource_kwargs.pop('rpath', '')
                     print("got file path : {}".format(resource_path))
     
                     writer_spec = writer_dict['spec']
                     writer_root = writer_dict['root'] 
     
                     # writer and handler share same resource kwargs
-                    writer_instance = writer(**resource_kwargs)
+                    writer_instance = writer(resource_path, **resource_kwargs)
                     # write the data dictionary, get datum kwargs
                     # the actual writing is done here
                     print("Writing data key {}".format(key))
