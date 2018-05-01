@@ -48,7 +48,7 @@ def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     #return uids
     
 
-def tscan_plan(name:str, comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan_plan(name:str, comment:str="", prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
     uids = []
     for indx in range(int(n_cycles)): 
         name_n = name + ' ' + str(indx + 1)
@@ -56,8 +56,8 @@ def tscan_plan(name:str, comment:str, prepare_traj:bool=True, n_cycles:int=1, de
         if prepare_traj:
             yield from prep_traj_plan()
         #uid = (yield from execute_trajectory(name_n))
-        yield from execute_trajectory(name_n, comment=comment)
-        uid = db[-1]['start']['uid']
+        uid = (yield from execute_trajectory(name_n, comment=comment))
+        # uid = db[-1]['start']['uid']
         uids.append(uid)
 			
         yield from bp.sleep(float(delay))
