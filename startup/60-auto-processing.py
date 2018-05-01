@@ -232,4 +232,4 @@ gen_parser = xasdata.XASdataGeneric(hhm.pulses_per_deg, db, db_analysis)
 xia_parser = xiaparser.xiaparser()
 
 processor = ProcessingRequester(db, sender)
-processor_subscribe_id = RE.subscribe(processor)
+#processor_subscribe_id = RE.subscribe(processor)

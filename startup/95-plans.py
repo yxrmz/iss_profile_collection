@@ -335,7 +335,9 @@ def execute_trajectory(name, **metadata):
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
               'edge': curr_traj.edge.value,
-              'e0': curr_traj.e0.value}
+              'e0': curr_traj.e0.value,
+              'pulses_per_degree': hhm.pulses_per_deg,
+}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
@@ -375,12 +377,13 @@ def execute_trajectory(name, **metadata):
                 else:
                     break
 
-
         yield from bp.finalize_wrapper(poll_the_traj_plan(), 
                                        bp.pchain(shutter.close_plan(), 
                                                  bp.abs_set(hhm.stop_trajectory, 
                                                             '1', wait=True)))
-
+        #print('moving back')
+        #hhm.prepare_trajectory.put('1')
+        #print('should be done')
         yield from bp.close_run()
 
     def final_plan():
@@ -389,6 +392,7 @@ def execute_trajectory(name, **metadata):
         for flyer in flyers:
             yield from bp.unstage(flyer)
         yield from bp.unstage(hhm)
+
 
     for flyer in flyers:
         yield from bp.stage(flyer)

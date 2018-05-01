@@ -42,6 +42,7 @@ def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
         RE(prep_traj_plan())
         uid = RE(execute_trajectory(name_n, comment=comment))
         yield uid
+        #hhm.prepare_trajectory.put('1')
         #uids.append(uid)
         time.sleep(float(delay))
     print('Scan is complete!')
