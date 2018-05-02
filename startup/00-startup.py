@@ -10,6 +10,7 @@ RE = RunEngine({})
 # Set up a Broker.
 from databroker import Broker
 db = Broker.named('iss')
+db_analysis = Broker.named('iss-analysis')
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
@@ -109,3 +110,6 @@ print(stop2 - start)
 print(stop3 - start)
 
 print('00 done')
+
+rootpath = '/nsls2/xf08id/'
+filepath = 'users'

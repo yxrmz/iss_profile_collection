@@ -50,56 +50,6 @@ data_dicts = [
 
 doc_gen = ingest(data_dicts, md=md, external_writers=external_writers)
 
-# rewriteing because there has been a refactor
-from databroker import Broker
-class ToDataBroker:
-    '''
-        This version is for *before* the asset refactor.
-    '''
-    def __init__(self, dbname, reg=None):
-        '''
-            Callback to write back into analysis store
-        '''
-        self.db = Broker.named(dbname)
-        if reg is None:
-            self.reg = self.db.reg
-
-    def __call__(self, name, doc):
-        getattr(self, name)(doc)
-
-    def start(self, doc):
-        self.db.insert('start', doc)
-
-    def descriptor(self, doc):
-        self.db.insert('descriptor', doc)
-
-    def event(self, doc):
-        self.db.insert('event', doc)
-
-    def stop(self, doc):
-        self.db.insert('stop', doc)
-
-    def resource(self, doc):
-        # TODO : After refactor, we can give a uid
-        # For now, uid is mutated
-        # TODO: Assumed that datums follow in order
-        # make sure this is documented somewhere
-        resource = dict(
-            spec=doc['spec'],
-            root=doc['root'],
-            resource_path=doc['resource_path'],
-            resource_kwargs=doc['resource_kwargs'],
-        )
-        self.resource_uid = self.db.reg.insert_resource(**resource)
-        
-
-    def datum(self, doc):
-        datum_id = doc['datum_id']
-        datum_kwargs = doc['datum_kwargs']
-        # TODO Add this after the refactor
-        #resource_id = doc['resource']
-        # and replace self here
-        self.db.reg.insert_datum(self.resource_uid, datum_id, datum_kwargs)
 
 dbname = 'iss-analysis'
 todb = ToDataBroker(dbname)

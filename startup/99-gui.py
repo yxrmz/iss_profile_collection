@@ -1,5 +1,5 @@
-import isstools.gui
-from isstools import Xview
+
+from isstools import xview, xlive
 import collections
 import atexit
 import requests
@@ -103,7 +103,7 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'ir_amp': ir_amp,
                  'iff_amp': iff_amp}
 
-xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_seconds], 
+xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_seconds],
                                  prep_traj_plan, 
                                  RE,
                                  db,
@@ -119,7 +119,12 @@ xlive_gui = isstools.gui.ScanGui([tscan, tscanxia, tscancam, get_offsets, sleep_
                                  set_gains_offsets = set_gains_and_offsets,
                                  prepare_bl = [prepare_bl_plan, prepare_bl_def],
                                  sample_stages = sample_stages,
-                                 processing_sender = sender)
+                                 processing_sender = sender,
+                                 job_submitter=job_submitter,
+                                 bootstrap_servers=['cmb01:9092', 'cmb02:9092'],
+                                 kafka_topic="qas-analysis", 
+                                 window_title="XLive @ISS/08-ID NSLS-II",
+                                 )
 
 
 def xlive():
@@ -128,7 +133,7 @@ def xlive():
 
 
 
-xview_gui = Xview.XviewGui(hhm.pulses_per_deg, db=db)
+xview_gui = xview.XviewGui(hhm.pulses_per_deg, db=db)
 
 def xview():
     xview_gui.show()

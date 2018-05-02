@@ -24,8 +24,10 @@ def submit_lightflow_job(uid):
     store_args['uid'] = uid
     store_args['requester'] = socket.gethostname()
     job_id = start_workflow(name='interpolation', config=config,
-                            store_args=store_args)
+                            store_args=store_args, queue='iss-workflow')
     print('Started workflow with ID', job_id)
+
+job_submitter = submit_lightflow_job
 
 class InterpolationRequester(CallbackBase):
     '''
