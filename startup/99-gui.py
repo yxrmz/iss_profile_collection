@@ -1,4 +1,3 @@
-
 from isstools import xview, xlive
 import collections
 import atexit
@@ -122,7 +121,7 @@ xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_second
                                  processing_sender = sender,
                                  job_submitter=job_submitter,
                                  bootstrap_servers=['cmb01:9092', 'cmb02:9092'],
-                                 kafka_topic="qas-analysis", 
+                                 kafka_topic="iss-analysis", 
                                  window_title="XLive @ISS/08-ID NSLS-II",
                                  )
 
