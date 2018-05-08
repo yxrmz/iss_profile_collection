@@ -24,7 +24,7 @@ RE.preprocessors.append(sd)
 # Add a progress bar.
 from timeit import default_timer as timer
 
-start = timer()
+
 from bluesky.utils import ProgressBarManager
 pbar_manager = ProgressBarManager()
 #RE.waiting_hook = pbar_manager
@@ -91,25 +91,24 @@ RE.is_aborted = False
 
 
 # register_builtin_handlers(db.fs)
-
+start = timer()
 
 def ensure_proposal_id(md):
     if 'proposal_id' not in md:
         raise ValueError("You forgot the proposal_id.")
-print('1111')
-stop1 = timer()
+
 # Set up default metadata.
 RE.md['group'] = 'iss'
 RE.md['beamline_id'] = 'ISS'
 RE.md['proposal_id'] = None
-stop2 = timer()
+
 RE.md_validator = ensure_proposal_id
-stop3 = timer()
-print(stop1-start)
-print(stop2 - start)
-print(stop3 - start)
+stop = timer()
 
-print('00 done')
+print("MD handling complete in {} sec".format(stop - start))
 
-rootpath = '/nsls2/xf08id/'
-filepath = 'users'
+
+# the file paths for acquitision and analysis
+rootpath = '/nsls2/xf08id'
+raw_filepath = 'data'
+user_filepath = 'users'
