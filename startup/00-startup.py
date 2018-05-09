@@ -101,7 +101,8 @@ def ensure_proposal_id(md):
 RE.md['group'] = 'iss'
 RE.md['beamline_id'] = 'ISS'
 RE.md['proposal_id'] = None
-
+#RE.md['proposal_id'] = None
+stop2 = timer()
 RE.md_validator = ensure_proposal_id
 stop = timer()
 

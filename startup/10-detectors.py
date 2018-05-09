@@ -56,8 +56,14 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stage_sigs['cam.image_mode'] = 'Single'
+
         #self.stage_sigs.clear()  # default stage sigs do not apply
+
+    def stage(self, acquire_time, image_mode, *args, **kwargs):
+        self.stage_sigs['cam.acquire_time'] =  acquire_time
+        self.stage_sigs['cam.image_mode'] = image_mode
+        super().stage(*args, **kwargs)
+
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
@@ -65,9 +71,10 @@ bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 bpm_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
-bpm_ms1 = CAMERA('XF:08IDB-BI{BPM:MS-1}', name='bpm_ms1')
+bpm_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='bpm_sp3')
+#bpm_ms1 = CAMERA('XF:08IDB-BI{BPM:MS-1}', name='bpm_ms1')
 
-for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1]:
+for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1, bpm_sp3]:
     bpm.read_attrs = ['stats1', 'stats2']
     bpm.image.read_attrs = ['array_data']
     bpm.stats1.read_attrs = ['total', 'centroid']
@@ -670,3 +677,6 @@ db.reg.register_handler('PIZZABOX_ENC_FILE_TXT',
                         PizzaBoxEncHandlerTxt, overwrite=True)
 db.reg.register_handler('PIZZABOX_DI_FILE_TXT',
                         PizzaBoxDIHandlerTxt, overwrite=True)
+
+
+
