@@ -112,38 +112,38 @@ class XIA(Device):
 
     
     def start_trigger(self):
-        yield from bp.abs_set(pb4.do0.enable, 1, wait=True)
+        yield from bps.abs_set(pb4.do0.enable, 1, wait=True)
 
     def stop_trigger(self):
-        yield from bp.abs_set(pb4.do0.enable, 0, wait=True)
+        yield from bps.abs_set(pb4.do0.enable, 0, wait=True)
 
     def start_mapping_scan(self):
-        yield from bp.abs_set(self.collect_mode, 'MCA mapping', wait=True)
+        yield from bps.abs_set(self.collect_mode, 'MCA mapping', wait=True)
         #self.collect_mode.put('MCA mapping')
-        yield from bp.sleep(.25)
+        yield from bps.sleep(.25)
         #ttime.sleep(0.25)
-        yield from bp.abs_set(pb4.do0.dutycycle_sp, 50, wait=True)
-        yield from bp.abs_set(self.capt_start_stop, 1, wait=True)
+        yield from bps.abs_set(pb4.do0.dutycycle_sp, 50, wait=True)
+        yield from bps.abs_set(self.capt_start_stop, 1, wait=True)
         #self.capt_start_stop.put(1)
-        yield from bp.abs_set(self.erase_start, 1, wait=True)
+        yield from bps.abs_set(self.erase_start, 1, wait=True)
         #self.erase_start.put(1)
-        yield from bp.sleep(1)
+        yield from bps.sleep(1)
         #ttime.sleep(1)
-        yield from bp.abs_set(pb4.do0.enable, 1, wait=True)
+        yield from bps.abs_set(pb4.do0.enable, 1, wait=True)
         #pb4.do0.enable.put(1) # Workaround
         return self._status
 
     def stop_scan(self):
-        yield from bp.abs_set(pb4.do0.enable, 0, wait=True)
+        yield from bps.abs_set(pb4.do0.enable, 0, wait=True)
         while(pb4.do0.enable.value):
             pass
         #pb4.do0.enable.put(0) # Workaround
-        yield from bp.sleep(1.5)
-        yield from bp.abs_set(self.stop_sig, 1, wait=True)
+        yield from bps.sleep(1.5)
+        yield from bps.abs_set(self.stop_sig, 1, wait=True)
         #self.stop_sig.put(1)
-        yield from bp.sleep(0.5)
+        yield from bps.sleep(0.5)
         #ttime.sleep(0.5)
-        yield from bp.abs_set(self.capt_start_stop, 0, wait=True)
+        yield from bps.abs_set(self.capt_start_stop, 0, wait=True)
         #self.capt_start_stop.put(0)
 
     def __init__(self, *args, **kwargs):

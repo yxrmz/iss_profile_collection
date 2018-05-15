@@ -120,8 +120,8 @@ def make_filename(filename):
     '''
         Makes a rootpath, filepath pair
     '''
-    # raw_filepath is a global defined in 00-startup.py
-    write_path_template = os.path.join(raw_filepath, '/%Y/%m/%d')
+    # RAW_FILEPATH is a global defined in 00-startup.py
+    write_path_template = os.path.join(RAW_FILEPATH, '%Y/%m/%d')
     # path without the root
     filepath = os.path.join(datetime.now().strftime(write_path_template), filename)
     return filepath
@@ -139,8 +139,10 @@ class EncoderFS(Encoder):
 
             filename = 'en_' + str(uuid.uuid4())[:8]
 
+            # without the root, but with data path + date folders
             full_path = make_filename(filename)
-            self._full_path = os.path.join(rootpath, full_path)  # stash for future reference
+            # with the root
+            self._full_path = os.path.join(ROOT_PATH, full_path)  # stash for future reference
 
 
             # FIXME: Quick TEMPORARY fix for beamline disaster
@@ -156,7 +158,7 @@ class EncoderFS(Encoder):
 
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_ENC_FILE_TXT',
-                root_path, full_path,
+                ROOT_PATH, full_path,
                 {'chunk_size': self.chunk_size})
 
             super().stage()
@@ -291,7 +293,7 @@ class DIFS(DigitalInput):
         filename = 'di_' + str(uuid.uuid4())[:8]
 
         full_path = make_filename(filename)
-        self._full_path = os.path.join(rootpath, filename)
+        self._full_path = os.path.join(ROOT_PATH, filename)
 
         # FIXME: Quick TEMPORARY fix for beamline disaster
         # we are writing the file to a temp directory in the ioc and
@@ -306,7 +308,7 @@ class DIFS(DigitalInput):
 
         self.resource_uid = self._reg.register_resource(
             'PIZZABOX_DI_FILE_TXT',
-            root_path, full_path,
+            ROOT_PATH, full_path,
             {'chunk_size': self.chunk_size})
 
         super().stage()
@@ -358,7 +360,7 @@ class DIFS(DigitalInput):
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
-        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+        cp_stat = shutil.copy(workstation_full_path, ROOT_PATH + self._full_path)
 
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
@@ -482,7 +484,7 @@ class Adc(Device):
 class AdcFS(Adc):
     "Adc Device, when read, returns references to data in filestore."
     chunk_size = 1024
-    write_path_template = os.path.join(rootpath, raw_filepath, '/%Y/%m/%d')
+    write_path_template = os.path.join(ROOT_PATH, RAW_FILEPATH, '/%Y/%m/%d')
 
     def __init__(self, *args, reg, **kwargs):
         self._reg = reg
@@ -498,7 +500,7 @@ class AdcFS(Adc):
 
             filename = 'an_' + str(uuid.uuid4())[:8]
             full_path = make_filename(filename)
-            self._full_path = os.path.join(full_path, filename)
+            self._full_path = os.path.join(ROOT_PATH, full_path)
 
             # FIXME: Quick TEMPORARY fix for beamline disaster
             # we are writing the file to a temp directory in the ioc and
@@ -515,7 +517,7 @@ class AdcFS(Adc):
 
             self.resource_uid = self._reg.register_resource(
                 'PIZZABOX_AN_FILE_TXT',
-                root_path, full_path,
+                ROOT_PATH, full_path,
                 {'chunk_size': self.chunk_size})
             print('Staging of {} complete'.format(self.name))
             super().stage()
@@ -622,7 +624,7 @@ class PizzaBoxAnalogFS(Device):
             yield from getattr(self, attr_name).collect()
 
 pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
-pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
+#pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
 
 class PizzaBoxEncHandlerTxt(HandlerBase):
     encoder_row = namedtuple('encoder_row',

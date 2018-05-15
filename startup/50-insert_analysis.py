@@ -324,7 +324,7 @@ class SpectroscopyInterpHandler(HandlerBase):
 #                         db_analysis,
 #                         'interpolated',
 #                         Path(filepath) / Path('2017.3.301954/SPS_Brow_Xcut_R12 28.hdf5'),
-#                         root=rootpath)
+#                         root=ROOT_PATH)
 
 # Retrieving data:
 #hdr = db_analysis[-1]

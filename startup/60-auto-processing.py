@@ -112,7 +112,7 @@ class ProcessingRequester(CallbackBase):
                 #                         db_analysis,
                 #                         'interpolated',
                 #                         Path(filepath) / Path('2017.3.301954/SPS_Brow_Xcut_R12 28.hdf5'),
-                #                         root=rootpath)
+                #                         root=ROOT_PATH)
             elif md['plan_name'] == 'relative_scan':
                 pass
 

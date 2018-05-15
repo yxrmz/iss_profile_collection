@@ -8,28 +8,31 @@ import signal
 
 
 
-def energy_scan(start, stop, num, flyers=[pb9.enc1, pba2.adc6, pba1.adc7], name='', **metadata):
+def energy_scan(start, stop, num, flyers=None, name='', **metadata):
     """
     Example
     -------
     >>> RE(energy_scan(11350, 11450, 2))
     """
+    if flyers is None:
+        #flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
+        flyers = [pb9.enc1, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'step scan', 'name': name}
         md.update(**metadata)
-        yield from bp.open_run(md=md)
+        yield from bps.open_run(md=md)
 
     # Start with a step scan.
     plan = bp.scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'name': name})
     # Wrap it in a fly scan with the Pizza Box.
-    plan = bp.fly_during_wrapper(plan, flyers)
+    plan = bpp.fly_during_wrapper(plan, flyers)
     # Working around a bug in fly_during_wrapper, stage and unstage the pizza box manually.
 
     for flyer in flyers:
-        yield from bp.stage(flyer)
-    yield from bp.stage(hhm)
+        yield from bps.stage(flyer)
+    yield from bps.stage(hhm)
 
-    plan = bp.pchain(plan)
+    plan = bpp.pchain(plan)
 
     yield from plan
 
@@ -40,11 +43,12 @@ def energy_multiple_scans(start, stop, repeats, name='', **metadata):
     -------
     >>> RE(energy_scan(11350, 11450, 2))
     """
-    flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
+    #flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
+    flyers = [pb9.enc1, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'name': name}
         md.update(**metadata)
-        yield from bp.open_run(md=md)
+        yield from bps.open_run(md=md)
 
         for i in range(0, repeats):
             print('Run:', i+1)
@@ -57,18 +61,18 @@ def energy_multiple_scans(start, stop, repeats, name='', **metadata):
             while (hhm_en.energy.moving == True):
                 ttime.sleep(.1)
 
-        yield from bp.close_run()
+        yield from bps.close_run()
 
 
     for flyer in flyers:
-        yield from bp.stage(flyer)
-    yield from bp.stage(hhm)
+        yield from bps.stage(flyer)
+    yield from bps.stage(hhm)
 
-    yield from bp.fly_during_wrapper(inner(), flyers)
+    yield from bpp.fly_during_wrapper(inner(), flyers)
 
-    yield from bp.unstage(hhm)
+    yield from bps.unstage(hhm)
     for flyer in flyers:
-        yield from bp.unstage(flyer)
+        yield from bps.unstage(flyer)
 
 
 
@@ -86,9 +90,9 @@ def get_offsets_plan(detectors, num = 1, name = '', **metadata):
     def set_offsets():
         for flyer in flyers:
             ret = flyer.volt.value
-            yield from bp.abs_set(flyer.offset, ret, wait=True)
+            yield from bps.abs_set(flyer.offset, ret, wait=True)
 
-    yield from bp.fly_during_wrapper(bp.finalize_wrapper(plan, set_offsets()), flyers)
+    yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(plan, set_offsets()), flyers)
 
 
 
@@ -104,8 +108,8 @@ def tune(detectors, motor, start, stop, num, name='', **metadata):
     plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'name': name})
     
     if hasattr(flyers[0], 'kickoff'):
-        plan = bp.fly_during_wrapper(plan, flyers)
-        plan = bp.pchain(plan)
+        plan = bpp.fly_during_wrapper(plan, flyers)
+        plan = bpp.pchain(plan)
 
     yield from plan
 
@@ -150,7 +154,7 @@ def step_list_plan(detectors, motor, positions_grid, name = ''):
             flyers.append(det)
             
     if len(flyers) > 0:
-        plan = bp.fly_during_wrapper(plan, flyers)
+        plan = bpp.fly_during_wrapper(plan, flyers)
         
     yield from plan
     
@@ -213,7 +217,7 @@ def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
     plan = bp.relative_scan(detectors, motor, rel_start, rel_stop, num)
     
     if hasattr(detectors[0], 'kickoff'):
-        plan = bp.fly_during_wrapper(plan, detectors)
+        plan = bpp.fly_during_wrapper(plan, detectors)
 
     yield from plan
 
@@ -230,8 +234,8 @@ def sampleXY_plan(detectors, motor, start, stop, num):
     plan = bp.relative_scan(flyers, motor, start, stop, num)
     
     if hasattr(flyers[0], 'kickoff'):
-        plan = bp.fly_during_wrapper(plan, flyers)
-        # Check if I can remove bp.pchain
+        plan = bpp.fly_during_wrapper(plan, flyers)
+        # Check if I can remove bpp.pchain
 
     yield from plan
 
@@ -242,29 +246,29 @@ def pb_scan_plan(detectors, motor, scan_center, scan_range, name = ''):
     def inner():
         md = {'plan_args': {}, 'plan_name': 'pb_scan','experiment': 'pb_scan', 'name': name}
         #md.update(**metadata)
-        yield from bp.open_run(md=md)
-        yield from bp.sleep(.4)
-        yield from bp.clear_checkpoint()
-        yield from bp.abs_set(motor, scan_center + (scan_range / 2), wait=True)
-        yield from bp.sleep(.4)
-        yield from bp.close_run()
+        yield from bps.open_run(md=md)
+        yield from bps.sleep(.4)
+        yield from bps.clear_checkpoint()
+        yield from bps.abs_set(motor, scan_center + (scan_range / 2), wait=True)
+        yield from bps.sleep(.4)
+        yield from bps.close_run()
         yield from shutter.close_plan()
-        yield from bp.abs_set(motor, scan_center, wait=True)
+        yield from bps.abs_set(motor, scan_center, wait=True)
 
     def final_plan():
         for flyer in flyers:
-            yield from bp.unstage(flyer)
-        yield from bp.unstage(motor)
+            yield from bps.unstage(flyer)
+        yield from bps.unstage(motor)
 
-    yield from bp.abs_set(motor, scan_center - (scan_range / 2), wait=True)
+    yield from bps.abs_set(motor, scan_center - (scan_range / 2), wait=True)
 
     yield from shutter.open_plan()
     for flyer in flyers:
-        yield from bp.stage(flyer)
+        yield from bps.stage(flyer)
 
-    yield from bp.stage(motor)
+    yield from bps.stage(motor)
 
-    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
                                               flyers))
 
 
@@ -277,11 +281,11 @@ def prep_trajectory(delay = 1):
     ttime.sleep(delay)
 
 def prep_traj_plan(delay = 0.1):
-    yield from bp.abs_set(hhm.prepare_trajectory, '1', wait=True)
+    yield from bps.abs_set(hhm.prepare_trajectory, '1', wait=True)
 
     # Poll the trajectory ready pv
     while True:
-        ret = (yield from bp.read(hhm.trajectory_ready))
+        ret = (yield from bps.read(hhm.trajectory_ready))
         if ret is None:
             break
         is_running = ret['hhm_trajectory_ready']['value']
@@ -289,22 +293,22 @@ def prep_traj_plan(delay = 0.1):
         if is_running:
             break
         else:
-            yield from bp.sleep(.1)
+            yield from bps.sleep(.1)
 
     while True:
-        ret = (yield from bp.read(hhm.trajectory_ready))
+        ret = (yield from bps.read(hhm.trajectory_ready))
         if ret is None:
             break
         is_running = ret['hhm_trajectory_ready']['value']
 
         if is_running:
-            yield from bp.sleep(.05)
+            yield from bps.sleep(.05)
         else:
             break
 
-    yield from bp.sleep(delay)
+    yield from bps.sleep(delay)
 
-    curr_energy = (yield from bp.read(hhm.energy))
+    curr_energy = (yield from bps.read(hhm.energy))
 
     if curr_energy is None:
         return
@@ -314,17 +318,19 @@ def prep_traj_plan(delay = 0.1):
     print('Curr Energy: {}'.format(curr_energy))
     if curr_energy >= 12000:
         print('>12000')
-        yield from bp.mv(hhm.energy, curr_energy + 100)
-        yield from bp.sleep(1)
+        yield from bps.mv(hhm.energy, curr_energy + 100)
+        yield from bps.sleep(1)
         print('1')
-        yield from bp.mv(hhm.energy, curr_energy)
+        yield from bps.mv(hhm.energy, curr_energy)
 
 
 def execute_trajectory(name, **metadata):
     #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
-    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    #flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    #flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
+    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
-        interp_fn = f"{rootpath}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
+        interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
@@ -342,21 +348,21 @@ def execute_trajectory(name, **metadata):
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
         md.update(**metadata)
-        yield from bp.open_run(md=md)
+        yield from bps.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        yield from bp.clear_checkpoint()
+        yield from bps.clear_checkpoint()
         yield from shutter.open_plan()
         #yield from xia1.start_trigger()
         # this must be a float
-        yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
+        yield from bps.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
-        yield from bp.abs_set(hhm.start_trajectory, '1', wait=True)
+        yield from bps.abs_set(hhm.start_trajectory, '1', wait=True)
 
         # this should be replaced by a status object
         def poll_the_traj_plan():
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
@@ -364,50 +370,51 @@ def execute_trajectory(name, **metadata):
                 if is_running:
                     break
                 else:
-                    yield from bp.sleep(.1)
+                    yield from bps.sleep(.1)
 
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
 
                 if is_running:
-                    yield from bp.sleep(.05)
+                    yield from bps.sleep(.05)
                 else:
                     break
 
-        yield from bp.finalize_wrapper(poll_the_traj_plan(), 
-                                       bp.pchain(shutter.close_plan(), 
-                                                 bp.abs_set(hhm.stop_trajectory, 
+        yield from bpp.finalize_wrapper(poll_the_traj_plan(), 
+                                       bpp.pchain(shutter.close_plan(), 
+                                                 bps.abs_set(hhm.stop_trajectory, 
                                                             '1', wait=True)))
         #print('moving back')
         #hhm.prepare_trajectory.put('1')
         #print('should be done')
-        yield from bp.close_run()
+        yield from bps.close_run()
 
     def final_plan():
-        yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
         #yield from xia1.stop_trigger()
         for flyer in flyers:
-            yield from bp.unstage(flyer)
-        yield from bp.unstage(hhm)
+            yield from bps.unstage(flyer)
+        yield from bps.unstage(hhm)
 
 
     for flyer in flyers:
-        yield from bp.stage(flyer)
+        yield from bps.stage(flyer)
 
-    yield from bp.stage(hhm)
+    yield from bps.stage(hhm)
 
-    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
                                               flyers))
 
 def execute_camera_trajectory(name, **metadata):
-    flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
 
-        ret = (yield from bp.read(bpm_ms1.tiff_filenumber))
+        ret = (yield from bps.read(bpm_ms1.tiff_filenumber))
         if ret is None:
             raise Exception("Cannot read bpm_ms1 settings")
         else:
@@ -419,30 +426,30 @@ def execute_camera_trajectory(name, **metadata):
             call(['setfacl', '-m', 'g:iss-staff:rwx', new_folder])
             call(['chmod', '777', new_folder])
 
-        yield from bp.sleep(0.25)
-        #yield from bp.abs_set(bpm_ms1.tiff_filepath, new_folder)
+        yield from bps.sleep(0.25)
+        #yield from bps.abs_set(bpm_ms1.tiff_filepath, new_folder)
         bpm_ms1.tiff_filepath.put(new_folder)
-        yield from bp.sleep(0.5)
+        yield from bps.sleep(0.5)
 
-        ret = (yield from bp.read(bpm_ms1.tiff_filepath))
+        ret = (yield from bps.read(bpm_ms1.tiff_filepath))
         if ret is None:
             raise Exception("Cannot read bpm_ms1 settings")
         else:
             tiff_filepath = ret[bpm_ms1.tiff_filepath.name]['value']
 
-        ret = (yield from bp.read(bpm_ms1.tiff_filename))
+        ret = (yield from bps.read(bpm_ms1.tiff_filename))
         if ret is None:
             raise Exception("Cannot read bpm_ms1 settings")
         else:
             tiff_filename = ret[bpm_ms1.tiff_filename.name]['value']
 
-        ret = (yield from bp.read(bpm_ms1.tiff_filefmt))
+        ret = (yield from bps.read(bpm_ms1.tiff_filefmt))
         if ret is None:
             raise Exception("Cannot read bpm_ms1 settings")
         else:
             tiff_filefmt = ret[bpm_ms1.tiff_filefmt.name]['value']
 
-        interp_fn = f"{rootpath}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
+        interp_fn = f"{ROOT_PATH}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission',
@@ -461,21 +468,21 @@ def execute_camera_trajectory(name, **metadata):
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
         md.update(**metadata)
-        yield from bp.open_run(md=md)
+        yield from bps.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        yield from bp.clear_checkpoint()
+        yield from bps.clear_checkpoint()
         yield from shutter.open_plan()
         yield from xia1.start_trigger()
         # this must be a float
-        yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
+        yield from bps.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
-        yield from bp.abs_set(hhm.start_trajectory, '1', wait=True)
+        yield from bps.abs_set(hhm.start_trajectory, '1', wait=True)
 
         # this should be replaced by a status object
         def poll_the_traj_plan():
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
@@ -483,44 +490,45 @@ def execute_camera_trajectory(name, **metadata):
                 if is_running:
                     break
                 else:
-                    yield from bp.sleep(.1)
+                    yield from bps.sleep(.1)
 
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
 
                 if is_running:
-                    yield from bp.sleep(.05)
+                    yield from bps.sleep(.05)
                 else:
                     break
 
 
-        yield from bp.finalize_wrapper(poll_the_traj_plan(), 
-                                       bp.pchain(shutter.close_plan(), 
-                                                 bp.abs_set(hhm.stop_trajectory, 
+        yield from bpp.finalize_wrapper(poll_the_traj_plan(), 
+                                       bpp.pchain(shutter.close_plan(), 
+                                                 bps.abs_set(hhm.stop_trajectory, 
                                                             '1', wait=True)))
 
-        yield from bp.close_run()
+        yield from bps.close_run()
 
     def final_plan():
-        yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
         yield from xia1.stop_trigger()
         for flyer in flyers:
-            yield from bp.unstage(flyer)
-        yield from bp.unstage(hhm)
+            yield from bps.unstage(flyer)
+        yield from bps.unstage(hhm)
 
     for flyer in flyers:
-        yield from bp.stage(flyer)
+        yield from bps.stage(flyer)
 
-    yield from bp.stage(hhm)
+    yield from bps.stage(hhm)
 
-    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
                                               flyers))
 
 def execute_xia_trajectory(name, **metadata):
-    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
+    #flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
+    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7, pb4.di]
     def inner():
         # Setting the name of the file
         xia1.netcdf_filename.put(name)
@@ -534,7 +542,7 @@ def execute_xia_trajectory(name, **metadata):
                     xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
                     xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
 
-        interp_fn = f"{rootpath}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
+        interp_fn = f"{ROOT_PATH}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
@@ -553,33 +561,33 @@ def execute_xia_trajectory(name, **metadata):
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
         md.update(**metadata)
-        yield from bp.open_run(md=md)
+        yield from bps.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
-        yield from bp.clear_checkpoint()
+        yield from bps.clear_checkpoint()
 
         fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
         fname = fname[0:len(fname) - 1]
         while(fname != name):
             fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
             fname = name[0:len(fname) - 1]
-            yield from bp.sleep(.05)
+            yield from bps.sleep(.05)
        
         yield from shutter.open_plan()
-        yield from bp.sleep(.5)
+        yield from bps.sleep(.5)
         yield from xia1.start_mapping_scan()
-        yield from bp.sleep(.5)
+        yield from bps.sleep(.5)
 
         # this must be a float
-        yield from bp.abs_set(hhm.enable_loop, 0, wait=True)
-        yield from bp.sleep(.5)
+        yield from bps.abs_set(hhm.enable_loop, 0, wait=True)
+        yield from bps.sleep(.5)
         # this must be a string
-        yield from bp.abs_set(hhm.start_trajectory, "1", wait=True)
-        yield from bp.sleep(.5)
+        yield from bps.abs_set(hhm.start_trajectory, "1", wait=True)
+        yield from bps.sleep(.5)
 
         def poll_the_traj_plan():
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
@@ -587,62 +595,63 @@ def execute_xia_trajectory(name, **metadata):
                 if is_running:
                     break
                 else:
-                    yield from bp.sleep(.1)
+                    yield from bps.sleep(.1)
 
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
 
                 if is_running:
-                    yield from bp.sleep(.05)
+                    yield from bps.sleep(.05)
                 else:
                     break
 
 
-        yield from bp.finalize_wrapper(poll_the_traj_plan(), 
-                                       bp.pchain(xia1.stop_scan(),
+        yield from bpp.finalize_wrapper(poll_the_traj_plan(), 
+                                       bpp.pchain(xia1.stop_scan(),
                                                  shutter.close_plan(), 
-                                                 bp.abs_set(hhm.stop_trajectory, 
+                                                 bps.abs_set(hhm.stop_trajectory, 
                                                             '1', wait=True)))
 
-        yield from bp.close_run()
+        yield from bps.close_run()
 
     def final_plan():
-        yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
 #        yield from xia1.stop_scan()
         while xia1.capt_start_stop.value:
             pass
         print('Stopped XIA')
         for flyer in flyers:
-            yield from bp.unstage(flyer)
-        yield from bp.unstage(hhm)
+            yield from bps.unstage(flyer)
+        yield from bps.unstage(hhm)
 
     for flyer in flyers:
-        yield from bp.stage(flyer)
+        yield from bps.stage(flyer)
 
-    yield from bp.stage(hhm)
+    yield from bps.stage(hhm)
 
-    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()), flyers))
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()), flyers))
 
 
 def execute_loop_trajectory(name, **metadata):
 
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    #flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'name': name, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)
-        yield from bp.open_run(md=md)
+        yield from bps.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
         yield from shutter.open_plan()
-        yield from bp.abs_set(hhm.enable_loop, 1, wait=True)#hhm.enable_loop.put("1")
-        yield from bp.abs_set(hhm.start_trajectory, "1", wait=True) # NOT SURE IF THIS LINE SHOULD BE HERE
+        yield from bps.abs_set(hhm.enable_loop, 1, wait=True)#hhm.enable_loop.put("1")
+        yield from bps.abs_set(hhm.start_trajectory, "1", wait=True) # NOT SURE IF THIS LINE SHOULD BE HERE
 
         def poll_the_traj_plan():
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
+                ret = (yield from bps.read(hhm.trajectory_running))
                 if ret is None:
                     break
                 is_running = ret['hhm_trajectory_running']['value']
@@ -650,54 +659,54 @@ def execute_loop_trajectory(name, **metadata):
                 if is_running:
                     break
                 else:
-                    yield from bp.sleep(.1)
+                    yield from bps.sleep(.1)
 
             while True:
-                ret = (yield from bp.read(hhm.trajectory_running))
-                retloop = (yield from bp.read(hhm.enable_loop_rbv))
+                ret = (yield from bps.read(hhm.trajectory_running))
+                retloop = (yield from bps.read(hhm.enable_loop_rbv))
                 if ret is None or retloop is None:
                     break
                 loop_is_running = retloop['hhm_enable_loop_rbv']['value']
 
                 if loop_is_running:
-                    yield from bp.sleep(.05)
+                    yield from bps.sleep(.05)
                 else:
                     break
 
-        yield from bp.finalize_wrapper(poll_the_traj_plan(), 
-                                       bp.pchain(shutter.close_plan(), 
-                                                 bp.abs_set(hhm.stop_trajectory, 
+        yield from bpp.finalize_wrapper(poll_the_traj_plan(), 
+                                       bpp.pchain(shutter.close_plan(), 
+                                                 bps.abs_set(hhm.stop_trajectory, 
                                                             '1', wait=True), 
-                                                 bp.abs_set(hhm.enable_loop, 
+                                                 bps.abs_set(hhm.enable_loop, 
                                                             0, wait=True)))
 
-        yield from bp.close_run()
+        yield from bps.close_run()
 
     def final_plan():
-        yield from bp.abs_set(hhm.trajectory_running, 0, wait=True)
+        yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
         for flyer in flyers:
-            yield from bp.unstage(flyer)
-        yield from bp.unstage(hhm)
+            yield from bps.unstage(flyer)
+        yield from bps.unstage(hhm)
 
     for flyer in flyers:
-        yield from bp.stage(flyer)
+        yield from bps.stage(flyer)
 
-    yield from bp.stage(hhm)
+    yield from bps.stage(hhm)
 
-    return (yield from bp.fly_during_wrapper(bp.finalize_wrapper(inner(), final_plan()),
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
                                               flyers))
 
 
 def wait_filter_in_place(status_pv):
     #for j in range(5):
     while True:
-        ret = yield from bp.read(status_pv)
+        ret = yield from bps.read(status_pv)
         if ret is None:
             break
         if ret[status_pv.name]['value'] == 1:
             break
         else:
-            yield from bp.sleep(.1)
+            yield from bps.sleep(.1)
 
 
 def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
@@ -707,7 +716,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
     energy = int(energy)
     curr_energy = energy
     if energy < 0:
-        ret = (yield from bp.read(hhm.energy))
+        ret = (yield from bps.read(hhm.energy))
         if ret is not None:
             curr_energy = ret[hhm.energy.name]['value']
 
@@ -725,19 +734,19 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
     if print_messages:
         print('[Prepare BL] Setting HE to {}'.format(curr_range['pvs']['IC Gas He']['value']))
     if not debug:
-        yield from bp.mv(pv_he, curr_range['pvs']['IC Gas He']['value'])
+        yield from bps.mv(pv_he, curr_range['pvs']['IC Gas He']['value'])
 
     pv_n2 = curr_range['pvs']['IC Gas N2']['object']
     if print_messages:
         print('[Prepare BL] Setting N2 to {}'.format(curr_range['pvs']['IC Gas N2']['value']))
     if not debug:
-        yield from bp.mv(pv_n2, curr_range['pvs']['IC Gas N2']['value'])
+        yield from bps.mv(pv_n2, curr_range['pvs']['IC Gas N2']['value'])
 
     # If you go from less than 1000 V to more than 1400 V, you need a delay. 2 minutes
     # For now if you increase the voltage (any values), we will have the delay. 2 minutes
 
     pv_i0_volt = curr_range['pvs']['I0 Voltage']['object']
-    ret = (yield from bp.read(pv_i0_volt))
+    ret = (yield from bps.read(pv_i0_volt))
     if ret is not None:
         old_i0 = ret[pv_i0_volt.name]['value']
     else:
@@ -747,7 +756,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                                                                         curr_range['pvs']['I0 Voltage']['value']))
 
     pv_it_volt = curr_range['pvs']['It Voltage']['object']
-    ret = (yield from bp.read(pv_it_volt))
+    ret = (yield from bps.read(pv_it_volt))
     if ret is not None:
         old_it = ret[pv_it_volt.name]['value']
     else:
@@ -757,7 +766,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                                                                         curr_range['pvs']['It Voltage']['value']))
 
     pv_ir_volt = curr_range['pvs']['Ir Voltage']['object']
-    ret = (yield from bp.read(pv_ir_volt))
+    ret = (yield from bps.read(pv_ir_volt))
     if ret is not None:
         old_ir = ret[pv_ir_volt.name]['value']
     else:
@@ -774,8 +783,8 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
         pv = cm['object'].switch_retract
     elif new_cm_value == 'IN':
         pv = cm['object'].switch_insert
-    yield from bp.sleep(0.1)
-    ret = (yield from bp.read(pv))
+    yield from bps.sleep(0.1)
+    ret = (yield from bps.read(pv))
     if ret is not None:
         if ret[pv.name]['value'] == 0:
             close_shutter = 1
@@ -784,8 +793,8 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
     mv_fb = 0
     fb_value = prepare_bl_def[1]['FB Positions'][curr_range['pvs']['Filterbox Pos']['value'] - 1]
     pv_fb_motor = curr_range['pvs']['Filterbox Pos']['object']
-    yield from bp.sleep(0.1)
-    ret = (yield from bp.read(pv_fb_motor))
+    yield from bps.sleep(0.1)
+    ret = (yield from bps.read(pv_fb_motor))
     if ret is not None:
         curr_fb_value = ret[pv_fb_motor.name]['value']
     else:
@@ -812,33 +821,33 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                 return
 
             tries = 10
-            ret = (yield from bp.read(shutter_fe.state))
+            ret = (yield from bps.read(shutter_fe.state))
             if ret is not None:
                 while ret[shutter_fe.state.name]['value'] != 1:
-                    yield from bp.sleep(0.1)
+                    yield from bps.sleep(0.1)
                     if tries:
                         yield from shutter_fe.close_plan()
                         tries -= 1
-                    ret = (yield from bp.read(shutter_fe.state))
+                    ret = (yield from bps.read(shutter_fe.state))
 
             signal.alarm(0)
         if print_messages:
             print('[Prepare BL] FE Shutter closed')
 
-    yield from bp.sleep(0.1)
+    yield from bps.sleep(0.1)
     fb_sts_pv = curr_range['pvs']['Filterbox Pos']['STS PVS'][curr_range['pvs']['Filterbox Pos']['value'] - 1]
     if mv_fb:
         if print_messages:
             print('[Prepare BL] Moving Filterbox to {}'.format(fb_value))
         if not debug:
-            yield from bp.abs_set(pv_fb_motor, fb_value, group='prepare_bl')
+            yield from bps.abs_set(pv_fb_motor, fb_value, group='prepare_bl')
 
     pv_hhrm_hor = curr_range['pvs']['HHRM Hor Trans']['object']
-    yield from bp.sleep(0.1)
+    yield from bps.sleep(0.1)
     if print_messages:
         print('[Prepare BL] Moving HHRM Horizontal to {}'.format(curr_range['pvs']['HHRM Hor Trans']['value']))
     if not debug:
-        yield from bp.abs_set(pv_hhrm_hor, curr_range['pvs']['HHRM Hor Trans']['value'], group='prepare_bl')
+        yield from bps.abs_set(pv_hhrm_hor, curr_range['pvs']['HHRM Hor Trans']['value'], group='prepare_bl')
 
     bpm_pvs = []
     for bpm in curr_range['pvs']['BPMs']:
@@ -856,9 +865,9 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                 for i in range(3):
                     if not debug:
                         if exposure_time > 0:
-                            yield from bp.abs_set(bpm['object'].exp_time, exposure_time)
-                        yield from bp.abs_set(pv_set, 1)
-                    yield from bp.sleep(0.1)
+                            yield from bps.abs_set(bpm['object'].exp_time, exposure_time)
+                        yield from bps.abs_set(pv_set, 1)
+                    yield from bps.sleep(0.1)
                 bpm_pvs.append([pv_set, pv_read])
         except Exception as exp:
             print(exp)
@@ -879,14 +888,14 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                 return
 
             tries = 10
-            ret = (yield from bp.read(shutter_fe.state))
+            ret = (yield from bps.read(shutter_fe.state))
             if ret is not None:
                 while ret[shutter_fe.state.name]['value'] != 0:
-                    yield from bp.sleep(0.1)
+                    yield from bps.sleep(0.1)
                     if tries:
                         yield from shutter_fe.open_plan()
                         tries -= 1
-                    ret = (yield from bp.read(shutter_fe.state))
+                    ret = (yield from bps.read(shutter_fe.state))
 
             signal.alarm(0)
         if print_messages:
@@ -906,7 +915,7 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                     print(
                         '[Prepare BL] {:3}% ({:.1f}s)'.format(int(np.round(percentage * 100)), percentage * wait_time))
                     percentage += 0.1
-                yield from bp.sleep(0.1)
+                yield from bps.sleep(0.1)
         print('[Prepare BL] 100% ({:.1f}s)'.format(wait_time))
         if print_messages:
             print('[Prepare BL] Done waiting for gas...')
@@ -919,11 +928,11 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
         pv_i0_volt._put_complete = True
         pv_it_volt._put_complete = True
         pv_ir_volt._put_complete = True
-        yield from bp.abs_set(pv_i0_volt, curr_range['pvs']['I0 Voltage']['value'])#, group='prepare_bl')
-        yield from bp.abs_set(pv_it_volt, curr_range['pvs']['It Voltage']['value'])#, group='prepare_bl')
-        yield from bp.abs_set(pv_ir_volt, curr_range['pvs']['Ir Voltage']['value'])#, group='prepare_bl')
+        yield from bps.abs_set(pv_i0_volt, curr_range['pvs']['I0 Voltage']['value'])#, group='prepare_bl')
+        yield from bps.abs_set(pv_it_volt, curr_range['pvs']['It Voltage']['value'])#, group='prepare_bl')
+        yield from bps.abs_set(pv_ir_volt, curr_range['pvs']['Ir Voltage']['value'])#, group='prepare_bl')
 
-    yield from bp.sleep(0.1)
+    yield from bps.sleep(0.1)
 
     if print_messages:
         print('[Prepare BL] Waiting for everything to be in position...')
@@ -934,28 +943,28 @@ def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
                         curr_range['pvs']['It Voltage']['value'])) > (10 ** -pv_it_volt.precision) * 2000 or abs(
                         abs(pv_ir_volt.value) - abs(
                         curr_range['pvs']['Ir Voltage']['value'])) > (10 ** -pv_ir_volt.precision) * 2000:
-            yield from bp.sleep(0.1)
-        yield from bp.wait(group='prepare_bl')
+            yield from bps.sleep(0.1)
+        yield from bps.wait(group='prepare_bl')
     if print_messages:
         print('[Prepare BL] Everything seems to be in position')
         print('[Prepare BL] Setting energy to {}'.format(curr_energy))
 
     if not debug:
-        yield from bp.abs_set(hhm.energy, curr_energy, wait=True)
+        yield from bps.abs_set(hhm.energy, curr_energy, wait=True)
 
     if print_messages:
         print('[Prepare BL] Beamline preparation complete!')
 
-#    yield from bp.mv(hhm.energy, E)
-#    yield from bp.mv(other_thing, f(E))
-#    yield from bp.mv(t1, v1, t2, v2)
-#    yield from bp.abs_set(motor, val, group='A')
-#    yield from bp.abs_set(motor2, val2, group='A')
-#    yield from bp.wait(group='A')
+#    yield from bps.mv(hhm.energy, E)
+#    yield from bps.mv(other_thing, f(E))
+#    yield from bps.mv(t1, v1, t2, v2)
+#    yield from bps.abs_set(motor, val, group='A')
+#    yield from bps.abs_set(motor2, val2, group='A')
+#    yield from bps.wait(group='A')
 
 
 def sleep_plan(sleep_time, **metadata):
-    return (yield from bp.sleep(float(sleep_time)))
+    return (yield from bps.sleep(float(sleep_time)))
 
 
 lut_offsets = {
@@ -1064,7 +1073,7 @@ def set_gains_and_offsets_plan(*args):
            hs_str = 'hs'
         else:
            hs_str = 'ln'
-        yield from bp.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs_str][str(val)])
+        yield from bps.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs_str][str(val)])
         print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs_str][str(val)]))
 
 

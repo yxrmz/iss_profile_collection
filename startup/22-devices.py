@@ -74,12 +74,12 @@ class Shutter(Device):
 
     def open_plan(self):
         print('Opening {}'.format(self.name))
-        yield from bp.abs_set(self.output, 0, wait=True)
+        yield from bps.abs_set(self.output, 0, wait=True)
         self.state = 'open'
 
     def close_plan(self):
         print('Closing {}'.format(self.name))
-        yield from bp.abs_set(self.output, 1, wait=True)
+        yield from bps.abs_set(self.output, 1, wait=True)
         self.state = 'closed'
 
 shutter = Shutter(name = 'SP Shutter')
@@ -100,10 +100,10 @@ class EPS_Shutter(Device):
         self.color = 'red'
 
     def open_plan(self):
-        yield from bp.mv(self.opn, 1)
+        yield from bps.mv(self.opn, 1)
 
     def close_plan(self):
-        yield from bp.mv(self.cls, 1)
+        yield from bps.mv(self.cls, 1)
 
     def open(self):
         print('Opening {}'.format(self.name))
@@ -165,17 +165,17 @@ class ICAmplifier(Device):
 
         if high_speed:
             val -= 1
-            yield from bp.abs_set(self.low_noise_gain, 0)
-            yield from bp.abs_set(self.high_speed_gain, val + 1)
-            yield from bp.abs_set(self.hspeed_bit, 1)
+            yield from bps.abs_set(self.low_noise_gain, 0)
+            yield from bps.abs_set(self.high_speed_gain, val + 1)
+            yield from bps.abs_set(self.hspeed_bit, 1)
         else:
-            yield from bp.abs_set(self.low_noise_gain, val + 1)
-            yield from bp.abs_set(self.high_speed_gain, 0)
-            yield from bp.abs_set(self.hspeed_bit, 0)
+            yield from bps.abs_set(self.low_noise_gain, val + 1)
+            yield from bps.abs_set(self.high_speed_gain, 0)
+            yield from bps.abs_set(self.hspeed_bit, 0)
 
-        yield from bp.abs_set(self.gain_0, (val >> 0) & 1)
-        yield from bp.abs_set(self.gain_1, (val >> 1) & 1)
-        yield from bp.abs_set(self.gain_2, (val >> 2) & 1)
+        yield from bps.abs_set(self.gain_0, (val >> 0) & 1)
+        yield from bps.abs_set(self.gain_1, (val >> 1) & 1)
+        yield from bps.abs_set(self.gain_2, (val >> 2) & 1)
 
     def get_gain(self):
         if self.low_noise_gain.value == 0:

@@ -8,6 +8,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 from bluesky.examples import motor
 motor.move = motor.set
 
+print("took {} sec".format(time.time()-t1))
 
 
 detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
@@ -19,7 +20,7 @@ detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_
             it.name: {'obj': it, 'elements': ['pba1_adc1_volt']},
             iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
             i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt']},
-            ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
+            #ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
             #pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
             xia1.name: {'obj': xia1, 'elements': xia_list}}
 
@@ -121,7 +122,7 @@ xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_second
                                  processing_sender = sender,
                                  job_submitter=job_submitter,
                                  bootstrap_servers=['cmb01:9092', 'cmb02:9092'],
-                                 kafka_topic="iss-analysis", 
+                                 kafka_topic="iss-processing", 
                                  window_title="XLive @ISS/08-ID NSLS-II",
                                  )
 

@@ -1,3 +1,5 @@
+import time
+t1 = time.time()
 # Make ophyd listen to pyepics.
 from ophyd import setup_ophyd
 setup_ophyd()
@@ -110,6 +112,6 @@ print("MD handling complete in {} sec".format(stop - start))
 
 
 # the file paths for acquitision and analysis
-rootpath = '/nsls2/xf08id'
-raw_filepath = 'data'
-user_filepath = 'users'
+ROOT_PATH = '/nsls2/xf08id'
+RAW_FILEPATH = 'data'
+USER_FILEPATH = 'users'
