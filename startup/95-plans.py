@@ -15,8 +15,7 @@ def energy_scan(start, stop, num, flyers=None, name='', **metadata):
     >>> RE(energy_scan(11350, 11450, 2))
     """
     if flyers is None:
-        #flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
-        flyers = [pb9.enc1, pba1.adc7]
+        flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'step scan', 'name': name}
         md.update(**metadata)
@@ -43,8 +42,7 @@ def energy_multiple_scans(start, stop, repeats, name='', **metadata):
     -------
     >>> RE(energy_scan(11350, 11450, 2))
     """
-    #flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
-    flyers = [pb9.enc1, pba1.adc7]
+    flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'name': name}
         md.update(**metadata)
@@ -324,11 +322,19 @@ def prep_traj_plan(delay = 0.1):
         yield from bps.mv(hhm.energy, curr_energy)
 
 
-def execute_trajectory(name, **metadata):
+def execute_trajectory(name, *, ignore_shutter, **metadata):
+    ''' Execute a trajectory on the flyers given:
+            flyers : list of flyers to fly on
+        scans on 'mono1' by default
+        ignore_shutter : bool, optional
+            If True, ignore the shutter
+            (suspenders on shutter and ring current will be installed if not)
+        ex:
+            execute_trajectory(**md)
+    '''
     #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     #flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
-    #flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
+    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
@@ -404,9 +410,15 @@ def execute_trajectory(name, **metadata):
         yield from bps.stage(flyer)
 
     yield from bps.stage(hhm)
+    fly_plan = bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
+                                              flyers)
+    # TODO : Add in when suspend_wrapper is avaialable
+    if not ignore_shutter:
+        # this will use suspenders defined in 23-suspenders.py
+        fly_plan = bpp.suspend_wrapper(fly_plan, suspenders)
 
-    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
-                                              flyers))
+    yield from fly_plan
+
 
 def execute_camera_trajectory(name, **metadata):
     #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
@@ -637,8 +649,8 @@ def execute_xia_trajectory(name, **metadata):
 
 def execute_loop_trajectory(name, **metadata):
 
-    #flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
+    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    #flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'name': name, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
         md.update(**metadata)

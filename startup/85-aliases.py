@@ -10,6 +10,6 @@ iff = pba1.adc6
 iff_amp.par = iff
 iff.amp = iff_amp
 
-#ir = pba2.adc6
-#ir_amp.par = ir
-#ir.amp = ir_amp
+ir = pba2.adc6
+ir_amp.par = ir
+ir.amp = ir_amp
