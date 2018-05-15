@@ -322,7 +322,7 @@ def prep_traj_plan(delay = 0.1):
         yield from bps.mv(hhm.energy, curr_energy)
 
 
-def execute_trajectory(name, *, **metadata):
+def execute_trajectory(name, **metadata):
     ''' Execute a trajectory on the flyers given:
             flyers : list of flyers to fly on
         scans on 'mono1' by default
