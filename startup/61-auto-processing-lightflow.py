@@ -81,6 +81,6 @@ class InterpolationRequesterNoLightFlow(CallbackBase):
         interpolation.process_run_func(data, store, None, None)
 
 
-#interpolator = InterpolationRequester()
-interpolator = InterpolationRequesterNoLightFlow()
+interpolator = InterpolationRequester()
+#interpolator = InterpolationRequesterNoLightFlow()
 interpolation_subscribe_id = RE.subscribe(interpolator)

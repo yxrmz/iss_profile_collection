@@ -45,11 +45,11 @@ class HHM(Device):
     ip = '10.8.2.86'
     traj_filepath = '/GPFS/xf08id/trajectory/'
 
-    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
-    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
-    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
-    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
-    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr')
+    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
+    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
+    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
+    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
+    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind='hinted')
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 
@@ -102,8 +102,7 @@ class HHM(Device):
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
-hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
-hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
+#hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 # hinted also is automatically set as read so no need to set read_attrs
 #hhm.energy.kind = 'hinted'
 #hhm.pitch.kind = 'hinted'
