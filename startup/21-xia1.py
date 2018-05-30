@@ -206,4 +206,3 @@ list1 = [mca.name for mca in xia1.mcas]
 list2 = ['roi{}'.format(number) for number in range(12)]
 
 xia_list = ['{}_{}_sum'.format(x,y) for x in list1 for y in list2]
-

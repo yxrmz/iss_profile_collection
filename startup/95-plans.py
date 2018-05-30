@@ -6,6 +6,8 @@ import os
 from isstools.conversions import xray
 import signal
 
+from ophyd.device import Kind
+
 
 
 def energy_scan(start, stop, num, flyers=None, name='', **metadata):
@@ -550,13 +552,18 @@ def execute_xia_trajectory(name, **metadata):
 
         xia_rois = {}
         max_energy = xia1.mca_max_energy.value
-        for mca in xia1.read_attrs:
-            for roi in range(12):
-                if not (eval('xia1.{}.roi{}.low.value'.format(mca, roi)) < 0 or eval('xia1.{}.roi{}.high.value'.format(mca, roi)) < 0):
-                    xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
-                    xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
+        for mca in xia1.mcas:
+            if mca.kind & Kind.normal:
+                for roi_number in range(12):
+                    #if not (eval('xia1.{}.roi{}.low.value'.format(mca, roi)) < 0 or eval('xia1.{}.roi{}.high.value'.format(mca, roi)) < 0):
+                    roi = getattr(mca, f'roi{roi_number}')
+                    if not roi.low.value < 0 or roi.high.value < 0:
+                        #xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
+                        #xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
+                        xia_rois[roi.high.name] = roi.high.value * max_energy / 2048
+                        xia_rois[roi.low.name] = roi.low.value * max_energy / 2048
 
-        interp_fn = f"{ROOT_PATH}/{filepath}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
+        interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',

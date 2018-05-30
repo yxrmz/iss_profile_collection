@@ -293,7 +293,7 @@ class DIFS(DigitalInput):
         filename = 'di_' + str(uuid.uuid4())[:8]
 
         full_path = make_filename(filename)
-        self._full_path = os.path.join(ROOT_PATH, filename)
+        self._full_path = os.path.join(ROOT_PATH, full_path)
 
         # FIXME: Quick TEMPORARY fix for beamline disaster
         # we are writing the file to a temp directory in the ioc and
@@ -353,14 +353,14 @@ class DIFS(DigitalInput):
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
 
-        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
 
 
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
-        cp_stat = shutil.copy(workstation_full_path, ROOT_PATH + self._full_path)
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
         if os.path.isfile(self._full_path):
             with open(self._full_path, 'r') as f:
@@ -679,6 +679,3 @@ db.reg.register_handler('PIZZABOX_ENC_FILE_TXT',
                         PizzaBoxEncHandlerTxt, overwrite=True)
 db.reg.register_handler('PIZZABOX_DI_FILE_TXT',
                         PizzaBoxDIHandlerTxt, overwrite=True)
-
-
-
