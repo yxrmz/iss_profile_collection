@@ -49,8 +49,8 @@ from bluesky.callbacks.broker import verify_files_saved
 # RE.subscribe(post_run(verify_files_saved), 'stop')
 
 # Import matplotlib and put it in interactive mode.
-import matplotlib.pyplot as plt
-plt.ion()
+#import matplotlib.pyplot as plt
+#plt.ion()
 
 # Make plots update live while scans run.
 from bluesky.utils import install_qt_kicker

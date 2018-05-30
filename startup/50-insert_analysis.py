@@ -1,6 +1,3 @@
-import matplotlib
-matplotlib.use("Agg")
-
 import uuid
 from databroker import Broker
 import time
