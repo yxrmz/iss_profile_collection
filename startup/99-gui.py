@@ -141,7 +141,8 @@ def xview():
 xlive()
 print('Startup complete')
 
-
+sys.stdout = xlive_gui.emitstream_out
+sys.stderr = xlive_gui.emitstream_err
 
 
 #def cleaning():
