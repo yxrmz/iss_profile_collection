@@ -182,3 +182,23 @@ class XBIC(Device):
 
 #xbic = XBIC('XF:08IDB-OP{', name='xbic')
 
+class SixAxesStage(Device):
+    x = Cpt(EpicsMotor, '-Ax:X}Mtr')
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    z = Cpt(EpicsMotor, '-Ax:Z}Mtr')
+    pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
+    yaw = Cpt(EpicsMotor, '-Ax:Yaw}Mtr')
+    roll = Cpt(EpicsMotor, '-Ax:R}Mtr')
+
+six_axes_stage = SixAxesStage('XF:08IDB-OP{PCL', name='six_axes_stage')
+
+class FoilWheel(Device):
+    wheel1 = Cpt(EpicsMotor, '1:Rot}Mtr')
+    wheel2 = Cpt(EpicsMotor, '2:Rot}Mtr')
+
+foil_wheel = FoilWheel('XF:08IDB-OP{FoilWheel', name='foil_wheel')
+
+
+
+
+
