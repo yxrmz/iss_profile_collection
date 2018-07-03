@@ -1,4 +1,4 @@
-from isstools import xview, xlive
+from isstools import xlive
 import collections
 import atexit
 import requests
@@ -49,9 +49,15 @@ motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1
                'huber_stage_y': {'name': huber_stage.y.name,  'description':'B2 Huber Stage Y','object': huber_stage.y},
                'huber_stage_pitch': {'name': huber_stage.pitch.name, 'description':'B2 Huber Stage Pitch','object': huber_stage.pitch},
                'huber_stage_z': {'name': huber_stage.z.name, 'description':'B2 Huber Stage Z','object': huber_stage.z},
-               'Dummy Motor': {'name': motor.name, 'description':'A dummy motor','object': motor}
+               'Dummy Motor': {'name': motor.name, 'description':'A dummy motor','object': motor},
 #               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
+               'six_axes_stage_x': {'name': six_axes_stage.x.name, 'description':'Six Axes Stage X', 'object': six_axes_stage.x},
+               'six_axes_stage_y': {'name': six_axes_stage.y.name, 'description':'Six Axes Stage Y', 'object': six_axes_stage.y},
+               'six_axes_stage_z': {'name': six_axes_stage.z.name, 'description':'Six Axes Stage Z', 'object': six_axes_stage.z},
+               'six_axes_stage_pitch': {'name': six_axes_stage.pitch.name, 'description':'Six Axes Stage Pitch', 'object': six_axes_stage.pitch},
+               'six_axes_stage_yaw': {'name': six_axes_stage.yaw.name, 'description':'Six Axes Stage Yaw', 'object': six_axes_stage.yaw},
+               'six_axes_stage_roll': {'name': six_axes_stage.roll.name, 'description':'Six Axes Stage Roll', 'object': six_axes_stage.roll}
               }
 
 sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
@@ -133,10 +139,10 @@ def xlive():
 
 
 
-xview_gui = xview.XviewGui(hhm.pulses_per_deg, db=db)
+#xview_gui = xview.XviewGui(hhm.pulses_per_deg, db=db)
 
-def xview():
-    xview_gui.show()
+#def xview():
+    #xview_gui.show()
 
 xlive()
 print('Startup complete')
