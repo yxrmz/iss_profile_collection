@@ -1,11 +1,11 @@
-from isstools import xview, xlive
+from isstools import xlive
 import collections
 import atexit
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-from bluesky.examples import motor
+from ophyd.sim import motor
 motor.move = motor.set
 
 print("took {} sec".format(time.time()-t1))
@@ -103,7 +103,8 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'ir_amp': ir_amp,
                  'iff_amp': iff_amp}
 
-xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_seconds],
+xlive_gui = xlive.XliveGui([tscan_plan, tscanxia_plan, tscancam_plan],
+                                 [get_offsets, sleep_seconds],
                                  prep_traj_plan, 
                                  RE,
                                  db,
@@ -113,6 +114,7 @@ xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_second
                                  detector_dictionary,
                                  motors_dictionary,
                                  general_scan,
+                                 test_motor = giantxy,
                                  write_html_log = write_html_log,
                                  auto_tune_elements = auto_tune,
                                  ic_amplifiers = ic_amplifiers,
@@ -130,13 +132,6 @@ xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_second
 def xlive():
     xlive_gui.show()
 
-
-
-
-xview_gui = xview.XviewGui(hhm.pulses_per_deg, db=db)
-
-def xview():
-    xview_gui.show()
 
 xlive()
 print('Startup complete')

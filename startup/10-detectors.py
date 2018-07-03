@@ -8,7 +8,7 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
 from ophyd import DeviceStatus, set_and_wait
-from bluesky.examples import NullStatus
+from ophyd.sim import NullStatus
 
 from datetime import datetime
 
