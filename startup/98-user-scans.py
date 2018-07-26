@@ -28,6 +28,7 @@ def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     --------
     :func:`tscanxia`
     """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     #uids = []
     RE.is_aborted = False
@@ -42,13 +43,15 @@ def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
         RE(prep_traj_plan())
         uid = RE(execute_trajectory(name_n, comment=comment))
         yield uid
+        #hhm.prepare_trajectory.put('1')
         #uids.append(uid)
         time.sleep(float(delay))
     print('Scan is complete!')
     #return uids
     
 
-def tscan_plan(name:str, comment:str, prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+def tscan_plan(name:str, comment:str="", prepare_traj:bool=True, n_cycles:int=1, delay:float=0, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     uids = []
     for indx in range(int(n_cycles)): 
         name_n = name + ' ' + str(indx + 1)
@@ -56,11 +59,11 @@ def tscan_plan(name:str, comment:str, prepare_traj:bool=True, n_cycles:int=1, de
         if prepare_traj:
             yield from prep_traj_plan()
         #uid = (yield from execute_trajectory(name_n))
-        yield from execute_trajectory(name_n, comment=comment)
-        uid = db[-1]['start']['uid']
+        uid = (yield from execute_trajectory(name_n, comment=comment))
+        # uid = db[-1]['start']['uid']
         uids.append(uid)
 			
-        yield from bp.sleep(float(delay))
+        yield from bps.sleep(float(delay))
     print('Scan is complete!')
     return uids
 
@@ -91,6 +94,7 @@ def tscanxia(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     --------
     :func:`tscan`
     """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     #uids = []
     RE.is_aborted = False
@@ -137,6 +141,7 @@ def tscancam(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     --------
     :func:`tscanxia`
     """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     #uids = []
     RE.is_aborted = False
@@ -177,6 +182,7 @@ def get_offsets(num:int = 20, *args, **kwargs):
     --------
     :func:`tscan`
     """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     adcs = list(args)
     if not len(adcs):
@@ -212,6 +218,11 @@ def get_offsets(num:int = 20, *args, **kwargs):
         if i['name'] != 'primary':
             os.remove(i['data_keys'][i['name']]['filename'])
 
+    stdout = kwargs.pop('stdout', sys.stdout)
+
+    if 'stdout' not in kwargs:
+        print("Warning, stdout not passed. GUI should be passing this")
+
     if 'dummy_read' in kwargs:
         print_message = ''
         for index, adc in enumerate(adcs):
@@ -224,15 +235,16 @@ def get_offsets(num:int = 20, *args, **kwargs):
                     print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
                 elif offsets[index] <= saturation/100 and offsets[index] > saturation/10:
                     print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
-        print('-' * 30)
-        print(print_message[:-1])
-        print('-' * 30)
+        print('-' * 30, file=stdout)
+        print(print_message[:-1], file=stdout)
+        print('-' * 30, file=stdout)
 
     print(uid)
     print('Done!')
     yield uid
 
 def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, rel_stop, num, find_min_max, retries, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     for index, detector in enumerate(detectors):
         if type(detector) == str:
             detectors[index] = eval(detector)
@@ -294,6 +306,7 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
     :func:`tscan`
 
     '''
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     energy_grid, time_grid = get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafs_spacing)
     positions_grid = xray.energy2encoder(energy_grid) / 360000
@@ -316,18 +329,21 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
     
 
 def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     if type(detectors) is not list:
         detectors = [detectors]
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, int(num)), LivePlot(detectors[0].volt.name, motor.name))
 
 
 def sleep_seconds(secs:float=1, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     RE(sleep_plan(secs))
     yield None
 
 
 def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
                           ir_gain:int=5, hs:bool=False):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     i0_gain = int(i0_gain)
     it_gain = int(it_gain)
     iff_gain = int(iff_gain)
@@ -355,6 +371,7 @@ def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testi
     each scan file name will be: [samplename]_[current-runnum+runnum_start].txt
 
     '''
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     if len(xyposlist) < 1:
         print('xyposlist is empty')
         raise

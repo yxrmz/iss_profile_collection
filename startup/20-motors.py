@@ -45,11 +45,11 @@ class HHM(Device):
     ip = '10.8.2.86'
     traj_filepath = '/GPFS/xf08id/trajectory/'
 
-    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr')
-    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr')
-    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr')
-    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr')
-    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr')
+    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
+    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
+    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
+    theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
+    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind='hinted')
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 
@@ -102,7 +102,13 @@ class HHM(Device):
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
-hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
+#hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
+# hinted also is automatically set as read so no need to set read_attrs
+#hhm.energy.kind = 'hinted'
+#hhm.pitch.kind = 'hinted'
+#hhm.roll.kind = 'hinted'
+#hhm.theta.kind = 'hinted'
+#hhm.y.kind = 'hinted'
 
 hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
 
@@ -175,4 +181,24 @@ class XBIC(Device):
     dac2 = Cpt(EpicsSignal, 'MC:XBIC}DAC2-I', write_pv='MC:XBIC}DAC2R-SP')
 
 #xbic = XBIC('XF:08IDB-OP{', name='xbic')
+
+class SixAxesStage(Device):
+    x = Cpt(EpicsMotor, '-Ax:X}Mtr')
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    z = Cpt(EpicsMotor, '-Ax:Z}Mtr')
+    pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
+    yaw = Cpt(EpicsMotor, '-Ax:Yaw}Mtr')
+    roll = Cpt(EpicsMotor, '-Ax:R}Mtr')
+
+six_axes_stage = SixAxesStage('XF:08IDB-OP{PCL', name='six_axes_stage')
+
+class FoilWheel(Device):
+    wheel1 = Cpt(EpicsMotor, '1:Rot}Mtr')
+    wheel2 = Cpt(EpicsMotor, '2:Rot}Mtr')
+
+foil_wheel = FoilWheel('XF:08IDB-OP{FoilWheel', name='foil_wheel')
+
+
+
+
 
