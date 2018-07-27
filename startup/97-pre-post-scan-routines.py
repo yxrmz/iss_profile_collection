@@ -4,6 +4,7 @@ from subprocess import call
 import time
 from scipy.optimize import curve_fit
 from isstools.xasdata import xasdata
+from bluesky.plan_stubs import mv
 
 
 def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
@@ -288,3 +289,22 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
     return table
 
+def set_foil_reference(element):
+    reference = {'Ti': {'foilwheel2': 45,  'foilwheel1': 0},
+                 'V':  {'foilwheel2': 90,  'foilwheel1': 0},
+                 'Cr': {'foilwheel2': 135, 'foilwheel1': 0},
+                 'Mn': {'foilwheel2': 180, 'foilwheel1': 0},
+                 'Fe': {'foilwheel2': 225, 'foilwheel1': 0},
+                 'Co': {'foilwheel2': 270, 'foilwheel1': 0},
+                 'Ni': {'foilwheel2': 315, 'foilwheel1': 0},
+                 'Cu': {'foilwheel1': 45, 'foilwheel2': 0},
+                 'Zn': {'foilwheel1': 90, 'foilwheel2': 0},
+                 'Pt': {'foilwheel1': 135, 'foilwheel2': 0},
+                 'Au': {'foilwheel1': 180, 'foilwheel2': 0},
+                 'Mo': {'foilwheel1': 225, 'foilwheel2': 0},
+                 'Rh': {'foilwheel1': 270, 'foilwheel2': 0},
+                 'Pd': {'foilwheel1': 315, 'foilwheel2': 0}
+                 }
+
+    yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
+    yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
