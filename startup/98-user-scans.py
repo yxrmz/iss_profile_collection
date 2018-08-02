@@ -1,6 +1,6 @@
 import inspect
 import bluesky.plans as bp
-import os
+import os, sys
 
 def tscan(name:str, comment:str, n_cycles:int=1, delay:float=0, **kwargs):
     """

@@ -289,7 +289,8 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
     return table
 
-def set_foil_reference(element):
+def set_foil_reference(element = None):
+
     reference = {'Ti': {'foilwheel2': 45,  'foilwheel1': 0},
                  'V':  {'foilwheel2': 90,  'foilwheel1': 0},
                  'Cr': {'foilwheel2': 135, 'foilwheel1': 0},
@@ -305,6 +306,9 @@ def set_foil_reference(element):
                  'Rh': {'foilwheel1': 270, 'foilwheel2': 0},
                  'Pd': {'foilwheel1': 315, 'foilwheel2': 0}
                  }
-
-    yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
-    yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
+    if element is None:
+        yield from mv(foil_wheel.wheel1, 0)
+        yield from mv(foil_wheel.wheel2, 0)
+    else:
+        yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
+        yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
