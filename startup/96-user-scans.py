@@ -27,7 +27,7 @@ def tscan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs
 
 
     See Also
-    --------
+    --------f
     :func:`tscanxia`
     """
 
@@ -276,7 +276,7 @@ def tscancam_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, 
     # return uids
 
 
-def get_offsets(num:int = 20, *args, **kwargs):
+def get_offsets(times:int = 20, *args, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -307,7 +307,7 @@ def get_offsets(num:int = 20, *args, **kwargs):
         old_avers.append(adc.averaging_points.get())
         adc.averaging_points.put(15)
     
-    uid, = RE(get_offsets_plan(adcs, num = int(num)))
+    uid, = RE(get_offsets_plan(adcs, num = int(times)))
 
     if 'dummy_read' not in kwargs:
         print('Updating values...')
@@ -318,7 +318,7 @@ def get_offsets(num:int = 20, *args, **kwargs):
     for index, adc in enumerate(adcs):
         key = '{}_volt'.format(adc.name)
         array = df[key]
-        offset = np.mean(df[key][2:int(num)])
+        offset = np.mean(df[key][2:int(times)])
 
         arrays.append(array)
         offsets.append(offset)
@@ -449,9 +449,9 @@ def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
     return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, int(num)), LivePlot(detectors[0].volt.name, motor.name))
 
 
-def sleep_seconds(secs:float=1, **kwargs):
+def sleep(delay:float=1, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    RE(sleep_plan(secs))
+    RE(sleep_plan(delay))
     yield None
 
 
