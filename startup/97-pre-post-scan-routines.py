@@ -291,20 +291,27 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
 def set_foil_reference(element = None):
 
-    reference = {'Ti': {'foilwheel2': 45,  'foilwheel1': 0},
-                 'V':  {'foilwheel2': 90,  'foilwheel1': 0},
-                 'Cr': {'foilwheel2': 135, 'foilwheel1': 0},
-                 'Mn': {'foilwheel2': 180, 'foilwheel1': 0},
-                 'Fe': {'foilwheel2': 225, 'foilwheel1': 0},
-                 'Co': {'foilwheel2': 270, 'foilwheel1': 0},
-                 'Ni': {'foilwheel2': 315, 'foilwheel1': 0},
-                 'Cu': {'foilwheel1': 45, 'foilwheel2': 0},
-                 'Zn': {'foilwheel1': 90, 'foilwheel2': 0},
-                 'Pt': {'foilwheel1': 135, 'foilwheel2': 0},
-                 'Au': {'foilwheel1': 180, 'foilwheel2': 0},
-                 'Mo': {'foilwheel1': 225, 'foilwheel2': 0},
-                 'Rh': {'foilwheel1': 270, 'foilwheel2': 0},
-                 'Pd': {'foilwheel1': 315, 'foilwheel2': 0}
+    reference = {'Ti': {'foilwheel2': 30,  'foilwheel1': 0},
+                 'V':  {'foilwheel2': 60,  'foilwheel1': 0},
+                 'Cr': {'foilwheel2': 90,  'foilwheel1': 0},
+                 'Mn': {'foilwheel2': 120, 'foilwheel1': 0},
+                 'Fe': {'foilwheel2': 150, 'foilwheel1': 0},
+                 'Co': {'foilwheel2': 180, 'foilwheel1': 0},
+                 'Ni': {'foilwheel2': 210, 'foilwheel1': 0},
+                 'Cu': {'foilwheel2': 240, 'foilwheel1': 0},
+                 'Zn': {'foilwheel2': 270, 'foilwheel1': 0},
+                 'Pt': {'foilwheel2': 300, 'foilwheel1': 0},
+                 'Au': {'foilwheel2': 330, 'foilwheel1': 0},
+                 'Se': {'foilwheel1': 60,  'foilwheel2': 0},
+                 'Pb': {'foilwheel1': 90,  'foilwheel2': 0},
+                 'Nb': {'foilwheel1': 120, 'foilwheel2': 0},
+                 'Mo': {'foilwheel1': 150, 'foilwheel2': 0},
+                 'Ru': {'foilwheel1': 180, 'foilwheel2': 0},
+                 'Rh': {'foilwheel1': 210, 'foilwheel2': 0},
+                 'Pd': {'foilwheel1': 240, 'foilwheel2': 0},
+                 'Ag': {'foilwheel1': 270, 'foilwheel2': 0},
+                 'Sn': {'foilwheel1': 300, 'foilwheel2': 0},
+                 'Sb': {'foilwheel1': 330, 'foilwheel2': 0}
                  }
     if element is None:
         yield from mv(foil_wheel.wheel1, 0)
