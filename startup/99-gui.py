@@ -119,6 +119,7 @@ xlive_gui = xlive.XliveGui([tscan, tscanxia, tscancam, get_offsets, sleep_second
                                  detector_dictionary,
                                  motors_dictionary,
                                  general_scan,
+                                 set_foil_reference,
                                  write_html_log = write_html_log,
                                  auto_tune_elements = auto_tune,
                                  ic_amplifiers = ic_amplifiers,
