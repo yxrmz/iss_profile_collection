@@ -291,31 +291,36 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
 def set_foil_reference(element = None):
 
-    reference = {'Ti': {'foilwheel1': 30,  'foilwheel2': 0},
-                 'V':  {'foilwheel1': 60,  'foilwheel2': 0},
-                 'Cr': {'foilwheel1': 90,  'foilwheel2': 0},
-                 'Mn': {'foilwheel1': 120, 'foilwheel2': 0},
-                 'Fe': {'foilwheel1': 150, 'foilwheel2': 0},
-                 'Co': {'foilwheel1': 180, 'foilwheel2': 0},
-                 'Ni': {'foilwheel1': 210, 'foilwheel2': 0},
-                 'Cu': {'foilwheel1': 240, 'foilwheel2': 0},
-                 'Zn': {'foilwheel1': 270, 'foilwheel2': 0},
-                 'Pt': {'foilwheel1': 300, 'foilwheel2': 0},
-                 'Au': {'foilwheel1': 330, 'foilwheel2': 0},
-                 'Se': {'foilwheel2': 60,  'foilwheel1': 0},
-                 'Pb': {'foilwheel2': 90,  'foilwheel1': 0},
-                 'Nb': {'foilwheel2': 120, 'foilwheel1': 0},
-                 'Mo': {'foilwheel2': 150, 'foilwheel1': 0},
-                 'Ru': {'foilwheel2': 180, 'foilwheel1': 0},
-                 'Rh': {'foilwheel2': 210, 'foilwheel1': 0},
-                 'Pd': {'foilwheel2': 240, 'foilwheel1': 0},
-                 'Ag': {'foilwheel2': 270, 'foilwheel1': 0},
-                 'Sn': {'foilwheel2': 300, 'foilwheel1': 0},
-                 'Sb': {'foilwheel2': 330, 'foilwheel1': 0}
-                 }
-    if element is None:
-        yield from mv(foil_wheel.wheel1, 0)
-        yield from mv(foil_wheel.wheel2, 0)
-    else:
-        yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
-        yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
+    # Adding reference foil element list
+    reference_foils = json.loads(open('/nsls2/xf08id/settings/json/foil_wheel.json').read())
+    elems = [item['element'] for item in reference_foils]
+    print(reference_foils)
+
+    #reference = {'Ti': {'foilwheel1': 30,  'foilwheel2': 0},
+    #             'V':  {'foilwheel1': 60,  'foilwheel2': 0},
+    #             'Cr': {'foilwheel1': 90,  'foilwheel2': 0},
+    #             'Mn': {'foilwheel1': 120, 'foilwheel2': 0},
+    #             'Fe': {'foilwheel1': 150, 'foilwheel2': 0},
+    #             'Co': {'foilwheel1': 180, 'foilwheel2': 0},
+    #             'Ni': {'foilwheel1': 210, 'foilwheel2': 0},
+    #             'Cu': {'foilwheel1': 240, 'foilwheel2': 0},
+    #             'Zn': {'foilwheel1': 270, 'foilwheel2': 0},
+    #             'Pt': {'foilwheel1': 300, 'foilwheel2': 0},
+    #             'Au': {'foilwheel1': 330, 'foilwheel2': 0},
+    #             'Se': {'foilwheel2': 60,  'foilwheel1': 0},
+    #             'Pb': {'foilwheel2': 90,  'foilwheel1': 0},
+    #             'Nb': {'foilwheel2': 120, 'foilwheel1': 0},
+    #             'Mo': {'foilwheel2': 150, 'foilwheel1': 0},
+    #             'Ru': {'foilwheel2': 180, 'foilwheel1': 0},
+    #             'Rh': {'foilwheel2': 210, 'foilwheel1': 0},
+    #             'Pd': {'foilwheel2': 240, 'foilwheel1': 0},
+    #             'Ag': {'foilwheel2': 270, 'foilwheel1': 0},
+    #             'Sn': {'foilwheel2': 300, 'foilwheel1': 0},
+    #             'Sb': {'foilwheel2': 330, 'foilwheel1': 0}
+    #             }
+    #if element is None:
+    #    yield from mv(foil_wheel.wheel1, 0)
+    #    yield from mv(foil_wheel.wheel2, 0)
+    #else:
+    #    yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
+    #    yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
