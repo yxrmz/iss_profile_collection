@@ -288,3 +288,17 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
     return table
 
+
+def tuning_scan(motor, detector, channel, scan_range, scan_step, n_tries,target = 'max'):
+    channel = f'{detector.name}_{channel}'
+    motor_init_position = motor.read()[motor.name]['value']
+    scan_positions = np.arange(motor_init_position-scan_range/2,motor_init_position+scan_range/2+scan_step/2,scan_step)
+    uid = (yield from  bp.list_scan([detector], motor,scan_positions))
+    hdr = db[uid]
+    idx = getattr(hdr.table()[channel], f'idx{target}')()
+    motor_pos = hdr.table()[motor.name][idx]
+    detector_value = hdr.table()[channel][idx]
+    print(motor_pos)
+    print(detector_value)
+    print(idx)
+    yield from bps.mv(motor, motor_pos)
