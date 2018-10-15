@@ -294,7 +294,7 @@ def set_foil_reference(element = None):
     # Adding reference foil element list
     reference_foils = json.loads(open('/nsls2/xf08id/settings/json/foil_wheel.json').read())
     elems = [item['element'] for item in reference_foils]
-    print(reference_foils)
+    ##print(reference_foils[][][])
 
     #reference = {'Ti': {'foilwheel1': 30,  'foilwheel2': 0},
     #             'V':  {'foilwheel1': 60,  'foilwheel2': 0},
@@ -318,9 +318,19 @@ def set_foil_reference(element = None):
     #             'Sn': {'foilwheel2': 300, 'foilwheel1': 0},
     #             'Sb': {'foilwheel2': 330, 'foilwheel1': 0}
     #             }
-    #if element is None:
-    #    yield from mv(foil_wheel.wheel1, 0)
-    #    yield from mv(foil_wheel.wheel2, 0)
-    #else:
-    #    yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
-    #    yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
+
+    if element is None:
+        yield from mv(foil_wheel.wheel1, 0)
+        yield from mv(foil_wheel.wheel2, 0)
+    else:
+        if element in elems:
+            indx = elems.index(element)
+            yield from mv(foil_wheel.wheel2, reference_foils[indx]['fw2'])
+            yield from mv(foil_wheel.wheel1, reference_foils[indx]['fw1'])
+        else:
+            yield from mv(foil_wheel.wheel1, 0)
+            yield from mv(foil_wheel.wheel2, 0)
+
+        #yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
+        #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
+
