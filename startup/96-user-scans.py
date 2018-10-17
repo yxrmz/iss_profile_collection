@@ -51,7 +51,7 @@ def tscan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs
     # return uids
 
 
-def tscan_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
+def tscan_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
     '''
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
 
@@ -82,6 +82,10 @@ def tscan_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **k
 
     print('Running tscan_plan')
     uids = []
+
+    current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+    yield from set_foil_reference(current_element)
+
     for indx in range(int(n_cycles)):
         name_n = '{} {:03d}'.format(name, indx + 1)
         print(name_n)
@@ -372,7 +376,7 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
     if find_min_max:
         over = 0
         while(not over):
-            uid, = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
+            uid = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
             yield uid
             last_table = db.get_table(db[-1])
             if detectors[0].polarity == 'pos':
