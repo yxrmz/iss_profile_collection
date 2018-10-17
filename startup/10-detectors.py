@@ -497,8 +497,6 @@ class AdcFS(Adc):
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
-
-
         if(self.connected):
             print( 'Staging of {} starting'.format(self.name))
 
@@ -534,11 +532,15 @@ class AdcFS(Adc):
     def kickoff(self):
         print('kickoff', self.name)
         self._ready_to_collect = True
+    
         "Start writing data into the file."
-        set_and_wait(self.enable_sel, 0)
+        # set_and_wait(self.enable_sel, 0)
+        st = self.enable_sel.set(0)
+
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
-        return NullStatus()
+        # return NullStatus()
+        return st
 
     def complete(self):
         print('storing', self.name, 'in', self._full_path)
