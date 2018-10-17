@@ -86,6 +86,10 @@ tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',
                          name='tc_mask2_3')
 
 
+bpm_fm.stats1.kind = 'hinted'
+bpm_fm.stats1.total.kind = 'hinted'
+
+
 class Encoder(Device):
     """This class defines components but does not implement actual reading.
 
@@ -624,7 +628,18 @@ class PizzaBoxAnalogFS(Device):
             yield from getattr(self, attr_name).collect()
 
 pba1 = PizzaBoxAnalogFS('XF:08IDB-CT{GP1-', name = 'pba1')
+
 pba2 = PizzaBoxAnalogFS('XF:08IDB-CT{GP-', name = 'pba2')
+
+for jj in [1, 6, 7]:
+    getattr(pba1, f'adc{jj}').volt.kind = 'hinted'
+    getattr(pba2, f'adc{jj}').volt.kind = 'hinted'
+    getattr(pba1, f'adc{jj}').kind = 'hinted'
+    getattr(pba2, f'adc{jj}').kind = 'hinted'
+
+
+
+
 
 class PizzaBoxEncHandlerTxt(HandlerBase):
     encoder_row = namedtuple('encoder_row',

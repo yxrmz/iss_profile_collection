@@ -39,8 +39,8 @@ get_ipython().register_magics(BlueskyMagics)
 from bluesky.callbacks.best_effort import BestEffortCallback
 bec = BestEffortCallback()
 bec.disable_plots()
-bec.disable_table()
-#RE.subscribe(bec)
+#bec.disable_table()
+RE.subscribe(bec)
 peaks = bec.peaks  # just as alias for less typing
 
 # At the end of every run, verify that files were saved and
@@ -116,3 +116,6 @@ print("MD handling complete in {} sec".format(stop - start))
 ROOT_PATH = '/nsls2/xf08id'
 RAW_FILEPATH = 'data'
 USER_FILEPATH = 'users'
+
+
+
