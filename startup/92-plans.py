@@ -5,6 +5,7 @@ from subprocess import call
 import os
 from isstools.conversions import xray
 import signal
+from mendeleev import element
 
 from ophyd.device import Kind
 
@@ -342,6 +343,7 @@ def execute_trajectory(name, **metadata):
     def inner():
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+        full_element_name = element(curr_traj.elem.value).name
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission',
@@ -350,6 +352,7 @@ def execute_trajectory(name, **metadata):
               'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
+              'element_full': full_element_name,
               'edge': curr_traj.edge.value,
               'e0': curr_traj.e0.value,
               'pulses_per_degree': hhm.pulses_per_deg,
