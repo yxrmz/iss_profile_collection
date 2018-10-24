@@ -444,13 +444,6 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
     print('Done!')
     return uid
 
-    
-
-def samplexy_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
-    if type(detectors) is not list:
-        detectors = [detectors]
-    return RE(sampleXY_plan(detectors, motor, rel_start, rel_stop, int(num)), LivePlot(detectors[0].volt.name, motor.name))
 
 
 def sleep(delay:float=1, **kwargs):
@@ -471,103 +464,18 @@ def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
 
     RE(set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs))
 
-
-def xymove_repeat(numrepeat=1, xyposlist=[], samplelist=[], sleeptime = 2, testing = False, simulation = True, runnum_start = 0, usexia = True, **kwargs):
-
-    '''
-    collect EXAFS scans on given sample locations repeatedly.
-
-    variables:
-    numrepeat (int): number of repeated runs
-    xyposlist (list of of [x,y] positions in pairs, x, y are floats): \
-                     list of [x, y] positions, e.g. [[2.3, 23], [34.5, 23.2]]
-    samplelist (list of strings) sample/file names for each scans
-    sleeptime (int): how long (in sec.) to wait between samples
-    testing (bool): if True, no sample motion, no EXAFS scans but just print the process
-    simulation (bool): if True, only sample motions, no EXAFS scans
-
-    each scan file name will be: [samplename]_[current-runnum+runnum_start].txt
-
-    '''
+def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
+                          ir_gain:int=5, hs:bool=False):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    if len(xyposlist) < 1:
-        print('xyposlist is empty')
-        raise
-    if len(samplelist) < 1:
-        print('samplelist is empty')
-        raise
+    i0_gain = int(i0_gain)
+    it_gain = int(it_gain)
+    iff_gain = int(iff_gain)
+    ir_gain = int(ir_gain)
+    if type(hs) == str:
+        hs = hs == 'True'
 
-    if len(xyposlist) is not len(samplelist):
-        print('xypolist and samplelist must have the same length')
-        raise
+    yield from set_gains_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs)
 
-    gen_parser = xasdata.XASdataGeneric(db)
-    uids = []
-    for runnum in range(numrepeat):
-        print('current run', runnum)
-        print('current run + run start', runnum+runnum_start)
-        for i in range(len(xyposlist)):
-            print('moving sample xy to', xyposlist[i])
-            if testing is not True:
-                samplexy.x.move(xyposlist[i][0])
-                samplexy.y.move(xyposlist[i][1])
 
-            print('done moving, taking a nap with wait time (s)', sleeptime)
-            time.sleep(sleeptime)
 
-            print('done napping, starting taking the scan')
-            if testing is not True:
-                if simulation is not True:
-                    tscan_name = samplelist[i]+'_'+str(runnum+runnum_start).zfill(3)
-                    if usexia is False:
-                        uid = tscan(tscan_name)[0]
-                    else:
-                        uid = tscanxia(tscan_name)[0]
-
-            print('done taking the current scan')
-
-            print('parsing the current scan')
-            current_filepath = '/GPFS/xf08id/User Data/{}.{}.{}/' \
-                               '{}.txt'.format(db[uid]['start']['year'],
-                                               db[uid]['start']['cycle'],
-                                               db[uid]['start']['PROPOSAL'],
-                                               db[uid]['start']['name'])
-    
-            gen_parser.load(uid)
-            key_base = 'i0'
-            if 'xia_filename' in db[uid]['start']:
-                 key_base = 'xia_trigger'
-            gen_parser.interpolate(key_base = key_base)
-    
-            if 'xia_filename' in db[uid]['start']:
-                # Parse xia
-                xia_filename = db[uid]['start']['xia_filename']
-                xia_filepath = 'smb://elistavitski-ni/epics/{}'.format(xia_filename)
-                xia_destfilepath = '/GPFS/xf08id/xia_files/{}'.format(xia_filename)
-                smbclient = xiaparser.smbclient(xia_filepath, xia_destfilepath)
-                smbclient.copy()
-                xia_parser.parse(xia_filename, '/GPFS/xf08id/xia_files/')
-                xia_parsed_filepath = current_filepath[0 : current_filepath.rfind('/') + 1]
-                xia_parser.export_files(dest_filepath = xia_parsed_filepath, all_in_one = True)
-    
-                length = min(len(xia_parser.exporting_array1), len(gen_parser.interp_arrays['energy']))
-    
-                mcas = []
-                if 'xia_rois' in db[uid]['start']:
-                    xia_rois = db[uid]['start']['xia_rois']
-                    for mca_number in range(1, 5):
-                        mcas.append(xia_parser.parse_roi(range(0, length), mca_number, xia_rois['xia1_mca{}_roi0_low'.format(mca_number)], xia_rois['xia1_mca{}_roi0_high'.format(mca_number)]))
-                    mca_sum = sum(mcas)
-                else:
-                    for mca_number in range(1, 5):
-                        mcas.append(xia_parser.parse_roi(range(0, length), mca_number, 6.7, 6.9))
-                    mca_sum = sum(mcas)
-    
-                gen_parser.interp_arrays['XIA_SUM'] = np.array([gen_parser.interp_arrays['energy'][:, 0], mca_sum]).transpose()
-    
-                gen_parser.export_trace(current_filepath[:-4], '')
-
-        print('done with the current run')
-
-    print('done with all the runs! congratulations!')
 

@@ -110,7 +110,7 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'iff_amp': iff_amp}
 
 xlive_gui = xlive.XliveGui([tscan_plan, tscanxia_plan, tscancam_plan],
-                                 [get_offsets, sleep],
+                                 [get_offsets, sleep, random_step,  set_gains],
                                  prep_traj_plan, 
                                  RE,
                                  db,

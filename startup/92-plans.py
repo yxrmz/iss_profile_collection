@@ -568,6 +568,7 @@ def execute_xia_trajectory(name, **metadata):
 
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+        full_element_name = element(curr_traj.elem.value).name
         md = {'plan_args': {}, 
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd', 
@@ -579,6 +580,7 @@ def execute_xia_trajectory(name, **metadata):
               'angle_offset': str(hhm.angle_offset.value),
               'trajectory_name': hhm.trajectory_name.value,
               'element': curr_traj.elem.value,
+              'element_full': full_element_name,
               'edge': curr_traj.edge.value,
               'e0': curr_traj.e0.value}
         for flyer in flyers:
@@ -1101,3 +1103,29 @@ def set_gains_and_offsets_plan(*args):
         print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs_str][str(val)]))
 
 
+def set_gains_plan(*args):
+    """
+    Parameters
+    ----------
+    Groups of three parameters: amplifier, gain, hs
+
+    Example: set_gains_and_offsets(i0_amp, 5, False, it_amp, 4, False, iff_amp, 5, True)
+    """
+
+    mod = len(args) % 3
+    if mod:
+        args = args[:-mod]
+
+    for ic, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0],
+                       [val for index, val in enumerate(args) if index % 3 == 1],
+                       [hs for index, hs in enumerate(args) if index % 3 == 2]):
+        yield from ic.set_gain_plan(val, hs)
+
+        if type(ic) != ICAmplifier:
+            raise Exception('Wrong type: {} - it should be ICAmplifier'.format(type(ic)))
+        if type(val) != int:
+            raise Exception('Wrong type: {} - it should be int'.format(type(val)))
+        if type(hs) != bool:
+            raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
+
+        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.value, val, hs))

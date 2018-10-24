@@ -4,7 +4,8 @@ from subprocess import call
 import time
 from scipy.optimize import curve_fit
 from isstools.xasdata import xasdata
-from bluesky.plan_stubs import mv
+from bluesky.plan_stubs import mv, mvr
+from random import random
 
 
 def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
@@ -354,4 +355,26 @@ def set_foil_reference(element = None):
 
         #yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
         #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
+
+
+def random_step(x: float = 0,y: float = 0, **kwargs):
+
+    '''
+    This plan will move the stage randomly by a random number between
+    x/2 and x  and y/2 and y, sampling a donut around the original point
+    '''
+
+
+    if not 'motor_x' in kwargs.keys():
+        motor_x = giantxy.x
+    if not 'motor_y' in kwargs.keys():
+        motor_y = giantxy.y
+    random_x = 2 * x * (random()-0.5)
+    random_x = random_x * 0.5 + 0.5 * np.sign(random_x)
+    random_y = 2 * y*(random()-0.5)
+    random_y = random_y * 0.5 + 0.5 * np.sign(random_y)
+    yield from mvr(motor_x,random_x,motor_y,random_y)
+
+
+
 
