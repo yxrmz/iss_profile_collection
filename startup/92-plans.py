@@ -5,7 +5,7 @@ from subprocess import call
 import os
 from isstools.conversions import xray
 import signal
-from mendeleev import element
+from periodictable import elements
 
 from ophyd.device import Kind
 
@@ -93,7 +93,7 @@ def get_offsets_plan(detectors, num = 1, name = '', **metadata):
             ret = flyer.volt.value
             yield from bps.abs_set(flyer.offset, ret, wait=True)
 
-    yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(plan, set_offsets()), flyers)
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(plan, set_offsets()), flyers))
 
 
 
@@ -343,7 +343,9 @@ def execute_trajectory(name, **metadata):
     def inner():
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-        full_element_name = element(curr_traj.elem.value).name
+
+        full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'transmission',

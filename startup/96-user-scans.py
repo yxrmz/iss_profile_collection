@@ -2,6 +2,7 @@ import inspect
 import bluesky.plans as bp
 import bluesky.plan_stubs as bps
 import os, sys
+from bluesky.utils import FailedStatus
 
 
 def tscan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
@@ -310,15 +311,31 @@ def get_offsets(times:int = 20, *args, **kwargs):
     for adc in adcs:
         old_avers.append(adc.averaging_points.get())
         adc.averaging_points.put(15)
-    
-    uid, = RE(get_offsets_plan(adcs, num = int(times)))
+
+    print(old_avers)
+
+    try:
+        yield from bps.mv(shutter_ph_2b,'Close')
+    except FailedStatus:
+        print('Error: Photon shutter failed to close')
+        pass
+
+
+    uid = (yield from get_offsets_plan(adcs, num = int(times)))
+
+    try:
+        yield from bps.mv(shutter_ph_2b,'Open')
+    except FailedStatus:
+        print('ERROR: Photon shutter failed to open')
 
     if 'dummy_read' not in kwargs:
         print('Updating values...')
 
     arrays = []
     offsets = []
-    df = db.get_table(db[-1])
+    df = db[uid].table()
+
+
     for index, adc in enumerate(adcs):
         key = '{}_volt'.format(adc.name)
         array = df[key]
@@ -329,7 +346,10 @@ def get_offsets(times:int = 20, *args, **kwargs):
         if 'dummy_read' not in kwargs:
             adc.offset.put(offset)
             print('{}\nMean ({}) = {}'.format(array, adc.dev_name.value, offset))
+        print('')
         adc.averaging_points.put(old_avers[index])
+
+
     
     run = db[uid]
     for i in run['descriptors']:
@@ -359,7 +379,7 @@ def get_offsets(times:int = 20, *args, **kwargs):
 
     print(uid)
     print('Done!')
-    yield uid
+
 
 def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, rel_stop, num, find_min_max, retries, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
@@ -465,7 +485,7 @@ def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
     RE(set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs))
 
 def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
-                          ir_gain:int=5, hs:bool=False):
+                          ir_gain:int=5, hs:bool=False, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     i0_gain = int(i0_gain)
     it_gain = int(it_gain)

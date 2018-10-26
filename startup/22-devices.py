@@ -1,6 +1,7 @@
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
+from nslsii.devices import TwoButtonShutter
 import bluesky.plans as bp
 
 
@@ -85,6 +86,12 @@ class Shutter(Device):
 shutter = Shutter(name = 'SP Shutter')
 shutter.shutter_type = 'SP'
 
+class TwoButtonShutterISS(TwoButtonShutter):
+    def stop(self):
+        pass
+
+shutter_ph_2b = TwoButtonShutterISS('XF:08IDA-PPS{PSh}', name='shutter_ph_2b')
+shutter_fe_2b = TwoButtonShutterISS('XF:08ID-PPS{Sh:FE}', name='shutter_fe_2b')
 
 class EPS_Shutter(Device):
     state = Cpt(EpicsSignal, 'Pos-Sts')
