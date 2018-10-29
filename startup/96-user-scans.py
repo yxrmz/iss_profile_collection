@@ -280,8 +280,83 @@ def tscancam_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, 
     print('Done!')
     # return uids
 
+def check_set_gains(*args, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+
+    energy_min_limit = motor_init_position - scan_range / 2
+    energy_max_limit = motor_init_position + scan_range / 2 + scan_step / 2
+    scan_positions = np.arange(min_limit, max_limit, scan_step)
+
 
 def get_offsets(times:int = 20, *args, **kwargs):
+    """
+       Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
+
+       Parameters
+       ----------
+       num : int
+           Number of points to acquire and average for each ion chamber
+
+
+       Returns
+       -------
+       uid : list(str)
+           List containing the unique id of the scan
+
+
+       See Also
+       --------
+       :func:`tscan`
+       """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    adcs = list(args)
+    if not len(adcs):
+        adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+
+    old_avers = []
+    for adc in adcs:
+        old_avers.append(adc.averaging_points.get())
+        adc.averaging_points.put(15)
+
+    try:
+        yield from bps.mv(shutter_ph_2b, 'Close')
+    except FailedStatus:
+        print('Error: Photon shutter failed to close')
+        pass
+
+    uid = (yield from get_offsets_plan(adcs, num=int(times)))
+
+    try:
+        yield from bps.mv(shutter_ph_2b, 'Open')
+    except FailedStatus:
+        print('ERROR: Photon shutter failed to open')
+
+    print('Updating values...')
+
+    arrays = []
+    offsets = []
+    df = db[uid].table()
+
+    for index, adc in enumerate(adcs):
+        key = '{}_volt'.format(adc.name)
+        array = df[key]
+        offset = np.mean(df[key][2:int(times)])
+
+        arrays.append(array)
+        offsets.append(offset)
+        adc.offset.put(offset)
+        print('{}\n New offset for {}) is  {}'.format(array, adc.dev_name.value, offset))
+        adc.averaging_points.put(old_avers[index])
+
+    run = db[uid]
+    for i in run['descriptors']:
+        if i['name'] != 'primary':
+            os.remove(i['data_keys'][i['name']]['filename'])
+
+
+def get_adc_readout(times:int = 20, *args, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -312,41 +387,20 @@ def get_offsets(times:int = 20, *args, **kwargs):
         old_avers.append(adc.averaging_points.get())
         adc.averaging_points.put(15)
 
-    print(old_avers)
-
-    try:
-        yield from bps.mv(shutter_ph_2b,'Close')
-    except FailedStatus:
-        print('Error: Photon shutter failed to close')
-        pass
-
-
     uid = (yield from get_offsets_plan(adcs, num = int(times)))
 
-    try:
-        yield from bps.mv(shutter_ph_2b,'Open')
-    except FailedStatus:
-        print('ERROR: Photon shutter failed to open')
-
-    if 'dummy_read' not in kwargs:
-        print('Updating values...')
-
-    arrays = []
-    offsets = []
+    readouts = []
     df = db[uid].table()
 
 
     for index, adc in enumerate(adcs):
         key = '{}_volt'.format(adc.name)
         array = df[key]
-        offset = np.mean(df[key][2:int(times)])
+        readout = np.mean(df[key][2:int(times)])
 
-        arrays.append(array)
-        offsets.append(offset)
-        if 'dummy_read' not in kwargs:
-            adc.offset.put(offset)
-            print('{}\nMean ({}) = {}'.format(array, adc.dev_name.value, offset))
-        print('')
+
+        readouts.append(readout)
+        print('Channel readout for {}  is {} V'.format(adc.dev_name.value,readout))
         adc.averaging_points.put(old_avers[index])
 
 
@@ -356,29 +410,7 @@ def get_offsets(times:int = 20, *args, **kwargs):
         if i['name'] != 'primary':
             os.remove(i['data_keys'][i['name']]['filename'])
 
-    stdout = kwargs.pop('stdout', sys.stdout)
-
-    if 'stdout' not in kwargs:
-        print("Warning, stdout not passed. GUI should be passing this")
-
-    if 'dummy_read' in kwargs:
-        print_message = ''
-        for index, adc in enumerate(adcs):
-            print('Mean ({}) = {}'.format(adc.dev_name.value, offsets[index]))
-
-            saturation = adc.dev_saturation.value
-
-            if adc.polarity == 'neg':
-                if offsets[index] > saturation/100:
-                    print_message += 'Increase {} gain by 10^2\n'.format(adc.dev_name.value)
-                elif offsets[index] <= saturation/100 and offsets[index] > saturation/10:
-                    print_message += 'Increase {} gain by 10^1\n'.format(adc.dev_name.value)
-        print('-' * 30, file=stdout)
-        print(print_message[:-1], file=stdout)
-        print('-' * 30, file=stdout)
-
-    print(uid)
-    print('Done!')
+    print('ADC readout complete!')
 
 
 def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, rel_stop, num, find_min_max, retries, **kwargs):
@@ -468,7 +500,7 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
 
 def sleep(delay:float=1, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    RE(sleep_plan(delay))
+    yield from (sleep_plan(delay))
     yield None
 
 
@@ -484,7 +516,7 @@ def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
 
     RE(set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs))
 
-def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
+def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=5,
                           ir_gain:int=5, hs:bool=False, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     i0_gain = int(i0_gain)

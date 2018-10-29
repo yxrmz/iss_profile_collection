@@ -4,6 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 import shutil
 import time as ttime
+import pandas as pd
+
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
@@ -14,6 +16,8 @@ from datetime import datetime
 
 from databroker.assets.handlers_base import HandlerBase
 
+def print_now():
+    return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
 
 class BPM(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
@@ -138,7 +142,7 @@ class EncoderFS(Encoder):
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
 
-        if(self.connected):
+        if self.connected:
             print('Staging of {} starting'.format(self.name))
 
             filename = 'en_' + str(uuid.uuid4())[:8]
@@ -161,12 +165,14 @@ class EncoderFS(Encoder):
             self.filepath.put(self._ioc_full_path)
 
             self.resource_uid = self._reg.register_resource(
-                'PIZZABOX_ENC_FILE_TXT',
+                'PIZZABOX_ENC_FILE_TXT_PD',
                 ROOT_PATH, full_path,
-                {'chunk_size': self.chunk_size})
+                {})
 
             super().stage()
             print('Staging of {} complete'.format(self.name))
+        else:
+            raise ConnectionError(f'{self.name} cannot be connected')
 
     def unstage(self):
         if(self.connected):
@@ -206,6 +212,7 @@ class EncoderFS(Encoder):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
+
         ttime.sleep(1)  # wait for file to be written by pizza box
 
         workstation_file_root = '/mnt/xf08ida-ioc1/'
@@ -216,21 +223,18 @@ class EncoderFS(Encoder):
         # Let's move the file to the correct place
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
-
+        print(f'Encoder {print_now()}')
         if os.path.isfile(self._full_path):
-            with open(self._full_path, 'r') as f:
-                linecount = len(list(f))
-            chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
-            for chunk_num in range(chunk_count):
-                datum_uid = self._reg.register_datum(
-                    self.resource_uid, {'chunk_num': chunk_num})
-                data = {self.name: datum_uid}
-                yield {'data': data,
-                       'timestamps': {key: now for key in data}, 'time': now}
+            datum_uid = self._reg.register_datum(self.resource_uid, {})
+            data = {self.name: datum_uid}
+            yield {'data': data,
+                   'timestamps': {key: now for key in data}, 'time': now}
             print('Collect of {} complete'.format(self.name))
 
         else:
             print('Collect {}: File was not created'.format(self.name))
+        print(f'Encoder {print_now()}')
+
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -311,9 +315,9 @@ class DIFS(DigitalInput):
         self.filepath.put(self._ioc_full_path)
 
         self.resource_uid = self._reg.register_resource(
-            'PIZZABOX_DI_FILE_TXT',
+            'PIZZABOX_DI_FILE_TXT_PD',
             ROOT_PATH, full_path,
-            {'chunk_size': self.chunk_size})
+            {})
 
         super().stage()
         print('Staging of {} complete'.format(self.name))
@@ -367,16 +371,10 @@ class DIFS(DigitalInput):
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
         if os.path.isfile(self._full_path):
-            with open(self._full_path, 'r') as f:
-                linecount = len(list(f))
-            chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
-            for chunk_num in range(chunk_count):
-                datum_uid = self._reg.register_datum(self.resource_uid,
-                                                     {'chunk_num': chunk_num})
-                data = {self.name: datum_uid}
-
-                yield {'data': data,
-                       'timestamps': {key: now for key in data}, 'time': now}
+            datum_uid = self._reg.register_datum(self.resource_uid, {})
+            data = {self.name: datum_uid}
+            yield {'data': data,
+                   'timestamps': {key: now for key in data}, 'time': now}
             print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
@@ -391,6 +389,7 @@ class DIFS(DigitalInput):
                       'external': 'FILESTORE:',
                       'shape': [1024, 5],
                       'dtype': 'array'}}}
+
 
 class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
@@ -438,6 +437,7 @@ pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
 pb9 = PizzaBoxFS('XF:08IDA-CT{Enc09', name = 'pb9')
 pb9.enc1.pulses_per_deg = 360000
 
+
 class Adc(Device):
     file_size = Cpt(EpicsSignal, '}FileSize')
     reset = Cpt(EpicsSignal, '}Rst-Cmd')
@@ -457,6 +457,7 @@ class Adc(Device):
     dev_name = Cpt(EpicsSignal, '}DevName')
     dev_saturation = Cpt(EpicsSignal, '}DevSat')
     polarity = 'neg'
+    buffer_level =  Cpt(EpicsSignalRO, '}Buf:Rel-I')
 
     enable_sel = Cpt(EpicsSignal, '}Ena-Sel')
     enable_rb = Cpt(EpicsSignal, '}Ena-Sts')
@@ -497,7 +498,7 @@ class AdcFS(Adc):
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
-        if(self.connected):
+        if self.connected:
             print( 'Staging of {} starting'.format(self.name))
 
             filename = 'an_' + str(uuid.uuid4())[:8]
@@ -518,11 +519,13 @@ class AdcFS(Adc):
             self.filepath.put(self._ioc_full_path)
 
             self.resource_uid = self._reg.register_resource(
-                'PIZZABOX_AN_FILE_TXT',
+                'PIZZABOX_AN_FILE_TXT_PD',
                 ROOT_PATH, full_path,
-                {'chunk_size': self.chunk_size})
+                {})
             print('Staging of {} complete'.format(self.name))
             super().stage()
+        else:
+            raise ConnectionError(f'{self.name} cannot be connected')
 
     def unstage(self):
         if(self.connected):
@@ -556,13 +559,14 @@ class AdcFS(Adc):
 
         Return a dictionary with references to these documents.
         """
+        now = ttime.time()
         print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
-        now = ttime.time()
-        ttime.sleep(1)  # wait for file to be written by pizza box
+        while self.buffer_level.value > 0:
+            ttime.sleep(0.01)  # wait for file to be written by pizza box
 
         workstation_file_root = '/mnt/xf08idb-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
@@ -572,22 +576,17 @@ class AdcFS(Adc):
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         stat = shutil.copy(workstation_full_path, self._full_path)
 
+        print(f'Analog {print_now()}')
         if os.path.isfile(self._full_path):
-            with open(self._full_path, 'r') as f:
-                linecount = 0
-                for ln in f:
-                    linecount += 1
-            chunk_count = linecount // self.chunk_size + int(linecount % self.chunk_size != 0)
-            for chunk_num in range(chunk_count):
-                datum_uid = self._reg.register_datum(self.resource_uid,
-                                                     {'chunk_num': chunk_num})
-                data = {self.name: datum_uid}
-
-                yield {'data': data,
-                       'timestamps': {key: now for key in data}, 'time': now}
+            datum_uid = self._reg.register_datum(self.resource_uid, {})
+            data = {self.name: datum_uid}
+            yield {'data': data,
+                   'timestamps': {key: now for key in data}, 'time': now}
+            print(f'==========\n\ndata: {data}\n\n==========')
             print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
+        print(f'Analog {print_now()}')
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -696,3 +695,37 @@ db.reg.register_handler('PIZZABOX_ENC_FILE_TXT',
                         PizzaBoxEncHandlerTxt, overwrite=True)
 db.reg.register_handler('PIZZABOX_DI_FILE_TXT',
                         PizzaBoxDIHandlerTxt, overwrite=True)
+
+
+# New handlers to support reading files into a Pandas dataframe
+class PizzaBoxAnHandlerTxtPD(HandlerBase):
+    "Read PizzaBox text files using info from filestore."
+    def __init__(self, fpath):
+        self.df = pd.read_table(fpath, names=['ts_s', 'ts_ns', 'index', 'adc'], sep=' ')
+
+    def __call__(self):
+        return self.df
+
+class PizzaBoxDIHandlerTxtPD(HandlerBase):
+    "Read PizzaBox text files using info from filestore."
+    def __init__(self, fpath):
+        self.df = pd.read_table(fpath, names=['ts_s', 'ts_ns', 'encoder', 'index', 'di'], sep=' ')
+
+    def __call__(self):
+        return self.df
+
+class PizzaBoxEncHandlerTxtPD(HandlerBase):
+    "Read PizzaBox text files using info from filestore."
+    def __init__(self, fpath):
+        self.df = pd.read_table(fpath, names=['ts_s', 'ts_ns', 'encoder', 'index', 'state'], sep=' ')
+
+    def __call__(self):
+        return self.df
+
+
+db.reg.register_handler('PIZZABOX_AN_FILE_TXT_PD',
+                        PizzaBoxAnHandlerTxtPD, overwrite=True)
+db.reg.register_handler('PIZZABOX_DI_FILE_TXT_PD',
+                        PizzaBoxDIHandlerTxtPD, overwrite=True)
+db.reg.register_handler('PIZZABOX_ENC_FILE_TXT_PD',
+                        PizzaBoxEncHandlerTxtPD, overwrite=True)
