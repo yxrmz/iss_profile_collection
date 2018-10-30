@@ -8,6 +8,13 @@ from bluesky.plan_stubs import mv, mvr
 from random import random
 
 
+def remove_pb_files(uid):
+    run = db[uid]
+    for i in run['descriptors']:
+        if i['name'] != 'primary':
+            os.remove(i['data_keys'][i['name']]['filename'])
+
+
 def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Get needed data from db
     uuid = db[uuid]['start']['uid']
@@ -115,135 +122,6 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
 
 
 
-def tune_mono_pitch(scan_range, step, retries = 1, ax = None):
-    aver=pba1.adc7.averaging_points.get()
-    pba1.adc7.averaging_points.put(10)
-    num_points = int(round(scan_range/step) + 1)
-    over = 0
-
-    while(not over):
-        RE(tune([pba1.adc7], hhm.pitch, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba1_adc7_volt', 'hhm_pitch', ax=ax))
-        last_table = db.get_table(db[-1])
-        min_index = np.argmin(last_table['pba1_adc7_volt'])
-        hhm.pitch.move(last_table['hhm_pitch'][min_index])
-        print(hhm.pitch.position)
-
-        run = db[-1]
-        os.remove(run['descriptors'][0]['data_keys'][run['descriptors'][0]['name']]['filename'])
-        #for i in run['descriptors']:
-        #        if 'devname' in i['data_keys'][i['name']]
-
-        #os.remove(db[-1]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
-        if (num_points >= 10):
-            if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
-                over = 1
-            if retries > 1:
-                retries -= 1
-        else:
-            over = 1
-
-    pba1.adc7.averaging_points.put(aver)
-    print('Pitch tuning complete!')
-
-def tune_mono_pitch_encoder(scan_range, step, retries = 1, ax = None):
-    aver=pba1.adc7.averaging_points.get()
-    pba1.adc7.averaging_points.put(10)
-    num_points = int(round(scan_range/step) + 1)
-    over = 0
-	
-    start_position = pb2.enc3.pos_I.value
-
-    while(not over):
-        RE(tune([pba1.adc7, pb2.enc3], hhm.pitch, -scan_range/2, scan_range/2, 2, ''))
-
-        enc = xasdata.XASdataAbs.loadENCtrace('', '', db[-1]['descriptors'][0]['data_keys']['pb2_enc3']['filename'])
-        i0 = xasdata.XASdataAbs.loadADCtrace('', '', db[-1]['descriptors'][1]['data_keys']['pba1_adc7']['filename'])
-		
-        min_timestamp = np.array([i0[0,0], enc[0,0]]).max()
-        max_timestamp = np.array([i0[len(i0)-1,0], enc[len(enc)-1,0]]).min()
-        interval = i0[1,0] - i0[0,0]
-        timestamps = np.arange(min_timestamp, max_timestamp, interval)
-        enc_interp = np.array([timestamps, np.interp(timestamps, enc[:,0], enc[:,1])]).transpose()
-        i0_interp = np.array([timestamps, np.interp(timestamps, i0[:,0], i0[:,1])]).transpose()
-        len_to_erase = int(np.round(0.015 * len(i0_interp)))
-        enc_interp = enc_interp[len_to_erase:]
-        i0_interp = i0_interp[len_to_erase:]
-		
-        xas_abs.data_manager.process_equal(i0_interp[:,0],
-                                           enc_interp[:,1],
-                                           i0_interp[:,1],
-                                           i0_interp[:,1],
-                                           i0_interp[:,1],
-                                           10)
-												
-        xas_abs.data_manager.en_grid = xas_abs.data_manager.en_grid[5:-5]
-        xas_abs.data_manager.i0_interp = xas_abs.data_manager.i0_interp[5:-5]
-		#plt.plot(enc_interp[:,1], i0_interp[:,1]) #not binned
-		
-        plt.plot(xas_abs.data_manager.en_grid, xas_abs.data_manager.i0_interp) #binned
-        minarg = np.argmin(xas_abs.data_manager.i0_interp)
-        enc_diff = xas_abs.data_manager.en_grid[minarg] - start_position
-		
-        pitch_pos = enc_diff / 204 # Enc to pitch convertion
-        print('Delta Pitch = {}'.format(pitch_pos))
-		#convert enc_diff to position (need to know the relation)
-		#then move to the new position
-		
-        print(hhm.pitch.position)
-        #os.remove(db[-1]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
-        over = 1
-
-    pba1.adc7.averaging_points.put(aver)
-    print('Pitch tuning complete!')
-
-
-def tune_mono_y(scan_range, step, retries = 1, ax = None):
-    aver=pba1.adc7.averaging_points.get()
-    pba1.adc7.averaging_points.put(10)
-    num_points = int(round(scan_range/step) + 1)
-    over = 0
-
-    while(not over):
-        RE(tune([pba1.adc7], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('pba1_adc7_volt', 'hhm_y', ax=ax))
-        last_table = db.get_table(db[-1])
-        min_index = np.argmin(last_table['pba1_adc7_volt'])
-        hhm.y.move(last_table['hhm_y'][min_index])
-        print('New position: {}'.format(hhm.y.position))
-        run = db[-1]
-        os.remove(run['descriptors'][0]['data_keys'][run['descriptors'][0]['name']]['filename'])
-        #os.remove(db[-1]['descriptors'][0]['data_keys']['pba1_adc7']['filename'])
-        if (num_points >= 10):
-            if (((min_index > 0.2 * num_points) and (min_index < 0.8 * num_points)) or retries == 1):
-                over = 1
-            if retries > 1:
-                retries -= 1
-        else:
-            over = 1
-
-    pba1.adc7.averaging_points.put(aver)
-    print('Y tuning complete!')
-
-
-def tune_mono_y_bpm(scan_range, step, retries = 1, ax = None):
-    num_points = int(round(scan_range/step) + 1)
-    over = 0
-
-    while(not over):
-        RE(tune([bpm_fm], hhm.y, -scan_range/2, scan_range/2, num_points, ''), LivePlot('bpm_fm_stats1_total', 'hhm_y', ax=ax))
-        last_table = db.get_table(db[-1])
-        max_index = np.argmax(last_table['bpm_fm_stats1_total'])
-        hhm.y.move(last_table['hhm_y'][max_index])
-        print('New position: {}'.format(hhm.y.position))
-        if (num_points >= 10):
-            if (((max_index > 0.2 * num_points) and (max_index < 0.8 * num_points)) or retries == 1):
-                over = 1
-            if retries > 1:
-                retries -= 1
-        else:
-            over = 1
-
-    print('Y tuning complete!')
-
 
 def gauss(x, *p):
     A, mu, sigma = p
@@ -291,47 +169,6 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
     return table
 
 
-def tuning_scan(motor, detector, channel, scan_range, scan_step, n_tries = 3,target = 'max'):
-    channel = f'{detector.name}_{channel}'
-
-    for jj in range(n_tries):
-        motor_init_position = motor.read()[motor.name]['value']
-        min_limit = motor_init_position - scan_range / 2
-        max_limit = motor_init_position + scan_range / 2 + scan_step / 2
-        scan_positions = np.arange(min_limit,max_limit,scan_step)
-
-        scan_range = (scan_positions[-1] - scan_positions[0])
-        min_threshold = scan_positions[0] + scan_range / 10
-        max_threshold = scan_positions[-1] - scan_range / 10
-
-        plan = bp.list_scan([detector], motor,scan_positions)
-        if hasattr(detector, 'kickoff'):
-            plan = bpp.fly_during_wrapper(plan, [detector])
-        uid = (yield from plan)
-        hdr = db[uid]
-        idx = getattr(hdr.table()[channel], f'idx{target}')()
-        motor_pos = hdr.table()[motor.name][idx]
-        detector_value = hdr.table()[channel][idx]
-        print(f'Motor position {motor_pos}')
-        print(f'Max threshold {max_threshold}')
-        print(f'Min threshold {min_threshold}')
-        if motor_pos < min_threshold:
-            print('min')
-            print(f' Starting {jj+2} try')
-            yield from bps.mv(motor,min_limit)
-        elif max_threshold < motor_pos:
-            print('max')
-            print(f' Starting {jj+2} try')
-            yield from bps.mv(motor, max_limit)
-        else:
-            print('move to point')
-            yield from bps.mv(motor, motor_pos)
-            break
-
-
-    print(detector_value)
-    print(idx)
-
 
 def set_foil_reference(element = None):
 
@@ -377,4 +214,158 @@ def random_step(x: float = 0,y: float = 0, **kwargs):
 
 
 
+def sleep(delay:float=1, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    yield from bps.sleep(float(delay))
+    yield None
 
+
+def get_offsets(times: int = 20, *args, **kwargs):
+    """
+       Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
+
+       Parameters
+       ----------
+       num : int
+           Number of points to acquire and average for each ion chamber
+
+
+       Returns
+       -------
+       uid : list(str)
+           List containing the unique id of the scan
+
+
+       See Also
+       --------
+       :func:`tscan`
+       """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    adcs = list(args)
+    if not len(adcs):
+        adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+
+    old_avers = []
+    for adc in adcs:
+        old_avers.append(adc.averaging_points.get())
+        adc.averaging_points.put(15)
+
+    try:
+        yield from bps.mv(shutter_ph_2b, 'Close')
+    except FailedStatus:
+        print('Error: Photon shutter failed to close')
+        pass
+
+    uid = (yield from get_offsets_plan(adcs, num=int(times)))
+
+    try:
+        yield from bps.mv(shutter_ph_2b, 'Open')
+    except FailedStatus:
+        print('ERROR: Photon shutter failed to open')
+
+    print('Updating values...')
+
+    arrays = []
+    offsets = []
+    df = db[uid].table()
+
+    for index, adc in enumerate(adcs):
+        key = '{}_volt'.format(adc.name)
+        array = df[key]
+        offset = np.mean(df[key][2:int(times)])
+
+        arrays.append(array)
+        offsets.append(offset)
+        adc.offset.put(offset)
+        print('{}\n New offset for {}) is  {}'.format(array, adc.dev_name.value, offset))
+        adc.averaging_points.put(old_avers[index])
+
+    remove_pb_files(uid)
+
+def get_adc_readout(times: int = 20, *args, **kwargs):
+    """
+    Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
+
+    Parameters
+    ----------
+    num : int
+        Number of points to acquire and average for each ion chamber
+
+
+    Returns
+    -------
+    uid : list(str)
+        List containing the unique id of the scan
+
+
+    See Also
+    --------
+    :func:`tscan`
+    """
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    adcs = list(args)
+    if not len(adcs):
+        adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+
+    old_avers = []
+    for adc in adcs:
+        old_avers.append(adc.averaging_points.get())
+        adc.averaging_points.put(15)
+
+    uid = (yield from get_offsets_plan(adcs, num=int(times)))
+
+    readouts = []
+    df = db[uid].table()
+
+    for index, adc in enumerate(adcs):
+        key = '{}_volt'.format(adc.name)
+        array = df[key]
+        readout = np.mean(df[key][2:int(times)])
+
+        readouts.append(readout)
+        print('Channel readout for {}  is {} V'.format(adc.dev_name.value, readout))
+        adc.averaging_points.put(old_avers[index])
+
+    remove_pb_files(uid)
+
+    print('ADC readout complete!')
+
+def adjust_ic_gains(*args, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    detectors = list(args)
+    if not len(detectors):
+        detectors = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    current_lut = int(hhm.lut_number_rbv.value)
+    traj_manager = trajectory_manager(hhm)
+    info = traj_manager.read_info(silent=True)
+    if 'max' not in info[str(current_lut)] or 'min' not in info[str(current_lut)]:
+        raise Exception(
+            'Could not find max or min information in the trajectory.'
+            ' Try sending it again to the controller.')
+
+    e_min = int(info[str(current_lut)]['min'])
+    e_max = int(info[str(current_lut)]['max'])
+
+    '''
+    try:
+        yield from bps.mv(shutter_ph_2b, 'Open')
+    except FailedStatus:
+        print('ERROR: Photon shutter failed to open')
+    shutter.open()    
+    '''
+
+    scan_positions = np.arange(e_max + 50, e_min - 50, -50)
+
+    yield from bp.list_scan(detectors, hhm.energy, scan_positions)
+    plan = bp.list_scan([detector], motor, scan_positions)
+    flyers = []
+    for detector in detectors:
+        if hasattr(detector, 'kickoff'):
+            flyers.append(detector)
+    plan = bpp.fly_during_wrapper(plan, flyers)
+    uid = (yield from plan)
+    print('ADC readout complete!')
+
+    remove_pb_files(uid)
