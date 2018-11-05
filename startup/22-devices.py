@@ -186,11 +186,18 @@ class ICAmplifier(Device):
 
     def get_gain(self):
         if self.low_noise_gain.value == 0:
+            return [int(self.high_speed_gain.enum_strs[self.high_speed_gain.value][-1]),1]
+        elif self.high_speed_gain.value == 0:
+            return [int(self.low_noise_gain.enum_strs[self.low_noise_gain.value][-1]),0]
+
+        '''
+        if self.low_noise_gain.value == 0:
             return [self.high_speed_gain.enum_strs[self.high_speed_gain.value], 1]
         elif self.high_speed_gain.value == 0:
             return [self.low_noise_gain.enum_strs[self.low_noise_gain.value], 0]
         else:
             return ['0', 0]
+        '''
 
 
 i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',

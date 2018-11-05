@@ -5,6 +5,7 @@ import time
 from scipy.optimize import curve_fit
 from isstools.xasdata import xasdata
 from bluesky.plan_stubs import mv, mvr
+import bluesky.preprocessors as bpp
 from random import random
 
 
@@ -332,11 +333,14 @@ def get_adc_readout(times: int = 20, *args, **kwargs):
 
     print('ADC readout complete!')
 
-def adjust_ic_gains(*args, **kwargs):
+def adjust_ic_gains( **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    detectors = list(args)
-    if not len(detectors):
-        detectors = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+
+    if 'detectors' not in kwargs:
+        detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    else:
+        detectors = kwargs['detectors']
+
     current_lut = int(hhm.lut_number_rbv.value)
     traj_manager = trajectory_manager(hhm)
     info = traj_manager.read_info(silent=True)
@@ -358,14 +362,37 @@ def adjust_ic_gains(*args, **kwargs):
 
     scan_positions = np.arange(e_max + 50, e_min - 50, -50)
 
-    yield from bp.list_scan(detectors, hhm.energy, scan_positions)
-    plan = bp.list_scan([detector], motor, scan_positions)
+    plan = bp.list_scan(detectors, hhm.energy, scan_positions)
     flyers = []
     for detector in detectors:
         if hasattr(detector, 'kickoff'):
             flyers.append(detector)
-    plan = bpp.fly_during_wrapper(plan, flyers)
-    uid = (yield from plan)
-    print('ADC readout complete!')
+
+    uid = (yield from bpp.fly_during_wrapper(plan, flyers))
+
+    table = db[uid].table()
+    for det in detectors:
+        name = f'{det.name}_volt'
+        current_gain = det.amp.get_gain()[0]
+        if det.polarity == 'neg':
+            trace_extreme = table[name].min()
+        else:
+            trace_extreme = table[name].max()
+
+        print(f'Extreme value {trace_extreme} for detector {det.channel}')
+        if abs(trace_extreme) > 3.7:
+            print(f'Decreasing gain for detector {det.channel}')
+            yield from det.amp.set_gain_plan(current_gain-1, False)
+        elif abs(trace_extreme) <= 3.7 and abs(trace_extreme) > 0.35:
+            print(f'Correct gain for detector {det.channel}')
+        elif abs(trace_extreme) <= 0.35:
+            print(f'Increasing gain for detector {det.channel}')
+            yield from det.amp.set_gain_plan(current_gain + 1, False)
+
+    print('[Adjust Gain] Complete\n')
+
+
+
+
 
     remove_pb_files(uid)
