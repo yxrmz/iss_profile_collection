@@ -352,13 +352,14 @@ def adjust_ic_gains( **kwargs):
     e_min = int(info[str(current_lut)]['min'])
     e_max = int(info[str(current_lut)]['max'])
 
-    '''
+
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
-    shutter.open()    
-    '''
+    shutter.open()
+
+
 
     scan_positions = np.arange(e_max + 50, e_min - 50, -50)
 
@@ -367,32 +368,29 @@ def adjust_ic_gains( **kwargs):
     for detector in detectors:
         if hasattr(detector, 'kickoff'):
             flyers.append(detector)
+    for jj in range(2):
+        uid = (yield from bpp.fly_during_wrapper(plan, flyers))
 
-    uid = (yield from bpp.fly_during_wrapper(plan, flyers))
+        table = db[uid].table()
+        for det in detectors:
+            name = f'{det.name}_volt'
+            current_gain = det.amp.get_gain()[0]
+            if det.polarity == 'neg':
+                trace_extreme = table[name].min()
+            else:
+                trace_extreme = table[name].max()
 
-    table = db[uid].table()
-    for det in detectors:
-        name = f'{det.name}_volt'
-        current_gain = det.amp.get_gain()[0]
-        if det.polarity == 'neg':
-            trace_extreme = table[name].min()
-        else:
-            trace_extreme = table[name].max()
+            print(f'Extreme value {trace_extreme} for detector {det.channel}')
+            if abs(trace_extreme) > 3.7:
+                print(f'Decreasing gain for detector {det.channel}')
+                yield from det.amp.set_gain_plan(current_gain-1, False)
 
-        print(f'Extreme value {trace_extreme} for detector {det.channel}')
-        if abs(trace_extreme) > 3.7:
-            print(f'Decreasing gain for detector {det.channel}')
-            yield from det.amp.set_gain_plan(current_gain-1, False)
-        elif abs(trace_extreme) <= 3.7 and abs(trace_extreme) > 0.35:
-            print(f'Correct gain for detector {det.channel}')
-        elif abs(trace_extreme) <= 0.35:
-            print(f'Increasing gain for detector {det.channel}')
-            yield from det.amp.set_gain_plan(current_gain + 1, False)
+            elif abs(trace_extreme) <= 3.7 and abs(trace_extreme) > 0.35:
+                print(f'Correct gain for detector {det.channel}')
+            elif abs(trace_extreme) <= 0.35:
+                print(f'Increasing gain for detector {det.channel}')
+                yield from det.amp.set_gain_plan(current_gain + 1, False)
 
+    shutter.close()
     print('[Adjust Gain] Complete\n')
-
-
-
-
-
     remove_pb_files(uid)
