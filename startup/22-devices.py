@@ -90,6 +90,24 @@ class TwoButtonShutterISS(TwoButtonShutter):
     def stop(self):
         pass
 
+    class CannotActuateShutter(Exception):
+        pass
+
+
+    def close(self):
+        try:
+            yield from bps.mv(shutter_ph_2b, 'Close')
+        except FailedStatus:
+            raise self.CannotActuateShutter(f'Error: Photon shutter failed to close.')
+
+    def open(self):
+        try:
+            yield from bps.mv(shutter_ph_2b, 'Open')
+        except FailedStatus:
+            raise self.CannotActuateShutter(f'Error: Photon shutter failed to open.')
+
+
+
 shutter_ph_2b = TwoButtonShutterISS('XF:08IDA-PPS{PSh}', name='shutter_ph_2b')
 shutter_fe_2b = TwoButtonShutterISS('XF:08ID-PPS{Sh:FE}', name='shutter_fe_2b')
 

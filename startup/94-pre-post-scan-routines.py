@@ -171,7 +171,7 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
 
 
-def set_foil_reference(element = None):
+def set_reference_foil(element = None):
 
     # Adding reference foil element list
     with open('/nsls2/xf08id/settings/json/foil_wheel.json') as fp:
@@ -221,7 +221,11 @@ def sleep(delay:float=1, **kwargs):
     yield None
 
 
-def get_offsets(times: int = 20, *args, **kwargs):
+class CannotActuateShutter(Exception):
+    pass
+
+
+def get_adc_offsets(times: int = 20, *args, **kwargs):
     """
        Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -255,15 +259,15 @@ def get_offsets(times: int = 20, *args, **kwargs):
     try:
         yield from bps.mv(shutter_ph_2b, 'Close')
     except FailedStatus:
-        print('Error: Photon shutter failed to close')
-        pass
+        raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
 
     uid = (yield from get_offsets_plan(adcs, num=int(times)))
 
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:
-        print('ERROR: Photon shutter failed to open')
+        print('Error: Photon shutter failed to open')
+
 
     print('Updating values...')
 
@@ -284,7 +288,7 @@ def get_offsets(times: int = 20, *args, **kwargs):
 
     remove_pb_files(uid)
 
-def get_adc_readout(times: int = 20, *args, **kwargs):
+def get_adc_readouts(times: int = 20, *args, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
 
@@ -314,8 +318,12 @@ def get_adc_readout(times: int = 20, *args, **kwargs):
     for adc in adcs:
         old_avers.append(adc.averaging_points.get())
         adc.averaging_points.put(15)
-
+    try:
+        yield from bps.mv(shutter_ph_2b, 'Open')
+    except FailedStatus:
+        raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
     uid = (yield from get_offsets_plan(adcs, num=int(times)))
+
 
     readouts = []
     df = db[uid].table()

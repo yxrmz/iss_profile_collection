@@ -86,7 +86,7 @@ def tscan_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, ref
     uids = []
 
     current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
-    yield from set_foil_reference(current_element)
+    yield from set_reference_foil(current_element)
 
     for indx in range(int(n_cycles)):
         name_n = '{} {:03d}'.format(name, indx + 1)

@@ -11,18 +11,18 @@ motor.move = motor.set
 print("took {} sec".format(time.time()-t1))
 
 
-detector_dictionary = { bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
-                        bpm_cm.name: {'obj': bpm_cm, 'elements': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
-                        bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
-                        bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
-                        bpm_es.name: {'obj': bpm_es, 'elements':['bpm_es_stats1_total','bpm_es_stats2_total']},
-                        pb9.enc1.name: {'obj': pb9.enc1, 'elements': ['pb9_enc1_pos_I']},
-                        it.name: {'obj': it, 'elements': ['pba1_adc1_volt'], 'name':'it'},
-                        iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt'], 'name':'iff'},
-                        i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt'], 'name':'i0'},
-                        ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt'], 'name':'ir'},
-                        pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
-                        xia1.name: {'obj': xia1, 'elements': xia_list}}
+detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
+            bpm_cm.name: {'obj': bpm_cm, 'elements': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
+            bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
+            bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
+            bpm_es.name: {'obj': bpm_es, 'elements':['bpm_es_stats1_total','bpm_es_stats2_total']},
+            pb9.enc1.name: {'obj': pb9.enc1, 'elements': ['pb9_enc1_pos_I']},
+            it.name: {'obj': it, 'elements': ['pba1_adc1_volt']},
+            iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
+            i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt']},
+            ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
+            pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
+            xia1.name: {'obj': xia1, 'elements': xia_list}}
 
 motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
                'slits_v_pos': {'name': slits.v_pos.name, 'description':'B1 Slit Vertical Position','object': slits.v_pos},
@@ -57,14 +57,12 @@ motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1
                'six_axes_stage_z': {'name': six_axes_stage.z.name, 'description':'Six Axes Stage Z', 'object': six_axes_stage.z},
                'six_axes_stage_pitch': {'name': six_axes_stage.pitch.name, 'description':'Six Axes Stage Pitch', 'object': six_axes_stage.pitch},
                'six_axes_stage_yaw': {'name': six_axes_stage.yaw.name, 'description':'Six Axes Stage Yaw', 'object': six_axes_stage.yaw},
-               'six_axes_stage_roll': {'name': six_axes_stage.roll.name, 'description':'Six Axes Stage Roll', 'object': six_axes_stage.roll},
-               'gonio_meter_th1': {'name': gonio_meter.th1.name, 'description':'Gonio Meter Theta1', 'object': gonio_meter.th1},
-               'gonio_meter_th2': {'name': gonio_meter.th2.name, 'description':'Gonio Meter Theta2', 'object': gonio_meter.th2}
+               'six_axes_stage_roll': {'name': six_axes_stage.roll.name, 'description':'Six Axes Stage Roll', 'object': six_axes_stage.roll}
               }
 
-sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
-                 {'x': samplexy.x.name, 'y': samplexy.y.name},
-                 {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
+# sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
+#                  {'x': samplexy.x.name, 'y': samplexy.y.name},
+#                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
 auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
                                'motor' : bpm_fm.ins,
@@ -111,32 +109,43 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'ir_amp': ir_amp,
                  'iff_amp': iff_amp}
 
-xlive_gui = xlive.XliveGui([tscan_plan, tscanxia_plan, tscancam_plan],
-                                 [get_offsets, sleep, random_step,  set_gains, adjust_ic_gains],
-                                 prep_traj_plan, 
-                                 RE,
-                                 db,
-                                 nsls_ii,
-                                 hhm,
-                                 shutters_dictionary,
-                                 detector_dictionary,
-                                 motors_dictionary,
-                                 general_scan,
-                                 sample_stage = giantxy,
-                                 reference_foil_func = set_foil_reference,
-                                 adjust_ic_gains_func =  adjust_ic_gains,
-                                 write_html_log = write_html_log,
-                                 auto_tune_elements = auto_tune,
-                                 ic_amplifiers = ic_amplifiers,
-                                 set_gains_offsets = set_gains_and_offsets,
-                                 prepare_bl = [prepare_bl_plan, prepare_bl_def],
-                                 sample_stages = sample_stages,
-                                 processing_sender = sender,
-                                 job_submitter=job_submitter,
-                                 bootstrap_servers=['cmb01:9092', 'cmb02:9092'],
-                                 kafka_topic="iss-processing", 
-                                 window_title="XLive @ISS/08-ID NSLS-II",
-                                 )
+xlive_gui = xlive.XliveGui(plan_funcs={
+                                'tscan_plan':       tscan_plan,
+                                'tscanxia_plan':    tscanxia_plan,
+                                'tscancam_plan':    tscancam_plan,
+                           },
+                           service_plan_funcs={
+                                'get_adc_offsets': get_adc_offsets,
+                                'sleep':             sleep,
+                                'random_step':      random_step,
+                                'set_gains':        set_gains,
+                                'adjust_ic_gains': adjust_ic_gains,
+                                'prepare_bl_plan': prepare_bl_plan
+                           },
+                           aux_plan_funcs ={
+                               'get_adc_readouts': get_adc_readouts,
+                               'prepare_traj_plan': prep_traj_plan,
+                               'general_scan': general_scan,
+                               'set_reference_foil': set_reference_foil,
+                               'write_html_log':     write_html_log
+
+                           },
+                           RE = RE,
+                           db = db,
+                           accelerator = nsls_ii,
+                           hhm = hhm,
+                           shutters_dict =shutters_dictionary,
+                           det_dict=detector_dictionary,
+                           motors_dict=motors_dictionary,
+                           sample_stage = giantxy,
+                           auto_tune_elements = auto_tune,
+                           ic_amplifiers = ic_amplifiers,
+                           processing_sender = sender,
+                           job_submitter=job_submitter,
+                           bootstrap_servers=['cmb01:9092', 'cmb02:9092'],
+                           kafka_topic="iss-processing",
+                           window_title="XLive @ISS/08-ID NSLS-II",
+                           )
 
 
 def xlive():
