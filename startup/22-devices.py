@@ -33,6 +33,7 @@ class WPS(Device):
 
 wps1 = WPS('XF:08IDB-OP{WPS:01', name='wps1')
 
+wps1.hv305.tolerance = 0
 
 class Shutter(Device):
 

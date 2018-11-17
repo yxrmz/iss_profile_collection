@@ -1,4 +1,6 @@
-def prepare_bl_plan(energy: int = -1):
+
+import time as ttime
+def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
     energy_ranges = [
 
         {
@@ -6,8 +8,9 @@ def prepare_bl_plan(energy: int = -1):
             'energy_end': 6000,
             'He_flow': 5,
             'N2_flow': 1,
-            'IC curent': 1000,
+            'IC_voltage': 1000,
             'HHRM': 0,
+            'CM1':0,
             'Filtebox': 1,
         },
         {
@@ -15,17 +18,29 @@ def prepare_bl_plan(energy: int = -1):
             'energy_end': 10000,
             'He_flow': 5,
             'N2_flow': 3,
-            'IC curent': 1500,
+            'IC_voltage': 1700,
             'HHRM': 0,
+            'CM1':0,
             'Filtebox': -69,
         },
         {
             'energy_start': 10000,
+            'energy_end': 13000,
+            'He_flow': 5,
+            'N2_flow': 5,
+            'IC_voltage': 1700,
+            'HHRM': 80,
+            'CM1':0,
+            'Filtebox': -139,
+        },
+        {
+            'energy_start': 13000,
             'energy_end': 17000,
             'He_flow': 5,
             'N2_flow': 5,
-            'IC curent': 1700,
+            'IC_voltage': 1700,
             'HHRM': 80,
+            'CM1': 40,
             'Filtebox': -139,
         },
         {
@@ -33,11 +48,13 @@ def prepare_bl_plan(energy: int = -1):
             'energy_end': 35000,
             'He_flow': 2,
             'N2_flow': 5,
-            'IC curent': 1900,
+            'IC_voltage': 1900,
             'HHRM': 80,
+            'CM1': 40,
             'Filtebox': -209,
         },
     ]
+
 
     He_flow_setter = gas_he
     N2_flow_setter = gas_n2
@@ -52,13 +69,22 @@ def prepare_bl_plan(energy: int = -1):
     energy_range = [e_range for e_range in energy_ranges if
                   e_range['energy_end'] > energy >= e_range['energy_start']]
     if not energy_range:
-        print('Energy is outside of the beamline energy range')
+        print('ERROR: Energy is outside of the beamline energy range')
         return
+    print(f'[Prepare BL] Setting up the beamline to {energy} eV')
 
 
+    if move_cm_mirror == True:
+        start_cm_position = cm1.x.position
+        end_cm_position = energy_range['CM1']
+        cm_motion_range = abs(end_cm_position-start_cm_position)
+        moving_cm_mirror = cm1.x.set(end_cm_position)
 
     for high_voltage_setter in high_voltage_setters:
         yield from bps.mv(high_voltage_setter, safe_high_voltage)
+
+    start_time = ttime.time()
+
 
     yield from bps.mv(
                         He_flow_setter,energy_range['He_flow'],
@@ -70,14 +96,40 @@ def prepare_bl_plan(energy: int = -1):
 
     yield from bps.mv(high_voltage_setters, safe_high_voltage)
 
+    #close shutter before moving the filter
+
     shutter_fe_2b.close()
-
     yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
+    shutter_fe_2b.open()
+
+    while ttime.time < (start_time + 120):
+        print(f'[Prepare Beamline] {int(120 - (ttime.time-start_time))} s left to settle the ion chamber gas flow')
+        yield from bps.sleep(5)
+
+    for high_voltage_setter in high_voltage_setters:
+        yield from bps.mv(high_voltage_setter, energy_range['IC_voltage'])
+
+
+    if move_cm_mirror == True
+        while moving_cm_mirror.done is False:
+            motion_so_far = cm1.x.position
+            percent_complete = int(abs(motion_so_far-start_cm_position)/cm_motion_range*100)
+            print(f'[Prepare Beamline]CM1 motion is {percent_complete} % complete')
+
+    print('[Prepare Beamline] Beamline preparation complete!')
 
 
 
 
-#logic for
+
+
+
+
+
+
+
+
+
 
 
 
