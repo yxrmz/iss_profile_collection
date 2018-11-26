@@ -10,7 +10,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
             'IC_voltage': 1000,
             'HHRM': 0,
             'CM1':0,
-            'Filtebox': 1,
+            'Filterbox': 1,
         },
         {
             'energy_start': 6000,
@@ -20,7 +20,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
             'IC_voltage': 1700,
             'HHRM': 0,
             'CM1':0,
-            'Filtebox': -69,
+            'Filterbox': -69,
         },
         {
             'energy_start': 10000,
@@ -30,7 +30,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
             'IC_voltage': 1700,
             'HHRM': 8,
             'CM1':0,
-            'Filtebox': -139,
+            'Filterbox': -139,
         },
         {
             'energy_start': 13000,
@@ -40,7 +40,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
             'IC_voltage': 1700,
             'HHRM': 20,
             'CM1': 2,
-            'Filtebox': -139,
+            'Filterbox': -139,
         },
         {
             'energy_start': 17000,
@@ -50,7 +50,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
             'IC_voltage': 1900,
             'HHRM': 8,
             'CM1': 2,
-            'Filtebox': -209,
+            'Filterbox': -209,
         },
     ]
 
@@ -68,25 +68,26 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
     if not energy_range:
         print('ERROR: Energy is outside of the beamline energy range')
         return
-    print(f'[Prepare BL] Setting up the beamline to {energy} eV')
+    print(f'[Prepare Beamline] Setting up the beamline to {energy} eV')
 
-
+    print('[Prepare Beamline] Starting...')
     if move_cm_mirror == True:
         start_cm_position = cm_setter.position
         end_cm_position = energy_range['CM1']
         cm_motion_range = abs(end_cm_position-start_cm_position)
 
-        moving_cm_mirror = cm_setter.set(end_cm_position)
+        moving_cm = cm_setter.set(end_cm_position)
 
     moving_hhrm = hhrm_setter.set(energy_range['HHRM'])
+
 
     hv_setter_values = []
     for high_voltage_setter in high_voltage_setters:
         hv_setter_values.append(high_voltage_setter)
         hv_setter_values.append(safe_high_voltage)
-
-
     yield from bps.mv(*hv_setter_values)
+    print('[Prepare Beamline] High voltage supply is set to safe values')
+
 
     start_time = ttime.time()
 
@@ -94,31 +95,34 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
                         He_flow_setter,energy_range['He_flow'],
                         N2_flow_setter,energy_range['N2_flow'],
                       )
+    print('[Prepare Beamline] Ion chamber gas composition set')
 
+    # print('[Prepare Beamline] Closing frontend shutter before selecting filter  ')
+    # #close shutter before moving the filter
+    # try:
+    #     yield from bps.mv(shutter_fe_2b, 'Close')
+    # except FailedStatus:
+    #     raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
+    #
+    # yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
 
+    print('[Prepare Beamline] Filter set')
+
+    while ttime.time() < (start_time + 120):
+        print(f'[Prepare Beamline] {int(120 - (ttime.time()-start_time))} s left to settle the ion chamber gas flow')
+        yield from bps.sleep(5)
 
     while not moving_hhrm.done:
-        print('waiting')
+        print('')
         yield from bps.sleep(1)
 
 
 
     '''
+    
+   
 
-    #close shutter before moving the filter
-
-   try:
-        yield from bps.mv(shutter_ph_2b, 'Close')
-   except FailedStatus:
-        raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
-
-
-    yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
-    shutter_fe_2b.open()
-
-    while ttime.time < (start_time + 120):
-        print(f'[Prepare Beamline] {int(120 - (ttime.time-start_time))} s left to settle the ion chamber gas flow')
-        yield from bps.sleep(5)
+    
 
     for high_voltage_setter in high_voltage_setters:
         yield from bps.mv(high_voltage_setter, energy_range['IC_voltage'])
