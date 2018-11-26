@@ -347,7 +347,7 @@ def execute_trajectory(name, **metadata):
         full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
 
         md = {'plan_args': {},
-              'plan_name': 'execute_trajectory',
+              'plan_name': 'execute_trajectory1',
               'experiment': 'transmission',
               'name': name,
               'interp_filename': interp_fn,
@@ -360,8 +360,12 @@ def execute_trajectory(name, **metadata):
               'pulses_per_degree': hhm.pulses_per_deg,
 }
         for flyer in flyers:
+            print(f'Flyer is {flyer}')
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
+            if hasattr(flyer, 'amp'):
+                print('has gain')
+                md['{} gain'.format(flyer.name)]= flyer.amp.get_gain()[0]
         md.update(**metadata)
         yield from bps.open_run(md=md)
 
@@ -488,6 +492,8 @@ def execute_camera_trajectory(name, **metadata):
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
+
+
         md.update(**metadata)
         yield from bps.open_run(md=md)
 

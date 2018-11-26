@@ -92,8 +92,6 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
                         hhrm_setter,energy_range['HHRM']
                       )
 
-
-
     yield from bps.mv(high_voltage_setters, safe_high_voltage)
 
     #close shutter before moving the filter
@@ -110,7 +108,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
         yield from bps.mv(high_voltage_setter, energy_range['IC_voltage'])
 
 
-    if move_cm_mirror == True
+    if move_cm_mirror == True:
         while moving_cm_mirror.done is False:
             motion_so_far = cm1.x.position
             percent_complete = int(abs(motion_so_far-start_cm_position)/cm_motion_range*100)
@@ -143,8 +141,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
 
 
 
-
-    '''
+'''
 
 def prepare_bl_plan(energy: int = -1, print_messages=True, debug=False):
     if debug:

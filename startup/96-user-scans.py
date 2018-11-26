@@ -81,9 +81,11 @@ def tscan_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, ref
     '''
 
     sys.stdout = kwargs.pop('stdout', sys.stdout)
+    print(print_now())
 
     print('Running tscan_plan')
     uids = []
+    print(print_now())
 
     current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
     yield from set_reference_foil(current_element)
@@ -91,9 +93,14 @@ def tscan_plan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, ref
     for indx in range(int(n_cycles)):
         name_n = '{} {:03d}'.format(name, indx + 1)
         print(name_n)
+
         yield from prep_traj_plan()
+        print(f'Trajectory prepared at {print_now()}')
+
         uid = (yield from execute_trajectory(name_n, comment=comment))
         uids.append(uid)
+
+        print(f'Trajectory excecuted {print_now()}')
 
         yield from bps.sleep(float(delay))
     print('Scan is complete!')

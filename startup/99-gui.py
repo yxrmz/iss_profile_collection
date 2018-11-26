@@ -168,3 +168,24 @@ sys.stderr = xlive_gui.emitstream_err
 #        xlive_gui.toggle_piezo_fb(0)
 
 #atexit.register(cleaning)
+
+#def cleaning():
+#    if xlive_gui.piezo_thread.isRunning():
+#        xlive_gui.toggle_piezo_fb(0)
+
+#atexit.register(cleaning)
+
+from isstools.xasdata.xasdata_lite import xasdata_load_dataset_from_files, xasdata_bin_dataset, xasdata_interpolate_dataset
+
+
+def load():
+    start = timer()
+    uid = db[-1]['start']['uid']
+    aa = xasdata_load_dataset_from_files(db, uid)
+    print(f'took {timer()-start}')
+    return aa
+
+
+
+
+
