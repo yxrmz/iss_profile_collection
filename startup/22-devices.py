@@ -3,25 +3,63 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    DeviceStatus)
 from nslsii.devices import TwoButtonShutter
 import bluesky.plans as bp
-
+from ophyd.status import SubscriptionStatus
 
 class MFC(Device):
     flow = Cpt(EpicsSignal, '-RB', write_pv='-SP')
 
+
 gas_he = MFC('XF:08IDB-OP{IC}FLW:He', name='gas_he')
+gas_he.flow.tolerance = 0.01
 gas_n2 = MFC('XF:08IDB-OP{IC}FLW:N2', name='gas_n2')
+gas_n2.flow.tolerance = 0.01
+
+
+
+
+
+class DeviceWithNegativeReadBack(Device):
+    read_pv = Cpt(EpicsSignal, 'V-Sense')
+    write_pv =  Cpt(EpicsSignal, 'V-Set')
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._moving = None
+
+
+    def set(self,value):
+
+        def callback(*args,**kwargs):
+            if self._moving and  abs(abs(self.read_pv.value)-abs(self.write_pv.value)) < 0.5:
+                self._moving = False
+                return True
+            else:
+                self._moving = True
+                return False
+
+        status = SubscriptionStatus(self.read_pv, callback)
+
+        self.write_pv.set(value)
+
+        return status
 
 
 class WPS(Device):
-    hv300 = Cpt(EpicsSignal, '-HV:u300}V-Sense', write_pv='-HV:u300}V-Set')
-    hv301 = Cpt(EpicsSignal, '-HV:u301}V-Sense', write_pv='-HV:u301}V-Set')
-    hv302 = Cpt(EpicsSignal, '-HV:u302}V-Sense', write_pv='-HV:u302}V-Set')
-    hv303 = Cpt(EpicsSignal, '-HV:u303}V-Sense', write_pv='-HV:u303}V-Set')
-    hv304 = Cpt(EpicsSignal, '-HV:u304}V-Sense', write_pv='-HV:u304}V-Set')
-    hv305 = Cpt(EpicsSignal, '-HV:u305}V-Sense', write_pv='-HV:u305}V-Set')
-    hv306 = Cpt(EpicsSignal, '-HV:u306}V-Sense', write_pv='-HV:u306}V-Set')
-    hv307 = Cpt(EpicsSignal, '-HV:u307}V-Sense', write_pv='-HV:u307}V-Set')
+    hv300 = Cpt(DeviceWithNegativeReadBack, 'HV:u300}')
+    hv301 = Cpt(DeviceWithNegativeReadBack, 'HV:u301}')
+    hv302 = Cpt(DeviceWithNegativeReadBack, 'HV:u302}')
+    hv303 = Cpt(DeviceWithNegativeReadBack, 'HV:u303}')
+    hv304 = Cpt(DeviceWithNegativeReadBack, 'HV:u304}')
+    hv305 = Cpt(DeviceWithNegativeReadBack, 'HV:u305}')
+    hv306 = Cpt(DeviceWithNegativeReadBack, 'HV:u306}')
+    hv307 = Cpt(DeviceWithNegativeReadBack, 'HV:u307}')
 
+
+
+
+    '''
+
+
+    
     lv0 = Cpt(EpicsSignal, '-LV:u0}V-Sense', write_pv='-LV:u0}V-Set')
     lv1 = Cpt(EpicsSignal, '-LV:u1}V-Sense', write_pv='-LV:u1}V-Set')
     lv2 = Cpt(EpicsSignal, '-LV:u2}V-Sense', write_pv='-LV:u2}V-Set')
@@ -30,10 +68,10 @@ class WPS(Device):
     lv5 = Cpt(EpicsSignal, '-LV:u5}V-Sense', write_pv='-LV:u5}V-Set')
     lv6 = Cpt(EpicsSignal, '-LV:u6}V-Sense', write_pv='-LV:u6}V-Set')
     lv7 = Cpt(EpicsSignal, '-LV:u7}V-Sense', write_pv='-LV:u7}V-Set')
+    '''
+wps1 = WPS('XF:08IDB-OP{WPS:01-', name='wps1')
 
-wps1 = WPS('XF:08IDB-OP{WPS:01', name='wps1')
 
-wps1.hv305.tolerance = 0
 
 class Shutter(Device):
 
