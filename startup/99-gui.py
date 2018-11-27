@@ -11,7 +11,7 @@ motor.move = motor.set
 print("took {} sec".format(time.time()-t1))
 
 
-detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
+detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],'channels': ['stats1_total', 'stats2_total']},
             bpm_cm.name: {'obj': bpm_cm, 'elements': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
             bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
             bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
@@ -120,14 +120,17 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                 'random_step':      random_step,
                                 'set_gains':        set_gains,
                                 'adjust_ic_gains': adjust_ic_gains,
-                                'prepare_bl_plan': prepare_bl_plan
+                                'prepare_bl_plan': prepare_bl_plan,
+
                            },
                            aux_plan_funcs ={
                                'get_adc_readouts': get_adc_readouts,
                                'prepare_traj_plan': prep_traj_plan,
                                'general_scan': general_scan,
                                'set_reference_foil': set_reference_foil,
-                               'write_html_log':     write_html_log
+                               'write_html_log':     write_html_log,
+                               'tuning_scan': tuning_scan,
+
 
                            },
                            RE = RE,

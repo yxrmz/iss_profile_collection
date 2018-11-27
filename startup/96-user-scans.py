@@ -303,7 +303,7 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
     ax = kwargs.get('ax')
 
     if find_min_max:
-        over = 0
+        over = False
         while(not over):
             uid = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
             yield uid
@@ -316,16 +316,20 @@ def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, r
             print('[General Scan] New {} position: {}'.format(motor.name, motor.position))
             if (num >= 10):
                 if (((index > 0.2 * num) and (index < 0.8 * num)) or retries == 1):
-                    over = 1
+                    over = True
                 if retries > 1:
                     retries -= 1
             else:
-                over = 1
+                over = True
         print('[General Scan] {} tuning complete!'.format(motor.name))
     else:
         uid, = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)), NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
         yield uid
         print('[General Scan] Done!')
+
+
+
+
 
 
 def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):

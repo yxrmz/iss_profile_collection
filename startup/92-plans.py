@@ -804,3 +804,43 @@ def set_gains_plan(*args):
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
         print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.value, val, hs))
+
+
+def tuning_scan(motor, detector, channel, scan_range, scan_step, n_tries = 3, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    channel = f'{detector.name}_{channel}'
+    for jj in range(n_tries):
+        motor_init_position = motor.read()[motor.name]['value']
+        min_limit = motor_init_position - scan_range / 2
+        max_limit = motor_init_position + scan_range / 2 + scan_step / 2
+        scan_positions = np.arange(min_limit,max_limit,scan_step)
+        scan_range = (scan_positions[-1] - scan_positions[0])
+        min_threshold = scan_positions[0] + scan_range / 10
+        max_threshold = scan_positions[-1] - scan_range / 10
+        plan = bp.list_scan([detector], motor,scan_positions)
+        if hasattr(detector, 'kickoff'):
+            plan = bpp.fly_during_wrapper(plan, [detector])
+        uid = (yield from plan)
+        hdr = db[uid]
+        if detector.polarity == 'pos':
+            idx = getattr(hdr.table()[channel], 'idxmax')()
+        elif detector.polarity == 'neg':
+            idx = getattr(hdr.table()[channel], 'idxmin')()
+        motor_pos = hdr.table()[motor.name][idx]
+        print(f'New motor position {motor_pos}')
+
+        if motor_pos < min_threshold:
+
+            yield from bps.mv(motor,min_limit)
+            if jj+1 < n_tries:
+                print(f' Starting {jj+2} try')
+        elif max_threshold < motor_pos:
+            print('max')
+            if jj+1 < n_tries:
+                print(f' Starting {jj+2} try')
+            yield from bps.mv(motor, max_limit)
+        else:
+            print('move to point')
+            yield from bps.mv(motor, motor_pos)
+            break

@@ -32,7 +32,11 @@ class BPM(SingleTrigger, ProsilicaDetector):
     ret = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
     switch_insert = Cpt(EpicsSignalRO, 'Sw:InLim-Sts')
     switch_retract = Cpt(EpicsSignalRO, 'Sw:OutLim-Sts')
+    image_mode = Cpt(EpicsSignal,'cam1:ImageMode')
+    acquire = Cpt(EpicsSignal, 'cam1:Acquire')
+
     polarity = 'pos'
+
 
     def insert(self):
         self.ins.put(1)
