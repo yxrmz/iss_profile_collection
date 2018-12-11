@@ -24,7 +24,7 @@ detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_
             pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
             xia1.name: {'obj': xia1, 'elements': xia_list}}
 
-motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
+motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
                'slits_v_pos': {'name': slits.v_pos.name, 'description':'B1 Slit Vertical Position','object': slits.v_pos},
                'slits_hor_in': {'name': slits.hor_in.name,'description':'B1 Slit Horisontal Inboard Position', 'object': slits.hor_in},
                'slits_hor_out': {'name': slits.hor_out.name,'description':'B1 Slit Horisontal Outboard Position', 'object': slits.hor_out},
@@ -64,43 +64,37 @@ motors_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1
 #                  {'x': samplexy.x.name, 'y': samplexy.y.name},
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
-auto_tune = { 'pre_elements':[{'name' : bpm_fm.name,
-                               'motor' : bpm_fm.ins,
-                               'read_back' : bpm_fm.switch_insert,
-                               'tries' : 3,
-                               'value' : 1}
-                             ],
-              'post_elements':[{'name' : bpm_fm.name,
-                                'motor' : bpm_fm.ret,
-                                'read_back' : bpm_fm.switch_retract,
-                                'tries' : 3,
-                                'value' : 1}
-                              ],
-              'elements':[{'name' : hhm.pitch.name,
-                           'object' : hhm.pitch,
-                           'scan_range' : 5,
-                           'step_size' : 0.025,#0.25,
-                           'max_retries' : 3,#1,
-                           'detector_name' : bpm_fm.name,
-                           'detector_signame' : bpm_fm.stats1.total.name},
-                           {'name' : hhm.y.name,
-                           'object' : hhm.y,
-                           'scan_range' : 1,
-                           'step_size' : 0.025,#0.25,
-                           'max_retries' : 3,#1,s
-                           'detector_name' : bpm_fm.name,
-                           'detector_signame' : bpm_fm.stats1.total.name},
-                           {'name' : hhrm.y.name,
-                           'object' : hhrm.y,
-                           'scan_range' : 3,
-                           'step_size' : 0.1,#0.25,
-                           'max_retries' : 3,#1,
-                           'detector_name' : i0.dev_name.value,
-                           'detector_signame' : i0.volt.name}
-                          ]
-           }
+tune_elements =  [{'motor': hhm.pitch.name,
+                   'detector': bpm_fm.name,
+                   'range': 10,
+                   'step': 0.1,
+                   'retries': 10,
+                   'comment': 'rough pitch tune'},
+                  {'motor': hhm.pitch.name,
+                   'detector': bpm_fm.name,
+                   'range': 2,
+                   'step': 0.02,
+                   'retries': 10,
+                   'comment': 'rough pitch tune'}
 
-shutters_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
+                   # {'name' : hhm.y.name,
+                   # 'object' : hhm.y,
+                   # 'scan_range' : 1,
+                   # 'step_size' : 0.025,#0.25,
+                   # 'max_retries' : 3,#1,s
+                   # 'detector_name' : bpm_fm.name,
+                   # 'detector_signame' : bpm_fm.stats1.total.name},
+                   # {'name' : hhrm.y.name,
+                   # 'object' : hhrm.y,
+                   # 'scan_range' : 3,
+                   # 'step_size' : 0.1,#0.25,
+                   # 'max_retries' : 3,#1,
+                   # 'detector_name' : i0.dev_name.value,
+                   # 'detector_signame' : i0.volt.name}
+                  ]
+
+
+shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
                                          (shutter_ph.name, shutter_ph),
                                          (shutter.name, shutter)])
 
@@ -137,11 +131,11 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            db = db,
                            accelerator = nsls_ii,
                            hhm = hhm,
-                           shutters_dict =shutters_dictionary,
+                           shutters_dict =shutter_dictionary,
                            det_dict=detector_dictionary,
-                           motors_dict=motors_dictionary,
+                           motors_dict=motor_dictionary,
                            sample_stage = giantxy,
-                           auto_tune_elements = auto_tune,
+                           tune_elements = tune_elements,
                            ic_amplifiers = ic_amplifiers,
                            processing_sender = sender,
                            job_submitter=job_submitter,

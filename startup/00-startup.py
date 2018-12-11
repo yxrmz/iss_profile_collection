@@ -39,7 +39,7 @@ get_ipython().register_magics(BlueskyMagics)
 from bluesky.callbacks.best_effort import BestEffortCallback
 bec = BestEffortCallback()
 bec.disable_plots()
-#bec.disable_table()
+bec.disable_table()
 RE.subscribe(bec)
 peaks = bec.peaks  # just as alias for less typing
 
