@@ -1,6 +1,6 @@
 
 import time as ttime
-def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
+def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
     energy_ranges = [
         {
             'energy_start': 4500,
@@ -58,7 +58,7 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
     He_flow_setter = gas_he.flow
     N2_flow_setter = gas_n2.flow
     high_voltage_setters = [wps1.hv302,wps1.hv303,wps1.hv305]
-    safe_high_voltage = 900
+    safe_high_voltage = 580
     filter_box_setter = filterbox.y
     cm_setter = cm1.x
     hhrm_setter = hhrm.hor_translation
@@ -121,8 +121,6 @@ def prepare_bl_plan(energy: int = -1, move_cm_mirror = False):
         hv_setter_values.append(energy_range['IC_voltage'])
     yield from bps.mv(*hv_setter_values)
     print('[Prepare Beamline] High voltage values set')
-
-
 
     while not moving_hhrm.done:
         motion_so_far = hhrm_setter.position

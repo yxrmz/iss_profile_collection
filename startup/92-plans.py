@@ -114,7 +114,8 @@ def tune(detectors, motor, start, stop, num, name='', **metadata):
 
     yield from plan
 
-def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
+def get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing,
+                        xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
     preedge = np.arange(e0 + preedge_start, e0 + xanes_start, preedge_spacing)
     preedge_int = np.ones(len(preedge)) * int_time_preedge
 
@@ -841,6 +842,5 @@ def tuning_scan(motor, detector, channel, scan_range, scan_step, n_tries = 3, **
                 print(f' Starting {jj+2} try')
             yield from bps.mv(motor, max_limit)
         else:
-            print('move to point')
             yield from bps.mv(motor, motor_pos)
             break

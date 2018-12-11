@@ -69,29 +69,21 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'range': 10,
                    'step': 0.1,
                    'retries': 10,
-                   'comment': 'rough pitch tune'},
+                   'comment': 'rough monochromator pitch tune'},
                   {'motor': hhm.pitch.name,
                    'detector': bpm_fm.name,
                    'range': 2,
                    'step': 0.02,
-                   'retries': 10,
-                   'comment': 'rough pitch tune'}
-
-                   # {'name' : hhm.y.name,
-                   # 'object' : hhm.y,
-                   # 'scan_range' : 1,
-                   # 'step_size' : 0.025,#0.25,
-                   # 'max_retries' : 3,#1,s
-                   # 'detector_name' : bpm_fm.name,
-                   # 'detector_signame' : bpm_fm.stats1.total.name},
-                   # {'name' : hhrm.y.name,
-                   # 'object' : hhrm.y,
-                   # 'scan_range' : 3,
-                   # 'step_size' : 0.1,#0.25,
-                   # 'max_retries' : 3,#1,
-                   # 'detector_name' : i0.dev_name.value,
-                   # 'detector_signame' : i0.volt.name}
+                   'retries': 3,
+                   'comment': 'fine monochromator pitch tune'},
+                  {'motor': hhm.y.name,
+                   'detector': bpm_fm.name,
+                   'range': 1,
+                   'step': 0.025,
+                   'retries': 3,
+                   'comment': 'monochromator crystal distance tune'},
                   ]
+
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
@@ -114,7 +106,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                 'random_step':      random_step,
                                 'set_gains':        set_gains,
                                 'adjust_ic_gains': adjust_ic_gains,
-                                'prepare_bl_plan': prepare_bl_plan,
+                                'prepare_beamline_plan': prepare_beamline_plan,
 
                            },
                            aux_plan_funcs ={
