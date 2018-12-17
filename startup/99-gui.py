@@ -19,7 +19,7 @@ detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_
             pb9.enc1.name: {'obj': pb9.enc1, 'elements': ['pb9_enc1_pos_I']},
             it.name: {'obj': it, 'elements': ['pba1_adc1_volt']},
             iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
-            i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt']},
+            i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt'],'channels': ['']},
             ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
             pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
             xia1.name: {'obj': xia1, 'elements': xia_list}}
@@ -72,7 +72,7 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'comment': 'rough monochromator pitch tune'},
                   {'motor': hhm.pitch.name,
                    'detector': bpm_fm.name,
-                   'range': 2,
+                   'range': 1,
                    'step': 0.02,
                    'retries': 3,
                    'comment': 'fine monochromator pitch tune'},
@@ -82,6 +82,13 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'step': 0.025,
                    'retries': 3,
                    'comment': 'monochromator crystal distance tune'},
+                  {'motor': hhrm.y.name,
+                   'detector': i0.name,
+                   'range': 1,
+                   'step': 0.025,
+                   'retries': 3,
+                   'comment': 'monochromator crystal distance tune'},
+
                   ]
 
 
