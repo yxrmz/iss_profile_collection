@@ -227,7 +227,7 @@ class EncoderFS(Encoder):
         # Let's move the file to the correct place
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
-        print(f'Encoder {print_now()}')
+        #print(f'Encoder {print_now()}')
         if os.path.isfile(self._full_path):
             datum_uid = self._reg.register_datum(self.resource_uid, {})
             data = {self.name: datum_uid}
@@ -237,7 +237,7 @@ class EncoderFS(Encoder):
 
         else:
             print('Collect {}: File was not created'.format(self.name))
-        print(f'Encoder {print_now()}')
+        #print(f'Encoder {print_now()}')
 
 
     def describe_collect(self):
@@ -342,7 +342,7 @@ class DIFS(DigitalInput):
         return NullStatus()
 
     def complete(self):
-        print('storing', self.name, 'in', self._full_path)
+        #print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -580,17 +580,17 @@ class AdcFS(Adc):
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         stat = shutil.copy(workstation_full_path, self._full_path)
 
-        print(f'Analog {print_now()}')
+        #print(f'Analog {print_now()}')
         if os.path.isfile(self._full_path):
             datum_uid = self._reg.register_datum(self.resource_uid, {})
             data = {self.name: datum_uid}
             yield {'data': data,
                    'timestamps': {key: now for key in data}, 'time': now}
-            print(f'==========\n\ndata: {data}\n\n==========')
+            #print(f'==========\n\ndata: {data}\n\n==========')
             print('Collect of {} complete'.format(self.name))
         else:
             print('collect {}: File was not created'.format(self.name))
-        print(f'Analog {print_now()}')
+        #print(f'Analog {print_now()}')
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)

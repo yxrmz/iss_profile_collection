@@ -322,7 +322,6 @@ def prep_traj_plan(delay = 0.1):
         print('>12000')
         yield from bps.mv(hhm.energy, curr_energy + 100)
         yield from bps.sleep(1)
-        print('1')
         yield from bps.mv(hhm.energy, curr_energy)
 
 
@@ -348,8 +347,8 @@ def execute_trajectory(name, **metadata):
         full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
 
         md = {'plan_args': {},
-              'plan_name': 'execute_trajectory1',
-              'experiment': 'transmission',
+              'plan_name': 'execute_trajectory',
+              'experiment': 'fly_energy_scan',
               'name': name,
               'interp_filename': interp_fn,
               'angle_offset': str(hhm.angle_offset.value),
@@ -361,14 +360,14 @@ def execute_trajectory(name, **metadata):
               'pulses_per_degree': hhm.pulses_per_deg,
 }
         for flyer in flyers:
-            print(f'Flyer is {flyer}')
+            #print(f'Flyer is {flyer}')
             if hasattr(flyer, 'offset'):
                 md['{} offset'.format(flyer.name)] = flyer.offset.value
             if hasattr(flyer, 'amp'):
-                print('has gain')
                 md['{} gain'.format(flyer.name)]= flyer.amp.get_gain()[0]
         md.update(**metadata)
         yield from bps.open_run(md=md)
+        #print(f'==== ret (open run): {ret}')
 
         # TODO Replace this with actual status object logic.
         yield from bps.clear_checkpoint()
@@ -403,14 +402,15 @@ def execute_trajectory(name, **metadata):
                 else:
                     break
 
-        yield from bpp.finalize_wrapper(poll_the_traj_plan(), 
-                                       bpp.pchain(shutter.close_plan(), 
-                                                 bps.abs_set(hhm.stop_trajectory, 
-                                                            '1', wait=True)))
-        #print('moving back')
-        #hhm.prepare_trajectory.put('1')
-        #print('should be done')
-        yield from bps.close_run()
+        yield from bpp.finalize_wrapper(poll_the_traj_plan(),
+                                         bpp.pchain(shutter.close_plan(),
+                                                    bps.abs_set(hhm.stop_trajectory,
+                                                    '1', wait=True)))
+
+        ret = yield from bps.close_run()
+        #print(f'==== ret2 (close run): {ret2}')
+
+        return ret
 
     def final_plan():
         yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
@@ -425,17 +425,17 @@ def execute_trajectory(name, **metadata):
 
     yield from bps.stage(hhm)
     fly_plan = bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
-                                              flyers)
+                                      flyers)
     # TODO : Add in when suspend_wrapper is avaialable
     #if not ignore_shutter:
         # this will use suspenders defined in 23-suspenders.py
         #fly_plan = bpp.suspend_wrapper(fly_plan, suspenders)
 
-    yield from fly_plan
+    return (yield from fly_plan)
+
 
 
 def execute_camera_trajectory(name, **metadata):
-    #flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
     flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))

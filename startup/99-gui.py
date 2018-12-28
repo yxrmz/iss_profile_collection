@@ -8,7 +8,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 from ophyd.sim import motor
 motor.move = motor.set
 
-print("took {} sec".format(time.time()-t1))
+
 
 
 detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],'channels': ['stats1_total', 'stats2_total']},
@@ -103,14 +103,14 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'iff_amp': iff_amp}
 
 xlive_gui = xlive.XliveGui(plan_funcs={
-                                'tscan_plan':       tscan_plan,
-                                'tscanxia_plan':    tscanxia_plan,
-                                'tscancam_plan':    tscancam_plan,
+                                'Fly scan':       fly_scan,
+                                'Fly scan with SDD':    fly_scan_with_sdd,
+                                'Fly scan with Area Detector':    fly_scan_with_camera,
                            },
                            service_plan_funcs={
-                                'get_adc_offsets': get_adc_offsets,
-                                'sleep':             sleep,
-                                'random_step':      random_step,
+                                'get_adc_offsets':  get_adc_offsets,
+                                'sleep':                   sleep,
+                                'random_step':          random_step,
                                 'set_gains':        set_gains,
                                 'adjust_ic_gains': adjust_ic_gains,
                                 'prepare_beamline_plan': prepare_beamline_plan,
@@ -136,10 +136,6 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            sample_stage = giantxy,
                            tune_elements = tune_elements,
                            ic_amplifiers = ic_amplifiers,
-                           processing_sender = sender,
-                           job_submitter=job_submitter,
-                           bootstrap_servers=['cmb01:9092', 'cmb02:9092'],
-                           kafka_topic="iss-processing",
                            window_title="XLive @ISS/08-ID NSLS-II",
                            )
 
@@ -171,15 +167,14 @@ sys.stderr = xlive_gui.emitstream_err
 
 #atexit.register(cleaning)
 
-from isstools.xasdata.xasdata_lite import xasdata_load_dataset_from_files, xasdata_bin_dataset, xasdata_interpolate_dataset
-
-
-def load():
-    start = timer()
-    uid = db[-1]['start']['uid']
-    aa = xasdata_load_dataset_from_files(db, uid)
-    print(f'took {timer()-start}')
-    return aa
+# from isstools.xasdata.xasdata_lite import xasdata_load_dataset_from_files, xasdata_bin_dataset, xasdata_interpolate_dataset
+#
+#
+# def load():
+#     uid = db[-1]['start']['uid']
+#     aa = xasdata_load_dataset_from_files(db, uid)
+#     print(f'took {timer()-start}')
+#     return aa
 
 
 

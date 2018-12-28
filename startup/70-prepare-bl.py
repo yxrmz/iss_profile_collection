@@ -68,11 +68,11 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
     energy_range = [e_range for e_range in energy_ranges if
                   e_range['energy_end'] > energy >= e_range['energy_start']][0]
     if not energy_range:
-        print('ERROR: Energy is outside of the beamline energy range', flush = True)
+        print('ERROR: Energy is outside of the beamline energy range')
         return
-    print(f'[Prepare Beamline] Setting up the beamline to {energy} eV', flush = True)
+    print(f'[Prepare Beamline] Setting up the beamline to {energy} eV')
 
-    print('[Prepare Beamline] Starting...', flush = True)
+    print('[Prepare Beamline] Starting...')
     if move_cm_mirror == True:
         start_cm_position = cm_setter.position
         end_cm_position = energy_range['CM1']
@@ -91,8 +91,8 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
         hv_setter_values.append(high_voltage_setter)
         hv_setter_values.append(safe_high_voltage)
     yield from bps.mv(*hv_setter_values)
-    print('[Prepare Beamline] High voltage supply is set to safe values', flush = True)
-    sys.stdout.flush()
+    print('[Prepare Beamline] High voltage supply is set to safe values')
+
 
     start_time = ttime.time()
 
@@ -111,7 +111,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
 
     yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
 
-    print('[Prepare Beamline] Filter set', flush = True)
+    print('[Prepare Beamline] Filter set')
 
     while ttime.time() < (start_time + 120):
         print(f'[Prepare Beamline] {int(120 - (ttime.time()-start_time))} s left to settle the ion chamber gas flow')
@@ -127,20 +127,20 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
     while not moving_hhrm.done:
         motion_so_far = hhrm_setter.position
         percent_complete = int(abs(motion_so_far - start_hhrm_position) / hhrm_motion_range * 100)
-        print(f'[Prepare Beamline] HHRM motion is {percent_complete} % complete', flush = True)
+        print(f'[Prepare Beamline] HHRM motion is {percent_complete} % complete')
         yield from bps.sleep(10)
 
-    print('[Prepare Beamline] High harmonics rejection mirror position set', flush = True)
+    print('[Prepare Beamline] High harmonics rejection mirror position set')
 
 
     if move_cm_mirror == True:
         while not moving_cm.done:
             motion_so_far = cm_setter.position
             percent_complete = int(abs(motion_so_far - start_cm_position) / cm_motion_range * 100)
-            print(f'[Prepare Beamline] CM1 motion is {percent_complete} % set', flush = True)
+            print(f'[Prepare Beamline] CM1 motion is {percent_complete} % set')
             yield from bps.sleep(10)
 
     print('[Prepare Beamline] CM1 mirror position set', flush = True)
 
-    print('[Prepare Beamline] Beamline preparation is complete', flush = True)
+    print('[Prepare Beamline] Beamline preparation is complete')
 
