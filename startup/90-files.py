@@ -2,11 +2,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-from isstools.xasdata import xasdata
+
 from isstools.xiaparser import xiaparser
-
-smbclient = xiaparser.smbclient()
-
 
 def save_mca_to_file(filename, path = '/GPFS/xf08id/xia_files/', mcas = [xia1.mca1, xia1.mca2, xia1.mca3, xia1.mca4]):
     if path[-1] != '/':
@@ -116,13 +113,6 @@ def parse_xia_step_scan(uid, filename, path):
                                  comments = gen_xia_comments(uid))
 
     return '{}{}.txt'.format(path, filename)
-
-
-
-
-
-
-
 
 
 

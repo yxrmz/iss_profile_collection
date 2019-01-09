@@ -1,4 +1,4 @@
-from isstools.trajectory.trajectory import trajectory, trajectory_manager
+from xas.trajectory import trajectory, trajectory_manager
 from bluesky.plan_stubs import mv
 
 

@@ -167,8 +167,7 @@ sys.stderr = xlive_gui.emitstream_err
 
 #atexit.register(cleaning)
 
-# from isstools.xasdata.xasdata_lite import xasdata_load_dataset_from_files, xasdata_bin_dataset, xasdata_interpolate_dataset
-#
+
 #
 # def load():
 #     uid = db[-1]['start']['uid']

@@ -3,8 +3,7 @@ import bluesky.plans as bp
 import bluesky.plan_stubs as bps
 import os, sys
 from bluesky.utils import FailedStatus
-from isstools.trajectory.trajectory import trajectory_manager
-from isstools.xasdata.xasdata_lite import xasdata_load_dataset_from_files, xasdata_bin_dataset, xasdata_interpolate_dataset
+
 
 
 def tscan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):

@@ -85,7 +85,8 @@ def ensure_proposal_id(md):
 
 # Set up default metadata.
 RE.md['group'] = 'iss'
-RE.md['beamline_id'] = 'ISS'
+RE.md['Facility'] = 'NSLS-II'
+RE.md['beamline_id'] = 'ISS (8-ID)'
 RE.md['proposal_id'] = None
 #RE.md['proposal_id'] = None
 stop2 = timer()

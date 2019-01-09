@@ -1,6 +1,6 @@
 
 
-
+'''
 
 def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
                           ir_gain:int=5, hs:bool=False):
@@ -159,3 +159,5 @@ def tune_mono_y_bpm(scan_range, step, retries=1, ax=None):
             over = 1
 
     print('Y tuning complete!')
+
+'''
