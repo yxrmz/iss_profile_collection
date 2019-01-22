@@ -11,7 +11,7 @@ motor.move = motor.set
 
 
 
-detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total'],'channels': ['stats1_total', 'stats2_total']},
+detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
             bpm_cm.name: {'obj': bpm_cm, 'elements': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
             bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
             bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
@@ -87,7 +87,7 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'range': 1,
                    'step': 0.025,
                    'retries': 3,
-                   'comment': 'monochromator crystal distance tune'},
+                   'comment': 'Harmonic regection mirror tune'},
 
                   ]
 

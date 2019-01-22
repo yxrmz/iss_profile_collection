@@ -807,10 +807,10 @@ def set_gains_plan(*args):
         print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.value, val, hs))
 
 
-def tuning_scan(motor, detector, channel, scan_range, scan_step, n_tries = 3, **kwargs):
+def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
-    channel = f'{detector.name}_{channel}'
+    channel = detector.hints['fields'][0]
     for jj in range(n_tries):
         motor_init_position = motor.read()[motor.name]['value']
         min_limit = motor_init_position - scan_range / 2
@@ -832,7 +832,6 @@ def tuning_scan(motor, detector, channel, scan_range, scan_step, n_tries = 3, **
         print(f'New motor position {motor_pos}')
 
         if motor_pos < min_threshold:
-
             yield from bps.mv(motor,min_limit)
             if jj+1 < n_tries:
                 print(f' Starting {jj+2} try')
