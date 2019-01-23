@@ -243,7 +243,6 @@ def sampleXY_plan(detectors, motor, start, stop, num):
 
 
 def pb_scan_plan(detectors, motor, scan_center, scan_range, name = ''):
-
     flyers = detectors
     def inner():
         md = {'plan_args': {}, 'plan_name': 'pb_scan','experiment': 'pb_scan', 'name': name}
@@ -343,9 +342,10 @@ def execute_trajectory(name, **metadata):
     def inner():
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-
-        full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
-
+        try:
+            full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+        except:
+            full_element_name = curr_traj.elem.value
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'fly_energy_scan',
