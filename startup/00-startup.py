@@ -45,25 +45,6 @@ peaks = bec.peaks  # just as alias for less typing
 from bluesky.utils import install_qt_kicker
 install_qt_kicker()
 
-# Optional: set any metadata that rarely changes.
-# RE.md['beamline_id'] = 'YOUR_BEAMLINE_HERE'
-
-# convenience imports
-from bluesky.callbacks import *
-from bluesky.callbacks.broker import *
-from bluesky.simulators import *
-from bluesky.plans import *
-import numpy as np
-
-from pyOlog.ophyd_tools import *
-
-# Uncomment the following lines to turn on verbose messages for
-# debugging.
-# import logging
-# ophyd.logger.setLevel(logging.DEBUG)
-# logging.basicConfig(level=logging.DEBUG)
-
-
 from pathlib import Path
 from historydict import HistoryDict
 
@@ -76,7 +57,6 @@ except Exception as exc:
     RE.md = HistoryDict('{}/.config/blues/bluesky_history.db'.format(str(Path.home())))
 RE.is_aborted = False
 
-
 start = timer()
 
 def ensure_proposal_id(md):
@@ -88,7 +68,6 @@ RE.md['group'] = 'iss'
 RE.md['Facility'] = 'NSLS-II'
 RE.md['beamline_id'] = 'ISS (8-ID)'
 RE.md['proposal_id'] = None
-#RE.md['proposal_id'] = None
 stop2 = timer()
 RE.md_validator = ensure_proposal_id
 stop = timer()
