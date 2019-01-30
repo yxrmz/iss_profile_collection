@@ -72,9 +72,8 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     if not energy_range:
         print_to_gui('ERROR: Energy is outside of the beamline energy range')
         return
-    print_to_gui(f'[Prepare Beamline] Setting up the beamline to {energy} eV')
 
-    print_to_gui('[Prepare Beamline] Starting...')
+    print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...')
     if move_cm_mirror == True:
         start_cm_position = cm_setter.position
         end_cm_position = energy_range['CM1']
@@ -92,7 +91,6 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     for high_voltage_setter in high_voltage_setters:
         hv_setter_values.append(high_voltage_setter)
         hv_setter_values.append(safe_high_voltage)
-    print_to_gui('here')
     yield from bps.mv(*hv_setter_values)
     print_to_gui('[Prepare Beamline] High voltage supply is set to safe values')
 
@@ -119,18 +117,18 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     while ttime.time() < (start_time + 120):
         print_to_gui(f'[Prepare Beamline] {int(120 - (ttime.time()-start_time))} s left to settle the ion chamber gas flow')
         yield from bps.sleep(10)
-
+    print_to_gui('[Prepare Beamline] Setting high voltage values ')
     hv_setter_values = []
     for high_voltage_setter in high_voltage_setters:
         hv_setter_values.append(high_voltage_setter)
         hv_setter_values.append(energy_range['IC_voltage'])
     yield from bps.mv(*hv_setter_values)
-    print_to_gui('[Prepare Beamline] High voltage values set', flush = True)
+    print_to_gui('[Prepare Beamline] High voltage values set')
 
     while not moving_hhrm.done:
         motion_so_far = hhrm_setter.position
         percent_complete = int(abs(motion_so_far - start_hhrm_position) / hhrm_motion_range * 100)
-        print_to_guif'[Prepare Beamline] HHRM motion is {percent_complete} % complete')
+        print_to_gui(f'[Prepare Beamline] HHRM motion is {percent_complete} % complete')
         yield from bps.sleep(10)
 
     print_to_gui('[Prepare Beamline] High harmonics rejection mirror position set')
@@ -142,8 +140,8 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             percent_complete = int(abs(motion_so_far - start_cm_position) / cm_motion_range * 100)
             print_to_gui(f'[Prepare Beamline] CM1 motion is {percent_complete} % set')
             yield from bps.sleep(10)
+        print_to_gui('[Prepare Beamline] CM1 mirror position set')
 
-    print_to_gui('[Prepare Beamline] CM1 mirror position set', flush = True)
 
     print_to_gui('[Prepare Beamline] Beamline preparation is complete')
 
