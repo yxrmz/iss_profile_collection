@@ -105,6 +105,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
     print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter')
     #close shutter before moving the filter
+
     try:
         yield from bps.mv(shutter_fe_2b, 'Close')
     except FailedStatus:
@@ -113,6 +114,15 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
 
     print_to_gui('[Prepare Beamline] Filter set')
+
+    print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter')
+    # close shutter before moving the filter
+
+    try:
+        yield from bps.mv(shutter_fe_2b, 'Open')
+    except FailedStatus:
+        raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
+
 
     while ttime.time() < (start_time + 120):
         print_to_gui(f'[Prepare Beamline] {int(120 - (ttime.time()-start_time))} s left to settle the ion chamber gas flow')
