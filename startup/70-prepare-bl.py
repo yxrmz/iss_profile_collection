@@ -152,6 +152,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             yield from bps.sleep(10)
         print_to_gui('[Prepare Beamline] CM1 mirror position set')
 
-
+    print_to_gui('[Prepare Beamline] Moving to the target energy')
+    yield from bps.mv(hhm.energy, energy)
     print_to_gui('[Prepare Beamline] Beamline preparation is complete')
 
