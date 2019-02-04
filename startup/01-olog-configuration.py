@@ -40,4 +40,4 @@ def send_to_olog_queue(name, doc):
     except queue.Full:
         warn('The olog queue is full. This will not be logged.')
 
-RE.subscribe(send_to_olog_queue, 'start')
+# RE.subscribe(send_to_olog_queue, 'start')

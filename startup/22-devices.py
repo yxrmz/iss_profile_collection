@@ -126,7 +126,7 @@ shutter = Shutter(name = 'SP Shutter')
 shutter.shutter_type = 'SP'
 
 class TwoButtonShutterISS(TwoButtonShutter):
-    def stop(self):
+    def stop(self, success=False):
         pass
 
 

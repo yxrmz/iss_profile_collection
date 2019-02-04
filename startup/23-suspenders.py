@@ -1,4 +1,5 @@
 print(__file__)
+from ophyd import EpicsSignalRO
 from bluesky.suspenders import (SuspendBoolHigh,
                                 SuspendBoolLow,
                                 SuspendFloor,
@@ -6,17 +7,21 @@ from bluesky.suspenders import (SuspendBoolHigh,
                                 SuspendInBand, SuspendOutBand)
 
 
-fe_shut_suspender = SuspendBoolHigh(shutter_fe.state, sleep=10*60)
-ph_shut_suspender = SuspendBoolHigh(shutter_ph.state, sleep=10*60)
+fe_shut_suspender = SuspendBoolHigh(EpicsSignalRO(shutter_fe_2b.status.pvname), sleep=10)
+ph_shut_suspender = SuspendBoolHigh(EpicsSignalRO(shutter_ph_2b.status.pvname), sleep=10)
 
 
 # suspender for beamline current is mA
 beam_current_suspender = SuspendFloor(nsls_ii.beam_current,
-                                      suspend_thresh = 300, sleep = 10*60)
-suspenders = [fe_shut_suspender,
-              ph_shut_suspender,
-              beam_current_suspender,
-              ]
+                                      suspend_thresh = 300, sleep = 10)
+suspenders = [
+    # fe_shut_suspender,
+    # ph_shut_suspender,
+    #  beam_current_suspender,
+   ]
+
+for s in suspenders:
+    RE.install_suspender(s)
 
 ''' Some help on suspenders /bluesky
 # how to add a suspender:
