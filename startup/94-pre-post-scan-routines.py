@@ -7,6 +7,7 @@ from bluesky.plan_stubs import mv, mvr
 import bluesky.preprocessors as bpp
 from random import random
 from xas.trajectory import trajectory_manager
+import json
 
 
 def remove_pb_files(uid):
