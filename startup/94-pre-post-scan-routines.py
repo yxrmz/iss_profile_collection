@@ -343,10 +343,13 @@ def get_adc_readouts(times: int = 20, *args, **kwargs):
 def adjust_ic_gains( **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
-    if 'detectors' not in kwargs:
+    if 'detector_names' not in kwargs:
         detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
     else:
-        detectors = kwargs['detectors']
+        detectors = []
+        for d in kwargs['detector_names']:
+            detectors.append(globals()[d])
+        #TODO replace with dictionary
 
     current_lut = int(hhm.lut_number_rbv.value)
     traj_manager = trajectory_manager(hhm)
@@ -376,8 +379,10 @@ def adjust_ic_gains( **kwargs):
         if hasattr(detector, 'kickoff'):
             flyers.append(detector)
     for jj in range(2):
+        plan = bp.list_scan(detectors, hhm.energy, scan_positions)
+        #print(f'F>>>>>>>>>>> {flyers}\n D>>>>>>>>>>>>>>>>.{detectors}')
         uid = (yield from bpp.fly_during_wrapper(plan, flyers))
-
+        #print(f' >>>>>> UID {uid}')
         table = db[uid].table()
         for det in detectors:
             name = f'{det.name}_volt'
@@ -398,6 +403,8 @@ def adjust_ic_gains( **kwargs):
                 print(f'Increasing gain for detector {det.channel}')
                 yield from det.amp.set_gain_plan(current_gain + 1, False)
 
+        #print(f'F2>>>>>>>>>>> {flyers}\n D2>>>>>>>>>>>>>>>>.{detectors}')
+        yield from bps.sleep(2)
     shutter.close()
     print('[Adjust Gain] Complete\n')
     remove_pb_files(uid)
