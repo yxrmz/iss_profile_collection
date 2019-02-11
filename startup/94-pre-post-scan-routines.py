@@ -362,14 +362,11 @@ def adjust_ic_gains( **kwargs):
     e_min = int(info[str(current_lut)]['min'])
     e_max = int(info[str(current_lut)]['max'])
 
-
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
     shutter.open()
-
-
 
     scan_positions = np.arange(e_max + 50, e_min - 50, -50)
 

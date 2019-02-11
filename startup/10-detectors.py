@@ -10,14 +10,17 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
 from ophyd import DeviceStatus, set_and_wait
+from ophyd.status import SubscriptionStatus
 from ophyd.sim import NullStatus
 
 from datetime import datetime
 
 from databroker.assets.handlers_base import HandlerBase
 
+
 def print_now():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
+
 
 class BPM(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
@@ -27,27 +30,39 @@ class BPM(SingleTrigger, ProsilicaDetector):
     roi2 = Cpt(ROIPlugin, 'ROI2:')
     counts = Cpt(EpicsSignal, 'Pos:Counts')
     exp_time = Cpt(EpicsSignal, 'cam1:AcquireTime_RBV', write_pv='cam1:AcquireTime')
-    # Dan Allan guessed about the nature of these signals. Fix them if you need them.
-    ins = Cpt(EpicsSignal, 'Cmd:In-Cmd')
-    ret = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
-    switch_insert = Cpt(EpicsSignalRO, 'Sw:InLim-Sts')
-    switch_retract = Cpt(EpicsSignalRO, 'Sw:OutLim-Sts')
     image_mode = Cpt(EpicsSignal,'cam1:ImageMode')
     acquire = Cpt(EpicsSignal, 'cam1:Acquire')
 
-    polarity = 'pos'
+    # Actuator
+    insert = Cpt(EpicsSignal, 'Cmd:In-Cmd')
+    inserted = Cpt(EpicsSignalRO, 'Sw:InLim-Sts')
 
-
-    def insert(self):
-        self.ins.put(1)
-
-    def retract(self):
-        self.ret.put(1)
+    retract = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
+    retracted = Cpt(EpicsSignal, 'Sw:OutLim-Sts')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs['cam.image_mode'] = 'Single'
-        #self.stage_sigs.clear()  # default stage sigs do not apply
+        self.polarity = 'pos'
+        # self._inserting = None
+        # self._retracting = None
+
+    def set(self, command):
+        def callback(value, old_value, **kwargs):
+            if value == 1:
+                return True
+            return False
+
+        if command.lower() == 'insert':
+            status = SubscriptionStatus(self.inserted, callback)
+            self.insert.set('Insert')
+            return status
+
+        if command.lower() == 'retract':
+            status = SubscriptionStatus(self.retracted, callback)
+            self.retract.set('Retract')
+            return status
+
 
 class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')

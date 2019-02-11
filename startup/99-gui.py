@@ -64,32 +64,6 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
 #                  {'x': samplexy.x.name, 'y': samplexy.y.name},
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
-tune_elements =  [{'motor': hhm.pitch.name,
-                   'detector': bpm_fm.name,
-                   'range': 10,
-                   'step': 0.1,
-                   'retries': 10,
-                   'comment': 'rough monochromator pitch tune'},
-                  {'motor': hhm.pitch.name,
-                   'detector': bpm_fm.name,
-                   'range': 1,
-                   'step': 0.02,
-                   'retries': 3,
-                   'comment': 'fine monochromator pitch tune'},
-                  {'motor': hhm.y.name,
-                   'detector': bpm_fm.name,
-                   'range': 1,
-                   'step': 0.025,
-                   'retries': 3,
-                   'comment': 'monochromator crystal distance tune'},
-                  {'motor': hhrm.y.name,
-                   'detector': i0.name,
-                   'range': 1,
-                   'step': 0.025,
-                   'retries': 3,
-                   'comment': 'Harmonic regection mirror tune'},
-
-                  ]
 
 
 
