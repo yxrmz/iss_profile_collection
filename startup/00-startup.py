@@ -1,4 +1,6 @@
 import time
+import sys
+from bluesky.simulators import summarize_plan
 
 
 # Set up a RunEngine and use metadata backed by a sqlite file.
@@ -80,5 +82,8 @@ ROOT_PATH = '/nsls2/xf08id'
 RAW_FILEPATH = 'data'
 USER_FILEPATH = 'users'
 
+
+def print_to_gui(string, stdout=sys.stdout):
+    print(string, file=stdout, flush=True)
 
 

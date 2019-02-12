@@ -826,23 +826,24 @@ def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
         if hasattr(detector, 'kickoff'):
             plan = bpp.fly_during_wrapper(plan, [detector])
         uid = (yield from plan)
-        hdr = db[uid]
-        if detector.polarity == 'pos':
-            idx = getattr(hdr.table()[channel], 'idxmax')()
-        elif detector.polarity == 'neg':
-            idx = getattr(hdr.table()[channel], 'idxmin')()
-        motor_pos = hdr.table()[motor.name][idx]
-        print(f'New motor position {motor_pos}')
+        if uid:
+            hdr = db[uid]
+            if detector.polarity == 'pos':
+                idx = getattr(hdr.table()[channel], 'idxmax')()
+            elif detector.polarity == 'neg':
+                idx = getattr(hdr.table()[channel], 'idxmin')()
+            motor_pos = hdr.table()[motor.name][idx]
+            print(f'New motor position {motor_pos}')
 
-        if motor_pos < min_threshold:
-            yield from bps.mv(motor,min_limit)
-            if jj+1 < n_tries:
-                print(f' Starting {jj+2} try')
-        elif max_threshold < motor_pos:
-            print('max')
-            if jj+1 < n_tries:
-                print(f' Starting {jj+2} try')
-            yield from bps.mv(motor, max_limit)
-        else:
-            yield from bps.mv(motor, motor_pos)
-            break
+            if motor_pos < min_threshold:
+                yield from bps.mv(motor,min_limit)
+                if jj+1 < n_tries:
+                    print(f' Starting {jj+2} try')
+            elif max_threshold < motor_pos:
+                print('max')
+                if jj+1 < n_tries:
+                    print(f' Starting {jj+2} try')
+                yield from bps.mv(motor, max_limit)
+            else:
+                yield from bps.mv(motor, motor_pos)
+                break

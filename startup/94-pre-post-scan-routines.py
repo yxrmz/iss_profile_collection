@@ -408,9 +408,6 @@ def adjust_ic_gains( **kwargs):
 
 
 
-def  tune_beamline_plan(motor1,det1,field1):
-    yield from tuning_scan(motor, bpm_fm, 'stats1_total', 5, 0.5, n_tries=3)
-    yield from tuning_scan(hhm.pitch, bpm_fm, 'stats1_total', 1, 0.025, n_tries=3)
 
 
 
