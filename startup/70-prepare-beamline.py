@@ -132,10 +132,10 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
         print_to_gui('[Prepare Beamline] Filter set',stdout=stdout)
         print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter',stdout=stdout)
 
-        # try:
-        #     yield from bps.mv(shutter_fe_2b, 'Open')
-        # except FailedStatus:
-        #     raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
+        try:
+            yield from bps.mv(shutter_fe_2b, 'Open')
+        except FailedStatus:
+            raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
 
 
     while ttime.time() < (start_time + 120):
