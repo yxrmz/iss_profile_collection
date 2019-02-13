@@ -1,6 +1,7 @@
 import inspect
 import bluesky.plans as bp
 import bluesky.plan_stubs as bps
+from bluesky.plan_patterns import spiral_square_pattern
 import os, sys
 from bluesky.utils import FailedStatus
 
@@ -103,6 +104,25 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
         yield from bps.sleep(float(delay))
     return uids
 
+def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: float = 0):
+
+    motor_x = motor_dictionary['giantxy_x']['object']
+    motor_y = motor_dictionary['giantxy_y']['object']
+
+    x_center = motor_x.read()[motor_x.name]['value']
+    y_center = motor_y.read()[motor_y.name]['value']
+
+    cycler = spiral_square_pattern(motor_x, motor_y, x_center, y_center, 10, 10, 4, 4 ) #10*2+1, 10*2+1)
+
+    pos_cache={motor_x:x_center, motor_y: y_center}
+
+    for i in range(n_cycles):
+        name_n = '{} {:04d}'.format(name, i+1)
+        position = list(cycler)[i]
+        yield from bps.move_per_step(position, pos_cache)
+        yield from fly_scan(name=name_n, comment=comment, n_cycles = 1, delay = delay)
+
+    yield from bps.mv(motor_x,x_center,motor_y,y_center)
 
 def tscanxia(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
     """

@@ -1,11 +1,9 @@
 from isstools import xlive
-import collections
+
 import atexit
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-
 
 
 # sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
@@ -13,21 +11,11 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
 
-
-
-shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
-                                         (shutter_ph.name, shutter_ph),
-                                         (shutter.name, shutter)])
-
-ic_amplifiers = {'i0_amp': i0_amp,
-                 'it_amp': it_amp,
-                 'ir_amp': ir_amp,
-                 'iff_amp': iff_amp}
-
 xlive_gui = xlive.XliveGui(plan_funcs={
-                                'Fly scan':       fly_scan,
-                                'Fly scan with SDD':    fly_scan_with_sdd,
-                                'Fly scan with Area Detector':    fly_scan_with_camera,
+                                    'Fly scan':       fly_scan,
+                                    'Spiral fly scan': fly_scan_over_spiral,
+                                    'Fly scan with SDD':    fly_scan_with_sdd,
+                                    'Fly scan with Area Detector':    fly_scan_with_camera,
                            },
                            service_plan_funcs={
                                 'get_adc_offsets':  get_adc_offsets,
@@ -61,14 +49,8 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            window_title="XLive @ISS/08-ID NSLS-II Development",
                            )
 
-
 def xlive():
     xlive_gui.show()
-
-#xview_gui = xview.XviewGui(hhm.pulses_per_deg, db=db)
-
-#def xview():
-    #xview_gui.show()
 
 xlive()
 print('Startup complete')
@@ -83,19 +65,7 @@ sys.stderr = xlive_gui.emitstream_err
 
 #atexit.register(cleaning)
 
-#def cleaning():
-#    if xlive_gui.piezo_thread.isRunning():
-#        xlive_gui.toggle_piezo_fb(0)
 
-#atexit.register(cleaning)
-
-
-#
-# def load():
-#     uid = db[-1]['start']['uid']
-#     aa = xasdata_load_dataset_from_files(db, uid)
-#     print(f'took {timer()-start}')
-#     return aa
 
 
 

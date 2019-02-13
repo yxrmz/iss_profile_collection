@@ -60,17 +60,29 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
     He_flow_setter = gas_he.flow
     N2_flow_setter = gas_n2.flow
-    high_voltage_setters = [wps1.hv302,wps1.hv303,wps1.hv305]
+    high_voltage_setters = [wps1.hv302, wps1.hv303, wps1.hv305]
     safe_high_voltage = 580
     filter_box_setter = filterbox.y
     cm_setter = cm1.x
     hhrm_setter = hhrm.hor_translation
+    settling_time = 20
 
     energy_range = [e_range for e_range in energy_ranges if
                   e_range['energy_end'] > energy >= e_range['energy_start']][0]
     if not energy_range:
         print_to_gui('ERROR: Energy is outside of the beamline energy range',stdout=stdout)
         return
+
+
+    current_filterbox_position = filterbox.y.read()[filterbox.y.name]['value']
+    print_to_gui(f' >>>>> {current_filterbox_position}',stdout=stdout)
+    print_to_gui(energy_range['Filterbox'],stdout=stdout)
+    if  (abs(energy_range['Filterbox'] - current_filterbox_position)) < 0.1:
+        move_filter = False
+    else:
+        move_filter = True
+    print_to_gui(energy_range['Filterbox'] - current_filterbox_position,stdout=stdout)
+    print_to_gui(move_filter,stdout=stdout)
 
     print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...',stdout=stdout)
     if move_cm_mirror == True:
@@ -102,31 +114,32 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
                       )
     print_to_gui('[Prepare Beamline] Ion chamber gas composition set',stdout=stdout)
 
-    print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter',stdout=stdout)
+
 
     #close shutter before moving the filter
-    current_filterbox_position = filterbox.y.read()[filterbox.y.name]['value']
-    print_to_gui(f' >>>>> {current_filterbox_position}',stdout=stdout)
-    print_to_gui(energy_range['Filterbox'],stdout=stdout)
 
-    # close shutter before moving the filter
-    try:
-        yield from bps.mv(shutter_fe_2b, 'Close')
-    except FailedStatus:
-        raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
 
-    yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
-    print_to_gui('[Prepare Beamline] Filter set',stdout=stdout)
-    print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter',stdout=stdout)
+    if move_filter:
+        print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter', stdout=stdout)
+        print('moving')
+        # close shutter before moving the filter
+        try:
+            yield from bps.mv(shutter_fe_2b, 'Close')
+        except FailedStatus:
+            raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
 
-    try:
-        yield from bps.mv(shutter_fe_2b, 'Open')
-    except FailedStatus:
-        raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
+        yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
+        print_to_gui('[Prepare Beamline] Filter set',stdout=stdout)
+        print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter',stdout=stdout)
+
+        # try:
+        #     yield from bps.mv(shutter_fe_2b, 'Open')
+        # except FailedStatus:
+        #     raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
 
 
     while ttime.time() < (start_time + 120):
-        print_to_gui(f'[Prepare Beamline] {int(120 - (ttime.time()-start_time))} s left to settle the ion chamber gas flow',stdout=stdout)
+        print_to_gui(f'[Prepare Beamline] {int(settling_time - (ttime.time()-start_time))} s left to settle the ion chamber gas flow',stdout=stdout)
         yield from bps.sleep(10)
     print_to_gui('[Prepare Beamline] Setting high voltage values',stdout=stdout)
     hv_setter_values = []
