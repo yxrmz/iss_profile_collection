@@ -15,6 +15,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'HHRM': 0,
             'CM1':0,
             'Filterbox': 1,
+            'ES BPM exposure': 0.1
         },
         {
             'energy_start': 6000,
@@ -25,6 +26,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'HHRM': 0,
             'CM1':0,
             'Filterbox': -69,
+            'ES BPM exposure': 0.1
         },
         {
             'energy_start': 10000,
@@ -35,6 +37,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'HHRM': 8,
             'CM1':0,
             'Filterbox': -139,
+            'ES BPM exposure': 0.5
         },
         {
             'energy_start': 13000,
@@ -45,9 +48,22 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'HHRM': 80,
             'CM1': 40,
             'Filterbox': -139,
+            'ES BPM exposure': 0.5
         },
         {
             'energy_start': 17000,
+            'energy_end': 25000,
+            'He_flow': 2,
+            'N2_flow': 5,
+            'IC_voltage': 1900,
+            'HHRM': 80,
+            'CM1': 40,
+            'Filterbox': -209,
+            'ES BPM exposure': 0.8
+
+        },
+        {
+            'energy_start': 25000,
             'energy_end': 35000,
             'He_flow': 2,
             'N2_flow': 5,
@@ -55,9 +71,11 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'HHRM': 80,
             'CM1': 40,
             'Filterbox': -209,
+            'ES BPM exposure': 0.8
+
         },
     ]
-
+    BPM_exposure_setter = bpm_es.exp_time
     He_flow_setter = gas_he.flow
     N2_flow_setter = gas_n2.flow
     high_voltage_setters = [wps1.hv302, wps1.hv303, wps1.hv305]
@@ -75,14 +93,11 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
 
     current_filterbox_position = filterbox.y.read()[filterbox.y.name]['value']
-    print_to_gui(f' >>>>> {current_filterbox_position}',stdout=stdout)
-    print_to_gui(energy_range['Filterbox'],stdout=stdout)
-    if  (abs(energy_range['Filterbox'] - current_filterbox_position)) < 0.1:
+    if (abs(energy_range['Filterbox'] - current_filterbox_position)) < 0.1:
         move_filter = False
     else:
         move_filter = True
-    print_to_gui(energy_range['Filterbox'] - current_filterbox_position,stdout=stdout)
-    print_to_gui(move_filter,stdout=stdout)
+
 
     print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...',stdout=stdout)
     if move_cm_mirror == True:
@@ -138,7 +153,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
 
 
-    while ttime.time() < (start_time + 120):
+    while ttime.time() < (start_time + settling_time):
         print_to_gui(f'[Prepare Beamline] {int(settling_time - (ttime.time()-start_time))} s left to settle the ion chamber gas flow',stdout=stdout)
         yield from bps.sleep(10)
     print_to_gui('[Prepare Beamline] Setting high voltage values',stdout=stdout)
@@ -168,5 +183,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
     print_to_gui('[Prepare Beamline] Moving to the target energy',stdout=stdout)
     yield from bps.mv(hhm.energy, energy)
+    print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor', stdout=stdout)
+    yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
     print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)
 

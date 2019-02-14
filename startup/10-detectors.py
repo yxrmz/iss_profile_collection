@@ -63,7 +63,6 @@ class BPM(SingleTrigger, ProsilicaDetector):
             self.retract.set('Retract')
             return status
 
-
 class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
     stats1 = Cpt(StatsPlugin, 'Stats1:')

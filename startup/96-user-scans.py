@@ -91,28 +91,28 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
 
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
-
-
         yield from prep_traj_plan()
         print(f'Trajectory prepared at {print_now()}')
-
         uid = (yield from execute_trajectory(name_n, comment=comment))
-
         uids.append(uid)
 
         print(f'Trajectory excecuted {print_now()}')
         yield from bps.sleep(float(delay))
     return uids
 
-def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: float = 0):
 
+
+
+
+def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
     motor_x = motor_dictionary['giantxy_x']['object']
     motor_y = motor_dictionary['giantxy_y']['object']
 
     x_center = motor_x.read()[motor_x.name]['value']
     y_center = motor_y.read()[motor_y.name]['value']
 
-    cycler = spiral_square_pattern(motor_x, motor_y, x_center, y_center, 10, 10, 4, 4 ) #10*2+1, 10*2+1)
+    cycler = spiral_square_pattern(motor_x, motor_y, x_center, y_center, 10, 10, 11, 11) #10*2+1, 10*2+1)
 
     pos_cache={motor_x:x_center, motor_y: y_center}
 
@@ -120,9 +120,13 @@ def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: floa
         name_n = '{} {:04d}'.format(name, i+1)
         position = list(cycler)[i]
         yield from bps.move_per_step(position, pos_cache)
-        yield from fly_scan(name=name_n, comment=comment, n_cycles = 1, delay = delay)
+        yield from fly_scan(name=name_n, comment=comment, n_cycles = 1, delay = delay, **kwargs)
 
     yield from bps.mv(motor_x,x_center,motor_y,y_center)
+
+
+
+
 
 def tscanxia(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
     """
@@ -396,10 +400,12 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
 
 
 
-def sleep(delay:float=1, **kwargs):
+def sleep(delay:int=1, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    yield from (sleep_plan(delay))
-    yield None
+    print_to_gui(f'Pausing for {delay} seconds....',sys.stdout)
+    yield from (bps.sleep(int(delay)))
+    print_to_gui(f'Resuming', sys.stdout)
+
 
 
 def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,

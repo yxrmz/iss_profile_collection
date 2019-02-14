@@ -14,8 +14,8 @@ def find_holder_fiducial():
     uid = (yield from plan_with_flyers)
     table = db[uid].table()
     row_num = table[detector.volt.name].idxmin()
-    x_pos = table.ix(row_num)['giantxy_x']
-    y_pos = table.ix(row_num)['giantxy_y']
+    x_pos = table['giantxy_x'][row_num]
+    y_pos = table['giantxy_y'][row_num]
     return x_pos, y_pos
 
 

@@ -200,8 +200,11 @@ def random_step(x: float = 0,y: float = 0, **kwargs):
     This plan will move the stage randomly by a random number between
     x/2 and x  and y/2 and y, sampling a donut around the original point
     '''
-
-
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    print_to_gui('Executing random move',sys.stdout)
+    if  type(x) == str:
+        x = float(x)
+        y = float(y)
     if not 'motor_x' in kwargs.keys():
         motor_x = giantxy.x
     if not 'motor_y' in kwargs.keys():
