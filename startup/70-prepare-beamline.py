@@ -83,7 +83,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     filter_box_setter = filterbox.y
     cm_setter = cm1.x
     hhrm_setter = hhrm.hor_translation
-    settling_time = 20
+    settling_time = 120
 
     energy_range = [e_range for e_range in energy_ranges if
                   e_range['energy_end'] > energy >= e_range['energy_start']][0]
@@ -150,7 +150,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
         try:
             yield from bps.mv(shutter_fe_2b, 'Open')
         except FailedStatus:
-            raise CannotActuateShutter(f'Error: Photon shutter failed to open.')
+            print_to_gui(f'Error: Photon shutter failed to open.',stdout=stdout)
 
 
     while ttime.time() < (start_time + settling_time):
