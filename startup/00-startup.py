@@ -56,7 +56,7 @@ try:
 except Exception as exc:
     print('local')
     print(exc)
-    RE.md = HistoryDict('{}/.config/blues/bluesky_history.db'.format(str(Path.home())))
+    RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
 RE.is_aborted = False
 
 start = timer()
