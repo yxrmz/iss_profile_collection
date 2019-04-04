@@ -209,7 +209,7 @@ class EncoderFS(Encoder):
         return NullStatus()
 
     def complete(self):
-        print('storing', self.name, 'in', self._full_path)
+        #print('s', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -564,7 +564,7 @@ class AdcFS(Adc):
         return st
 
     def complete(self):
-        print('storing', self.name, 'in', self._full_path)
+        #print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.

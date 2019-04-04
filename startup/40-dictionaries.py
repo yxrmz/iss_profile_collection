@@ -39,7 +39,7 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                #'hhrm_yd1': {'name': hhrm.yd1.name, 'object': hhrm.yd1},
                #'hhrm_yd2': {'name': hhrm.yd2.name, 'object': hhrm.yd2},
                'hhrm_mir_pitch': {'name': hhrm.mir_pitch.name, 'description':'B1 HHR Mirror Pitch','object': hhrm.mir_pitch},
-               'hhrm_table_pitch': {'name': hhrm.table_pitch.name, 'description':'B1 HHR Mirror Table Pitch','object': hhrm.table_pitch},
+               'hhrm_table_pitch': {'name': hhrm.table_pitch.name, 'description':'B1 HR Mirror Table Pitch','object': hhrm.table_pitch},
                'hhrm_y': {'name': hhrm.y.name, 'description':'B1 HHR Mirror Table Height','object': hhrm.y},
                #'hrm_theta': {'name': hrm.theta.name, 'object': hrm.theta},
                #'hrm_pitch': {'name': hrm.pitch.name, 'object': hrm.pitch},
@@ -48,14 +48,16 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'huber_stage_pitch': {'name': huber_stage.pitch.name, 'description':'B2 Huber Stage Pitch','object': huber_stage.pitch},
                'huber_stage_z': {'name': huber_stage.z.name, 'description':'B2 Huber Stage Z','object': huber_stage.z},
                'Dummy Motor': {'name': motor.name, 'description':'A dummy motor','object': motor},
+               'goniometer_1_th ': {'name': gonio_meter.th1.name , 'description':'B2 Goniometer 1-Th', 'object': gonio_meter.th1},
+               'goniometer_2_th ': {'name': gonio_meter.th2.name , 'description':'B2 Goniometer 2-Th', 'object': gonio_meter.th2},
 #               'xbic_dac1': {'name': xbic.dac1.name, 'object': xbic.dac1},
 #               'xbic_dac2': {'name': xbic.dac2.name, 'object': xbic.dac2}
-               'six_axes_stage_x': {'name': six_axes_stage.x.name, 'description':'Six Axes Stage X', 'object': six_axes_stage.x},
-               'six_axes_stage_y': {'name': six_axes_stage.y.name, 'description':'Six Axes Stage Y', 'object': six_axes_stage.y},
-               'six_axes_stage_z': {'name': six_axes_stage.z.name, 'description':'Six Axes Stage Z', 'object': six_axes_stage.z},
-               'six_axes_stage_pitch': {'name': six_axes_stage.pitch.name, 'description':'Six Axes Stage Pitch', 'object': six_axes_stage.pitch},
-               'six_axes_stage_yaw': {'name': six_axes_stage.yaw.name, 'description':'Six Axes Stage Yaw', 'object': six_axes_stage.yaw},
-               'six_axes_stage_roll': {'name': six_axes_stage.roll.name, 'description':'Six Axes Stage Roll', 'object': six_axes_stage.roll}
+               'six_axes_stage_x': {'name': six_axes_stage.x.name, 'description':'B2 Six Axes Stage X', 'object': six_axes_stage.x},
+               'six_axes_stage_y': {'name': six_axes_stage.y.name, 'description':'B2 Six Axes Stage Y', 'object': six_axes_stage.y},
+               'six_axes_stage_z': {'name': six_axes_stage.z.name, 'description':'B2 Six Axes Stage Z', 'object': six_axes_stage.z},
+               'six_axes_stage_pitch': {'name': six_axes_stage.pitch.name, 'description':'B2 Six Axes Stage Pitch', 'object': six_axes_stage.pitch},
+               'six_axes_stage_yaw': {'name': six_axes_stage.yaw.name, 'description':'B2 Six Axes Stage Yaw', 'object': six_axes_stage.yaw},
+               'six_axes_stage_roll': {'name': six_axes_stage.roll.name, 'description':'B2 Six Axes Stage Roll', 'object': six_axes_stage.roll},
               }
 
 

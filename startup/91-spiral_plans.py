@@ -7,7 +7,7 @@ def find_holder_fiducial():
     motor_x = motor_dictionary['giantxy_x']['object']
     motor_y = motor_dictionary['giantxy_y']['object']
 
-    plan = rel_spiral_square([detector],motor_x,motor_y,5,5,20,20)
+    plan = rel_spiral_square([detector],motor_x,motor_y,5,5,10,10)
 
     if hasattr(detector, 'kickoff'):
         plan_with_flyers = bpp.fly_during_wrapper(plan, [detector])

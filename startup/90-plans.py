@@ -282,7 +282,7 @@ def prep_trajectory(delay = 1):
         ttime.sleep(.1)
     ttime.sleep(delay)
 
-def prep_traj_plan(delay = 0.1):
+def prep_traj_plan(delay = 0.05):
     yield from bps.abs_set(hhm.prepare_trajectory, '1', wait=True)
 
     # Poll the trajectory ready pv
@@ -377,7 +377,7 @@ def execute_trajectory(name, **metadata):
         yield from shutter.open_plan()
         #yield from xia1.start_trigger()
         # this must be a float
-        yield from bps.abs_set(hhm.enable_loop, 0, wait=True)
+        #yield from bps.abs_set(hhm.enable_loop, 0, wait=True)
         # this must be a string
         yield from bps.abs_set(hhm.start_trajectory, '1', wait=True)
 
@@ -415,9 +415,10 @@ def execute_trajectory(name, **metadata):
 
         return ret
 
-    def final_plan():
+    def final_plan(flyers):
         yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
         #yield from xia1.stop_trigger()
+        flyers = flyers[::-1]
         for flyer in flyers:
             yield from bps.unstage(flyer)
         yield from bps.unstage(hhm)
@@ -427,7 +428,7 @@ def execute_trajectory(name, **metadata):
         yield from bps.stage(flyer)
 
     yield from bps.stage(hhm)
-    fly_plan = bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
+    fly_plan = bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan(flyers)),
                                       flyers)
     # TODO : Add in when suspend_wrapper is avaialable
     #if not ignore_shutter:
@@ -675,7 +676,7 @@ def execute_xia_trajectory(name, **metadata):
 
 def execute_loop_trajectory(name, **metadata):
 
-    flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7]
+    flyers = [pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7, pb9.enc1]
     #flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory','experiment': 'transmission', 'name': name, pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value, pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value, 'trajectory_name': hhm.trajectory_name.value}
@@ -722,6 +723,7 @@ def execute_loop_trajectory(name, **metadata):
 
     def final_plan():
         yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
+
         for flyer in flyers:
             yield from bps.unstage(flyer)
         yield from bps.unstage(hhm)
@@ -764,6 +766,7 @@ def set_gains_and_offsets_plan(*args):
     for ic, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0], 
                        [val for index, val in enumerate(args) if index % 3 == 1], 
                        [hs for index, hs in enumerate(args) if index % 3 == 2]):
+        yield from ic.set_gain_plan(val, hs)
         yield from ic.set_gain_plan(val, hs)
 
         if type(ic) != ICAmplifier:
