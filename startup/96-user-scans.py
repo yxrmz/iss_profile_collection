@@ -394,7 +394,7 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
     '''
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
-    energy_grid, time_grid = get_xia_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafs_spacing)
+    energy_grid, time_grid = generate_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafs_spacing)
     positions_grid = xray.energy2encoder(energy_grid) / 360000
 
     ax = kwargs.get('ax')

@@ -160,4 +160,14 @@ def tune_mono_y_bpm(scan_range, step, retries=1, ax=None):
 
     print('Y tuning complete!')
 
+
+
+    def prep_trajectory(delay = 1):
+    hhm.prepare_trajectory.put("1")
+    while (hhm.trajectory_ready.value == 0):
+        ttime.sleep(.1)
+    while (hhm.trajectory_ready.value == 1):
+        ttime.sleep(.1)
+    ttime.sleep(delay)
+
 '''
