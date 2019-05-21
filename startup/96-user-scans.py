@@ -45,12 +45,26 @@ def tscan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs
             name_n = name + ' ' + str(indx + 1)
         print('Current step: {} / {}'.format(indx + 1, n_cycles))
         RE(prep_traj_plan())
-        uid = RE(execute_trajectory(name_n, comment=comment))
+        uid = RE(execute_trajectory(name_n,delay,comment=comment))
         yield uid
         # hhm.prepare_trajectory.put('1')
         # uids.append(uid)
-        time.sleep(float(delay))
-    # return uids
+        # return uids
+
+def constant_energy(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
+
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    uids = []
+
+    for indx in range(int(n_cycles)):
+        name_n = '{} {:04d}'.format(name, indx + 1)
+
+        uid = (yield from execute_constant_energy(name_n, delay, comment=comment))
+        uids.append(uid)
+
+
+        yield from bps.sleep(float(delay))
+    return uids
 
 
 def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
