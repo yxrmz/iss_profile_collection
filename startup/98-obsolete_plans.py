@@ -170,4 +170,147 @@ def tune_mono_y_bpm(scan_range, step, retries=1, ax=None):
         ttime.sleep(.1)
     ttime.sleep(delay)
 
+
+
+
+def tscan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
+    """
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
+
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+
+    delay : float (default = 0)
+        Delay in seconds between scans
+
+
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+
+    See Also
+    --------f
+    :func:`tscanxia`
+    """
+
+    # uids = []
+    RE.is_aborted = False
+    for indx in range(int(n_cycles)):
+        if RE.is_aborted:
+            return 'Aborted'
+        if n_cycles == 1:
+            name_n = name
+        else:
+            name_n = name + ' ' + str(indx + 1)
+        print('Current step: {} / {}'.format(indx + 1, n_cycles))
+        RE(prep_traj_plan())
+        uid = RE(execute_trajectory(name_n,delay,comment=comment))
+        yield uid
+        # hhm.prepare_trajectory.put('1')
+        # uids.append(uid)
+        # return uids
+
+
+
+def tscancam(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
+    """
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
+
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+
+    delay : float (default = 0)
+        Delay in seconds between scans
+
+
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+
+    See Also
+    --------
+    :func:`tscanxia`
+    """
+
+    # uids = []
+    RE.is_aborted = False
+    for indx in range(int(n_cycles)):
+        if RE.is_aborted:
+            return 'Aborted'
+        if n_cycles == 1:
+            name_n = name
+        else:
+            name_n = name + ' ' + str(indx + 1)
+        print('Current step: {} / {}'.format(indx + 1, n_cycles))
+        RE(prep_traj_plan())
+        uid, = RE(execute_camera_trajectory(name_n, comment=comment))
+        yield uid
+        # uids.append(uid)
+        time.sleep(float(delay))
+    print('Done!')
+    # return uids
+
+
+
+
+def tscanxia(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
+    """
+    Trajectory Scan XIA - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA N times
+
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+
+    delay : float (default = 0)
+        Delay in seconds between scans
+
+
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+
+    See Also
+    --------
+    :func:`tscan`
+    """
+
+    # uids = []
+    RE.is_aborted = False
+    for i in range(int(n_cycles)):
+        if RE.is_aborted:
+            return 'Aborted'
+        if n_cycles == 1:
+            name_n = name
+        else:
+            name_n = name + ' ' + str(i + 1)
+        print('Current step: {} / {}'.format(i + 1, n_cycles))
+        RE(prep_traj_plan())
+        uid, = RE(execute_xia_trajectory(name_n, comment=comment))
+        yield uid
+        # uids.append(uid)
+        time.sleep(float(delay))
+    print('Done!')
+    # return uids
+
+
 '''

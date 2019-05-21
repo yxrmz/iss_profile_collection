@@ -116,30 +116,7 @@ def tune(detectors, motor, start, stop, num, name='', **metadata):
 
     yield from plan
 
-def generate_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing,
-                        xanes_spacing, exafsk_spacing, int_time_preedge = 1, int_time_xanes = 1, int_time_exafs = 1, k_power = 0):
-    preedge = np.arange(e0 + preedge_start, e0 + xanes_start, preedge_spacing)
-    preedge_int = np.ones(len(preedge)) * int_time_preedge
 
-    edge = np.arange(e0 + xanes_start, e0 + xanes_end, xanes_spacing)
-    edge_int = np.ones(len(edge)) * int_time_xanes
-
-    iterator = exafsk_spacing
-    kenergy = 0
-    postedge = np.array([])
-
-    energy_end = xray.k2e(exafs_end, e0)
-    exafs_int = []
-    while(kenergy + e0 + xanes_end < energy_end):
-        kenergy = xray.k2e(iterator, e0) - e0
-        postedge = np.append(postedge, e0 + xanes_end + kenergy)
-        exafs_int.append(int_time_exafs * (iterator ** k_power))
-        iterator += exafsk_spacing
-
-    integration_times = np.append(np.append(preedge_int, edge_int), np.array(exafs_int))
-    grid = np.append(np.append(preedge, edge), postedge)
-    return grid[::-1], integration_times
-    #return np.append(np.append(preedge, edge), postedge)
 
 def step_list_plan(detectors, motor, positions_grid, name = ''):
     """

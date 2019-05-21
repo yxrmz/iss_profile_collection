@@ -12,11 +12,13 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 xlive_gui = xlive.XliveGui(plan_funcs={
-                                    'Fly scan':       fly_scan,
-                                    'Constant energy' : constant_energy,
-                                    'Spiral fly scan': fly_scan_over_spiral,
-                                    'Fly scan with SDD':    fly_scan_with_sdd,
-                                    'Fly scan with Area Detector':    fly_scan_with_camera,
+                                    'Fly scan':                     fly_scan,
+                                    'Step scan' :                   step_scan,
+                                    'Constant energy' :             constant_energy,
+                                    'Spiral fly scan':              fly_scan_over_spiral,
+                                    'Fly scan with SDD':            fly_scan_with_sdd,
+                                    'Fly scan with Area Detector':  fly_scan_with_camera,
+
                            },
                            service_plan_funcs={
                                 'get_adc_offsets':  get_adc_offsets,
