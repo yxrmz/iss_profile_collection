@@ -1,23 +1,11 @@
-
-def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
+def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference=True, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    energy_grid = kwargs.pop('energy_grid',[])
+    energy_grid = kwargs.pop('energy_grid', [])
     time_grid = kwargs.pop('time_grid', [])
-    print(len(energy_grid))
-    print(len(time_grid))
-    print((energy_grid))
-    print((time_grid))
+    print(energy_grid)
+    #yield from bps.sleep(0.1)
+    yield from step_scan_plan(name, energy_grid)
 
-    yield from bps.sleep(1)
-
-    # time_grid = kwargs.pop('energy_grid')
-    # uids = []
-    #
-    # for indx in range(int(n_cycles)):
-    #     name_n = '{} {:04d}'.format(name, indx + 1)
-    #
-    #     yield from bps.sleep(float(delay))
-    # return uids
 
 
 
