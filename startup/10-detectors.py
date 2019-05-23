@@ -1,5 +1,6 @@
+import itertools
 import uuid
-from collections import namedtuple
+from collections import namedtuple, deque
 from concurrent.futures import ThreadPoolExecutor
 import os
 import shutil
@@ -135,10 +136,9 @@ class Encoder(Device):
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
 
-    def __init__(self, *args, reg, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
-        self._reg = reg
         if self.connected:
             self.ignore_sel.put(1)
             # self.filter_dt.put(10000)
@@ -158,6 +158,18 @@ def make_filename(filename):
 class EncoderFS(Encoder):
     "Encoder Device, when read, returns references to data in filestore."
     chunk_size = 1024
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._asset_docs_cache = deque()
+        self._resource_uid = None
+        self._datum_counter = None
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
@@ -184,19 +196,23 @@ class EncoderFS(Encoder):
             #self.filepath.put(self._full_path)   # commented out during disaster
             self.filepath.put(self._ioc_full_path)
 
-            self.resource_uid = self._reg.register_resource(
-                'PIZZABOX_ENC_FILE_TXT_PD',
-                ROOT_PATH, full_path,
-                {})
+            self._resource_uid = str(uuid.uuid4())
+            resource = {'spec': 'PIZZABOX_ENC_FILE_TXT_PD',
+                        'root': ROOT_PATH,
+                        'resource_path': full_path,
+                        'resource_kwargs': {},
+                        'path_semantics': os.name,
+                        'uid': self._resource_uid}
+            self._asset_docs_cache.append(('resource', resource))
+            self._datum_counter = itertools.count()
 
             super().stage()
             print('Staging of {} complete'.format(self.name))
-        else:
-            raise ConnectionError(f'{self.name} cannot be connected')
 
     def unstage(self):
         if(self.connected):
             set_and_wait(self.ignore_sel, 1)
+            self._datum_counter = None
             return super().unstage()
 
     def kickoff(self):
@@ -211,13 +227,35 @@ class EncoderFS(Encoder):
         return NullStatus()
 
     def complete(self):
-        #print('s', self.name, 'in', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.ignore_sel, 1)
         #while not os.path.isfile(self._full_path):
         #    ttime.sleep(.1)
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        workstation_file_root = '/mnt/xf08ida-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+
+
+        # HACK: Make datum documents here so that they are available for collect_asset_docs
+        # before collect() is called. May need changes to RE to do this properly. - Dan A.
+
+        self._datum_ids = []
+
+        datum_id = '{}/{}'.format(self._resource_uid,  next(self._datum_counter))
+        datum = {'resource': self._resource_uid,
+                 'datum_kwargs': {},
+                 'datum_id': datum_id}
+        self._asset_docs_cache.append(('datum', datum))
+
+        self._datum_ids.append(datum_id)
+
         return NullStatus()
 
     def collect(self):
@@ -232,29 +270,14 @@ class EncoderFS(Encoder):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
-
         ttime.sleep(1)  # wait for file to be written by pizza box
 
-        workstation_file_root = '/mnt/xf08ida-ioc1/'
-        workstation_full_path = os.path.join(workstation_file_root, self._filename)
-
-
-        # FIXME: beam line disaster fix.
-        # Let's move the file to the correct place
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
-        cp_stat = shutil.copy(workstation_full_path, self._full_path)
-        #print(f'Encoder {print_now()}')
-        if os.path.isfile(self._full_path):
-            datum_uid = self._reg.register_datum(self.resource_uid, {})
-            data = {self.name: datum_uid}
+        for datum_id in self._datum_ids:
+            data = {self.name: datum_id}
             yield {'data': data,
-                   'timestamps': {key: now for key in data}, 'time': now}
-            print('Collect of {} complete'.format(self.name))
-
-        else:
-            print('Collect {}: File was not created'.format(self.name))
-        #print(f'Encoder {print_now()}')
-
+                   'timestamps': {key: now for key in data}, 'time': now,
+                   'filled': {key: False for key in data}}
+        print('Collect of {} complete'.format(self.name))
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -264,7 +287,7 @@ class EncoderFS(Encoder):
                       'devname': self.dev_name.value,
                       'source': 'pizzabox-enc-file',
                       'external': 'FILESTORE:',
-                      'shape': [1024, 5],
+                      'shape': [-1, -1],
                       'dtype': 'array'}}}
 
 
@@ -276,8 +299,7 @@ class DigitalOutput(Device):
     dutycycle_sp = Cpt(EpicsSignal, '}DutyCycle-SP')
     default_pol = Cpt(EpicsSignal, '}Dflt-Sel')
 
-    def __init__(self, *args, reg, **kwargs):
-        self._reg = reg
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
@@ -300,8 +322,7 @@ class DigitalInput(Device):
     ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
     ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
 
-    def __init__(self, *args, reg, **kwargs):
-        self._reg = reg
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_to_collect = False
         if self.connected:
@@ -312,6 +333,18 @@ class DigitalInput(Device):
 class DIFS(DigitalInput):
     "Encoder Device, when read, returns references to data in filestore."
     chunk_size = 1024
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._asset_docs_cache = deque()
+        self._resource_uid = None
+        self._datum_counter = None
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
@@ -334,16 +367,22 @@ class DIFS(DigitalInput):
         # self.filepath.put(self._full_path)   # commented out during disaster
         self.filepath.put(self._ioc_full_path)
 
-        self.resource_uid = self._reg.register_resource(
-            'PIZZABOX_DI_FILE_TXT_PD',
-            ROOT_PATH, full_path,
-            {})
+        self._resource_uid = str(uuid.uuid4())
+        resource = {'spec': 'PIZZABOX_DI_FILE_TXT_PD',
+                    'root': root_path,
+                    'resource_path': full_path,
+                    'resource_kwargs': {},
+                    'path_semantics': os.name,
+                    'uid': self._resource_uid}
+        self._asset_docs_cache.append(('resource', resource))
+        self._datum_counter = itertools.count()
 
         super().stage()
         print('Staging of {} complete'.format(self.name))
 
     def unstage(self):
         set_and_wait(self.ignore_sel, 1)
+        self._datum_counter = None
         return super().unstage()
 
     def kickoff(self):
@@ -358,13 +397,32 @@ class DIFS(DigitalInput):
         return NullStatus()
 
     def complete(self):
-        #print('storing', self.name, 'in', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.ignore_sel, 1)
         #while not os.path.isfile(self._full_path):
         #    ttime.sleep(.1)
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        workstation_file_root = '/mnt/xf08ida-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+
+        # HACK: Make datum documents here so that they are available for collect_asset_docs
+        # before collect() is called. May need changes to RE to do this properly. - Dan A.
+        self._datum_ids = []
+
+        datum_id = '{}/{}'.format(self._resource_uid,  next(self._datum_counter))
+        datum = {'resource': self._resource_uid,
+                 'datum_kwargs': {},
+                 'datum_id': datum_id}
+        self._asset_docs_cache.append(('datum', datum))
+
+        self._datum_ids.append(datum_id)
         return NullStatus()
 
     def collect(self):
@@ -381,23 +439,12 @@ class DIFS(DigitalInput):
         now = ttime.time()
         ttime.sleep(1)  # wait for file to be written by pizza box
 
-        workstation_file_root = '/mnt/xf08ida-ioc1/'
-        workstation_full_path = os.path.join(workstation_file_root, self._filename)
 
-
-        # FIXME: beam line disaster fix.
-        # Let's move the file to the correct place
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
-        cp_stat = shutil.copy(workstation_full_path, self._full_path)
-
-        if os.path.isfile(self._full_path):
-            datum_uid = self._reg.register_datum(self.resource_uid, {})
-            data = {self.name: datum_uid}
+        for datum_id in self._datum_ids:
+            data = {self.name: datum_id}
             yield {'data': data,
-                   'timestamps': {key: now for key in data}, 'time': now}
-            print('Collect of {} complete'.format(self.name))
-        else:
-            print('collect {}: File was not created'.format(self.name))
+                   'timestamps': {key: now for key in data}, 'time': now,
+                   'filled': {key: False for key in data}}
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -410,20 +457,19 @@ class DIFS(DigitalInput):
                       'shape': [1024, 5],
                       'dtype': 'array'}}}
 
-
 class PizzaBoxFS(Device):
     ts_sec = Cpt(EpicsSignal, '}T:sec-I')
     #internal_ts_sel = Cpt(EpicsSignal, '}T:Internal-Sel')
 
-    enc1 = Cpt(EncoderFS, ':1', reg=db.reg)
-    enc2 = Cpt(EncoderFS, ':2', reg=db.reg)
-    enc3 = Cpt(EncoderFS, ':3', reg=db.reg)
-    enc4 = Cpt(EncoderFS, ':4', reg=db.reg)
-    di = Cpt(DIFS, ':DI', reg=db.reg)
-    do0 = Cpt(DigitalOutput, '-DO:0', reg=db.reg)
-    do1 = Cpt(DigitalOutput, '-DO:1', reg=db.reg)
-    do2 = Cpt(DigitalOutput, '-DO:2', reg=db.reg)
-    do3 = Cpt(DigitalOutput, '-DO:3', reg=db.reg)
+    enc1 = Cpt(EncoderFS, ':1')
+    enc2 = Cpt(EncoderFS, ':2')
+    enc3 = Cpt(EncoderFS, ':3')
+    enc4 = Cpt(EncoderFS, ':4')
+    di = Cpt(DIFS, ':DI')
+    do0 = Cpt(DigitalOutput, '-DO:0')
+    do1 = Cpt(DigitalOutput, '-DO:1')
+    do2 = Cpt(DigitalOutput, '-DO:2')
+    do3 = Cpt(DigitalOutput, '-DO:3')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -511,10 +557,18 @@ class AdcFS(Adc):
     chunk_size = 1024
     write_path_template = os.path.join(ROOT_PATH, RAW_FILEPATH, '/%Y/%m/%d')
 
-    def __init__(self, *args, reg, **kwargs):
-        self._reg = reg
+    def __init__(self, *args, **kwargs):
         self.file_move_executor = ThreadPoolExecutor(max_workers=2)
         super().__init__(*args, **kwargs)
+        self._asset_docs_cache = deque()
+        self._resource_uid = None
+        self._datum_counter = None
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
     def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
@@ -538,18 +592,23 @@ class AdcFS(Adc):
             #self.filepath.put(self._full_path)   # commented out during disaster
             self.filepath.put(self._ioc_full_path)
 
-            self.resource_uid = self._reg.register_resource(
-                'PIZZABOX_AN_FILE_TXT_PD',
-                ROOT_PATH, full_path,
-                {})
+            self._resource_uid = str(uuid.uuid4())
+            resource = {'spec': 'PIZZABOX_AN_FILE_TXT_PD',
+                        'root': ROOT_PATH,
+                        'resource_path': full_path,
+                        'resource_kwargs': {},
+                        'path_semantics': os.name,
+                        'uid': self._resource_uid}
+            self._asset_docs_cache.append(('resource', resource))
+            self._datum_counter = itertools.count()
+
             print('Staging of {} complete'.format(self.name))
             super().stage()
-        else:
-            raise ConnectionError(f'{self.name} cannot be connected')
 
     def unstage(self):
         if(self.connected):
             set_and_wait(self.enable_sel, 1)
+            self._datum_counter = None
             return super().unstage()
 
     def kickoff(self):
@@ -566,11 +625,29 @@ class AdcFS(Adc):
         return st
 
     def complete(self):
-        #print('storing', self.name, 'in', self._full_path)
+        print('storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.enable_sel, 1)
+
+        # FIXME: beam line disaster fix.
+        # Let's move the file to the correct place
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        stat = shutil.copy(workstation_full_path, self._full_path)
+
+        # HACK: Make datum documents here so that they are available for collect_asset_docs
+        # before collect() is called. May need changes to RE to do this properly. - Dan A.
+        self._datum_ids = []
+        datum_id = '{}/{}'.format(self._resource_uid,  next(self._datum_counter))
+        datum = {'resource': self._resource_uid,
+                 'datum_kwargs': {},
+                 'datum_id': datum_id}
+        self._asset_docs_cache.append(('datum', datum))
+
+        self._datum_ids.append(datum_id)
         return NullStatus()
 
     def collect(self):
@@ -579,34 +656,19 @@ class AdcFS(Adc):
 
         Return a dictionary with references to these documents.
         """
-        now = ttime.time()
         print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
-        while self.buffer_level.value > 0:
-            ttime.sleep(0.01)  # wait for file to be written by pizza box
+        now = ttime.time()
+        ttime.sleep(1)  # wait for file to be written by pizza box
 
-        workstation_file_root = '/mnt/xf08idb-ioc1/'
-        workstation_full_path = os.path.join(workstation_file_root, self._filename)
-
-        # FIXME: beam line disaster fix.
-        # Let's move the file to the correct place
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
-        stat = shutil.copy(workstation_full_path, self._full_path)
-
-        #print(f'Analog {print_now()}')
-        if os.path.isfile(self._full_path):
-            datum_uid = self._reg.register_datum(self.resource_uid, {})
-            data = {self.name: datum_uid}
+        for datum_id in self._datum_ids:
+            data = {self.name: datum_id}
             yield {'data': data,
-                   'timestamps': {key: now for key in data}, 'time': now}
-            #print(f'==========\n\ndata: {data}\n\n==========')
-            print('Collect of {} complete'.format(self.name))
-        else:
-            print('collect {}: File was not created'.format(self.name))
-        #print(f'Analog {print_now()}')
+                   'timestamps': {key: now for key in data}, 'time': now,
+                   'filled': {key: False for key in data}}
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -623,9 +685,9 @@ class AdcFS(Adc):
 class PizzaBoxAnalogFS(Device):
     #internal_ts_sel = Cpt(EpicsSignal, 'Gen}T:Internal-Sel')
 
-    adc1 = Cpt(AdcFS, 'ADC:1', reg=db.reg)
-    adc6 = Cpt(AdcFS, 'ADC:6', reg=db.reg)
-    adc7 = Cpt(AdcFS, 'ADC:7', reg=db.reg)
+    adc1 = Cpt(AdcFS, 'ADC:1')
+    adc6 = Cpt(AdcFS, 'ADC:6')
+    adc7 = Cpt(AdcFS, 'ADC:7')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
