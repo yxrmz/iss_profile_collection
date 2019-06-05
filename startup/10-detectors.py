@@ -363,7 +363,7 @@ class DIFS(DigitalInput):
         ioc_file_root = '/home/softioc/tmp/'
         self._ioc_full_path = os.path.join(ioc_file_root, filename)
         self._filename = filename
-
+        print(self._filename)
         # self.filepath.put(self._full_path)   # commented out during disaster
         self.filepath.put(self._ioc_full_path)
 
