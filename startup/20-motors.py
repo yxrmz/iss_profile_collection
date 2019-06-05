@@ -144,6 +144,14 @@ class SampleXY(Device):
 samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
 giantxy = SampleXY('XF:08IDB-OP{PPMAC:Stage', name='giantxy')
 
+class DetStageXYZ(Device):
+    x = Cpt(EpicsMotor, '-Ax:X}Mtr')
+    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    z = Cpt(EpicsMotor, '-Ax:Z}Mtr')
+
+detstage = DetStageXYZ('XF:08IDB-OP{PPMAC:DetStage', name='detstage')
+
+
 
 class FilterBox(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')

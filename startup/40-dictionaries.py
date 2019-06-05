@@ -58,6 +58,10 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'six_axes_stage_pitch': {'name': six_axes_stage.pitch.name, 'description':'B2 Six Axes Stage Pitch', 'object': six_axes_stage.pitch},
                'six_axes_stage_yaw': {'name': six_axes_stage.yaw.name, 'description':'B2 Six Axes Stage Yaw', 'object': six_axes_stage.yaw},
                'six_axes_stage_roll': {'name': six_axes_stage.roll.name, 'description':'B2 Six Axes Stage Roll', 'object': six_axes_stage.roll},
+               'detstage_x': {'name': detstage.x.name, 'description': 'Detector Stage X','object': detstage.x},
+               'detstage_y': {'name': detstage.y.name, 'description': 'Detector Stage Y','object': detstage.y},
+               'detstage_z': {'name': detstage.z.name, 'description': 'Detector Stage Z','object': detstage.z},
+
               }
 
 

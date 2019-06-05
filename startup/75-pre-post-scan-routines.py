@@ -256,7 +256,7 @@ def get_adc_offsets(times: int = 20, *args, **kwargs):
     old_avers = []
     for adc in adcs:
         old_avers.append(adc.averaging_points.get())
-        adc.averaging_points.put(15)
+        adc.averaging_points.put(10)
 
     try:
         yield from bps.mv(shutter_ph_2b, 'Close')
