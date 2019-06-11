@@ -1,3 +1,6 @@
+
+
+
 def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference=True, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     energy_grid = kwargs.pop('energy_grid', [])
