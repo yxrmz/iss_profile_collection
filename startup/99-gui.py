@@ -49,7 +49,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            sample_stage = giantxy,
                            tune_elements = tune_elements,
                            ic_amplifiers = ic_amplifiers,
-                           window_title="XLive @ISS/08-ID NSLS-II Development",
+                           window_title="XLive @ISS/08-ID NSLS-II",
                            )
 
 def xlive():
