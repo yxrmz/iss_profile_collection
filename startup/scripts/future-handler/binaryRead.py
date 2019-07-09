@@ -19,8 +19,8 @@ def Range(val):
     if(val==16): r = 100087
     return(r)
 
-X = np.fromfile("FAStream.bin",dtype=int)
-print len(X)
+X = np.fromfile("FAstream.bin",dtype=int)
+print(len(X))
 A = []
 B = []
 C = []
