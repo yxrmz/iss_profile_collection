@@ -93,13 +93,14 @@ bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
-bpm_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='bpm_sp1')
-bpm_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='bpm_sp3')
-bpm_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='bpm_sp4')
-bpm_sp5 = CAMERA('XF:08IDB-BI{BPM:SP-5}', name='bpm_sp5')
+camera_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
+camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
+camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
+camera_sp5 = CAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
 #bpm_ms1 = CAMERA('XF:08IDB-BI{BPM:MS-1}', name='bpm_ms1')
 
-for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, bpm_sp1, bpm_sp3]:
+for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es, camera_sp1, camera_sp2, camera_sp3, camera_sp4, camera_sp5]:
     bpm.read_attrs = ['stats1', 'stats2']
     bpm.image.read_attrs = ['array_data']
     bpm.stats1.read_attrs = ['total', 'centroid']
