@@ -74,5 +74,5 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'ir_amp': ir_amp,
                  'iff_amp': iff_amp}
 
-camera_dictionary = {'Camera_3':camera_sp3}
+camera_dictionary = {'camera_sample3':camera_sp3}
 
