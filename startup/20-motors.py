@@ -150,7 +150,7 @@ class DetStageXYZ(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
     z = Cpt(EpicsMotor, '-Ax:Z}Mtr')
 
-detstage = DetStageXYZ('XF:08IDB-OP{PPMAC:DetStage', name='detstage')
+detstage = DetStageXYZ('XF:08IDB-OP{Stage:Det', name='detstage')
 
 
 
