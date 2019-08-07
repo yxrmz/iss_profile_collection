@@ -1,4 +1,4 @@
-from isstools import xlive
+#from isstools import xlive
 
 import atexit
 import requests
@@ -10,7 +10,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 #                  {'x': samplexy.x.name, 'y': samplexy.y.name},
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
-
+'''
 xlive_gui = xlive.XliveGui(plan_funcs={
                                     'Fly scan':                     fly_scan,
                                     'Step scan':                    step_scan,
@@ -60,7 +60,7 @@ print('Startup complete')
 
 sys.stdout = xlive_gui.emitstream_out
 sys.stderr = xlive_gui.emitstream_err
-
+'''
 
 #def cleaning():
 #    if xlive_gui.piezo_thread.isRunning():

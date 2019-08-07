@@ -1,7 +1,7 @@
 from ophyd import (EpicsMotor, Device, Component as Cpt,
                    EpicsSignal)
 import numpy as np
-
+print(__file__)
 
 class Mirror(Device):
     pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')

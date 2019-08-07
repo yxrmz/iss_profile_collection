@@ -4,6 +4,8 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
 from nslsii.devices import TwoButtonShutter
 import bluesky.plans as bp
 from ophyd.status import SubscriptionStatus
+print(__file__)
+
 
 class MFC(Device):
     flow = Cpt(EpicsSignal, '-RB', write_pv='-SP')

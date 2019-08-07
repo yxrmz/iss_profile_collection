@@ -1,5 +1,5 @@
 from bluesky.callbacks import LivePlot
-
+print(__file__)
 class NormPlot(LivePlot):
     def __init__(self, num_name, den_name, result_name, *args, **kwargs):
         super().__init__(*args, **kwargs)

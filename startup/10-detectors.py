@@ -17,7 +17,7 @@ from ophyd.sim import NullStatus
 from datetime import datetime
 
 from databroker.assets.handlers_base import HandlerBase
-
+print(__file__)
 
 def print_now():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')

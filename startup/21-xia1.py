@@ -1,4 +1,5 @@
 import time as ttime
+print(__file__)
 
 class ROI(Device):
     low =               Cpt(EpicsSignal, 'LO')

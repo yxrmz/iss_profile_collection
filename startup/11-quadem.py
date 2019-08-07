@@ -1,9 +1,142 @@
+import time as ttime
+from ophyd import Device, Component as Cpt, EpicsSignal, Kind
+from ophyd.status import SubscriptionStatus
+
 
 class Electrometer(Device):
-    acquire = Cpt(EpicsSignal, 'FA:SoftTrig-SP')
-    busy = Cpt(EpicsSignal, 'FA:Busy-I')
+    acquire = Cpt(EpicsSignal, 'FA:SoftTrig-SP', kind=Kind.omitted)
+    busy = Cpt(EpicsSignal, 'FA:Busy-I', kind=Kind.omitted)
+    stream = Cpt(EpicsSignal,'FA:Stream-SP', kind=Kind.omitted)
 
-em1 = Electrometer ('PBPM:', name='em1')
+    ch1_mean = Cpt(EpicsSignal, 'FA:A:Mean-I')
+    ch2_mean = Cpt(EpicsSignal, 'FA:B:Mean-I')
+    ch3_mean = Cpt(EpicsSignal, 'FA:C:Mean-I')
+    ch4_mean = Cpt(EpicsSignal, 'FA:D:Mean-I')
+
+    ch1_current = Cpt(EpicsSignal, 'Current:A-Calc')
+    ch2_current = Cpt(EpicsSignal, 'Current:B-Calc')
+    ch3_current = Cpt(EpicsSignal, 'Current:C-Calc')
+    ch4_current = Cpt(EpicsSignal, 'Current:D-Calc')
+
+    ch1_gain = Cpt(EpicsSignal, 'ADC:A:Gain-SP')
+    ch2_gain = Cpt(EpicsSignal, 'ADC:B:Gain-SP')
+    ch3_gain = Cpt(EpicsSignal, 'ADC:C:Gain-SP')
+    ch4_gain = Cpt(EpicsSignal, 'ADC:D:Gain-SP')
+
+    ch1_offset = Cpt(EpicsSignal, 'ADC:A:Offset-SP')
+    ch2_offset = Cpt(EpicsSignal, 'ADC:B:Offset-SP')
+    ch3_offset = Cpt(EpicsSignal, 'ADC:C:Offset-SP')
+    ch4_offset = Cpt(EpicsSignal, 'ADC:D:Offset-SP')
+
+    trig_source = Cpt(EpicsSignal, 'Machine:Clk-SP')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._capturing = None
+        self._ready_to_collect = False
+
+    def stage(self, *args, **kwargs):
+        self.trig_source.set(1)
+        super().stage(*args, **kwargs)
+
+    def trigger(self):
+        def callback(value, old_value, **kwargs):
+            print(f'{ttime.time()} {old_value} ---> {value}')
+            if self._capturing and int(round(old_value)) == 1 and int(round(value)) == 0:
+                self._capturing = False
+                return True
+            else:
+                self._capturing = True
+                return False
+
+        status = SubscriptionStatus(self.busy, callback)
+        self.acquire.set(1)
+        return status
+
+
+    # def trigger(self):
+    #     self.acquire.set(1)
+    #     time.sleep(0.3)
+    #     st = DeviceStatus(self)
+    #     while self.busy.get():
+    #         time.sleep(0.05)
+    #     st._finished()
+    #     return st
+
+    def kickoff(self):
+        self.stream.set(1)
+        self._ready_to_collect = True
+
+    def complete(self):
+        if not self._ready_to_collect:
+            raise RuntimeError("must called kickoff() method before calling complete()")
+        self.stream.set(0)
+
+
+em1 = Electrometer('PBPM:', name='em1')
+for i in [1, 2, 3, 4]:
+    getattr(em1, f'ch{i}_current').kind = 'hinted'
+
+
+
+
+
+
+
+
+def step_scan_with_electrometer(energy_list):
+
+    DATA={}
+
+    export_fp = '/tmp/export.dat'
+    if os.path.exists(export_fp):
+        os.remove(export_fp)
+        with open(export_fp, 'w') as f:
+            f.write('# ')
+
+        ch1_gain = em1.ch1_gain.get()
+        ch2_gain = em1.ch2_gain.get()
+        ch3_gain = em1.ch3_gain.get()
+        ch4_gain = em1.ch4_gain.get()
+
+        ch1_offset = em1.ch1_offset.get()
+        ch2_offset = em1.ch2_offset.get()
+        ch3_offset = em1.ch3_offset.get()
+        ch4_offset = em1.ch4_offset.get()
+
+    for energy in energy_list:
+        # move to next energy
+        print(f'Energy is {energy}')
+
+        em1.acquire.set(1)
+        time.sleep(0.3)
+        while em1.busy.get(): 
+            time.sleep(0.05)
+
+        ch1 = (em1.ch1_mean.get() - ch1_offset) / ch1_gain
+        ch2 = (em1.ch2_mean.get() - ch2_offset) / ch2_gain
+        ch3 = (em1.ch3_mean.get() - ch3_offset) / ch3_gain
+        ch4 = (em1.ch4_mean.get() - ch4_offset) / ch4_gain
+
+        print('Channel 1: {:.8e}'.format(ch1))
+        print('Channel 2: {:.8e}'.format(ch2))
+        print('Channel 3: {:.8e}'.format(ch3))
+        print('Channel 4: {:.8e}'.format(ch4))
+
+        DATA['i0'].append(ch1)
+
+
+
+
+
+
+
+
+
+
+
+
+
     # stats2 = Cpt(StatsPlugin, 'Stats2:')
     # roi1 = Cpt(ROIPlugin, 'ROI1:')
     # roi2 = Cpt(ROIPlugin, 'ROI2:')
