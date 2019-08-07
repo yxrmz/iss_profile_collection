@@ -142,7 +142,8 @@ class SampleXY(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
 
 samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
-giantxy = SampleXY('XF:08IDB-OP{PPMAC:Stage', name='giantxy')
+giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy')
+auxxy = SampleXY('XF:08IDB-OP{Stage:Aux1', name='auxxy')
 
 class DetStageXYZ(Device):
     x = Cpt(EpicsMotor, '-Ax:X}Mtr')
