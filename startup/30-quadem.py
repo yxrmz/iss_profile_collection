@@ -60,10 +60,14 @@ class Electrometer(Device):
 
     def collect(self):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh.connect('10.8.0.22', username='root')
+        server = '10.8.0.22'
+        self.ssh.connect(server, username='root')
+        filename = f'/tmp/test-{dt.datetime.strftime(dt.datetime.now(), "%Y%m%d%H%M%S")}.bin'
+        print(f'saving a file from {server} to {filename}')
         with self.ssh.open_sftp() as sftp:
             sftp.get('/home/Save/FAstream.bin',
-                     f'/tmp/test-{dt.datetime.strftime(dt.datetime.now(), "%Y%m%d%H%M%S")}.bin')
+                     filename)
+        return {}
 
 
 class Flyer:
