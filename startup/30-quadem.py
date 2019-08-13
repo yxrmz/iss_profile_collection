@@ -1,5 +1,5 @@
 import time as ttime
-import datetime
+import datetime as dt
 from ophyd import Device, Component as Cpt, EpicsSignal, Kind, set_and_wait
 from ophyd.status import SubscriptionStatus
 import paramiko
@@ -59,10 +59,11 @@ class Electrometer(Device):
         return status
 
     def collect(self):
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect('10.8.0.22', username='root')
         with self.ssh.open_sftp() as sftp:
             sftp.get('/home/Save/FAstream.bin',
-                     f'/tmp/test-{datetime.datetime.strftime(datetime.datetime.now(), "%Y%m%d%H%M%S")}.bin')
+                     f'/tmp/test-{dt.datetime.strftime(dt.datetime.now(), "%Y%m%d%H%M%S")}.bin')
 
 
 class Flyer:
@@ -74,10 +75,10 @@ class Flyer:
     def kickoff(self, *args, **kwargs):
         set_and_wait(self.det.trig_source, 1)
         # TODO: handle it on the plan level
-        # set_and_wait(self.mono, 'prepare')
+        # set_and_wait(self.motor, 'prepare')
 
         def callback(value, old_value, **kwargs):
-            print(f'{ttime.time()} {old_value} ---> {value}')
+            print(f'kickoff: {ttime.time()} {old_value} ---> {value}')
             if int(round(old_value)) == 0 and int(round(value)) == 1:
                 # Now start mono move
                 self._motor_status = self.motor.set('start')
@@ -91,16 +92,17 @@ class Flyer:
 
     def complete(self):
         def callback_det(value, old_value, **kwargs):
-            print(f'{ttime.time()} {old_value} ---> {value}')
+            print(f'complete: {ttime.time()} {old_value} ---> {value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 return True
             else:
                 return False
         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
 
-        def callback_motor(*args, **kwargs):
-            print(f'{ttime.time()}\nargs: {args}\nkwargs: {kwargs}')
-            return False
+        def callback_motor():
+            print(f'callback_motor {ttime.time()}')
+            self.det.stream.set(0)
+
         self._motor_status.add_callback(callback_motor)
 
         return streaming_st & self._motor_status
