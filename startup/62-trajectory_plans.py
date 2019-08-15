@@ -232,7 +232,7 @@ def execute_camera_trajectory(name, **metadata):
 
 def execute_xia_trajectory(name, **metadata):
     # flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
-    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7, pb4.di]
+    flyers = [pba2.adc7, pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7, pb9.enc1, pb4.di]
 
     def inner():
         # Setting the name of the file
@@ -254,7 +254,10 @@ def execute_xia_trajectory(name, **metadata):
 
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-        full_element_name = element(curr_traj.elem.value).name
+        try:
+            full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+        except:
+            full_element_name = curr_traj.elem.value
         md = {'plan_args': {},
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd',

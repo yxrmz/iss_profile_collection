@@ -369,7 +369,7 @@ class DIFS(DigitalInput):
 
         self._resource_uid = str(uuid.uuid4())
         resource = {'spec': 'PIZZABOX_DI_FILE_TXT_PD',
-                    'root': root_path,
+                    'root': ROOT_PATH,
                     'resource_path': full_path,
                     'resource_kwargs': {},
                     'path_semantics': os.name,
