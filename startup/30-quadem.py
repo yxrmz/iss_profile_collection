@@ -1,8 +1,16 @@
-import time as ttime
 import datetime as dt
-from ophyd import Device, Component as Cpt, EpicsSignal, Kind, set_and_wait
-from ophyd.status import SubscriptionStatus
+import itertools
+import os
+import time as ttime
+import uuid
+from collections import deque
+
+import numpy as np
+import pandas as pd
 import paramiko
+from ophyd import Device, Component as Cpt, EpicsSignal, Kind, set_and_wait
+from ophyd.sim import NullStatus
+from ophyd.status import SubscriptionStatus
 
 
 class Electrometer(Device):
@@ -38,10 +46,37 @@ class Electrometer(Device):
         super().__init__(*args, **kwargs)
         self._acquiring = None
         self.ssh = paramiko.SSHClient()
+        self.filename_bin = None
+        self.filename_txt = None
+
+        self._asset_docs_cache = deque()
+        self._resource_uid = None
+        self._datum_counter = None
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
     def stage(self, *args, **kwargs):
-        super().stage(*args, **kwargs)
+        file_uid = str(uuid.uuid4())
+        filename = f'{ROOT_PATH}/data/electrometer/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
+        self.filename_bin = f'{filename}.bin'
+        self.filename_txt = f'{filename}.txt'
+
+        self._resource_uid = str(uuid.uuid4())
+        resource = {'spec': 'ELECTROMETER',
+                    'root': ROOT_PATH,  # from 00-startup.py (added by mrakitin for future generations :D)
+                    'resource_path': self.filename_bin,
+                    'resource_kwargs': {},
+                    'path_semantics': os.name,
+                    'uid': self._resource_uid}
+        self._asset_docs_cache.append(('resource', resource))
+        self._datum_counter = itertools.count()
+
         st = self.trig_source.set(1)
+        super().stage(*args, **kwargs)
         return st
 
     def trigger(self):
@@ -58,21 +93,54 @@ class Electrometer(Device):
         self.acquire.set(1)
         return status
 
+    def complete(self, *args, **kwargs):
+        self._datum_ids = []
+        datum_id = '{}/{}'.format(self._resource_uid,  next(self._datum_counter))
+        datum = {'resource': self._resource_uid,
+                 'datum_kwargs': {},
+                 'datum_id': datum_id}
+        self._asset_docs_cache.append(('datum', datum))
+        self._datum_ids.append(datum_id)
+        return NullStatus()
+
     def collect(self):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         server = '10.8.0.22'
         self.ssh.connect(server, username='root')
-        filename = f'/tmp/test-{dt.datetime.strftime(dt.datetime.now(), "%Y%m%d%H%M%S")}.bin'
-        print(f'saving a file from {server} to {filename}')
         with self.ssh.open_sftp() as sftp:
-            sftp.get('/home/Save/FAstream.bin',
-                     filename)
-        return {}
+            print(f'Saving a binary file from {server} to {self.filename_bin}')
+            sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
+                     self.filename_bin)
+            print(f'Saving a text   file from {server} to {self.filename_txt}')
+            sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
+                     self.filename_txt)
+
+        # Copied from 10-detectors.py (class EncoderFS)
+        now = ttime.time()
+        for datum_id in self._datum_ids:
+            data = {self.name: datum_id}
+            yield {'data': data,
+                   'timestamps': {key: now for key in data}, 'time': now,
+                   'filled': {key: False for key in data}}
+
+    def unstage(self, *args, **kwargs):
+        self._datum_counter = None
+        st = self.stream.set(0)
+        super().unstage(*args, **kwargs)
+        return st
+
+
+em1 = Electrometer('PBPM:', name='em1')
+for i in [1, 2, 3, 4]:
+    getattr(em1, f'ch{i}_current').kind = 'hinted'
 
 
 class Flyer:
-    def __init__(self, det, motor):
+    def __init__(self, det, pbs, motor):
+        self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
+        self.parent = None
         self.det = det
+        self.pbs = pbs  # a list of passed pizza-boxes
         self.motor = motor
         self._motor_status = None
 
@@ -92,6 +160,10 @@ class Flyer:
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
         self.det.stream.set(1)
+        self.det.stage()
+        for pb in self.pbs:
+            pb.stage()
+            pb.kickoff()
         return streaming_st
 
     def complete(self):
@@ -106,26 +178,110 @@ class Flyer:
         def callback_motor():
             print(f'callback_motor {ttime.time()}')
             self.det.stream.set(0)
+            self.det.complete()
+            for pb in self.pbs:
+                pb.complete()
 
         self._motor_status.add_callback(callback_motor)
 
         return streaming_st & self._motor_status
 
     def describe_collect(self):
-        return {}
+        return_dict = {self.det.name:
+                        {f'{self.det.name}': {'source': 'electrometer',
+                                              'dtype': 'array',
+                                              'shape': [-1, -1],
+                                              'filename_bin': self.det.filename_bin,
+                                              'filename_txt': self.det.filename_txt,
+                                              'external': 'FILESTORE:'}}}
+        # Also do it for all pizza-boxes
+        for pb in self.pbs:
+            return_dict[pb.name] = pb.describe_collect()[pb.name]
+
+        return return_dict
+
+    def collect_asset_docs(self):
+        yield from self.det.collect_asset_docs()
+        for pb in self.pbs:
+            yield from pb.collect_asset_docs()
 
     def collect(self):
-        return self.det.collect()
+        self.det.unstage()
+        for pb in self.pbs:
+            pb.unstage()
+
+        def collect_all():
+            for pb in self.pbs:
+                yield from pb.collect()
+            yield from self.det.collect()
+
+        return collect_all()
+
+flyer = Flyer(det=em1, pbs=[pb9.enc1], motor=hhm)
 
 
-em1 = Electrometer('PBPM:', name='em1')
-for i in [1, 2, 3, 4]:
-    getattr(em1, f'ch{i}_current').kind = 'hinted'
+class ElectrometerBinFileHandler(HandlerBase):
+    "Read electrometer *.bin files"
+    def __init__(self, fpath):
+        # It's a text config file, which we don't store in the resources yet, parsing for now
+        fpath_txt = f'{os.path.splitext(fpath)[0]}.txt'
 
-flyer = Flyer(det=em1, motor=hhm)
+        with open(fpath_txt, 'r') as fp:
+            N = int(fp.readline().split(':')[1])
+            Gains = [int(x) for x in fp.readline().split(':')[1].split(',')]
+            Offsets = [int(x) for x in fp.readline().split(':')[1].split(',')]
+            FAdiv = (fp.readline().split(':')[1])
+            fp.readline()
+            Ranges = [int(x) for x in fp.readline().split(':')[1].split(',')]
+            FArate = float(fp.readline().split(':')[1])
 
-def excecute_trajectory_with_em():
-    pass
+            def Range(val):
+                ranges = {1: 1,
+                          2: 10,
+                          4: 100,
+                          8: 1000,
+                          16: 100087}
+                try:
+                    ret = ranges[val]
+                except:
+                    raise ValueError(f'The value "val" can be one of {ranges.keys()}')
+                return ret
+
+            # 1566332720 366808768 -4197857 11013120 00
+            X = np.fromfile(fpath, dtype=int)
+            print(len(X))
+            A = []
+            B = []
+            C = []
+            D = []
+            T = []
+            Ra = Range(Ranges[0])
+            Rb = Range(Ranges[1])
+            Rc = Range(Ranges[2])
+            Rd = Range(Ranges[3])
+            dt = 1.0 / FArate / 1000.0
+
+            for i in range(0, len(X), 4):
+                A.append(Ra * ((X[i] / 37.0) - Offsets[0]) / Gains[0])
+                B.append(Rb * ((X[i + 1] / 37.0) - Offsets[1]) / Gains[1])
+                C.append(Rc * ((X[i + 2] / 37.0) - Offsets[2]) / Gains[2])
+                D.append(Rd * ((X[i + 3] / 37.0) - Offsets[3]) / Gains[3])
+                T.append(i * dt / 4.0)
+
+        data = np.vstack((np.array(T),
+                          np.array(A),
+                          np.array(B),
+                          np.array(C),
+                          np.array(D))).T
+
+        self.df = pd.DataFrame(data=data, columns=['timestamp', 'i0', 'it', 'ir', 'iff'])
+
+    def __call__(self):
+        return self.df
+
+
+db.reg.register_handler('ELECTROMETER',
+                        ElectrometerBinFileHandler, overwrite=True)
 
 
 def step_scan_with_electrometer(energy_list):
