@@ -12,6 +12,8 @@ from ophyd import Device, Component as Cpt, EpicsSignal, Kind, set_and_wait
 from ophyd.sim import NullStatus
 from ophyd.status import SubscriptionStatus
 
+from xas.trajectory import trajectory_manager
+
 
 class Electrometer(Device):
     acquire = Cpt(EpicsSignal, 'FA:SoftTrig-SP', kind=Kind.omitted)
@@ -19,6 +21,11 @@ class Electrometer(Device):
 
     stream = Cpt(EpicsSignal,'FA:Stream-SP', kind=Kind.omitted)
     streaming = Cpt(EpicsSignal,'FA:Streaming-I', kind=Kind.omitted)
+    acq_rate= Cpt(EpicsSignal,'FA:Rate-I', kind=Kind.omitted)
+
+    stream_samples = Cpt(EpicsSignal,'FA:Stream:Samples-SP')
+    divide = Cpt(EpicsSignal,'FA:Divide-SP')
+
 
     ch1_mean = Cpt(EpicsSignal, 'FA:A:Mean-I')
     ch2_mean = Cpt(EpicsSignal, 'FA:B:Mean-I')
@@ -40,6 +47,8 @@ class Electrometer(Device):
     ch3_offset = Cpt(EpicsSignal, 'ADC:C:Offset-SP')
     ch4_offset = Cpt(EpicsSignal, 'ADC:D:Offset-SP')
 
+
+
     trig_source = Cpt(EpicsSignal, 'Machine:Clk-SP')
 
     def __init__(self, *args, **kwargs):
@@ -52,6 +61,7 @@ class Electrometer(Device):
         self._asset_docs_cache = deque()
         self._resource_uid = None
         self._datum_counter = None
+        self.num_points = None
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
@@ -61,6 +71,8 @@ class Electrometer(Device):
 
     def stage(self, *args, **kwargs):
         file_uid = str(uuid.uuid4())
+        self.calc_num_points()
+        self.stream_samples.put(self.num_points)
         filename = f'{ROOT_PATH}/data/electrometer/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         self.filename_bin = f'{filename}.bin'
         self.filename_txt = f'{filename}.txt'
@@ -129,95 +141,21 @@ class Electrometer(Device):
         super().unstage(*args, **kwargs)
         return st
 
+    def calc_num_points(self):
+        tr = trajectory_manager(hhm)
+        info = tr.read_info(silent=True)
+        lut = str(int(hhm.lut_number_rbv.get()))
+        traj_duration = int(info[lut]['size']) / 16000
+        acq_num_points = traj_duration * self.acq_rate.get()* 1000 *1.3
+        self.num_points = int(round(acq_num_points, ndigits=-3))
+
 
 em1 = Electrometer('PBPM:', name='em1')
 for i in [1, 2, 3, 4]:
     getattr(em1, f'ch{i}_current').kind = 'hinted'
 
 
-class Flyer:
-    def __init__(self, det, pbs, motor):
-        self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
-        self.parent = None
-        self.det = det
-        self.pbs = pbs  # a list of passed pizza-boxes
-        self.motor = motor
-        self._motor_status = None
 
-    def kickoff(self, *args, **kwargs):
-        set_and_wait(self.det.trig_source, 1)
-        # TODO: handle it on the plan level
-        # set_and_wait(self.motor, 'prepare')
-
-        def callback(value, old_value, **kwargs):
-            print(f'kickoff: {ttime.time()} {old_value} ---> {value}')
-            if int(round(old_value)) == 0 and int(round(value)) == 1:
-                # Now start mono move
-                self._motor_status = self.motor.set('start')
-                return True
-            else:
-                return False
-
-        streaming_st = SubscriptionStatus(self.det.streaming, callback)
-        self.det.stream.set(1)
-        self.det.stage()
-        for pb in self.pbs:
-            pb.stage()
-            pb.kickoff()
-        return streaming_st
-
-    def complete(self):
-        def callback_det(value, old_value, **kwargs):
-            print(f'complete: {ttime.time()} {old_value} ---> {value}')
-            if int(round(old_value)) == 1 and int(round(value)) == 0:
-                return True
-            else:
-                return False
-        streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
-
-        def callback_motor():
-            print(f'callback_motor {ttime.time()}')
-            self.det.stream.set(0)
-            self.det.complete()
-            for pb in self.pbs:
-                pb.complete()
-
-        self._motor_status.add_callback(callback_motor)
-
-        return streaming_st & self._motor_status
-
-    def describe_collect(self):
-        return_dict = {self.det.name:
-                        {f'{self.det.name}': {'source': 'electrometer',
-                                              'dtype': 'array',
-                                              'shape': [-1, -1],
-                                              'filename_bin': self.det.filename_bin,
-                                              'filename_txt': self.det.filename_txt,
-                                              'external': 'FILESTORE:'}}}
-        # Also do it for all pizza-boxes
-        for pb in self.pbs:
-            return_dict[pb.name] = pb.describe_collect()[pb.name]
-
-        return return_dict
-
-    def collect_asset_docs(self):
-        yield from self.det.collect_asset_docs()
-        for pb in self.pbs:
-            yield from pb.collect_asset_docs()
-
-    def collect(self):
-        self.det.unstage()
-        for pb in self.pbs:
-            pb.unstage()
-
-        def collect_all():
-            for pb in self.pbs:
-                yield from pb.collect()
-            yield from self.det.collect()
-
-        return collect_all()
-
-flyer = Flyer(det=em1, pbs=[pb9.enc1], motor=hhm)
 
 
 class ElectrometerBinFileHandler(HandlerBase):
@@ -230,7 +168,7 @@ class ElectrometerBinFileHandler(HandlerBase):
             N = int(fp.readline().split(':')[1])
             Gains = [int(x) for x in fp.readline().split(':')[1].split(',')]
             Offsets = [int(x) for x in fp.readline().split(':')[1].split(',')]
-            FAdiv = (fp.readline().split(':')[1])
+            FAdiv = float(fp.readline().split(':')[1])
             fp.readline()
             Ranges = [int(x) for x in fp.readline().split(':')[1].split(',')]
             FArate = float(fp.readline().split(':')[1])
@@ -248,7 +186,8 @@ class ElectrometerBinFileHandler(HandlerBase):
                 return ret
 
             # 1566332720 366808768 -4197857 11013120 00
-            X = np.fromfile(fpath, dtype=int)
+            self.raw_data = X = np.fromfile(fpath, dtype=np.int32)
+
             print(len(X))
             A = []
             B = []
@@ -262,10 +201,10 @@ class ElectrometerBinFileHandler(HandlerBase):
             dt = 1.0 / FArate / 1000.0
 
             for i in range(0, len(X), 4):
-                A.append(Ra * ((X[i] / 37.0) - Offsets[0]) / Gains[0])
-                B.append(Rb * ((X[i + 1] / 37.0) - Offsets[1]) / Gains[1])
-                C.append(Rc * ((X[i + 2] / 37.0) - Offsets[2]) / Gains[2])
-                D.append(Rd * ((X[i + 3] / 37.0) - Offsets[3]) / Gains[3])
+                A.append(Ra * ((X[i] / FAdiv) - Offsets[0]) / Gains[0])
+                B.append(Rb * ((X[i + 1] / FAdiv) - Offsets[1]) / Gains[1])
+                C.append(Rc * ((X[i + 2] / FAdiv) - Offsets[2]) / Gains[2])
+                D.append(Rd * ((X[i + 3] / FAdiv) - Offsets[3]) / Gains[3])
                 T.append(i * dt / 4.0)
 
         data = np.vstack((np.array(T),
@@ -277,7 +216,7 @@ class ElectrometerBinFileHandler(HandlerBase):
         self.df = pd.DataFrame(data=data, columns=['timestamp', 'i0', 'it', 'ir', 'iff'])
 
     def __call__(self):
-        return self.df
+        return self.df, self.raw_data
 
 
 db.reg.register_handler('ELECTROMETER',
@@ -324,3 +263,8 @@ def step_scan_with_electrometer(energy_list):
         print('Channel 4: {:.8e}'.format(ch4))
 
         DATA['i0'].append(ch1)
+
+
+
+
+
