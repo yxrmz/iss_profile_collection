@@ -98,6 +98,7 @@ def fly_scan_with_sdd(name: str, comment: str, n_cycles: int = 1, delay: float =
         Number of times to run the scan automatically
 
     delay : float (default = 0)
+    delay : float (default = 0)
         Delay in seconds between scans
 
 
@@ -112,7 +113,8 @@ def fly_scan_with_sdd(name: str, comment: str, n_cycles: int = 1, delay: float =
     :func:`tscan`
     """
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    # uids = []
+
+    uids = []
     for i in range(int(n_cycles)):
         if n_cycles == 1:
             name_n = name
@@ -124,11 +126,12 @@ def fly_scan_with_sdd(name: str, comment: str, n_cycles: int = 1, delay: float =
         yield from prep_traj_plan()
         # uid = (yield from execute_trajectory(name_n))
         uid = (yield from execute_xia_trajectory(name_n, comment=comment))
-        yield uid
-        # uids.append(uid)
+        print(f'uid: {uid}')
+
+        uids.append(uid)
         yield from bps.sleep(float(delay))
     print('Done!')
-    # return uids
+    return uids
 
 
 

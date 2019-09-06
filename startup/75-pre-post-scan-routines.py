@@ -287,8 +287,9 @@ def get_adc_offsets(times: int = 20, *args, **kwargs):
         adc.offset.put(offset)
         print('{}\n New offset for {}) is  {}'.format(array, adc.dev_name.value, offset))
         adc.averaging_points.put(old_avers[index])
-
+    print('[Offsets recorded] Complete\n')
     remove_pb_files(uid)
+
 
 def get_adc_readouts(times: int = 20, *args, **kwargs):
     """

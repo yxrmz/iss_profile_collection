@@ -51,6 +51,13 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            window_title="XLive @ISS/08-ID NSLS-II",
                            )
 
+# # jlynch 2019/9/5
+# # XIA debugging
+# from bluesky.utils import ts_msg_hook
+# RE.msg_hook = ts_msg_hook
+# # jlynch 2019/9/5
+
+
 def xlive():
     xlive_gui.show()
 

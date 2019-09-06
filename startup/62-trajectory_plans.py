@@ -329,7 +329,8 @@ def execute_xia_trajectory(name, **metadata):
                                                    bps.abs_set(hhm.stop_trajectory,
                                                                '1', wait=True)))
 
-        yield from bps.close_run()
+        ret =(yield from bps.close_run())
+        return ret
 
     def final_plan():
         yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
@@ -347,6 +348,18 @@ def execute_xia_trajectory(name, **metadata):
     yield from bps.stage(hhm)
 
     return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()), flyers))
+
+
+
+ #
+ #  fly_plan = bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan(flyers)),
+ #                                      flyers)
+ #    # TODO : Add in when suspend_wrapper is avaialable
+ #    # if not ignore_shutter:
+ #    # this will use suspenders defined in 23-suspenders.py
+ #    # fly_plan = bpp.suspend_wrapper(fly_plan, suspenders)
+ #
+ #    return (yield from fly_plan)
 
 
 def execute_loop_trajectory(name, **metadata):
