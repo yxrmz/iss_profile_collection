@@ -47,8 +47,6 @@ class Electrometer(Device):
     ch3_offset = Cpt(EpicsSignal, 'ADC:C:Offset-SP')
     ch4_offset = Cpt(EpicsSignal, 'ADC:D:Offset-SP')
 
-
-
     trig_source = Cpt(EpicsSignal, 'Machine:Clk-SP')
 
     def __init__(self, *args, **kwargs):
@@ -139,7 +137,6 @@ class Electrometer(Device):
         self._datum_counter = None
         st = self.stream.set(0)
         super().unstage(*args, **kwargs)
-        return st
 
     def calc_num_points(self):
         tr = trajectory_manager(hhm)
@@ -153,9 +150,6 @@ class Electrometer(Device):
 em1 = Electrometer('PBPM:', name='em1')
 for i in [1, 2, 3, 4]:
     getattr(em1, f'ch{i}_current').kind = 'hinted'
-
-
-
 
 
 class ElectrometerBinFileHandler(HandlerBase):
@@ -172,6 +166,7 @@ class ElectrometerBinFileHandler(HandlerBase):
             fp.readline()
             Ranges = [int(x) for x in fp.readline().split(':')[1].split(',')]
             FArate = float(fp.readline().split(':')[1])
+            trigger_timestamp = float(fp.readline().split(':')[1].strip().replace(',', '.'))
 
             def Range(val):
                 ranges = {1: 1,
@@ -207,7 +202,7 @@ class ElectrometerBinFileHandler(HandlerBase):
                 D.append(Rd * ((X[i + 3] / FAdiv) - Offsets[3]) / Gains[3])
                 T.append(i * dt / 4.0)
 
-        data = np.vstack((np.array(T),
+        data = np.vstack((np.array(T) + trigger_timestamp,
                           np.array(A),
                           np.array(B),
                           np.array(C),
@@ -263,8 +258,3 @@ def step_scan_with_electrometer(energy_list):
         print('Channel 4: {:.8e}'.format(ch4))
 
         DATA['i0'].append(ch1)
-
-
-
-
-
