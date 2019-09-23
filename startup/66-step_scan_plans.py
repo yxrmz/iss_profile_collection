@@ -41,4 +41,15 @@ def step_scan_plan(name, energy_steps):
           'angle_offset': str(hhm.angle_offset.value),
           }
 
+
+    for flyer in detectors:
+        # print(f'Flyer is {flyer}')
+        if hasattr(flyer, 'offset'):
+            md['{} offset'.format(flyer.name)] = flyer.offset.value
+        if hasattr(flyer, 'amp'):
+            md['{} gain'.format(flyer.name)] = flyer.amp.get_gain()[0]
+
+
+
+
     yield from bp.list_scan(detectors, hhm.energy, energy_steps, per_step=per_step_factory(acq_time), md=md)
