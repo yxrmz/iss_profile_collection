@@ -80,3 +80,6 @@ def parse(db, uid):
     energies = np.array(hdr.start['plan_pattern_args']['object'])
     dataset['energy']= energies
     return dataset
+
+def save_dataset(dataset, name):
+    dataset.to_csv()

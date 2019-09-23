@@ -630,11 +630,14 @@ class AdcFS(Adc):
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.enable_sel, 1)
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+        while not os.path.isfile(workstation_full_path):
+            ttime.sleep(.1)
 
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
-        workstation_file_root = '/mnt/xf08idb-ioc1/'
-        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         stat = shutil.copy(workstation_full_path, self._full_path)
 

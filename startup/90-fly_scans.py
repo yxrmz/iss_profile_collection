@@ -40,11 +40,11 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     uids = []
 
-    # current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
-    # try:
-    #     yield from set_reference_foil(current_element)
-    # except:
-    #     pass
+    current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+    try:
+        yield from set_reference_foil(current_element)
+    except:
+        pass
 
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
