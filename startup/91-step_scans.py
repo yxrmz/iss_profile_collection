@@ -63,17 +63,26 @@ def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xa
 def parse(db, uid):
     dataset = pd.DataFrame()
     hdr = db[uid]
+
     detectors = [pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7]
 
     channels = ['iff', 'it', 'ir', 'i0']
     for detector, channel in zip(detectors, channels):
+        indx = 0
         spectrum = [];
+        print(f'Detector {detector.name}')
         data = list(hdr.data(detector.name, stream_name=detector.name))
         for point in data:
+
+            indx +=1
+            print(f'We are at {indx}')
             adc = point['adc']
-            adc = adc.apply(lambda x: (int(x, 16) >> 8) - 0x40000 if (int(x, 16) >> 8) > 0x1FFFF else int(x,
+            try:
+                adc = adc.apply(lambda x: (int(x, 16) >> 8) - 0x40000 if (int(x, 16) >> 8) > 0x1FFFF else int(x,
                                                                                                           16) >> 8) * 7.62939453125e-05
-            mean_val = np.mean(adc)
+                mean_val = np.mean(adc)
+            except:
+                mena_val = 1
             spectrum.append(mean_val)
         dataset[channel] = np.array(spectrum)
 
