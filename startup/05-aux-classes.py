@@ -16,6 +16,6 @@ class NormPlot(LivePlot):
             else:
                 denominator = doc['data'][self.den_name]
             doc['data'][self.result_name] = doc['data'][self.num_name] / denominator
-        except KeyError:
-            pass
+        except KeyError as ke:
+            print(f"KeyError: {ke}")
         super().event(doc)

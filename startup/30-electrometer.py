@@ -22,7 +22,7 @@ class Electrometer(Device):
     stream = Cpt(EpicsSignal,'FA:Stream-SP', kind=Kind.omitted)
     streaming = Cpt(EpicsSignal,'FA:Streaming-I', kind=Kind.omitted)
     acq_rate= Cpt(EpicsSignal,'FA:Rate-I', kind=Kind.omitted)
-
+    samples = Cpt(EpicsSignal, 'FA:Samples-SP')
     stream_samples = Cpt(EpicsSignal,'FA:Stream:Samples-SP')
     divide = Cpt(EpicsSignal,'FA:Divide-SP')
 
