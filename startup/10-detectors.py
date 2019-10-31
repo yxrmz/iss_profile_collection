@@ -77,6 +77,30 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
     tiff_filenumber = Cpt(EpicsSignal, 'TIFF1:FileNumber_RBV', write_pv='TIFF1:FileNumber')
     tiff_filefmt = Cpt(EpicsSignal, 'TIFF1:FileTemplate_RBV', write_pv='TIFF1:FileTemplate')
 
+    bar1 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage1_RBV')
+    bar2 = Cpt(EpicsSignal, 'Bar2:BarcodeMessage2_RBV')
+    bar3 = Cpt(EpicsSignal, 'Bar3:BarcodeMessage3_RBV')
+    bar4 = Cpt(EpicsSignal, 'Bar4:BarcodeMessage4_RBV')
+    bar5 = Cpt(EpicsSignal, 'Bar5:BarcodeMessage5_RBV')
+
+    bar1Corner1X = Cpt(EpicsSignal, 'Bar1:UpperLeftX_RBV')
+    bar1Corner2X = Cpt(EpicsSignal, 'Bar1:UpperRightX_RBV')
+    bar1Corner3X = Cpt(EpicsSignal, 'Bar1:LowerLeftX_RBV')
+    bar1Corner4X = Cpt(EpicsSignal, 'Bar1:LowerRightX_RBV')
+    bar1Corner1Y = Cpt(EpicsSignal, 'Bar1:UpperLeftY_RBV')
+    bar1Corner2Y = Cpt(EpicsSignal, 'Bar1:UpperRightY_RBV')
+    bar1Corner3Y = Cpt(EpicsSignal, 'Bar1:LowerLeftY_RBV')
+    bar1Corner4Y = Cpt(EpicsSignal, 'Bar1:LowerRightY_RBV')
+
+    bar2Corner1X = Cpt(EpicsSignal, 'Bar2:UpperLeftX_RBV')
+    bar2Corner2X = Cpt(EpicsSignal, 'Bar2:UpperRightX_RBV')
+    bar2Corner3X = Cpt(EpicsSignal, 'Bar2:LowerLeftX_RBV')
+    bar2Corner4X = Cpt(EpicsSignal, 'Bar2:LowerRightX_RBV')
+    bar2Corner1Y = Cpt(EpicsSignal, 'Bar2:UpperLeftY_RBV')
+    bar2Corner2Y = Cpt(EpicsSignal, 'Bar2:UpperRightY_RBV')
+    bar2Corner3Y = Cpt(EpicsSignal, 'Bar2:LowerLeftY_RBV')
+    bar2Corner4Y = Cpt(EpicsSignal, 'Bar2:LowerRightY_RBV')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
