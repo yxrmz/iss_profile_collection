@@ -142,7 +142,7 @@ class Electrometer(Device):
         tr = trajectory_manager(hhm)
         info = tr.read_info(silent=True)
         lut = str(int(hhm.lut_number_rbv.get()))
-        traj_duration = int(info[lut]['size']) / 16000
+        traj_duration = int(info[lut][' size']) / 16000
         acq_num_points = traj_duration * self.acq_rate.get()* 1000 *1.3
         self.num_points = int(round(acq_num_points, ndigits=-3))
 
@@ -181,7 +181,7 @@ class ElectrometerBinFileHandler(HandlerBase):
                 return ret
 
             # 1566332720 366808768 -4197857 11013120 00
-            self.raw_data = raw_data = np.fromfile(fpath, dtype=np.int32)
+            raw_data = np.fromfile(fpath, dtype=np.int32)
 
             A = []
             B = []
@@ -200,9 +200,9 @@ class ElectrometerBinFileHandler(HandlerBase):
             derived_data = np.zeros((raw_data.shape[0], raw_data.shape[1] - 1))
             derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1] * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
             derived_data[:, 1] = Ra * ((raw_data[:, 0] / FAdiv) - Offsets[0]) / Gains[0]
-            derived_data[:, 2] = Ra * ((raw_data[:, 1] / FAdiv) - Offsets[1]) / Gains[1]
-            derived_data[:, 3] = Ra * ((raw_data[:, 2] / FAdiv) - Offsets[2]) / Gains[2]
-            derived_data[:, 4] = Ra * ((raw_data[:, 3] / FAdiv) - Offsets[3]) / Gains[3]
+            derived_data[:, 2] = Rb * ((raw_data[:, 1] / FAdiv) - Offsets[1]) / Gains[1]
+            derived_data[:, 3] = Rc* ((raw_data[:, 2] / FAdiv) - Offsets[2]) / Gains[2]
+            derived_data[:, 4] = Rd * ((raw_data[:, 3] / FAdiv) - Offsets[3]) / Gains[3]
 
             # for i in range(0, len(X), 4):
             #     A.append(Ra * ((X[i + 0] / FAdiv) - Offsets[0]) / Gains[0])
@@ -218,6 +218,7 @@ class ElectrometerBinFileHandler(HandlerBase):
         #                   np.array(D))).T
 
         self.df = pd.DataFrame(data=derived_data, columns=['timestamp', 'i0', 'it', 'ir', 'iff'])
+        self.raw_data = raw_data
 
     def __call__(self):
         return self.df, self.raw_data
