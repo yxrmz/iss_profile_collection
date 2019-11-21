@@ -689,7 +689,6 @@ class AdcFS(Adc):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
-        #S  # wait for file to be written by pizza box
 
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}

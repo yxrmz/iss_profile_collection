@@ -55,6 +55,8 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
 
         print(f'Trajectory excecuted {print_now()}')
         yield from bps.sleep(float(delay))
+    #yield from prep_traj_plan()
+    # yield from pre_stage_the_mono()
     return uids
 
 
