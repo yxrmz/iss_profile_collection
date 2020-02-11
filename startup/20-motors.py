@@ -1,4 +1,4 @@
-from ophyd import (EpicsMotor, Device, Component as Cpt,
+from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
                    EpicsSignal)
 import numpy as np
 from ophyd.status import SubscriptionStatus
@@ -51,7 +51,7 @@ class HHM(Device):
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
-    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind='hinted')
+    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 

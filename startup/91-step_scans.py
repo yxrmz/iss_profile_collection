@@ -5,9 +5,14 @@ def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refe
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     energy_grid = kwargs.pop('energy_grid', [])
     time_grid = kwargs.pop('time_grid', [])
-    print(energy_grid)
-    #yield from bps.sleep(0.1)
-    yield from step_scan_plan(name, energy_grid)
+    element = kwargs.pop('element', [])
+    e0 = kwargs.pop('e0', [])
+    edge = kwargs.pop('element', [])
+
+
+    yield from bps.mv(adaq_pb_step.divide, 35)
+    yield from step_scan_plan(name, energy_grid, time_grid, element=element, e0=e0, edge=edge )
+
 
 
 

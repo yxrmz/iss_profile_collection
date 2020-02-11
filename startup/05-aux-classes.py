@@ -19,3 +19,4 @@ class NormPlot(LivePlot):
         except KeyError as ke:
             print(f"KeyError: {ke}")
         super().event(doc)
+

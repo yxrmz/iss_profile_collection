@@ -6,55 +6,57 @@ import bluesky.plan_stubs as bps
 import bluesky.plans as bp
 
 
-def per_step_factory(acq):
-    _acq = acq.copy()
-    def per_step(dets, motor, step):
-        print(f'--------------- Step {step}')
-        acq_time = _acq.pop(0)
-        freq = dets[0].acq_rate.get()
-        yield from bps.abs_set(dets[0].samples,round(acq_time*freq*1000), wait=True)
-        yield from bps.abs_set(motor,step, wait=True)
-        yield from bps.trigger_and_read(list(dets) + [motor])
-    return per_step
+def adaq_pb_step_per_step_factory(energy_steps, time_steps):
+
+    scantime = sum(time_steps)
+    elapsed_time = 0
+
+    energy_to_time_step = dict(zip(energy_steps, time_steps))
+
+    def per_step_pb(dets, motor, energy_step):
+
+        time_step=energy_to_time_step[energy_step]
+        samples = 250*(np.ceil(time_step*10443/250))
+
+        yield from bps.abs_set(dets[0].sample_len, samples, wait=True )
+        yield from bps.abs_set(dets[0].wf_len, samples, wait=True )
+
+        yield from bps.mv(motor, energy_step)
+        devices = [*dets, motor]
+        yield from bps.trigger_and_read(devices=devices)
+        yield from bps.sleep(0.1)
+
+    return per_step_pb
 
 
-# yield from bps.mov(motor, step)
-#
-# for d in dets:
-#     if d._staged != Staged.no:
-#         yield from bps.unstage(d)
-#     yield from bps.stage(d)
-#     yield from bps.kickoff(d, group=f'kickoff_{step}')
-# yield from bps.wait(group=f'kickoff_{step}')
-# yield from bps.sleep(acq_time)
-# for d in dets:
-#     yield from bps.complete(d, group=f'complete_{step}')
-# yield from bps.wait(group=f'complete_{step}')
-# for d in dets:
-#     yield from bps.collect(d)
-# for d in dets:
-#     yield from bps.unstage(d)
+def step_scan_plan(name, energy_steps, time_steps, element='', e0 =0, edge=''):
 
-def step_scan_plan(name, energy_steps):
-    acq_time=1
-    detectors = [pba2.adc7, pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7]
+
+    fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
+    fn = validate_file_exists(fn)
+
+
+    try:
+        full_element_name = getattr(elements, element).name.capitalize()
+    except:
+        full_element_name = element
+
     md = {'plan_args': {},
-          'plan_name': 'execute_trajectory',
           'experiment': 'step_scan',
           'name': name,
-          'interp_filename': name,
-          'angle_offset': str(hhm.angle_offset.value),
+          'interp_filename': fn,
+          'element': element,
+          'element_full': full_element_name,
+          'edge': edge,
+          'e0': e0,
           }
+    #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
+    detectors = [adaq_pb_step]
 
-
-    for flyer in detectors:
-        # print(f'Flyer is {flyer}')
-        if hasattr(flyer, 'offset'):
-            md['{} offset'.format(flyer.name)] = flyer.offset.value
-        if hasattr(flyer, 'amp'):
-            md['{} gain'.format(flyer.name)] = flyer.amp.get_gain()[0]
-
-
-
-
-    yield from bp.list_scan(detectors, hhm.energy, energy_steps, per_step=per_step_factory(acq_time), md=md)
+    yield from bp.list_scan(
+        detectors,
+        hhm.energy,
+        energy_steps,
+        per_step=adaq_pb_step_per_step_factory(energy_steps,time_steps),
+        md=md
+    )
