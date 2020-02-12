@@ -11,7 +11,7 @@ def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refe
 
 
     yield from bps.mv(adaq_pb_step.divide, 35)
-    yield from step_scan_plan(name, energy_grid, time_grid, element=element, e0=e0, edge=edge )
+    yield from step_scan_plan(name, comment, energy_grid, time_grid, element=element, e0=e0, edge=edge )
 
 
 

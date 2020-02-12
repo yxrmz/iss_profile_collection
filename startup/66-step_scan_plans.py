@@ -21,16 +21,15 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
         yield from bps.abs_set(dets[0].sample_len, samples, wait=True )
         yield from bps.abs_set(dets[0].wf_len, samples, wait=True )
 
-        yield from bps.mv(motor, energy_step)
+        #yield from bps.mv(motor, energy_step)
         devices = [*dets, motor]
         yield from bps.trigger_and_read(devices=devices)
-        yield from bps.sleep(0.1)
+
 
     return per_step_pb
 
 
-def step_scan_plan(name, energy_steps, time_steps, element='', e0 =0, edge=''):
-
+def step_scan_plan(name, comment, energy_steps, time_steps, element='', e0 =0, edge=''):
 
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
     fn = validate_file_exists(fn)
@@ -44,6 +43,7 @@ def step_scan_plan(name, energy_steps, time_steps, element='', e0 =0, edge=''):
     md = {'plan_args': {},
           'experiment': 'step_scan',
           'name': name,
+          'comment': comment,
           'interp_filename': fn,
           'element': element,
           'element_full': full_element_name,
