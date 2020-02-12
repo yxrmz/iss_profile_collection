@@ -142,7 +142,7 @@ class Electrometer(Device):
         tr = trajectory_manager(hhm)
         info = tr.read_info(silent=True)
         lut = str(int(hhm.lut_number_rbv.get()))
-        traj_duration = int(info[lut][' size']) / 16000
+        traj_duration = int(info[lut]['size']) / 16000
         acq_num_points = traj_duration * self.acq_rate.get()* 1000 *1.3
         self.num_points = int(round(acq_num_points, ndigits=-3))
 
@@ -179,7 +179,6 @@ class ElectrometerBinFileHandler(HandlerBase):
                 except:
                     raise ValueError(f'The value "val" can be one of {ranges.keys()}')
                 return ret
-
             # 1566332720 366808768 -4197857 11013120 00
             raw_data = np.fromfile(fpath, dtype=np.int32)
 
