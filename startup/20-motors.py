@@ -1,6 +1,8 @@
 from ophyd import (EpicsMotor, Device, Component as Cpt,
                    EpicsSignal)
 import numpy as np
+from ophyd.status import SubscriptionStatus
+
 print(__file__)
 
 class Mirror(Device):
@@ -99,6 +101,52 @@ class HHM(Device):
         super().__init__(*args, **kwargs)
         self.pulses_per_deg = 1/self.main_motor_res.value
         self.enc = enc
+        self._preparing = None
+        self._starting = None
+
+    def set(self, command):
+        if command == 'prepare':
+
+            # This function will receive Events from the IOC and check whether
+            # we are seeing the trajectory_ready go low after having been high.
+            def callback(value, old_value, **kwargs):
+                if int(round(old_value)) == 1 and int(round(value)) == 0:
+                    if self._preparing or self._preparing is None:
+                        self._preparing = False
+                        return True
+                    else:
+                        self._preparing = True
+                return False
+
+            # Creating this status object subscribes `callback` Events from the
+            # IOC. Starting at this line, we are now listening for the IOC to
+            # tell us it is done. When it does, this status object will
+            # complete (status.done = True).
+            status = SubscriptionStatus(self.trajectory_ready, callback)
+
+            # Finally, now that we are litsening to the IOC, prepare the
+            # trajectory.
+            self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
+
+            # Return the status object immediately, without waiting. The caller
+            # will be able to watch for it to become done.
+            return status
+
+        if command == 'start':
+
+            def callback(value, old_value, **kwargs):
+                if int(round(old_value)) == 1 and int(round(value)) == 0:
+                    if self._starting or self._starting is None:
+                        self._starting = False
+                        return True
+                    else:
+                        self._starting = True
+                return False
+
+            status = SubscriptionStatus(self.trajectory_running, callback)
+            self.start_trajectory.set('1')
+
+            return status
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')

@@ -1,8 +1,8 @@
-Number of Samples Requested: 50000
+Number of Samples Requested: 500000
 Channel Gains: 125510,126220,125435,125850
 Channel Offsets: -2416,-2601,-2700,-2654
-FA Divide Setting: 378
+FA Divide Setting: 38
 Kx, Ky Settings:  10000005,10000006
 Current Range Settings: 8,8,8,8
-FA Date Rate:  1.00208
-Trigger Timestamp: 0,448
+FA Date Rate:  9.96810
+Trigger Timestamp: 1565732232,73816850

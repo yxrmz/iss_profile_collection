@@ -13,28 +13,19 @@ from bluesky.utils import FailedStatus
 def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
     '''
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
-
     Parameters
     ----------
     name : str
         Name of the scan - it will be stored in the metadata
-
     n_cycles : int (default = 1)
         Number of times to run the scan automatically
-
     delay : float (default = 0)
         Delay in seconds between scans
-
-
     Returns
     -------
     uid : list(str)
         Lists containing the unique ids of the scans
 
-
-    See Also
-    --------
-    :func:
     '''
 
     sys.stdout = kwargs.pop('stdout', sys.stdout)
@@ -58,6 +49,45 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
     #yield from prep_traj_plan()
     # yield from pre_stage_the_mono()
     return uids
+
+
+def fly_scan_with_em(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
+    '''
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+    delay : float (default = 0)
+        Delay in seconds between scans
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+    '''
+
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    uids = []
+
+    # current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+    # try:
+    #     yield from set_reference_foil(current_element)
+    # except:
+    #     pass
+
+    for indx in range(int(n_cycles)):
+        name_n = '{} {:04d}'.format(name, indx + 1)
+        yield from prep_traj_plan()
+        print(f'Trajectory prepared at {print_now()}')
+        uid = (yield from execute_trajectory_em(name_n, comment=comment))
+        uids.append(uid)
+        print(f'Trajectory excecuted {print_now()}')
+        yield from bps.sleep(float(delay))
+    return uids
+
 
 
 
