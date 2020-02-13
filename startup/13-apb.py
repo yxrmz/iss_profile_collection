@@ -4,7 +4,7 @@ from ophyd import Component as Cpt, Device, EpicsSignal, Kind
 from ophyd.status import SubscriptionStatus
 
 
-class AnalogPizzaBox(Device):
+class AnalogPizzaBoxAverage(Device):
     acquire = Cpt(EpicsSignal, 'FA:SoftTrig-SP', kind=Kind.omitted)
     busy = Cpt(EpicsSignal, 'FA:Busy-I', kind=Kind.omitted)
 
@@ -43,4 +43,4 @@ class AnalogPizzaBox(Device):
         return status
 
 
-adaq_pb_step = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="adaq_pb_step")
+adaq_pb_step_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="adaq_pb_step")
