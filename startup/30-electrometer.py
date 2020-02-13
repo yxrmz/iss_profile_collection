@@ -200,7 +200,7 @@ class ElectrometerBinFileHandler(HandlerBase):
             derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1] * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
             derived_data[:, 1] = Ra * ((raw_data[:, 0] / FAdiv) - Offsets[0]) / Gains[0]
             derived_data[:, 2] = Rb * ((raw_data[:, 1] / FAdiv) - Offsets[1]) / Gains[1]
-            derived_data[:, 3] = Rc* ((raw_data[:, 2] / FAdiv) - Offsets[2]) / Gains[2]
+            derived_data[:, 3] = Rc * ((raw_data[:, 2] / FAdiv) - Offsets[2]) / Gains[2]
             derived_data[:, 4] = Rd * ((raw_data[:, 3] / FAdiv) - Offsets[3]) / Gains[3]
 
             # for i in range(0, len(X), 4):
