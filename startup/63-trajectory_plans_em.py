@@ -16,7 +16,7 @@ class FlyerEM:
         # set_and_wait(self.motor, 'prepare')
 
         def callback(value, old_value, **kwargs):
-            print(f'kickoff: {ttime.time()} {old_value} ---> {value}')
+            print(f'kickoff: {ttime.ctime()} {old_value} ---> {value}')
             if int(round(old_value)) == 0 and int(round(value)) == 1:
                 # Now start mono move
                 self._motor_status = self.motor.set('start')
@@ -83,7 +83,7 @@ class FlyerEM:
 
         return collect_all()
 
-flyer_em = FlyerEM(det=em1, pbs=[pb9.enc1], motor=hhm)
+flyer_apb = FlyerEM(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
 
 def execute_trajectory_em(name, **metadata):
@@ -109,4 +109,4 @@ def execute_trajectory_em(name, **metadata):
           'pulses_per_degree': hhm.pulses_per_deg,
           }
     md.update(**metadata)
-    yield from bp.fly([flyer_em], md=md)
+    yield from bp.fly([flyer_apb], md=md)

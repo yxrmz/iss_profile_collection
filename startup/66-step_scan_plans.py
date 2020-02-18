@@ -51,7 +51,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, element='', e0 =0, e
           'e0': e0,
           }
     #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
-    detectors = [adaq_pb_step]
+    detectors = [adaq_pb_ave]
 
     yield from bp.list_scan(
         detectors,
