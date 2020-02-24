@@ -88,11 +88,6 @@ def fly_scan_with_em(name: str, comment: str, n_cycles: int = 1, delay: float = 
         yield from bps.sleep(float(delay))
     return uids
 
-
-
-
-
-
 def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     motor_x = motor_dictionary['giantxy_x']['object']
@@ -112,10 +107,6 @@ def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: floa
         yield from fly_scan(name=name_n, comment=comment, n_cycles = 1, delay = delay, **kwargs)
 
     yield from bps.mv(motor_x,x_center,motor_y,y_center)
-
-
-
-
 
 def fly_scan_with_sdd(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
     """

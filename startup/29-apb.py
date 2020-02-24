@@ -13,33 +13,41 @@ from ophyd.status import SubscriptionStatus
 
 
 class AnalogPizzaBox(Device):
+    ch1 = Cpt(EpicsSignal, 'SA:Ch1:mV-I')
+    ch2 = Cpt(EpicsSignal, 'SA:Ch2:mV-I')
+    ch3 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
+    ch4 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
+    ch5 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
+    ch6 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
+    ch7 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
+    ch8 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
 
-    ch1_mean = Cpt(EpicsSignal, 'FA:Ch1:Mean-I', kind=Kind.hinted)
-    ch2_mean = Cpt(EpicsSignal, 'FA:Ch2:Mean-I', kind=Kind.hinted)
-    ch3_mean = Cpt(EpicsSignal, 'FA:Ch3:Mean-I', kind=Kind.hinted)
-    ch4_mean = Cpt(EpicsSignal, 'FA:Ch4:Mean-I', kind=Kind.hinted)
-    ch5_mean = Cpt(EpicsSignal, 'FA:Ch5:Mean-I', kind=Kind.hinted)
-    ch6_mean = Cpt(EpicsSignal, 'FA:Ch6:Mean-I', kind=Kind.hinted)
-    ch7_mean = Cpt(EpicsSignal, 'FA:Ch7:Mean-I', kind=Kind.hinted)
-    ch8_mean = Cpt(EpicsSignal, 'FA:Ch8:Mean-I', kind=Kind.hinted)
+    ch1_offset = Cpt(EpicsSignal, 'Ch1:User:Offset-SP')
+    ch2_offset = Cpt(EpicsSignal, 'Ch2:User:Offset-SP')
+    ch3_offset = Cpt(EpicsSignal, 'Ch3:User:Offset-SP')
+    ch4_offset = Cpt(EpicsSignal, 'Ch4:User:Offset-SP')
+    ch5_offset = Cpt(EpicsSignal, 'Ch5:User:Offset-SP')
+    ch6_offset = Cpt(EpicsSignal, 'Ch6:User:Offset-SP')
+    ch7_offset = Cpt(EpicsSignal, 'Ch7:User:Offset-SP')
+    ch8_offset = Cpt(EpicsSignal, 'Ch8:User:Offset-SP')
 
-    ch1_gain = Cpt(EpicsSignal, 'ADC1:Gain-SP')
-    ch2_gain = Cpt(EpicsSignal, 'ADC2:Gain-SP')
-    ch3_gain = Cpt(EpicsSignal, 'ADC3:Gain-SP')
-    ch4_gain = Cpt(EpicsSignal, 'ADC4:Gain-SP')
-    ch5_gain = Cpt(EpicsSignal, 'ADC5:Gain-SP')
-    ch6_gain = Cpt(EpicsSignal, 'ADC6:Gain-SP')
-    ch7_gain = Cpt(EpicsSignal, 'ADC7:Gain-SP')
-    ch8_gain = Cpt(EpicsSignal, 'ADC8:Gain-SP')
+    ch1_adc_gain = Cpt(EpicsSignal, 'ADC1:Gain-SP')
+    ch2_adc_gain = Cpt(EpicsSignal, 'ADC2:Gain-SP')
+    ch3_adc_gain = Cpt(EpicsSignal, 'ADC3:Gain-SP')
+    ch4_adc_gain = Cpt(EpicsSignal, 'ADC4:Gain-SP')
+    ch5_adc_gain = Cpt(EpicsSignal, 'ADC5:Gain-SP')
+    ch6_adc_gain = Cpt(EpicsSignal, 'ADC6:Gain-SP')
+    ch7_adc_gain = Cpt(EpicsSignal, 'ADC7:Gain-SP')
+    ch8_adc_gain = Cpt(EpicsSignal, 'ADC8:Gain-SP')
 
-    ch1_offset = Cpt(EpicsSignal, 'ADC1:Offset-SP')
-    ch2_offset = Cpt(EpicsSignal, 'ADC2:Offset-SP')
-    ch3_offset = Cpt(EpicsSignal, 'ADC3:Offset-SP')
-    ch4_offset = Cpt(EpicsSignal, 'ADC4:Offset-SP')
-    ch5_offset = Cpt(EpicsSignal, 'ADC5:Offset-SP')
-    ch6_offset = Cpt(EpicsSignal, 'ADC6:Offset-SP')
-    ch7_offset = Cpt(EpicsSignal, 'ADC7:Offset-SP')
-    ch8_offset = Cpt(EpicsSignal, 'ADC8:Offset-SP')
+    ch1_adc_offset = Cpt(EpicsSignal, 'ADC1:Offset-SP')
+    ch2_adc_offset = Cpt(EpicsSignal, 'ADC2:Offset-SP')
+    ch3_adc_offset = Cpt(EpicsSignal, 'ADC3:Offset-SP')
+    ch4_adc_offset = Cpt(EpicsSignal, 'ADC4:Offset-SP')
+    ch5_adc_offset = Cpt(EpicsSignal, 'ADC5:Offset-SP')
+    ch6_adc_offset = Cpt(EpicsSignal, 'ADC6:Offset-SP')
+    ch7_adc_offset = Cpt(EpicsSignal, 'ADC7:Offset-SP')
+    ch8_adc_offset = Cpt(EpicsSignal, 'ADC8:Offset-SP')
 
     acquire = Cpt(EpicsSignal, 'FA:SoftTrig-SP', kind=Kind.omitted)
     acquiring = Cpt(EpicsSignal, 'FA:Busy-I', kind=Kind.omitted)
@@ -60,12 +68,26 @@ class AnalogPizzaBox(Device):
         super().__init__(*args, **kwargs)
         self._IP = '10.8.0.19'
 
+
+apb = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="apb")
+
 class AnalogPizzaBoxAverage(AnalogPizzaBox):
+
+    ch1_mean = Cpt(EpicsSignal, 'FA:Ch1:Mean-I', kind=Kind.hinted)
+    ch2_mean = Cpt(EpicsSignal, 'FA:Ch2:Mean-I', kind=Kind.hinted)
+    ch3_mean = Cpt(EpicsSignal, 'FA:Ch3:Mean-I', kind=Kind.hinted)
+    ch4_mean = Cpt(EpicsSignal, 'FA:Ch4:Mean-I', kind=Kind.hinted)
+    ch5_mean = Cpt(EpicsSignal, 'FA:Ch5:Mean-I', kind=Kind.hinted)
+    ch6_mean = Cpt(EpicsSignal, 'FA:Ch6:Mean-I', kind=Kind.hinted)
+    ch7_mean = Cpt(EpicsSignal, 'FA:Ch7:Mean-I', kind=Kind.hinted)
+    ch8_mean = Cpt(EpicsSignal, 'FA:Ch8:Mean-I', kind=Kind.hinted)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._capturing = None
         self._ready_to_collect = False
+
+
 
     def trigger(self):
         def callback(value, old_value, **kwargs):

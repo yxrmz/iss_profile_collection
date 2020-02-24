@@ -227,68 +227,83 @@ class CannotActuateShutter(Exception):
     pass
 
 
-def get_adc_offsets(times: int = 20, *args, **kwargs):
-    """
-       Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
-
-       Parameters
-       ----------
-       num : int
-           Number of points to acquire and average for each ion chamber
-
-
-       Returns
-       -------
-       uid : list(str)
-           List containing the unique id of the scan
-
-
-       See Also
-       --------
-       :func:`tscan`
-       """
+def get_offsets (time:int = 5, *args, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-
-    adcs = list(args)
-    if not len(adcs):
-        adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
-
-    old_avers = []
-    for adc in adcs:
-        old_avers.append(adc.averaging_points.get())
-        adc.averaging_points.put(10)
 
     try:
         yield from bps.mv(shutter_ph_2b, 'Close')
     except FailedStatus:
         raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
 
-    uid = (yield from get_offsets_plan(adcs, num=int(times)))
+    uid = (yield from get_offsets_plan(detectors, time))
 
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:
         print('Error: Photon shutter failed to open')
 
-
-    print('Updating values...')
-
-    arrays = []
-    offsets = []
-    df = db[uid].table()
-
-    for index, adc in enumerate(adcs):
-        key = '{}_volt'.format(adc.name)
-        array = df[key]
-        offset = np.mean(df[key][2:int(times)])
-
-        arrays.append(array)
-        offsets.append(offset)
-        adc.offset.put(offset)
-        print('{}\n New offset for {}) is  {}'.format(array, adc.dev_name.value, offset))
-        adc.averaging_points.put(old_avers[index])
-    print('[Offsets recorded] Complete\n')
-    remove_pb_files(uid)
+# def get_adc_offsets(times: int = 20, *args, **kwargs):
+#     """
+#        Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
+#
+#        Parameters
+#        ----------
+#        num : int
+#            Number of points to acquire and average for each ion chamber
+#
+#
+#        Returns
+#        -------
+#        uid : list(str)
+#            List containing the unique id of the scan
+#
+#
+#        See Also
+#        --------
+#        :func:`tscan`
+#        """
+#     sys.stdout = kwargs.pop('stdout', sys.stdout)
+#
+#     adcs = list(args)
+#     if not len(adcs):
+#         adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+#
+#     old_avers = []
+#     for adc in adcs:
+#         old_avers.append(adc.averaging_points.get())
+#         adc.averaging_points.put(10)
+#
+#     try:
+#         yield from bps.mv(shutter_ph_2b, 'Close')
+#     except FailedStatus:
+#         raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
+#
+#     uid = (yield from get_offsets_plan(adcs, num=int(times)))
+#
+#     try:
+#         yield from bps.mv(shutter_ph_2b, 'Open')
+#     except FailedStatus:
+#         print('Error: Photon shutter failed to open')
+#
+#
+#     print('Updating values...')
+#
+#     arrays = []
+#     offsets = []
+#     df = db[uid].table()
+#
+#     for index, adc in enumerate(adcs):
+#         key = '{}_volt'.format(adc.name)
+#         array = df[key]
+#         offset = np.mean(df[key][2:int(times)])
+#
+#         arrays.append(array)
+#         offsets.append(offset)
+#         adc.offset.put(offset)
+#         print('{}\n New offset for {}) is  {}'.format(array, adc.dev_name.value, offset))
+#         adc.averaging_points.put(old_avers[index])
+#     print('[Offsets recorded] Complete\n')
+#     remove_pb_files(uid)
 
 
 def get_adc_readouts(times: int = 20, *args, **kwargs):

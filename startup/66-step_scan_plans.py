@@ -21,10 +21,9 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
         yield from bps.abs_set(dets[0].sample_len, samples, wait=True )
         yield from bps.abs_set(dets[0].wf_len, samples, wait=True )
 
-        #yield from bps.mv(motor, energy_step)
+        yield from bps.mv(motor, energy_step)
         devices = [*dets, motor]
         yield from bps.trigger_and_read(devices=devices)
-
 
     return per_step_pb
 
@@ -51,7 +50,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, element='', e0 =0, e
           'e0': e0,
           }
     #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
-    detectors = [adaq_pb_ave]
+    detectors = [apb_ave]
 
     yield from bp.list_scan(
         detectors,
