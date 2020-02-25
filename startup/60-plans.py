@@ -79,38 +79,18 @@ def energy_multiple_scans(start, stop, repeats, name='', **metadata):
 
 
 
-# def get_offsets_plan(detectors, num = 1, name = '', **metadata):
-#     """
-#     Example
-#     -------
-#     >>> RE(get_offset([pba1.adc1, pba1.adc6, pba1.adc7, pba2.adc6]))
-#     """
-#
-#     flyers = detectors
-#
-#     plan = bp.count(flyers, num, md={'plan_name': 'get_offset', 'name': name}, delay = 0.5)
-#
-#     def set_offsets():
-#         for flyer in flyers:
-#             ret = flyer.volt.value
-#             yield from bps.abs_set(flyer.offset, ret, wait=True)
-#
-#     return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(plan, set_offsets()), flyers))
-
 def get_offsets_plan(detectors = [apb_ave], time = 2):
     for detector in detectors:
         detector.divide_old = detector.divide.get()
 
-        yield from bps.abs_set(detector.divide,36)
-        yield from bps.abs_set(detector.sample_len, int(time)*1e4)
-        yield from bps.abs_set(detector.wf_len, int(time) * 1e4)
+        yield from bps.abs_set(detector.divide,375)
+        yield from bps.abs_set(detector.sample_len, int(time)*1e3)
+        yield from bps.abs_set(detector.wf_len, int(time) * 1e3)
 
     uid = (yield from bp.count(detectors,1))
 
     for detector in detectors:
         yield from bps.abs_set(detector.divide, detector.divide_old)
-
-
 
     table = db[uid].table()
 
@@ -120,6 +100,7 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
             print(f'Mean {(mean)}')
             ch_offset = getattr(detector, f'ch{i+1}_offset')
             yield from bps.abs_set(ch_offset, mean)
+
     return uid
 
 
