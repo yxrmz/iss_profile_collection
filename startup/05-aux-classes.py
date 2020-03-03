@@ -2,6 +2,8 @@ from bluesky.callbacks import LivePlot
 print(__file__)
 class NormPlot(LivePlot):
     def __init__(self, num_name, den_name, result_name, *args, **kwargs):
+        print(f'NormPlot *args: {args}')
+        print(f'NormPlot **kwargs: {kwargs}')
         super().__init__(*args, **kwargs)
         self.num_name = num_name
         self.den_name = den_name

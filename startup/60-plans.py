@@ -87,7 +87,7 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
         yield from bps.abs_set(detector.sample_len, int(time)*1e3)
         yield from bps.abs_set(detector.wf_len, int(time) * 1e3)
 
-    uid = (yield from bp.count(detectors,1))
+    uid = (yield from bp.count(detectors,1, md={"plan_name": "get_offsets"}))
 
     for detector in detectors:
         yield from bps.abs_set(detector.divide, detector.divide_old)

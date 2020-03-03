@@ -14,7 +14,7 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
     energy_to_time_step = dict(zip(energy_steps, time_steps))
 
     def per_step_pb(dets, motor, energy_step):
-
+        #print(f' Energy {energy_step}')
         time_step=energy_to_time_step[energy_step]
         samples = 250*(np.ceil(time_step*10443/250))
 
