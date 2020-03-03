@@ -17,7 +17,7 @@ from ophyd import Component as Cpt, set_and_wait
 
 from pathlib import PurePath
 from nslsii.detectors.xspress3 import (XspressTrigger, Xspress3Detector,
-                                         Xspress3Channel, Xspress3FileStore, logger)
+                                       Xspress3Channel, Xspress3FileStore, logger)
 
 #from isstools.trajectory.trajectory import trajectory_manager
 
@@ -92,7 +92,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     hdf5 = Cpt(Xspress3FileStoreFlyable, 'HDF5:',
                read_path_template='/nsls2/xf08id/data/x3test/',
                root='/nsls2/xf08id/data/',
-               write_path_template='/nsls2/xf08id/data/x3test/',
+               write_path_template='/home/xspress3/data/',
                )
 
     def __init__(self, prefix, *, configuration_attrs=None, read_attrs=None,
