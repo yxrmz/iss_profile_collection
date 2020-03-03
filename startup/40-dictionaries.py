@@ -12,6 +12,7 @@ detector_dictionary = {bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_
             bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
             bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
             bpm_es.name: {'obj': bpm_es, 'elements':['bpm_es_stats1_total','bpm_es_stats2_total']},
+            bpm_sp4.name: {'obj': bpm_sp4, 'elements':['bpm_sp4_stats1_total','bpm_sp4_stats2_total']},
             pb9.enc1.name: {'obj': pb9.enc1, 'elements': ['pb9_enc1_pos_I']},
             it.name: {'obj': it, 'elements': ['pba1_adc1_volt']},
             iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
@@ -61,8 +62,8 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'detstage_x': {'name': detstage.x.name, 'description': 'Detector Stage X','object': detstage.x},
                'detstage_y': {'name': detstage.y.name, 'description': 'Detector Stage Y','object': detstage.y},
                'detstage_z': {'name': detstage.z.name, 'description': 'Detector Stage Z','object': detstage.z},
-
-              }
+               'usermotor2': {'name': usermotor2.pos.name, 'description': 'User Motor 2 position', 'object': usermotor2.pos},
+                    }
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
