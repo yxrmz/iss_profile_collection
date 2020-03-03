@@ -50,16 +50,18 @@ def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=5,
     yield from set_gains_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs)
 
 
-def general_scan(detectors, num_name, den_name, result_name, motor, rel_start, rel_stop, num,
-                 **kwargs):
+def general_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     print(f'Dets {detectors}')
     print(f'Motors {motor}')
+
     print('[General Scan] Starting scan...')
-    ax = kwargs.get('ax')
 
 
-    uid, = RE(general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)),
-              NormPlot(num_name, den_name, result_name, result_name, motor.name, ax=ax))
+
+
+    uid =  yield from (general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)))
+
 
     print('[General Scan] Done!')
+    return
