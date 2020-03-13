@@ -15,6 +15,7 @@ detector_dictionary =   {
                     'Endstation BPM': {'device': bpm_cm, 'channels': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
 
 
+
                 }
 
 

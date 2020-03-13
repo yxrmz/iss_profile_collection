@@ -51,6 +51,7 @@ def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=5,
 
 
 def general_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
+
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     print(f'Dets {detectors}')
     print(f'Motors {motor}')
