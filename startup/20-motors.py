@@ -201,6 +201,11 @@ class DetStageXYZ(Device):
 detstage = DetStageXYZ('XF:08IDB-OP{Stage:Det', name='detstage')
 
 
+class Usermotor(Device):
+    pos = Cpt(EpicsMotor, '}Mtr')
+
+usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
+
 
 class FilterBox(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
