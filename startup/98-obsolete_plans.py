@@ -462,7 +462,7 @@ def wait_filter_in_place(status_pv):
             break
         else:
             yield from bps.sleep(.1)
-
+'''
 def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     # Get needed data from db
     uuid = db[uuid]['start']['uid']
@@ -568,7 +568,7 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
     text_file.close()
 
 
-
+'''
 
 
 def gauss(x, *p):

@@ -200,15 +200,15 @@ class XIA(Device):
             self._status._finished()
            
 
-xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0)
-
-xia1.read_attrs = []
-
-for mca in xia1.mcas:
-    if mca.connected:
-        xia1.read_attrs.append(mca.name.split('_')[1])
-
-list1 = [mca.name for mca in xia1.mcas]
-list2 = ['roi{}'.format(number) for number in range(12)]
-
-xia_list = ['{}_{}_sum'.format(x,y) for x in list1 for y in list2]
+# xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0)
+#
+# xia1.read_attrs = []
+#
+# for mca in xia1.mcas:
+#     if mca.connected:
+#         xia1.read_attrs.append(mca.name.split('_')[1])
+#
+# list1 = [mca.name for mca in xia1.mcas]
+# list2 = ['roi{}'.format(number) for number in range(12)]
+#
+# xia_list = ['{}_{}_sum'.format(x,y) for x in list1 for y in list2]

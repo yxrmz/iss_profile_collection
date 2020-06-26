@@ -176,7 +176,10 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     def collect(self):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         server = self._IP
-        self.ssh.connect(server, username='root')
+        try:
+            self.ssh.connect(server, username='root')
+        except paramiko.ssh_exception.SSHException:
+            raise RuntimeError('SSH connection could not be established. Create SSH keys')
         with self.ssh.open_sftp() as sftp:
             print(f'Saving a binary file from {server} to {self.filename_bin}')
             sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
