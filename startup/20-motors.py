@@ -99,7 +99,8 @@ class HHM(Device):
 
     def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pulses_per_deg = 1/self.main_motor_res.value
+        self.pulses_per_deg = 1/self.main_motor_res.get()
+
         self.enc = enc
         self._preparing = None
         self._starting = None

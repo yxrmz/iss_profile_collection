@@ -31,7 +31,7 @@ class DeviceWithNegativeReadBack(Device):
     def set(self,value):
 
         def callback(*args,**kwargs):
-            if self._moving and  abs(abs(self.read_pv.value)-abs(self.write_pv.value)) < 0.5:
+            if self._moving and  abs(abs(self.read_pv.get())-abs(self.write_pv.get())) < 0.5:
                 self._moving = False
                 return True
             else:
@@ -81,9 +81,9 @@ class Shutter(Device):
         self.name = name
         if pb4.connected:
             self.output = pb4.do3.default_pol
-            if self.output.value == 1:
+            if self.output.get() == 1:
                 self.state = 'closed'
-            elif self.output.value == 0.0953125:
+            elif self.output.get() == 0.0953125:
                 self.state = 'open'
             self.function_call = None
             self.output.subscribe(self.update_state)
@@ -286,10 +286,10 @@ class ICAmplifier(Device):
         yield from bps.abs_set(self.gain_2, (val >> 2) & 1)
 
     def get_gain(self):
-        if self.low_noise_gain.value == 0:
-            return [int(self.high_speed_gain.enum_strs[self.high_speed_gain.value][-1]),1]
-        elif self.high_speed_gain.value == 0:
-            return [int(self.low_noise_gain.enum_strs[self.low_noise_gain.value][-1]),0]
+        if self.low_noise_gain.get() == 0:
+            return [int(self.high_speed_gain.enum_strs[self.high_speed_gain.get()][-1]),1]
+        elif self.high_speed_gain.get() == 0:
+            return [int(self.low_noise_gain.enum_strs[self.low_noise_gain.get()][-1]),0]
 
         '''
         if self.low_noise_gain.value == 0:

@@ -46,8 +46,8 @@ peaks = bec.peaks  # just as alias for less typing
 
 
 # Make plots update live while scans run.
-from bluesky.utils import install_qt_kicker
-install_qt_kicker()
+#from bluesky.utils import install_qt_kicker
+#install_qt_kicker()
 
 from pathlib import Path
 from historydict import HistoryDict

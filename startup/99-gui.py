@@ -1,7 +1,8 @@
 from isstools import xlive
-
+from PyQt5.QtWidgets import QApplication
 import atexit
 import requests
+import sys
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 import time as ttime
@@ -9,6 +10,9 @@ import time as ttime
 # sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
 #                  {'x': samplexy.x.name, 'y': samplexy.y.name},
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
+
+
+#app = QApplication(sys.argv)
 
 xlive_gui = xlive.XliveGui(plan_funcs={
 
@@ -62,11 +66,14 @@ xlive_gui = xlive.XliveGui(plan_funcs={
     apb=apb_ave
 )
 
+
+
 def xlive():
     xlive_gui.show()
 
 xlive()
 print(f'Startup complete at {ttime.ctime()}')
+#sys.exit(app.exec_())
 
 
 sys.stdout = xlive_gui.emitstream_out
