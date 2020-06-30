@@ -292,10 +292,10 @@ class ICAmplifier(Device):
             return [int(self.low_noise_gain.enum_strs[self.low_noise_gain.get()][-1]),0]
 
         '''
-        if self.low_noise_gain.value == 0:
-            return [self.high_speed_gain.enum_strs[self.high_speed_gain.value], 1]
-        elif self.high_speed_gain.value == 0:
-            return [self.low_noise_gain.enum_strs[self.low_noise_gain.value], 0]
+        if self.low_noise_gain.get() == 0:
+            return [self.high_speed_gain.enum_strs[self.high_speed_gain.get()], 1]
+        elif self.high_speed_gain.get() == 0:
+            return [self.low_noise_gain.enum_strs[self.low_noise_gain.get()], 0]
         else:
             return ['0', 0]
         '''

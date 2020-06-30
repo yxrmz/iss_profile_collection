@@ -46,8 +46,8 @@ peaks = bec.peaks  # just as alias for less typing
 
 
 # Make plots update live while scans run.
-from bluesky.utils import install_qt_kicker
-install_qt_kicker()
+#from bluesky.utils import install_qt_kicker
+#install_qt_kicker()
 
 from pathlib import Path
 from historydict import HistoryDict
@@ -83,6 +83,16 @@ print("MD handling complete in {} sec".format(stop - start))
 ROOT_PATH = '/nsls2/xf08id'
 RAW_FILEPATH = 'data'
 USER_FILEPATH = 'users'
+
+# Patch to fix Tom's terrible deeds
+
+import matplotlib.backends.backend_qt5
+from matplotlib.backends.backend_qt5 import _create_qApp
+from matplotlib._pylab_helpers import Gcf
+
+_create_qApp()
+qApp = matplotlib.backends.backend_qt5.qApp
+
 
 
 def print_to_gui(string, stdout=sys.stdout):

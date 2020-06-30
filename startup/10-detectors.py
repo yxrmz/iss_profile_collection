@@ -330,7 +330,7 @@ class EncoderFS(Encoder):
         now = ttime.time()
         return {self.name: {self.name:
                      {'filename': self._full_path,
-                      'devname': self.dev_name.value,
+                      'devname': self.dev_name.get(),
                       'source': 'pizzabox-enc-file',
                       'external': 'FILESTORE:',
                       'shape': [-1, -1],
@@ -501,7 +501,7 @@ class DIFS(DigitalInput):
         now = ttime.time()
         return {self.name: {self.name:
                      {'filename': self._full_path,
-                      'devname': self.dev_name.value,
+                      'devname': self.dev_name.get(),
                       'source': 'pizzabox-di-file',
                       'external': 'FILESTORE:',
                       'shape': [1024, 5],
@@ -595,7 +595,7 @@ class Adc(Device):
             #self.enable_sel.put(1)
             #self.sample_rate.put(350)
             self.enable_averaging.put(1)
-            if self.averaging_points.value == 0:
+            if self.averaging_points.get() == 0:
                 self.averaging_points.put("1024")
         #except Exception as exc:
         #    pass
@@ -727,7 +727,7 @@ class AdcFS(Adc):
         now = ttime.time()
         return {self.name: {self.name:
                      {'filename': self._full_path,
-                      'devname': self.dev_name.value,
+                      'devname': self.dev_name.get(),
                       'source': 'pizzabox-adc-file',
                       'external': 'FILESTORE:',
                       'shape': [5,],

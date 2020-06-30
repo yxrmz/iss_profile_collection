@@ -16,6 +16,7 @@ import time as ttime
 
 xlive_gui = xlive.XliveGui(plan_funcs={
 
+<<<<<<< HEAD
     'Fly scan (new PB)': fly_scan_with_apb,
     'Step scan': step_scan,
     'Step scan w/Pilatus': step_scan_w_pilatus,
@@ -67,14 +68,12 @@ xlive_gui = xlive.XliveGui(plan_funcs={
 )
 
 
-
 def xlive():
     xlive_gui.show()
 
 xlive()
 print(f'Startup complete at {ttime.ctime()}')
 #sys.exit(app.exec_())
-
 
 sys.stdout = xlive_gui.emitstream_out
 sys.stderr = xlive_gui.emitstream_err

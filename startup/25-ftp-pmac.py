@@ -80,13 +80,13 @@ def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 	hhm.lut_number.put(lut_number)
 
 	ttime.sleep(0.1)
-	while (hhm.lut_number_rbv.value != lut_number):
+	while (hhm.lut_number_rbv.get() != lut_number):
 		ttime.sleep(.01)
 
 	hhm.lut_start_transfer.put("1")	
-	while (hhm.lut_transfering.value == 0):
+	while (hhm.lut_transfering.get() == 0):
 		ttime.sleep(.01)
-	while (hhm.lut_transfering.value == 1):
+	while (hhm.lut_transfering.get() == 1):
 		ttime.sleep(.01)
 
 	ftp = FTP(ip)
@@ -118,7 +118,7 @@ def trajectory_init(lut_number, ip = '10.8.2.86', filename = 'hhm.txt'):
 			return False
 		else:
 			hhm.cycle_limit.put(size)
-			while (hhm.cycle_limit_rbv.value != size):
+			while (hhm.cycle_limit_rbv.get() != size):
 				ttime.sleep(.01)
 			print('Transfer completed!\nNew lut number: {}\nTrajectory name: {}\nNumber of points: {}'.format(lut_number, name, size))
 			return True

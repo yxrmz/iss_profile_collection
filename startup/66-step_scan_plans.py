@@ -55,7 +55,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
           'interp_filename': fn,
           'element': element,
           'element_full': full_element_name,
-          'angle_offset': str(hhm.angle_offset.value),
+          'angle_offset': str(hhm.angle_offset.get()),
           'edge': edge,
           'e0': e0,
           }
@@ -73,5 +73,3 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
         per_step=adaq_pb_step_per_step_factory(energy_steps,time_steps), #and this function is colled at every step
         md=md
     )
-
-
