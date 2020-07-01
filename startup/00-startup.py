@@ -52,13 +52,17 @@ peaks = bec.peaks  # just as alias for less typing
 from pathlib import Path
 from historydict import HistoryDict
 
-try:
-    RE.md = HistoryDict('/nsls2/xf08id/metadata/bluesky_history.db')
-    print('gpfs')
-except Exception as exc:
-    print('local')
-    print(exc)
-    RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
+# try:
+#     RE.md = HistoryDict('/nsls2/xf08id/metadata/bluesky_history.db')
+#     print('gpfs')
+# except Exception as exc:
+#     print('local')
+#     print(exc)
+#     RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
+
+from bluesky.utils import PersistentDict
+RE.md = PersistentDict('/nsls2/xf08id/metadata/bluesky-md')
+
 RE.is_aborted = False
 
 start = timer()
