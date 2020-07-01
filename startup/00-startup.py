@@ -50,7 +50,7 @@ peaks = bec.peaks  # just as alias for less typing
 #install_qt_kicker()
 
 from pathlib import Path
-from historydict import HistoryDict
+# from historydict import HistoryDict
 
 # try:
 #     RE.md = HistoryDict('/nsls2/xf08id/metadata/bluesky_history.db')
@@ -101,5 +101,4 @@ qApp = matplotlib.backends.backend_qt5.qApp
 
 def print_to_gui(string, stdout=sys.stdout):
     print(string, file=stdout, flush=True)
-
 
