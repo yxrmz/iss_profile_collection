@@ -2,6 +2,13 @@ import time
 import sys
 from bluesky.simulators import summarize_plan
 
+# Check version of bluesky and act accordingly
+from distutils.version import LooseVersion
+import bluesky
+if bluesky.__version__ < LooseVersion('1.6'):
+    OLD_BLUESKY = True
+else:
+    OLD_BLUESKY = False
 
 # Set up a RunEngine and use metadata backed by a sqlite file.
 print(__file__)
@@ -44,24 +51,32 @@ bec.disable_table()
 RE.subscribe(bec)
 peaks = bec.peaks  # just as alias for less typing
 
+if OLD_BLUESKY:
+    # Make plots update live while scans run.
+    from bluesky.utils import install_qt_kicker
+    install_qt_kicker()
 
-# Make plots update live while scans run.
-#from bluesky.utils import install_qt_kicker
-#install_qt_kicker()
+    from pathlib import Path
+    from historydict import HistoryDict
 
-from pathlib import Path
-# from historydict import HistoryDict
+    try:
+        RE.md = HistoryDict('/nsls2/xf08id/metadata/bluesky_history.db')
+        print('gpfs')
+    except Exception as exc:
+        print('local')
+        print(exc)
+        RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
+else:
+    # Patch to fix Tom's terrible deeds
+    import matplotlib.backends.backend_qt5
+    from matplotlib.backends.backend_qt5 import _create_qApp
+    from matplotlib._pylab_helpers import Gcf
 
-# try:
-#     RE.md = HistoryDict('/nsls2/xf08id/metadata/bluesky_history.db')
-#     print('gpfs')
-# except Exception as exc:
-#     print('local')
-#     print(exc)
-#     RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
+    _create_qApp()
+    qApp = matplotlib.backends.backend_qt5.qApp
 
-from bluesky.utils import PersistentDict
-RE.md = PersistentDict('/nsls2/xf08id/metadata/bluesky-md')
+    from bluesky.utils import PersistentDict
+    RE.md = PersistentDict('/nsls2/xf08id/metadata/bluesky-md')
 
 RE.is_aborted = False
 
@@ -87,16 +102,6 @@ print("MD handling complete in {} sec".format(stop - start))
 ROOT_PATH = '/nsls2/xf08id'
 RAW_FILEPATH = 'data'
 USER_FILEPATH = 'users'
-
-# Patch to fix Tom's terrible deeds
-
-import matplotlib.backends.backend_qt5
-from matplotlib.backends.backend_qt5 import _create_qApp
-from matplotlib._pylab_helpers import Gcf
-
-_create_qApp()
-qApp = matplotlib.backends.backend_qt5.qApp
-
 
 
 def print_to_gui(string, stdout=sys.stdout):
