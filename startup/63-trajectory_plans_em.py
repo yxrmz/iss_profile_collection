@@ -54,7 +54,7 @@ class FlyerEM:
 
     def describe_collect(self):
         return_dict = {self.det.name:
-                        {f'{self.det.name}': {'source': 'electrometer',
+                        {f'{self.det.name}': {'source': 'APB',
                                               'dtype': 'array',
                                               'shape': [-1, -1],
                                               'filename_bin': self.det.filename_bin,

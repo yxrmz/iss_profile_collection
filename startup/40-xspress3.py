@@ -1,3 +1,6 @@
+'''
+
+
 from ophyd.areadetector import (AreaDetector, PixiradDetectorCam, ImagePlugin,
                                 TIFFPlugin, StatsPlugin, HDF5Plugin,
                                 ProcessPlugin, ROIPlugin, TransformPlugin,
@@ -146,14 +149,14 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     # channel8 = C(Xspress3Channel, 'C8_', channel_num=8)
 
 
-xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
-xs.channel2.vis_enabled.put(1)
-xs.channel3.vis_enabled.put(1)
-
-# This is necessary for when the ioc restarts
-# we have to trigger one image for the hdf5 plugin to work correctly
-# else, we get file writing errors
-xs.hdf5.warmup()
+# xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
+# xs.channel2.vis_enabled.put(1)
+# xs.channel3.vis_enabled.put(1)
+#
+# # This is necessary for when the ioc restarts
+# # we have to trigger one image for the hdf5 plugin to work correctly
+# # else, we get file writing errors
+# xs.hdf5.warmup()
 
 # Hints:
 for n in [1, 2]:
@@ -204,3 +207,4 @@ def xs_list_scan(det, energies):
 
 # energies = np.arange(8959, 9070, 0.4)
 # RE(xs_list_scan(xs, energies=energies))
+'''
