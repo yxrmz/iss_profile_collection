@@ -11,8 +11,9 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
 xlive_gui = xlive.XliveGui(plan_funcs={
+
+                                    'Fly scan with new PB' :        fly_scan_with_apb,
                                     'Fly scan':                     fly_scan,
-                                    'Fly scan with new PB' :        fly_scan_with_em,
                                     'Step scan':                    step_scan,
                                     'Constant energy' :             constant_energy,
                                     'Spiral fly scan':              fly_scan_over_spiral,

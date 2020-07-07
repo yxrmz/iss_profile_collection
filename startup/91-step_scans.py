@@ -7,7 +7,8 @@ def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refe
     time_grid = kwargs.pop('time_grid', [])
     element = kwargs.pop('element', [])
     e0 = kwargs.pop('e0', [])
-    edge = kwargs.pop('element', [])
+    edge = kwargs.pop('edge', [])
+
 
     #divide_old = detector.divide.get()
 

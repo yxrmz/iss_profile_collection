@@ -86,7 +86,7 @@ class FlyerEM:
 flyer_apb = FlyerEM(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
 
-def execute_trajectory_em(name, **metadata):
+def execute_trajectory_apb(name, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
     interp_fn = validate_file_exists(interp_fn)
     print(f'Filepath  {interp_fn}')
@@ -96,8 +96,8 @@ def execute_trajectory_em(name, **metadata):
     except:
         full_element_name = curr_traj.elem.value
     md = {'plan_args': {},
-          'plan_name': 'execute_trajectory_em',
-          'experiment': 'fly_energy_scan_em',
+          'plan_name': 'execute_trajectory_apb',
+          'experiment': 'fly_energy_scan_apb',
           'name': name,
           'interp_filename': interp_fn,
           'angle_offset': str(hhm.angle_offset.value),

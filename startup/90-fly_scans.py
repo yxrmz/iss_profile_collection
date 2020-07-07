@@ -51,7 +51,7 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
     return uids
 
 
-def fly_scan_with_em(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
+def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float = 0, reference = True, **kwargs):
     '''
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
     Parameters
@@ -82,7 +82,7 @@ def fly_scan_with_em(name: str, comment: str, n_cycles: int = 1, delay: float = 
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from prep_traj_plan()
         print(f'Trajectory prepared at {print_now()}')
-        uid = (yield from execute_trajectory_em(name_n, comment=comment))
+        uid = (yield from execute_trajectory_apb(name_n, comment=comment))
         uids.append(uid)
         print(f'Trajectory excecuted {print_now()}')
         yield from bps.sleep(float(delay))
