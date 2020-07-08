@@ -33,6 +33,9 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
     return per_step_pb
 
 #OK so it seems that is the function that's we need
+
+
+
 def step_scan_plan(name, comment, energy_steps, time_steps, element='', e0=0, edge=''):
     print(f'Edge in plan {edge}')
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
@@ -55,7 +58,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, element='', e0=0, ed
           'e0': e0,
           }
     #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
-    detectors = [apb_ave, bpm_es]
+    detectors = [apb_ave]
     yield from bps.abs_set(apb_ave.divide, 35, wait=True)
 
     yield from bp.list_scan( #this is the scan
