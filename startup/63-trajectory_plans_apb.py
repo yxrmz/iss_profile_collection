@@ -108,5 +108,12 @@ def execute_trajectory_apb(name, **metadata):
           'e0': curr_traj.e0.value,
           'pulses_per_degree': hhm.pulses_per_deg,
           }
+    for indx in range(8):
+        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get() # should it be _adc_offset?
+        amp = getattr(apb, f'amp_ch{indx+1}')
+        if amp:
+            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
+        else:
+            md[f'ch{indx+1}_amp_gain']=0
     md.update(**metadata)
     yield from bp.fly([flyer_apb], md=md)
