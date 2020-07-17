@@ -13,6 +13,9 @@ from ophyd.status import SubscriptionStatus
 
 
 class AnalogPizzaBox(Device):
+
+    polarity = 'neg'
+
     ch1 = Cpt(EpicsSignal, 'SA:Ch1:mV-I')
     ch2 = Cpt(EpicsSignal, 'SA:Ch2:mV-I')
     ch3 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
