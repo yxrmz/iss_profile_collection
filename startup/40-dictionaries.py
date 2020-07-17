@@ -12,7 +12,7 @@ detector_dictionary =   {
                     'Ir ion Chamber': {'device': apb_ave, 'channels': ['apb_ave_ch3_mean']},
                     'PIPS detector': {'device': apb_ave, 'channels': ['apb_ave_ch4_mean']},
                     'Focusing mirror BPM': {'device': bpm_fm, 'channels': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
-                    'Endstation BPM': {'device': bpm_cm, 'channels': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
+                    'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
                                                                      'pil100k_stats3_total','pil100k_stats4_total']}
 
@@ -48,6 +48,8 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'samplexy_y': {'name': samplexy.y.name, 'description':'B2 Sample Stage Y','object': samplexy.y},
                'giantxy_x': {'name': giantxy.x.name, 'description':'B2 Giant Stage X','object': giantxy.x},
                'giantxy_y': {'name': giantxy.y.name, 'description':'B2 Giant Stage Y','object': giantxy.y},
+               'auxxy_x': {'name': auxxy.x.name, 'description':'B2 Aux Stage X','object': auxxy.x},
+               'auxxy_y': {'name': auxxy.y.name, 'description':'B2 Aux Stage Y','object': auxxy.y},
                'hhm_theta': {'name': hhm.theta.name,'description':'A Monochromator Theta', 'object': hhm.theta},
                'hhm_energy': {'name': hhm.energy.name, 'description':'A Monochromator Energy','object': hhm.energy},
                'hhm_y': {'name': hhm.y.name,'description':'A Monochromator Y', 'object': hhm.y},

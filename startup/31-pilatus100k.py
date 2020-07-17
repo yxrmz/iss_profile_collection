@@ -112,4 +112,10 @@ fd = FakeDetector(name='fd')
 
 pil100k.stats1.kind = 'hinted'
 pil100k.stats1.total.kind = 'hinted'
+pil100k.stats2.kind = 'hinted'
+pil100k.stats2.total.kind = 'hinted'
+pil100k.stats3.kind = 'hinted'
+pil100k.stats3.total.kind = 'hinted'
+pil100k.stats4.kind = 'hinted'
+pil100k.stats4.total.kind = 'hinted'
 pil100k.cam.ensure_nonblocking()
