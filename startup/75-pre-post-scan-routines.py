@@ -87,14 +87,14 @@ class CannotActuateShutter(Exception):
     pass
 
 
-def get_offsets (time:int = 5, *args, **kwargs):
+def get_offsets (time:int = 2, *args, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     try:
         yield from bps.mv(shutter_ph_2b, 'Close')
     except FailedStatus:
         raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
-
+    detectors = [apb_ave]
     uid = (yield from get_offsets_plan(detectors, time))
 
     try:

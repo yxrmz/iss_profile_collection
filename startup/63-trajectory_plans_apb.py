@@ -54,7 +54,7 @@ class FlyerEM:
 
     def describe_collect(self):
         return_dict = {self.det.name:
-                        {f'{self.det.name}': {'source': 'electrometer',
+                        {f'{self.det.name}': {'source': 'APB',
                                               'dtype': 'array',
                                               'shape': [-1, -1],
                                               'filename_bin': self.det.filename_bin,
@@ -86,7 +86,7 @@ class FlyerEM:
 flyer_apb = FlyerEM(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
 
-def execute_trajectory_em(name, **metadata):
+def execute_trajectory_apb(name, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
     interp_fn = validate_file_exists(interp_fn)
     print(f'Filepath  {interp_fn}')
@@ -96,8 +96,8 @@ def execute_trajectory_em(name, **metadata):
     except:
         full_element_name = curr_traj.elem.value
     md = {'plan_args': {},
-          'plan_name': 'execute_trajectory_em',
-          'experiment': 'fly_energy_scan_em',
+          'plan_name': 'execute_trajectory_apb',
+          'experiment': 'fly_energy_scan_apb',
           'name': name,
           'interp_filename': interp_fn,
           'angle_offset': str(hhm.angle_offset.value),
@@ -108,5 +108,12 @@ def execute_trajectory_em(name, **metadata):
           'e0': curr_traj.e0.value,
           'pulses_per_degree': hhm.pulses_per_deg,
           }
+    for indx in range(8):
+        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get() # should it be _adc_offset?
+        amp = getattr(apb, f'amp_ch{indx+1}')
+        if amp:
+            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
+        else:
+            md[f'ch{indx+1}_amp_gain']=0
     md.update(**metadata)
     yield from bp.fly([flyer_apb], md=md)

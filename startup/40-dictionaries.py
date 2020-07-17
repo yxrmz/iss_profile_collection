@@ -13,6 +13,8 @@ detector_dictionary =   {
                     'PIPS detector': {'device': apb_ave, 'channels': ['apb_ave_ch4_mean']},
                     'Focusing mirror BPM': {'device': bpm_fm, 'channels': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
                     'Endstation BPM': {'device': bpm_cm, 'channels': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
+                    'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
+                                                                     'pil100k_stats3_total','pil100k_stats4_total']}
 
 
 

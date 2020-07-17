@@ -131,7 +131,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         file_uid = str(uuid.uuid4())
         self.calc_num_points()
         self.stream_samples.put(self.num_points)
-        filename = f'{ROOT_PATH}/data/electrometer/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
+        filename = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         self.filename_bin = f'{filename}.bin'
         self.filename_txt = f'{filename}.txt'
 
@@ -212,6 +212,17 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
 apb_stream = AnalogPizzaBoxStream(prefix="XF:08IDB-CT{PBA:1}:", name="apb_stream")
 
+apb.amp_ch1 = i0_amp
+apb.amp_ch2 = it_amp
+apb.amp_ch3 = ir_amp
+apb.amp_ch4 = iff_amp
+apb.amp_ch5 = None
+apb.amp_ch6 = None
+apb.amp_ch7 = None
+apb.amp_ch8 = None
+
+
+
 
 class APBBinFileHandler(HandlerBase):
     "Read electrometer *.bin files"
@@ -237,15 +248,16 @@ class APBBinFileHandler(HandlerBase):
         raw_data = raw_data.reshape((raw_data.size // num_columns, num_columns))
 
         derived_data = np.zeros((raw_data.shape[0], raw_data.shape[1] - 1))
-        derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 1e-9  # Unix timestamp with nanoseconds
+        derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
         for i in range(num_columns - 2):
-            derived_data[:, i+1] = ((raw_data[:, i] ) - Offsets[i]) / Gains[i]
+            derived_data[:, i+1] = raw_data[:, i] #((raw_data[:, i] ) - Offsets[i]) / Gains[i]
 
         self.df = pd.DataFrame(data=derived_data, columns=columns)
         self.raw_data = raw_data
 
     def __call__(self):
-        return self.raw_data
+        return self.df
+
 
 
 

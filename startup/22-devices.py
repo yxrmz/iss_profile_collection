@@ -261,7 +261,7 @@ iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_11_0', gain_1='ES-DO}2_11_
                      lnoise='Amp-LN}If', hspeed='Amp-HS}If', bwidth='Amp-BW}If', name='iff_amp')
 
 
-
+#old pizzabox
 pba1.adc7.amp = i0_amp
 pba1.adc1.amp = it_amp
 pba1.adc6.amp = iff_amp
