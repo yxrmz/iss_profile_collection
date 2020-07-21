@@ -50,7 +50,10 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
                suffix="Proc1:TIFF:",
                # write_path_template="/GPFS/xf12id1/data/PLACEHOLDER",  # override this on instances using instance.tiff.write_file_path
                write_path_template="/home/det/PilatusData/",
-               root='/')
+               root='/',
+               # write_path_template="/nsls2/xf08id/data/pil100k/%Y/%m/%d",
+               # root='/nsls2/xf08id/data/',
+               )
 
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
@@ -69,6 +72,10 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
         self.read_attrs = [st, 'tiff']
         getattr(self, st).kind = 'hinted'
 
+
+# TODO: configure it once the mount on xf08id-pilatus (the IOC for Pilatus).
+# pil100k.tiff.write_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
+# pil100k.tiff.read_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
 
 pil100k = Pilatus("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
 pil100k.set_primary_roi(1)
