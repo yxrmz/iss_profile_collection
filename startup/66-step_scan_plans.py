@@ -21,8 +21,8 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
         for det in dets:
             if det.name == 'apb_ave':
                 samples = 250*(np.ceil(time_step*10443/250)) #hn I forget what that does... let's look into the new PB OPI
-                yield from bps.abs_set(det.sample_len, samples, wait=True )
-                yield from bps.abs_set(det.wf_len, samples, wait=True )
+                yield from bps.abs_set(det.sample_len, samples, wait=True)
+                yield from bps.abs_set(det.wf_len, samples, wait=True)
             else:
                 yield from bps.mv(det.cam.acquire_time, time_step)
 
