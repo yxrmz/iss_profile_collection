@@ -61,7 +61,7 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'detstage_x': {'name': detstage.x.name, 'description': 'Detector Stage X','object': detstage.x},
                'detstage_y': {'name': detstage.y.name, 'description': 'Detector Stage Y','object': detstage.y},
                'detstage_z': {'name': detstage.z.name, 'description': 'Detector Stage Z','object': detstage.z},
-
+               'cm1_x' : {'name' : cm1.x.name, 'description': 'Collimating mirror X','object': cm1.x}
               }
 
 
