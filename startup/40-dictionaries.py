@@ -81,7 +81,7 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'detstage_x': {'name': detstage.x.name, 'description': 'Detector Stage X','object': detstage.x},
                'detstage_y': {'name': detstage.y.name, 'description': 'Detector Stage Y','object': detstage.y},
                'detstage_z': {'name': detstage.z.name, 'description': 'Detector Stage Z','object': detstage.z},
-
+               'cm1_x' : {'name' : cm1.x.name, 'description': 'Collimating mirror X','object': cm1.x}
               }
 
 
@@ -93,4 +93,10 @@ ic_amplifiers = {'i0_amp': i0_amp,
                  'it_amp': it_amp,
                  'ir_amp': ir_amp,
                  'iff_amp': iff_amp}
+
+camera_dictionary = {'camera_sample1': camera_sp1,
+                     'camera_sample2': camera_sp2,
+                     'camera_sample4': camera_sp4,
+
+                     }
 

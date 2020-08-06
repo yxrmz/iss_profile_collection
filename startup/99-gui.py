@@ -47,6 +47,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            shutters_dict =shutter_dictionary,
                            det_dict=detector_dictionary,
                            motors_dict=motor_dictionary,
+                           camera_dict=camera_dictionary,
                            sample_stage = giantxy,
                            tune_elements = tune_elements,
                            ic_amplifiers = ic_amplifiers,

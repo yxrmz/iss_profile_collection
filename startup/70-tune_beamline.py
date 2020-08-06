@@ -25,6 +25,12 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'step': 0.025,
                    'retries': 3,
                    'comment': 'Harmonic rejection mirror tune'},
+                  {'motor': hhm.pitch.name,
+                   'detector': i0.name,
+                   'range': 1,
+                   'step': 0.02,
+                   'retries': 3,
+                   'comment': 'fine monochromator pitch tune'},
                 ]
 
 def tune_beamline_plan(stdout=sys.stdout):
