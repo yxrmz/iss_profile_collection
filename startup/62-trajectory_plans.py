@@ -232,7 +232,7 @@ def execute_camera_trajectory(name, **metadata):
 
 def execute_xia_trajectory(name, **metadata):
     # flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba2.adc6, pba1.adc7, pb4.di]
-    flyers = [pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7, pb4.di]
+    flyers = [pba2.adc7, pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7, pb9.enc1, pb4.di]
 
     def inner():
         # Setting the name of the file
@@ -254,7 +254,10 @@ def execute_xia_trajectory(name, **metadata):
 
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
         curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-        full_element_name = element(curr_traj.elem.value).name
+        try:
+            full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+        except:
+            full_element_name = curr_traj.elem.value
         md = {'plan_args': {},
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd',
@@ -326,7 +329,8 @@ def execute_xia_trajectory(name, **metadata):
                                                    bps.abs_set(hhm.stop_trajectory,
                                                                '1', wait=True)))
 
-        yield from bps.close_run()
+        ret =(yield from bps.close_run())
+        return ret
 
     def final_plan():
         yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
@@ -344,6 +348,18 @@ def execute_xia_trajectory(name, **metadata):
     yield from bps.stage(hhm)
 
     return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()), flyers))
+
+
+
+ #
+ #  fly_plan = bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan(flyers)),
+ #                                      flyers)
+ #    # TODO : Add in when suspend_wrapper is avaialable
+ #    # if not ignore_shutter:
+ #    # this will use suspenders defined in 23-suspenders.py
+ #    # fly_plan = bpp.suspend_wrapper(fly_plan, suspenders)
+ #
+ #    return (yield from fly_plan)
 
 
 def execute_loop_trajectory(name, **metadata):

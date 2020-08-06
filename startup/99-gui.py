@@ -10,10 +10,11 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 #                  {'x': samplexy.x.name, 'y': samplexy.y.name},
 #                  {'x': huber_stage.z.name, 'y': huber_stage.y.name}]
 
-
 xlive_gui = xlive.XliveGui(plan_funcs={
-                                    'Fly scan':                     fly_scan,
+
+                                    'Fly scan (new PB)' :        fly_scan_with_apb,
                                     'Step scan':                    step_scan,
+                                    'Step scan w/Pilatus':          step_scan_w_pilatus,
                                     'Constant energy' :             constant_energy,
                                     'Spiral fly scan':              fly_scan_over_spiral,
                                     'Fly scan with SDD':            fly_scan_with_sdd,
@@ -21,7 +22,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
 
                            },
                            service_plan_funcs={
-                                'get_adc_offsets':  get_adc_offsets,
+                                'get_offsets':  get_offsets,
                                 'sleep':                   sleep,
                                 'random_step':          random_step,
                                 'set_gains':        set_gains,
@@ -34,7 +35,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                'prepare_traj_plan': prep_traj_plan,
                                'general_scan': general_scan,
                                'set_reference_foil': set_reference_foil,
-                               'write_html_log':     write_html_log,
+
                                'tuning_scan': tuning_scan,
 
 
@@ -51,6 +52,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            tune_elements = tune_elements,
                            ic_amplifiers = ic_amplifiers,
                            window_title="XLive @ISS/08-ID NSLS-II",
+                           apb = apb_ave
                            )
 
 def xlive():
@@ -63,15 +65,8 @@ sys.stdout = xlive_gui.emitstream_out
 sys.stderr = xlive_gui.emitstream_err
 
 
-#def cleaning():
-#    if xlive_gui.piezo_thread.isRunning():
-#        xlive_gui.toggle_piezo_fb(0)
+def cleaning():
+   if xlive_gui.piezo_thread.isRunning():
+       xlive_gui.toggle_piezo_fb(0)
 
-#atexit.register(cleaning)
-
-
-
-
-
-
-
+atexit.register(cleaning)

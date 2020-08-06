@@ -4,7 +4,9 @@ from bluesky.simulators import summarize_plan
 
 
 # Set up a RunEngine and use metadata backed by a sqlite file.
+print(__file__)
 from bluesky import RunEngine
+
 from bluesky.utils import get_history
 RE = RunEngine({})
 

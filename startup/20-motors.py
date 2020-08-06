@@ -1,7 +1,9 @@
-from ophyd import (EpicsMotor, Device, Component as Cpt,
+from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
                    EpicsSignal)
 import numpy as np
+from ophyd.status import SubscriptionStatus
 
+print(__file__)
 
 class Mirror(Device):
     pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
@@ -49,7 +51,7 @@ class HHM(Device):
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
-    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind='hinted')
+    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 
@@ -99,6 +101,52 @@ class HHM(Device):
         super().__init__(*args, **kwargs)
         self.pulses_per_deg = 1/self.main_motor_res.value
         self.enc = enc
+        self._preparing = None
+        self._starting = None
+
+    def set(self, command):
+        if command == 'prepare':
+
+            # This function will receive Events from the IOC and check whether
+            # we are seeing the trajectory_ready go low after having been high.
+            def callback(value, old_value, **kwargs):
+                if int(round(old_value)) == 1 and int(round(value)) == 0:
+                    if self._preparing or self._preparing is None:
+                        self._preparing = False
+                        return True
+                    else:
+                        self._preparing = True
+                return False
+
+            # Creating this status object subscribes `callback` Events from the
+            # IOC. Starting at this line, we are now listening for the IOC to
+            # tell us it is done. When it does, this status object will
+            # complete (status.done = True).
+            status = SubscriptionStatus(self.trajectory_ready, callback)
+
+            # Finally, now that we are litsening to the IOC, prepare the
+            # trajectory.
+            self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
+
+            # Return the status object immediately, without waiting. The caller
+            # will be able to watch for it to become done.
+            return status
+
+        if command == 'start':
+
+            def callback(value, old_value, **kwargs):
+                if int(round(old_value)) == 1 and int(round(value)) == 0:
+                    if self._starting or self._starting is None:
+                        self._starting = False
+                        return True
+                    else:
+                        self._starting = True
+                return False
+
+            status = SubscriptionStatus(self.trajectory_running, callback)
+            self.start_trajectory.set('1')
+
+            return status
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
@@ -144,6 +192,7 @@ class SampleXY(Device):
 samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
 giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy')
 
+auxxy = SampleXY('XF:08IDB-OP{Stage:Aux1', name='auxxy')
 
 
 class DetStageXYZ(Device):
@@ -151,8 +200,13 @@ class DetStageXYZ(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
     z = Cpt(EpicsMotor, '-Ax:Z}Mtr')
 
-detstage = DetStageXYZ('XF:08IDB-OP{PPMAC:DetStage', name='detstage')
+detstage = DetStageXYZ('XF:08IDB-OP{Stage:Det', name='detstage')
 
+
+class Usermotor(Device):
+    pos = Cpt(EpicsMotor, '}Mtr')
+
+usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
 
 
 class FilterBox(Device):

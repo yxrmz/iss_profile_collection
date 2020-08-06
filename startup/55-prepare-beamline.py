@@ -122,7 +122,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
 
     start_time = ttime.time()
-
+    print_to_gui('[Prepare Beamline] Setting ion chamber gas composition...', stdout=stdout)
     yield from bps.mv(
                         He_flow_setter,energy_range['He_flow'],
                         N2_flow_setter,energy_range['N2_flow'],
@@ -183,6 +183,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
     print_to_gui('[Prepare Beamline] Moving to the target energy',stdout=stdout)
     yield from bps.mv(hhm.energy, energy)
+
     print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor', stdout=stdout)
     yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
     print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)

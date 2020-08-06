@@ -14,10 +14,12 @@ from ophyd import DeviceStatus, set_and_wait
 from ophyd.status import SubscriptionStatus
 from ophyd.sim import NullStatus
 
+from nslsii.ad33 import StatsPluginV33
+
 from datetime import datetime
 
 from databroker.assets.handlers_base import HandlerBase
-
+print(__file__)
 
 def print_now():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
@@ -25,8 +27,8 @@ def print_now():
 
 class BPM(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
-    stats1 = Cpt(StatsPlugin, 'Stats1:')
-    stats2 = Cpt(StatsPlugin, 'Stats2:')
+    stats1 = Cpt(StatsPluginV33, 'Stats1:')
+    stats2 = Cpt(StatsPluginV33, 'Stats2:')
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
     counts = Cpt(EpicsSignal, 'Pos:Counts')
@@ -66,16 +68,42 @@ class BPM(SingleTrigger, ProsilicaDetector):
 
 class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
-    #stats1 = Cpt(StatsPlugin, 'Stats1:')
-    #stats2 = Cpt(StatsPlugin, 'Stats2:')
-    #roi1 = Cpt(ROIPlugin, 'ROI1:')
-    #roi2 = Cpt(ROIPlugin, 'ROI2:')
+
+    stats1 = Cpt(StatsPluginV33, 'Stats1:')
+    stats2 = Cpt(StatsPluginV33, 'Stats2:')
+    roi1 = Cpt(ROIPlugin, 'ROI1:')
+    roi2 = Cpt(ROIPlugin, 'ROI2:')
+
     exp_time = Cpt(EpicsSignal, 'cam1:AcquireTime_RBV', write_pv='cam1:AcquireTime')
     polarity = 'pos'
     tiff_filepath = Cpt(EpicsSignal, 'TIFF1:FilePath_RBV', write_pv='TIFF1:FilePath')
     tiff_filename = Cpt(EpicsSignal, 'TIFF1:FileName_RBV', write_pv='TIFF1:FileName')
     tiff_filenumber = Cpt(EpicsSignal, 'TIFF1:FileNumber_RBV', write_pv='TIFF1:FileNumber')
     tiff_filefmt = Cpt(EpicsSignal, 'TIFF1:FileTemplate_RBV', write_pv='TIFF1:FileTemplate')
+
+    bar1 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage1_RBV')
+    bar2 = Cpt(EpicsSignal, 'Bar2:BarcodeMessage2_RBV')
+    bar3 = Cpt(EpicsSignal, 'Bar3:BarcodeMessage3_RBV')
+    bar4 = Cpt(EpicsSignal, 'Bar4:BarcodeMessage4_RBV')
+    bar5 = Cpt(EpicsSignal, 'Bar5:BarcodeMessage5_RBV')
+
+    bar1Corner1X = Cpt(EpicsSignal, 'Bar1:UpperLeftX_RBV')
+    bar1Corner2X = Cpt(EpicsSignal, 'Bar1:UpperRightX_RBV')
+    bar1Corner3X = Cpt(EpicsSignal, 'Bar1:LowerLeftX_RBV')
+    bar1Corner4X = Cpt(EpicsSignal, 'Bar1:LowerRightX_RBV')
+    bar1Corner1Y = Cpt(EpicsSignal, 'Bar1:UpperLeftY_RBV')
+    bar1Corner2Y = Cpt(EpicsSignal, 'Bar1:UpperRightY_RBV')
+    bar1Corner3Y = Cpt(EpicsSignal, 'Bar1:LowerLeftY_RBV')
+    bar1Corner4Y = Cpt(EpicsSignal, 'Bar1:LowerRightY_RBV')
+
+    bar2Corner1X = Cpt(EpicsSignal, 'Bar2:UpperLeftX_RBV')
+    bar2Corner2X = Cpt(EpicsSignal, 'Bar2:UpperRightX_RBV')
+    bar2Corner3X = Cpt(EpicsSignal, 'Bar2:LowerLeftX_RBV')
+    bar2Corner4X = Cpt(EpicsSignal, 'Bar2:LowerRightX_RBV')
+    bar2Corner1Y = Cpt(EpicsSignal, 'Bar2:UpperLeftY_RBV')
+    bar2Corner2Y = Cpt(EpicsSignal, 'Bar2:UpperRightY_RBV')
+    bar2Corner3Y = Cpt(EpicsSignal, 'Bar2:LowerLeftY_RBV')
+    bar2Corner4Y = Cpt(EpicsSignal, 'Bar2:LowerRightY_RBV')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,6 +121,7 @@ bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
+
 camera_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
@@ -101,6 +130,7 @@ camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
 #bpm_ms1 = CAMERA('XF:08IDB-BI{BPM:MS-1}', name='bpm_ms1')
 
 for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es,]: #camera_sp1, camera_sp2, camera_sp3, camera_sp4]:
+
     bpm.read_attrs = ['stats1', 'stats2']
     bpm.image.read_attrs = ['array_data']
     bpm.stats1.read_attrs = ['total', 'centroid']
@@ -279,7 +309,7 @@ class EncoderFS(Encoder):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
-        ttime.sleep(1)  # wait for file to be written by pizza box
+        #ttime.sleep(1)  # wait for file to be written by pizza box
 
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}
@@ -378,7 +408,7 @@ class DIFS(DigitalInput):
 
         self._resource_uid = str(uuid.uuid4())
         resource = {'spec': 'PIZZABOX_DI_FILE_TXT_PD',
-                    'root': root_path,
+                    'root': ROOT_PATH,
                     'resource_path': full_path,
                     'resource_kwargs': {},
                     'path_semantics': os.name,
@@ -446,7 +476,7 @@ class DIFS(DigitalInput):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
-        ttime.sleep(1)  # wait for file to be written by pizza box
+        #ttime.sleep(1)  # wait for file to be written by pizza box
 
 
         for datum_id in self._datum_ids:
@@ -639,11 +669,14 @@ class AdcFS(Adc):
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
         set_and_wait(self.enable_sel, 1)
+        workstation_file_root = '/mnt/xf08idb-ioc1/'
+        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+        while not os.path.isfile(workstation_full_path):
+            ttime.sleep(.1)
 
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
-        workstation_file_root = '/mnt/xf08idb-ioc1/'
-        workstation_full_path = os.path.join(workstation_file_root, self._filename)
+
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         stat = shutil.copy(workstation_full_path, self._full_path)
 
@@ -671,7 +704,6 @@ class AdcFS(Adc):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
-        ttime.sleep(1)  # wait for file to be written by pizza box
 
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}

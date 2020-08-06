@@ -1,4 +1,5 @@
 import time as ttime
+print(__file__)
 
 class ROI(Device):
     low =               Cpt(EpicsSignal, 'LO')
@@ -38,6 +39,7 @@ class XIA(Device):
     polarity = 'pos'
 
     capt_start_stop =  Cpt(EpicsSignal, 'netCDF1:Capture_RBV', write_pv='netCDF1:Capture')
+    write_mode      =  Cpt(EpicsSignal, 'netCDF1:FileWriteMode')
     pixels_per_run =   Cpt(EpicsSignal, 'PixelsPerRun')
     current_pixel =    Cpt(EpicsSignal, 'dxp1:CurrentPixel')
     next_pixel =       Cpt(EpicsSignal, 'NextPixel')
@@ -119,13 +121,17 @@ class XIA(Device):
 
     def start_mapping_scan(self):
         yield from bps.abs_set(self.collect_mode, 'MCA mapping', wait=True)
-        #self.collect_mode.put('MCA mapping')
         yield from bps.sleep(.25)
         #ttime.sleep(0.25)
         yield from bps.abs_set(pb4.do0.dutycycle_sp, 50, wait=True)
+        print('<<<<<<After setting PB4 & before setting capture<<<<<')
+        yield from bps.abs_set(self.write_mode, 'Capture', wait=True)
+        print('<<<<<After setting capture & before starting capturing<<<<<')
         yield from bps.abs_set(self.capt_start_stop, 1, wait=True)
+        print("<<<<<After capturing<<<<<")
         #self.capt_start_stop.put(1)
         yield from bps.abs_set(self.erase_start, 1, wait=True)
+        print("<<<<<After start<<<<<")
         #self.erase_start.put(1)
         yield from bps.sleep(1)
         #ttime.sleep(1)
@@ -194,15 +200,15 @@ class XIA(Device):
             self._status._finished()
            
 
-xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0)
-
-xia1.read_attrs = []
-
-for mca in xia1.mcas:
-    if mca.connected:
-        xia1.read_attrs.append(mca.name.split('_')[1])
-
-list1 = [mca.name for mca in xia1.mcas]
-list2 = ['roi{}'.format(number) for number in range(12)]
-
-xia_list = ['{}_{}_sum'.format(x,y) for x in list1 for y in list2]
+# xia1 = XIA('XF:08IDB-OP{XMAP}', name='xia1', input_trigger=pb4.do0)
+#
+# xia1.read_attrs = []
+#
+# for mca in xia1.mcas:
+#     if mca.connected:
+#         xia1.read_attrs.append(mca.name.split('_')[1])
+#
+# list1 = [mca.name for mca in xia1.mcas]
+# list2 = ['roi{}'.format(number) for number in range(12)]
+#
+# xia_list = ['{}_{}_sum'.format(x,y) for x in list1 for y in list2]

@@ -313,4 +313,297 @@ def tscanxia(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwa
     # return uids
 
 
+
+
+
+
+def xia_step_scan(name:str, comment:str, e0:int=8333, preedge_start:int=-200, xanes_start:int=-50, xanes_end:int=30, exafs_end:int=16, preedge_spacing:float=10, xanes_spacing:float=0.2, exafs_spacing:float=0.04, **kwargs):
+
+    xia_step_scan - Runs the monochromator along the trajectory defined in the parameters. Gets data from the XIA and the ion chambers after each step.
+
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+        Other parameters: TODO
+
+
+    Returns
+    -------
+    uid : str
+        Unique id of the scan
+
+    interp_filename : str
+    Filename where the interpolated data was stored
+
+
+    See Also
+    --------
+    :func:`tscan`
+
+record(ao,"$(P)Ch1:User:Offset-SP"){
+  field(DTYP,"Soft Channel")
+  field(VAL,0)
+  field(UDF,1)
+}
+
+record(ao,"$(P)Ch2:User:Offset-SP"){
+  field(DTYP,"Soft Channel")
+  field(VAL,0)
+  field(UDF,1)
+}
+
+record(ao,"$(P)Ch3:User:Offset-SP"){
+  field(DTYP,"Soft Channel")
+  field(VAL,0)
+  field(UDF,1)
+}
+
+record(ao,"$(P)Ch4:User:Offset-SP"){
+  field(DTYP,"Soft Channel")
+  field(VAL,0)
+  field(UDF,1)
+}
+"ADC.db" [readonly] 584L, 11404C
+
+
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    energy_grid, time_grid = generate_energy_grid(e0, preedge_start, xanes_start, xanes_end, exafs_end, preedge_spacing, xanes_spacing, exafs_spacing)
+    positions_grid = xray.energy2encoder(energy_grid) / 360000
+
+    ax = kwargs.get('ax')
+    if ax is not None:
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, name), LivePlot(xia1.mca1.roi0.sum.name, hhm.theta.name, ax=ax))
+    else:
+        uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, name))
+
+    path = '/GPFS/xf08id/User Data/{}.{}.{}/'.format(db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['PROPOSAL'])
+    filename = parse_xia_step_scan(uid, name, path)
+
+    ax.cla()
+    plot_xia_step_scan(uid, ax=ax)
+
+    print('Done!')
+    return uid
+
+
+def parse(db, uid):
+    dataset = pd.DataFrame()
+    hdr = db[uid]
+
+    detectors = [pba1.adc6, pba1.adc1, pba2.adc6, pba1.adc7]
+
+    channels = ['iff', 'it', 'ir', 'i0']
+    for detector, channel in zip(detectors, channels):
+        indx = 0
+        spectrum = [];
+        print(f'Detector {detector.name}')
+        data = list(hdr.data(detector.name, stream_name=detector.name))
+        for point in data:
+
+            indx +=1
+            print(f'We are at {indx}')
+            adc = point['adc']
+            try:
+                adc = adc.apply(lambda x: (int(x, 16) >> 8) - 0x40000 if (int(x, 16) >> 8) > 0x1FFFF else int(x,
+                                                                                                          16) >> 8) * 7.62939453125e-05
+                mean_val = np.mean(adc)
+            except:
+                mena_val = 1
+            spectrum.append(mean_val)
+        dataset[channel] = np.array(spectrum)
+
+    energies = np.array(hdr.start['plan_pattern_args']['object'])
+    dataset['energy']= energies
+    return dataset
+
+def save_dataset(dataset, name):
+    dataset.to_csv()
+
+
+def pb_scan_plan(detectors, motor, scan_center, scan_range, name = ''):
+    flyers = detectors
+    def inner():
+        md = {'plan_args': {}, 'plan_name': 'pb_scan','experiment': 'pb_scan', 'name': name}
+        #md.update(**metadata)
+        yield from bps.open_run(md=md)
+        yield from bps.sleep(.4)
+        yield from bps.clear_checkpoint()
+        yield from bps.abs_set(motor, scan_center + (scan_range / 2), wait=True)
+        yield from bps.sleep(.4)
+        yield from bps.close_run()
+        yield from shutter.close_plan()
+        yield from bps.abs_set(motor, scan_center, wait=True)
+
+    def final_plan():
+        for flyer in flyers:
+            yield from bps.unstage(flyer)
+        yield from bps.unstage(motor)
+
+    yield from bps.abs_set(motor, scan_center - (scan_range / 2), wait=True)
+
+    yield from shutter.open_plan()
+    for flyer in flyers:
+        yield from bps.stage(flyer)
+
+    yield from bps.stage(motor)
+
+    return (yield from bpp.fly_during_wrapper(bpp.finalize_wrapper(inner(), final_plan()),
+                                              flyers))
+
+def wait_filter_in_place(status_pv):
+    # for j in range(5):
+    while True:
+        ret = yield from bps.read(status_pv)
+        if ret is None:
+            break
+        if ret[status_pv.name]['value'] == 1:
+            break
+        else:
+            yield from bps.sleep(.1)
+'''
+def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
+    # Get needed data from db
+    uuid = db[uuid]['start']['uid']
+
+    if 'name' in db[uuid]['start']:
+        scan_name = db[uuid]['start']['name']
+    else:
+        scan_name = 'General Scan'
+
+    year = db[uuid]['start']['year']
+    cycle = db[uuid]['start']['cycle']
+    proposal = db[uuid]['start']['PROPOSAL']
+
+    # Create dirs if they are not there
+    if log_path[-1] != '/':
+        log_path += '/'
+    log_path = '{}{}.{}.{}/'.format(log_path, year, cycle, proposal)
+    if(not os.path.exists(log_path)):
+        os.makedirs(log_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
+        call(['chmod', '770', log_path])
+
+    log_path = log_path + 'log/'
+    if(not os.path.exists(log_path)):
+        os.makedirs(log_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', log_path])
+        call(['chmod', '770', log_path])
+
+    snapshots_path = log_path + 'snapshots/'
+    if(not os.path.exists(snapshots_path)):
+        os.makedirs(snapshots_path)
+        call(['setfacl', '-m', 'g:iss-staff:rwx', snapshots_path])
+        call(['chmod', '770', snapshots_path])
+
+    file_path = 'snapshots/{}.png'.format(scan_name)
+    fn = log_path + file_path
+    repeat = 1
+    while(os.path.isfile(fn)):
+        repeat += 1
+        file_path = 'snapshots/{}-{}.png'.format(scan_name, repeat)
+        fn = log_path + file_path
+
+    # Save figure
+    figure.savefig(fn)
+    call(['setfacl', '-m', 'g:iss-staff:rw', fn])
+    call(['chmod', '660', fn])
+
+    # Create or update the html file
+    relative_path = './' + file_path
+
+    comment = ''
+    if 'comment' in db[uuid]['start']:
+        comment = db[uuid]['start']['comment']
+    comment = '<p><b> Comment: </b> {} </p>'.format(comment)
+    start_timestamp = db[uuid]['start']['time']
+    stop_timestamp = db[uuid]['stop']['time']
+    time_stamp_start='<p><b> Scan start: </b> {} </p>\n'.format(datetime.fromtimestamp(start_timestamp).strftime('%m/%d/%Y    %H:%M:%S'))
+    time_stamp='<p><b> Scan complete: </b> {} </p>\n'.format(datetime.fromtimestamp(stop_timestamp).strftime('%m/%d/%Y    %H:%M:%S'))
+    time_total='<p><b> Total time: </b> {} </p>\n'.format(datetime.fromtimestamp(stop_timestamp - start_timestamp).strftime('%M:%S'))
+    uuid_html='<p><b> Scan ID: </b> {} </p>\n'.format(uuid)
+
+    filenames = {}
+    for i in db[uuid]['descriptors']:
+        if i['name'] in i['data_keys']:
+            if 'filename' in i['data_keys'][i['name']]:
+                name = i['name']
+                if 'devname' in i['data_keys'][i['name']]:
+                    name = i['data_keys'][i['name']]['devname']
+                filenames[name] = i['data_keys'][i['name']]['filename']
+
+    fn_html = '<p><b> Files: </b></p>\n<ul>\n'
+    for key in filenames.keys():
+        fn_html += '  <li><b>{}:</b> {}</ln>\n'.format(key, filenames[key])
+    fn_html += '</ul>\n'
+
+    image = '<img src="{}" alt="{}" height="447" width="610">\n'.format(fn, scan_name)
+
+    if(not os.path.isfile(log_path + 'log.html')):
+        create_file = open(log_path + 'log.html', "w")
+        create_file.write('<html> <body>\n</body> </html>')
+        create_file.close()
+        call(['setfacl', '-m', 'g:iss-staff:rw', log_path + 'log.html'])
+        call(['chmod', '660', log_path + 'log.html'])
+
+    text_file = open(log_path + 'log.html', "r")
+    lines = text_file.readlines()
+    text_file.close()
+
+    text_file = open(log_path + 'log.html', "w")
+
+    for indx,line in enumerate(lines):
+        if indx is 1:
+            text_file.write('<header><h2> {} </h2></header>\n'.format(scan_name))
+            text_file.write(comment)
+            text_file.write(uuid_html)
+            text_file.write(fn_html)
+            text_file.write(time_stamp_start)
+            text_file.write(time_stamp)
+            text_file.write(time_total)
+            text_file.write(image)
+            text_file.write('<hr>\n\n')
+        text_file.write(line)
+    text_file.close()
+
+
+'''
+
+
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+
+def xia_gain_matching(center_energy, scan_range, channel_number):
+
+    graph_x = xia1.mca_x.value
+    graph_data = getattr(xia1, "mca_array" + "{}".format(channel_number) + ".value")
+
+    condition = (graph_x <= (center_energy + scan_range)/1000) == (graph_x > (center_energy - scan_range)/1000)
+    interval_x = np.extract(condition, graph_x)
+    interval = np.extract(condition, graph_data)
+
+    # p0 is the initial guess for fitting coefficients (A, mu and sigma)
+    p0 = [.1, center_energy/1000, .1]
+    coeff, var_matrix = curve_fit(gauss, interval_x, interval, p0=p0)
+    print('Intensity = ', coeff[0])
+    print('Fitted mean = ', coeff[1])
+    print('Sigma = ', coeff[2])
+
+    # For testing (following two lines)
+    plt.plot(interval_x, interval)
+    plt.plot(interval_x, gauss(interval_x, *coeff))
+
+    #return gauss(interval_x, *coeff)
+
+
+
+def generate_xia_file(uuid, name, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_graph3'):
+    arrays = db.get_table(db[uuid])[graph]
+    np.savetxt('/GPFS/xf08id/Sandbox/' + name, [np.array(x) for x in arrays], fmt='%i',delimiter=' ')
+
+
+
 '''
