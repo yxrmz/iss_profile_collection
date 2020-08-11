@@ -223,12 +223,11 @@ def adjust_ic_gains( **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     if 'detector_names' not in kwargs:
-        detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
-    else:
-        detectors = []
-        for d in kwargs['detector_names']:
-            detectors.append(globals()[d])
-        #TODO replace with dictionary
+        # detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+        detectors = [apb_ave]
+        channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
+        offsets = [apb.ch1_offset, apb.ch2_offset,apb.ch3_offset,apb.ch4_offset,]
+
 
     current_lut = int(hhm.lut_number_rbv.value)
     traj_manager = trajectory_manager(hhm)
@@ -246,44 +245,42 @@ def adjust_ic_gains( **kwargs):
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
     shutter.open()
+    scan_positions = np.arange(e_max + 50, e_min - 50, -100)
 
-    scan_positions = np.arange(e_max + 50, e_min - 50, -50)
-
-    plan = bp.list_scan(detectors, hhm.energy, scan_positions)
+    # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
     flyers = []
-    for detector in detectors:
-        if hasattr(detector, 'kickoff'):
-            flyers.append(detector)
+    # for detector in detectors:
+    #     if hasattr(detector, 'kickoff'):
+    #         flyers.append(detector)
     for jj in range(2):
         plan = bp.list_scan(detectors, hhm.energy, scan_positions)
-        #print(f'F>>>>>>>>>>> {flyers}\n D>>>>>>>>>>>>>>>>.{detectors}')
-        uid = (yield from bpp.fly_during_wrapper(plan, flyers))
-        #print(f' >>>>>> UID {uid}')
-        table = db[uid].table()
-        for det in detectors:
-            name = f'{det.name}_volt'
-            current_gain = det.amp.get_gain()[0]
-            if det.polarity == 'neg':
-                trace_extreme = table[name].min()
+        yield from plan
+        table = db[-1].table()
+        for channel, offset in zip(channels, offsets):
+            current_gain = channel.amp.get_gain()[0]
+            if channel.polarity == 'neg':
+                trace_extreme = table[channel.name].min()
             else:
-                trace_extreme = table[name].max()
+                trace_extreme = table[channel.name].max()
 
-            print(f'Extreme value {trace_extreme} for detector {det.channel}')
-            if abs(trace_extreme) > 3.7:
-                print(f'Decreasing gain for detector {det.channel}')
-                yield from det.amp.set_gain_plan(current_gain-1, False)
+            trace_extreme = (trace_extreme - offset.get())/1000
 
-            elif abs(trace_extreme) <= 3.7 and abs(trace_extreme) > 0.35:
-                print(f'Correct gain for detector {det.channel}')
-            elif abs(trace_extreme) <= 0.35:
-                print(f'Increasing gain for detector {det.channel}')
-                yield from det.amp.set_gain_plan(current_gain + 1, False)
+            print(f'Extreme value {trace_extreme} for detector {channel.name}')
+            if abs(trace_extreme) > 3.4:
+                print(f'Decreasing gain for detector {channel.name}')
+                yield from channel.amp.set_gain_plan(current_gain-1, False)
 
-        #print(f'F2>>>>>>>>>>> {flyers}\n D2>>>>>>>>>>>>>>>>.{detectors}')
-        yield from bps.sleep(2)
-    shutter.close()
-    print('[Adjust Gain] Complete\n')
-    remove_pb_files(uid)
+            elif abs(trace_extreme) <= 3.4 and abs(trace_extreme) > 0.34:
+                print(f'Correct gain for detector {channel.name}')
+            elif abs(trace_extreme) <= 0.34:
+                print(f'Increasing gain for detector {channel.name}')
+                yield from channel.amp.set_gain_plan(current_gain + 1, False)
+
+            #     #print(f'F2>>>>>>>>>>> {flyers}\n D2>>>>>>>>>>>>>>>>.{detectors}')
+            #     yield from bps.sleep(2)
+            # shutter.close()
+            # print('[Adjust Gain] Complete\n')
+            # remove_pb_files(uid)
 
 
 

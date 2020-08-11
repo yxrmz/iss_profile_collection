@@ -83,7 +83,7 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
     for detector in detectors:
         detector.divide_old = detector.divide.get()
 
-        yield from bps.abs_set(detector.divide,375)
+        yield from bps.abs_set(detector.divide,375) # set sampling to 1 kHz
         yield from bps.abs_set(detector.sample_len, int(time)*1e3)
         yield from bps.abs_set(detector.wf_len, int(time) * 1e3)
 

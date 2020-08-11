@@ -21,5 +21,5 @@ def step_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float
     e0 = kwargs.pop('e0', [])
     edge = kwargs.pop('edge', [])
 
-    yield from step_scan_plan(name, comment, energy_grid, time_grid, [apb_ave, pil100k], element=element, e0=e0, edge=edge )
+    yield from step_scan_plan(name, comment, energy_grid, time_grid, [apb_ave, pil100k, hhm.enc.pos_I], element=element, e0=e0, edge=edge )
 

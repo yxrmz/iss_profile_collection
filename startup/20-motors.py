@@ -29,9 +29,6 @@ def fix_exit_trig_formula(theta):
     return h/(2*np.cos(np.deg2rad(theta)))
 
 
-def energy2theta(energy):
-    return np.rad2deg(np.arcsin(12400/energy/2/3.1356))
-
 
 class HHMTrajDesc(Device):
     filename = Cpt(EpicsSignal, '-Name')
@@ -96,6 +93,7 @@ class HHM(Device):
     fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
+    #encoder = Cpt(EpicsSignal, 'XF:08IDA-CT{Enc09:1}Cnt:Pos-I', limits=True)
 
     def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)

@@ -23,7 +23,7 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
                 samples = 250*(np.ceil(time_step*10443/250)) #hn I forget what that does... let's look into the new PB OPI
                 yield from bps.abs_set(det.sample_len, samples, wait=True)
                 yield from bps.abs_set(det.wf_len, samples, wait=True)
-            else:
+            elif det.name == 'pil100k':
                 yield from bps.mv(det.cam.acquire_time, time_step)
 
         yield from bps.mv(motor, energy_step)
@@ -54,6 +54,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
           'interp_filename': fn,
           'element': element,
           'element_full': full_element_name,
+          'angle_offset': str(hhm.angle_offset.value),
           'edge': edge,
           'e0': e0,
           }

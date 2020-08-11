@@ -19,11 +19,13 @@ class AnalogPizzaBox(Device):
     ch1 = Cpt(EpicsSignal, 'SA:Ch1:mV-I')
     ch2 = Cpt(EpicsSignal, 'SA:Ch2:mV-I')
     ch3 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
-    ch4 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
-    ch5 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
-    ch6 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
-    ch7 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
-    ch8 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
+    ch4 = Cpt(EpicsSignal, 'SA:Ch4:mV-I')
+    ch5 = Cpt(EpicsSignal, 'SA:Ch5:mV-I')
+    ch6 = Cpt(EpicsSignal, 'SA:Ch6:mV-I')
+    ch7 = Cpt(EpicsSignal, 'SA:Ch7:mV-I')
+    ch8 = Cpt(EpicsSignal, 'SA:Ch8:mV-I')
+
+    ch1.polarity = ch2.polarity = ch3.polarity = ch4.polarity = 'neg'
 
     ch1_offset = Cpt(EpicsSignal, 'Ch1:User:Offset-SP', kind=Kind.config)
     ch2_offset = Cpt(EpicsSignal, 'Ch2:User:Offset-SP', kind=Kind.config)
@@ -223,6 +225,22 @@ apb.amp_ch5 = None
 apb.amp_ch6 = None
 apb.amp_ch7 = None
 apb.amp_ch8 = None
+
+
+apb_ave.ch1.amp = i0_amp
+apb_ave.ch2.amp = it_amp
+apb_ave.ch3.amp = ir_amp
+apb_ave.ch4.amp = iff_amp
+apb_ave.ch1.polarity = 'neg'
+apb_ave.ch2.polarity = 'neg'
+apb_ave.ch3.polarity = 'neg'
+apb_ave.ch4.polarity = 'neg'
+
+apb.amp_ch5 = None
+apb.amp_ch6 = None
+apb.amp_ch7 = None
+apb.amp_ch8 = None
+
 
 
 

@@ -26,7 +26,7 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'retries': 3,
                    'comment': 'Harmonic rejection mirror tune'},
                   {'motor': hhm.pitch.name,
-                   'detector': i0.name,
+                   'detector': 'I0 ion Chamber',
                    'range': 1,
                    'step': 0.02,
                    'retries': 3,
@@ -44,7 +44,7 @@ def tune_beamline_plan(stdout=sys.stdout):
 
 
     for element in tune_elements:
-        detector = detector_dictionary[element['detector']]['obj']
+        detector = detector_dictionary[element['detector']]['device']
         motor = motor_dictionary[element['motor']]['object']
         yield from tuning_scan(motor, detector,
                               element['range'],
