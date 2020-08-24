@@ -37,7 +37,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'HHRM': 8,
             'CM1':0,
             'Filterbox': -139,
-            'ES BPM exposure': 0.5
+            'ES BPM exposure': 0.3
         },
         {
             'energy_start': 13000,
