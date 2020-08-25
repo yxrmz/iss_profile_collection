@@ -31,11 +31,11 @@ def fly_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, refer
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     uids = []
 
-    # current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
-    # try:
-    #     yield from set_reference_foil(current_element)
-    # except:
-    #     pass
+    current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+    try:
+        yield from set_reference_foil(current_element)
+    except:
+        pass
 
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
@@ -68,6 +68,12 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
         Lists containing the unique ids of the scans
 
     '''
+    current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+    try:
+        yield from set_reference_foil(current_element)
+    except:
+        pass
+
 
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     uids = []
@@ -82,8 +88,10 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from prep_traj_plan()
         print(f'Trajectory prepared at {print_now()}')
+        yield from shutter.open_plan()
         uid = (yield from execute_trajectory_apb(name_n, comment=comment))
         uids.append(uid)
+        yield from shutter.close_plan()
         print(f'Trajectory excecuted {print_now()}')
         yield from bps.sleep(float(delay))
     return uids

@@ -1,6 +1,7 @@
 
 import time as ttime
 import sys
+import numpy as np
 
 def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys.stdout):
 
@@ -187,4 +188,17 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor', stdout=stdout)
     yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
     print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)
+
+
+
+def optimize_beamline_plan(energy: int = -1,  stdout = sys.stdout, force_prepare = False):
+    old_energy = hhm.energy.read()['hhm_energy']['value']
+    if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
+        yield from shutter.close_plan()
+        yield from prepare_beamline_plan(energy, move_cm_mirror = True, stdout = sys.stdout)
+        yield from tune_beamline_plan(stdout=sys.stdout)
+    else:
+        print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
+        yield from bps.mv(hhm.energy, energy)
+
 

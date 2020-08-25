@@ -283,6 +283,9 @@ def adjust_ic_gains( **kwargs):
             # remove_pb_files(uid)
 
 
+def optimize_sample_plan(*args, **kwargs):
+    yield from adjust_ic_gains(**kwargs)
+    yield from get_offsets(*args, **kwargs)
 
 
 

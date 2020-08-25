@@ -124,8 +124,65 @@ class Shutter(Device):
         yield from bps.abs_set(self.output, 1, wait=True)
         self.state = 'closed'
 
-shutter = Shutter(name = 'SP Shutter')
+#shutter = Shutter(name = 'SP Shutter')
+#shutter.shutter_type = 'SP'
+
+
+class ShutterMotor(Device):
+
+    def __init__(self, name):
+        self.name = name
+        if usermotor3.connected:
+            self.output = usermotor3.pos
+            self.open_value = 0.01
+            self.open_range = 1
+
+            self.value = self.output.read()[self.output.name]['value']
+
+            if self.value-self.open_value > self.open_range:
+                self.state = 'closed'
+            else:
+                self.state = 'open'
+            self.function_call = None
+            self.output.subscribe(self.update_state)
+        else:
+            self.state = 'unknown'
+
+    def subscribe(self, function):
+        self.function_call = function
+
+    def unsubscribe(self):
+        self.function_call = None
+
+    def update_state(self, pvname=None, value=None, char_value=None, **kwargs):
+        if self.value-self.open_value > self.open_range:
+            self.state = 'closed'
+        else:
+            self.state = 'open'
+        if self.function_call is not None:
+            self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
+
+    def open(self):
+        RE(self.open_plan())
+
+    def close(self):
+        RE(self.close_plan())
+
+    def open_plan(self):
+        print('Opening {}'.format(self.name))
+        yield from bps.abs_set(self.output, self.open_value, wait=True)
+        self.state = 'open'
+
+    def close_plan(self):
+        print('Closing {}'.format(self.name))
+        yield from bps.abs_set(self.output, self.open_value+self.open_range, wait=True)
+        self.state = 'closed'
+
+
+shutter = ShutterMotor(name='User Shutter')
 shutter.shutter_type = 'SP'
+
+
 
 class TwoButtonShutterISS(TwoButtonShutter):
     def stop(self, success=False):

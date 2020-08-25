@@ -205,6 +205,7 @@ class Usermotor(Device):
     pos = Cpt(EpicsMotor, '}Mtr')
 
 usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
+usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
 
 
 class FilterBox(Device):
