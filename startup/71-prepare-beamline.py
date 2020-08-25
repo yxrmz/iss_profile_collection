@@ -173,7 +173,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
     print_to_gui('[Prepare Beamline] High harmonics rejection mirror position set',stdout=stdout)
 
-#
+
     if move_cm_mirror == True:
         while not moving_cm.done:
             motion_so_far = cm_setter.position
