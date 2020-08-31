@@ -83,7 +83,7 @@ class Shutter(Device):
             self.output = pb4.do3.default_pol
             if self.output.value == 1:
                 self.state = 'closed'
-            elif self.output.value == 0:
+            elif self.output.value == 0.0953125:
                 self.state = 'open'
             self.function_call = None
             self.output.subscribe(self.update_state)

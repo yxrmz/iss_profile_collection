@@ -82,7 +82,8 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'detstage_y': {'name': detstage.y.name, 'description': 'Detector Stage Y','object': detstage.y},
                'detstage_z': {'name': detstage.z.name, 'description': 'Detector Stage Z','object': detstage.z},
                'cm1_x' : {'name' : cm1.x.name, 'description': 'Collimating mirror X','object': cm1.x},
-              'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos}}
+              'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos},
+              'sample_shutter_angle' : {'name' : usermotor3.name, 'description' : 'sample shutter angle ', 'object' : usermotor3.pos}}
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),

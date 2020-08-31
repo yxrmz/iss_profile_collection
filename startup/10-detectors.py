@@ -263,6 +263,7 @@ class EncoderFS(Encoder):
 
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
+        print('kickoff complete', self.name)
         return NullStatus()
 
     def complete(self):
