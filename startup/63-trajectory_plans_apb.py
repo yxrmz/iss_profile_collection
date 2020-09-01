@@ -49,7 +49,7 @@ class FlyerEM:
                 pb.complete()
 
         self._motor_status.add_callback(callback_motor)
-
+        print(f'complete operation is happening ({ttime.ctime(ttime.time())})')
         return streaming_st & self._motor_status
 
     def describe_collect(self):
@@ -80,7 +80,7 @@ class FlyerEM:
             for pb in self.pbs:
                 yield from pb.collect()
             yield from self.det.collect()
-
+        print(f'collect is being returned ({ttime.ctime(ttime.time())})')
         return collect_all()
 
 flyer_apb = FlyerEM(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
