@@ -213,6 +213,9 @@ usermotor1 = Usermotor('XF:08IDB-OP{Misc-Ax:1', name='usermotor1')
 usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
 usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
 
+usermotor2.wait_for_connection()
+usermotor3.wait_for_connection()
+
 
 class FilterBox(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')

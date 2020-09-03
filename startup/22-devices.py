@@ -128,7 +128,7 @@ class Shutter(Device):
 #shutter.shutter_type = 'SP'
 
 
-class ShutterMotor(Device):
+class ShutterMotor:
 
     def __init__(self, name):
         self.name = name
