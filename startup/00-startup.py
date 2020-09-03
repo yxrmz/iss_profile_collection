@@ -65,7 +65,7 @@ if OLD_BLUESKY:
     except Exception as exc:
         print('local')
         print(exc)
-        RE.md = HistoryDict('{}/.config/bluesky/bluesky_history.db'.format(str(Path.home())))
+        RE.md = HistoryDict(str(Path('~/.config/bluesky/bluesky_history.db'.).expanduser()))
 else:
     # Patch to fix Tom's terrible deeds
     import matplotlib.backends.backend_qt5
@@ -106,4 +106,3 @@ USER_FILEPATH = 'users'
 
 def print_to_gui(string, stdout=sys.stdout):
     print(string, file=stdout, flush=True)
-
