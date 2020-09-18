@@ -68,11 +68,11 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
         Lists containing the unique ids of the scans
 
     '''
-    current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
-    try:
-        yield from set_reference_foil(current_element)
-    except:
-        pass
+    # current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+    # try:
+    #     yield from set_reference_foil(current_element)
+    # except:
+    #     pass
 
 
     sys.stdout = kwargs.pop('stdout', sys.stdout)

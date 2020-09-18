@@ -1,5 +1,5 @@
 from xas.file_io import validate_file_exists
-
+import time as ttime
 
 class FlyerEM:
     def __init__(self, det, pbs, motor):
@@ -42,7 +42,7 @@ class FlyerEM:
         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
 
         def callback_motor():
-            print(f'callback_motor {ttime.time()}')
+            #print(f'callback_motor {ttime.time()}')
             self.det.stream.set(0)
             self.det.complete()
             for pb in self.pbs:
