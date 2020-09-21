@@ -1,5 +1,13 @@
 print(__file__)
 
+# Check version of bluesky and act accordingly
+from distutils.version import LooseVersion
+
+if bluesky.__version__ < LooseVersion('1.6'):
+    OLD_BLUESKY = True
+else:
+    OLD_BLUESKY = False
+
 import logging
 import sys
 import time
@@ -11,7 +19,15 @@ import bluesky
 import nslsii
 from bluesky.simulators import summarize_plan
 
-nslsii.configure_base(get_ipython().user_ns, 'iss')
+if OLD_BLUESKY:
+    nslsii.configure_base(get_ipython().user_ns, 'iss')
+else:
+    # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
+    from databroker.v0 import Broker
+    db = Broker.named('iss')
+    nslsii.configure_base(get_ipython().user_ns, db)
+
+# nslsii.configure_base(get_ipython().user_ns, 'iss',  publish_documents_to_kafka=True)
 
 # Temporary fix before it's fixed in ophyd
 logger = logging.getLogger('ophyd')
@@ -67,14 +83,6 @@ runengine_metadata_dir = Path('/nsls2/xf08id/metadata/') / Path("runengine-metad
 
 # PersistentDict will create the directory if it does not exist
 RE.md = PersistentDict(runengine_metadata_dir)
-
-# Check version of bluesky and act accordingly
-from distutils.version import LooseVersion
-
-if bluesky.__version__ < LooseVersion('1.6'):
-    OLD_BLUESKY = True
-else:
-    OLD_BLUESKY = False
 
 
 if OLD_BLUESKY:

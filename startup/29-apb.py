@@ -324,6 +324,7 @@ class APBBinFileHandler(HandlerBase):
         self.raw_data = raw_data
 
     def __call__(self):
+        print(f'Returning {self.df}')
         return self.df
 
 
