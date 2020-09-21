@@ -1,13 +1,5 @@
 print(__file__)
 
-# Check version of bluesky and act accordingly
-from distutils.version import LooseVersion
-
-if bluesky.__version__ < LooseVersion('1.6'):
-    OLD_BLUESKY = True
-else:
-    OLD_BLUESKY = False
-
 import logging
 import sys
 import time
@@ -18,6 +10,14 @@ import appdirs
 import bluesky
 import nslsii
 from bluesky.simulators import summarize_plan
+
+# Check version of bluesky and act accordingly
+from distutils.version import LooseVersion
+
+if bluesky.__version__ < LooseVersion('1.6'):
+    OLD_BLUESKY = True
+else:
+    OLD_BLUESKY = False
 
 if OLD_BLUESKY:
     nslsii.configure_base(get_ipython().user_ns, 'iss')
