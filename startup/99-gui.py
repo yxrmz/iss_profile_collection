@@ -30,7 +30,8 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                 'prepare_beamline_plan': prepare_beamline_plan,
                                 'tune_beamline_plan': tune_beamline_plan,
                                 'spiral_scan': spiral_scan,
-                               'optimize_beamline_plan' : optimize_beamline_plan
+                               'optimize_beamline_plan' : optimize_beamline_plan,
+                               'xs_count': xs_count,
                            },
                            aux_plan_funcs ={
                                'get_adc_readouts': get_adc_readouts,
@@ -46,6 +47,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                            db = db,
                            accelerator = nsls_ii,
                            hhm = hhm,
+                           sdd =xs,
                            shutters_dict =shutter_dictionary,
                            det_dict=detector_dictionary,
                            motors_dict=motor_dictionary,

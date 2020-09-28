@@ -17,10 +17,7 @@ from ophyd import Component as Cpt, set_and_wait
 
 from pathlib import PurePath
 from nslsii.detectors.xspress3 import (XspressTrigger, Xspress3Detector,
-                                       Xspress3Channel, Xspress3FileStore, logger)
-from databroker.assets.handlers import Xspress3HDF5Handler
-db.reg.register_handler(Xspress3HDF5Handler.HANDLER_NAME, Xspress3HDF5Handler,
-                        overwrite=True)
+                                       Xspress3Channel, Xspress3FileStore, Xspress3ROI, logger)
 
 #from isstools.trajectory.trajectory import trajectory_manager
 
@@ -31,6 +28,7 @@ import numpy as np
 import itertools
 import time as ttime
 from collections import deque, OrderedDict
+import warnings
 
 
 class Xspress3FileStoreFlyable(Xspress3FileStore):
@@ -69,15 +67,25 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
             set_and_wait(sig, val)
         print("done")
 
-    def unstage(self):
-        """A custom unstage method is needed to avoid these messages:
+    # def unstage(self):
+    #   """A custom unstage method is needed to avoid these messages:
+    #
+    #   Still capturing data .... waiting.
+    #   Still capturing data .... waiting.
+    #   Still capturing data .... waiting.
+    #   Still capturing data .... giving up.
+    #   """
+    #   return super().unstage()
 
-        Still capturing data .... waiting.
-        Still capturing data .... waiting.
-        Still capturing data .... waiting.
-        Still capturing data .... giving up.
-        """
-        return super().unstage()
+
+# NELM specifies the number of elements that the array will hold NORD is Number
+# of Elements Read (at QAS, as of March 25, 2020, .NELM was set to 50000 for
+# the PVs below, but .NORD was always returning 1024 elements)
+dpb_sec = pb4.di.sec_array
+dpb_sec_nelm = EpicsSignalRO(f'{dpb_sec.pvname}.NELM', name='dpb_sec_nelm')
+
+dpb_nsec = pb4.di.nsec_array
+dpb_nsec_nelm = EpicsSignalRO(f'{dpb_nsec.pvname}.NELM', name='dpb_nsec_nelm')
 
 
 class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
@@ -88,9 +96,19 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     channel4 = Cpt(Xspress3Channel, 'C4_', channel_num=4, read_attrs=['rois'])
     # create_dir = Cpt(EpicsSignal, 'HDF5:FileCreateDir')
 
+    mca1_sum = Cpt(EpicsSignal, 'ARRSUM1:ArrayData')
+    mca2_sum = Cpt(EpicsSignal, 'ARRSUM2:ArrayData')
+    mca3_sum = Cpt(EpicsSignal, 'ARRSUM3:ArrayData')
+    mca4_sum = Cpt(EpicsSignal, 'ARRSUM4:ArrayData')
+
+    mca1 = Cpt(EpicsSignal, 'ARR1:ArrayData')
+    mca2 = Cpt(EpicsSignal, 'ARR2:ArrayData')
+    mca3 = Cpt(EpicsSignal, 'ARR3:ArrayData')
+    mca4 = Cpt(EpicsSignal, 'ARR4:ArrayData')
+
     hdf5 = Cpt(Xspress3FileStoreFlyable, 'HDF5:',
-               read_path_template='/nsls2/xf08id/data/x3test/',
-               root='/nsls2/xf08id/data/',
+               read_path_template='/home/xspress3/data/',
+               root='/home/xspress3/',
                write_path_template='/home/xspress3/data/',
                )
 
@@ -107,6 +125,11 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self.set_channels_for_hdf5()
         # self.create_dir.put(-3)
 
+        self._asset_docs_cache = deque()
+        self._datum_counter = None
+
+        self.channel1.rois.roi01.configuration_attrs.append('bin_low')
+
     def stop(self):
         ret = super().stop()
         self.hdf5.stop()
@@ -116,17 +139,80 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         if self.spectra_per_point.get() != 1:
             raise NotImplementedError(
                 "multi spectra per point not supported yet")
+
+
         ret = super().stage()
+        self._datum_counter = itertools.count()
         return ret
 
     def unstage(self):
-        self.settings.trigger_mode.put(0)  # 'Software'
+        self.settings.trigger_mode.put(1)  # 'Software'
         super().unstage()
+        self._datum_counter = None
+
+    def complete(self, *args, **kwargs):
+        for resource in self.hdf5._asset_docs_cache:
+            self._asset_docs_cache.append(('resource', resource[1]))
+
+        self._datum_ids = []
+
+        num_frames = xs.hdf5.num_captured.get()
+
+        for frame_num in range(num_frames):
+            datum_id = '{}/{}'.format(self.hdf5._resource_uid, next(self._datum_counter))
+            datum = {'resource': self.hdf5._resource_uid,
+                     'datum_kwargs': {'frame': frame_num},
+                     'datum_id': datum_id}
+            self._asset_docs_cache.append(('datum', datum))
+            self._datum_ids.append(datum_id)
+
+        return NullStatus()
+
+    def collect(self):
+        # TODO: try to separate it from the xspress3 class
+        collected_frames = self.settings.array_counter.get()
+
+        # This is a hack around the issue with .NORD (number of elements to #
+        # read) that does not match .NELM (number of elements to that the array
+        # will hold)
+        dpb_sec_nelm_count = int(dpb_sec_nelm.get())
+        dpb_nsec_nelm_count = int(dpb_nsec_nelm.get())
+        dpb_sec_values = np.array(dpb_sec.get(count=dpb_sec_nelm_count),
+                                  dtype='float128')[:collected_frames * 2: 2]
+        dpb_nsec_values = np.array(dpb_nsec.get(count=dpb_nsec_nelm_count),
+                                   dtype='float128')[:collected_frames * 2: 2]
+
+        di_timestamps = dpb_sec_values + dpb_nsec_values * 1e-9
+
+        len_di_timestamps = len(di_timestamps)
+        len_datum_ids = len(self._datum_ids)
+
+        if len_di_timestamps != len_datum_ids:
+            warnings.warn(f'The length of "di_timestamps" ({len_di_timestamps}) '
+                          f'does not match the length of "self._datum_ids" ({len_datum_ids})')
+
+        num_frames = min(len_di_timestamps, len_datum_ids)
+        for frame_num in range(num_frames):
+            datum_id = self._datum_ids[frame_num]
+            ts = di_timestamps[frame_num]
+
+            data = {self.name: datum_id}
+            # TODO: fix the lost precision as pymongo complained about np.float128.
+            ts = float(ts)
+            yield {'data': data,
+                   'timestamps': {key: ts for key in data},
+                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
+                   'filled': {key: False for key in data}}
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
     def set_channels_for_hdf5(self, channels=(1, 2, 3, 4)):
         """
         Configure which channels' data should be saved in the resulted hdf5 file.
-
         Parameters
         ----------
         channels: tuple, optional
@@ -149,6 +235,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs.channel2.vis_enabled.put(1)
 xs.channel3.vis_enabled.put(1)
+xs.dev_name = 'xs'
 
 # This is necessary for when the ioc restarts
 # we have to trigger one image for the hdf5 plugin to work correctly
@@ -171,6 +258,7 @@ xs.settings.configuration_attrs = ['acquire_period',
                                    'temperature_actual',
                                    'trigger_mode',
                                    'config_path',
+
                                    'config_save_path',
                                    'invert_f0',
                                    'invert_veto',
@@ -188,19 +276,264 @@ for n, d in xs.channels.items():
         getattr(d.rois, roi_n).value_sum.kind = 'omitted'
 
 
-def custom_xs_plan(xs_det, num, other_dets=None):
-   yield from bps.mv(xs_det.total_points, num)
-   all_dets = [xs_det]
-   if other_dets is not None:
-        all_dets += list(other_dets)
-   yield from bp.count(all_dets, num=num)
+
+def xs_count(acq_time:int = 1, num_frames:int =1):
+    yield from bps.mv(xs.settings.acquire, 0)
 
 
-def xs_list_scan(det, energies):
-    energies = list(energies)
-    yield from bps.mv(det.total_points, len(energies))
-    yield from bp.list_scan([det], hhm.energy, energies)
+# class XSFlyer:
+#     def __init__(self, *, pb, di, motor_ts, pb_triggers, xs_dets, an_dets, motor):
+#         """
+#         The flyer based on a single encoder pizza-box and multiple xspress3 devices running a mono.
+#         Parameters
+#         ----------
+#         pb : digital pizza box orchestrating the experiment (triggering and timestamping the xspress3)
+#         di : a digital input to timestamp trigger pulses
+#         motor_ts : an encoder pizza-box for timestamping the motor (mono)
+#         pb_triggers : list
+#             a list of names of the trigger signals (e.g., 'do1') from the pizza-box digital outputs.
+#             It's possible to configure up to 4 triggers per pizza-box, triggering a corresponding xspress3 detector each.
+#         xs_dets : list
+#             a list of ophyd devices for the xspress3 detectors (up to 4 xspress3 detectors per 1 pizza-box)
+#         an_dets : list
+#             a list of analog detectors to be triggered
+#         motor : a monochromator motor
+#         """
+#         self.name = f'{pb.name}-{"-".join([xs_det.name for xs_det in xs_dets])}-' \
+#             f'{"-".join([an_det.name for an_det in an_dets])}-{motor.name}-{self.__class__.__name__}'
+#         self.pb = pb
+#         self.di = di
+#         self.motor_ts = motor_ts
+#         self.pb_triggers = pb_triggers
+#         self.xs_dets = xs_dets
+#         self.an_dets = an_dets
+#         self.motor = motor
+#
+#         self.num_points = {}
+#         self._motor_status = None
+#
+#     def __repr__(self):
+#         return f"""\
+#     Flyer '{self.name}' with the following config:
+#         - digital pizza-box  : {self.pb.name}
+#         - pizza-box triggers : {', '.join([x for x in self.pb_triggers])}
+#         - xspress3 detectors : {', '.join([x.name for x in self.xs_dets])}
+#         - analog detectors   : {', '.join([x.name for x in self.an_dets])}
+#         - motor              : {self.motor.name}
+# """
+#
+#     def kickoff(self, *args, **kwargs):
+#         # Set the parameters in the LEMO DO CSS screen
+#         # for pb_trigger in self.pb_triggers:
+#         #     #getattr(self.pb, pb_trigger).period_sp.put(10)
+#         #     getattr(self.pb, pb_trigger).unit_sel.put('ms')  # in milliseconds
+#         #     #getattr(self.pb, pb_trigger).unit_sel.put('us')  # in microseconds
+#         #     getattr(self.pb, pb_trigger).dutycycle_sp.put(50)  # in percents
+#
+#         # Set all required signals in xspress3
+#         self._calc_num_points()
+#         for xs_det in self.xs_dets:
+#             xs_det.hdf5.file_write_mode.put('Stream')
+#
+#             # Prepare the soft signals for hxntools.detectors.xspress3.Xspress3FileStore#stage
+#             xs_det.external_trig.put(True)
+#             xs_det.total_points.put(self.num_points[xs_det.name])
+#             # TODO: sort out how many spectra per point we should have
+#             xs_det.spectra_per_point.put(1)
+#             xs_det.stage()
+#
+#             # These parameters are dynamically set for the case of
+#             # the external triggering mode in the stage() method (see above).
+#             # xs_det.settings.num_images.put(self.num_points[xs_det.name])
+#             # xs_det.hdf5.num_capture.put(self.num_points[xs_det.name])
+#
+#         for xs_det in self.xs_dets:
+#             # These parameters are dynamically set for the case of
+#             # the external triggering mode in the stage() method (see above).
+#
+#             # "Acquisition Controls and Status" (top left pane) -->
+#             # "Trigger" selection button 'TTL Veto Only (3)'
+#             # xs_det.settings.trigger_mode.put('TTL Veto Only')
+#             # "File Saving" (left bottom pane) --> "Start File Saving" button
+#             # xs_det.hdf5.capture.put(1)
+#
+#             # "Acquisition Controls and Status" (top left pane) --> "Start" button
+#             xs_det.settings.acquire.put(1)
+#
+#         # analog pizza-boxes:
+#         for an_det in self.an_dets:
+#             an_det.stage()
+#             an_det.kickoff()
+#
+#         # Parameters of the encoder pizza-boxes:
+#         # (J8B channel for pb2)
+#         self.motor_ts.stage()
+#         self.motor_ts.kickoff()
+#         self.di.stage()
+#         self.di.kickoff()
+#         for pb_trigger in self.pb_triggers:
+#             getattr(self.pb, pb_trigger).enable.put(1)
+#
+#         self._motor_status = self.motor.set('start')
+#
+#         return NullStatus()
+#
+#     def complete(self):
+#         def callback_motor():
+#             # Parameters of the encoder pizza-boxes:
+#             # (J8B channel for pb2)
+#             for pb_trigger in self.pb_triggers:
+#                 getattr(self.pb, pb_trigger).enable.put(0)
+#
+#             for an_det in self.an_dets:
+#                 an_det.complete()
+#             self.motor_ts.complete()
+#             self.di.complete()
+#
+#             for xs_det in self.xs_dets:
+#                 # "Acquisition Controls and Status" (top left pane) --> "Stop" button
+#                 xs_det.settings.acquire.put(0)
+#                 # TODO: check what happens when the number of collected frames is the same as expected.
+#                 # There is a chance the stop saving button is pressed twice.
+#                 xs_det.hdf5.capture.put(
+#                     0)  # this is to save the file is the number of collected frames is less than expected
+#                 # "Acquisition Controls and Status" (top left pane) -->
+#                 # "Trigger" selection button 'Internal'
+#                 xs_det.settings.trigger_mode.put('Internal')
+#                 xs_det.complete()
+#
+#         self._motor_status.add_callback(callback_motor)
+#
+#         return self._motor_status
+#
+#     def describe_collect(self):
+#         """
+#         In [3]: hdr.stream_names
+#         Out[3]:
+#         ['pba1_adc5',
+#          'pba1_adc8',
+#          'pba1_adc7',
+#          'pba1_adc4',
+#          'xs',
+#          'pb2_enc1',
+#          'pba1_adc3',
+#          'pba1_adc6']
+#         In [4]: hdr.table(stream_name='pba1_adc5')
+#         Out[4]:
+#                                          time                             pba1_adc5
+#         seq_num
+#         1       2019-11-27 15:08:43.058514118  b0d95db8-f2c4-49ab-a918-014e02775b3a
+#         In [5]: hdr.table(stream_name='pba1_adc5', fill=True)
+#         Out[5]:
+#                                          time                                          pba1_adc5
+#         seq_num
+#         1       2019-11-27 15:08:43.058514118            timestamp       adc
+#         0      1.574885e...
+#         In [6]: hdr.table(stream_name='pb1_enc1', fill=True)
+#         Out[6]:
+#         Empty DataFrame
+#         Columns: []
+#         Index: []
+#         In [7]: hdr.table(stream_name='pb2_enc1', fill=True)
+#         Out[7]:
+#         Empty DataFrame
+#         Columns: []
+#         Index: []
+#         In [8]: hdr.table(stream_name='xs', fill=True)
+#         Out[8]:
+#         Empty DataFrame
+#         Columns: []
+#         Index: []
+#         """
+#         return_dict = {}
+#
+#         # xspress3 detectors:
+#         for xs_det in self.xs_dets:
+#             return_dict[xs_det.name] = {f'{xs_det.name}': {'source': 'xspress3',
+#                                                            'devname': 'xs3',
+#                                                            'filename': '',
+#                                                            'dtype': 'array',
+#                                                            'shape': [xs_det.settings.num_images.get(),
+#                                                                      xs_det.hdf5.array_size.height.get(),
+#                                                                      xs_det.hdf5.array_size.width.get()],
+#                                                            'external': 'FILESTORE:'}}
+#
+#         # analog pizza-boxes:
+#         for an_det in self.an_dets:
+#             return_dict[an_det.name] = an_det.describe_collect()[an_det.name]
+#
+#         # encoder pizza-box:
+#         return_dict[self.motor_ts.name] = self.motor_ts.describe_collect()[self.motor_ts.name]
+#         return_dict[self.di.name] = self.di.describe_collect()[self.di.name]
+#
+#         return return_dict
+#
+#     def collect_asset_docs(self):
+#         for xs_det in self.xs_dets:
+#             yield from xs_det.collect_asset_docs()
+#         # TODO: Investigate below
+#         # for an_det in self.an_dets:
+#         #     yield from an_det.collect_asset_docs()
+#
+#     def collect(self):
+#         for xs_det in self.xs_dets:
+#             xs_det.unstage()
+#         for an_det in self.an_dets:
+#             an_det.unstage()
+#         self.motor_ts.unstage()
+#         self.di.unstage()
+#
+#         def collect_all():
+#             yield from self.motor_ts.collect()
+#             yield from self.di.collect()
+#             for an_det in self.an_dets:
+#                 yield from an_det.collect()
+#             for xs_det in self.xs_dets:
+#                 yield from xs_det.collect()
+#
+#         return collect_all()
+#
+#     def _calc_num_points(self):
+#         """
+#         Calculate a number of points for the xspress3 detectors.
+#         "Acquisition Controls and Status" (top left pane) --> "Number Of Frames" field
+#         """
+#         tr = trajectory_manager(self.motor)
+#         info = tr.read_info(silent=True)
+#         lut = str(int(self.motor.lut_number_rbv.get()))
+#         traj_duration = int(info[lut]['size']) / 16_000
+#         for pb_trigger, xs_det in zip(self.pb_triggers, self.xs_dets):
+#             units = getattr(self.pb, pb_trigger).unit_sel.get(as_string=True)
+#             if units == 'us':
+#                 multip = 1e-6  # micro-seconds
+#             elif units == 'ms':
+#                 multip = 1e-3  # milli-seconds
+#             else:
+#                 raise RuntimeError(f'The units "{units}" are not supported yet.')
+#             acq_num_points = traj_duration / (getattr(self.pb, pb_trigger).period_sp.get() * multip) * 1.3
+#             acq_num_points = int(round(acq_num_points, ndigits=0))
+#
+#             # WARNING! This is needed only for tests, should not be used for production!
+#             # acq_num_points = 5000
+#
+#             xs_max_num_images = 16384  # TODO: get from xspress3 EPICS PV
+#             if acq_num_points > xs_max_num_images:
+#                 raise ValueError(f'The calculated number of points {acq_num_points} is greater than maximum allowed '
+#                                  f'number of frames by Xspress3 {xs_max_num_images}')
+#             self.num_points[xs_det.name] = acq_num_points
+#
+#
+# xsflyer_pb2 = XSFlyer(pb=pb2,
+#                       di=pb2.di,
+#                       motor_ts=pb1.enc1,
+#                       pb_triggers=['do1'],
+#                       xs_dets=[xs],
+#                       an_dets=[pba1.adc3, pba1.adc4, pba1.adc5, pba1.adc6, pba1.adc7, pba1.adc8],
+#                       motor=mono1)
+#
+#
+# def xs_plan():
+#     yield from bps.mv(xsflyer_pb2.motor, 'prepare')
+#     yield from bp.fly([xsflyer_pb2])
 
 
-# energies = np.arange(8959, 9070, 0.4)
-# RE(xs_list_scan(xs, energies=energies))
