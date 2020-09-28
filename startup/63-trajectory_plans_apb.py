@@ -1,7 +1,7 @@
 from xas.file_io import validate_file_exists
 import time as ttime
 
-class FlyerEM:
+class FlyerAPB:
     def __init__(self, det, pbs, motor):
         self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
         self.parent = None
@@ -83,7 +83,7 @@ class FlyerEM:
         print(f'collect is being returned ({ttime.ctime(ttime.time())})')
         return collect_all()
 
-flyer_apb = FlyerEM(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
+flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
 
 def execute_trajectory_apb(name, **metadata):
