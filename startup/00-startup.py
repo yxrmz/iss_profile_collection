@@ -20,12 +20,12 @@ else:
     OLD_BLUESKY = False
 
 if OLD_BLUESKY:
-    nslsii.configure_base(get_ipython().user_ns, 'iss')
+    nslsii.configure_base(get_ipython().user_ns, 'iss') #, pbar=False)
 else:
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
     from databroker.v0 import Broker
     db = Broker.named('iss')
-    nslsii.configure_base(get_ipython().user_ns, db)
+    nslsii.configure_base(get_ipython().user_ns, db) #, pbar=False)
 
 # nslsii.configure_base(get_ipython().user_ns, 'iss',  publish_documents_to_kafka=True)
 

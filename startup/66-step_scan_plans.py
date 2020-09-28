@@ -13,11 +13,11 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
 
     energy_to_time_step = dict(zip(energy_steps, time_steps))
 
-    def per_step_pb(dets, motor, energy_step):
+    def per_step_pb(detectors, motor, step, take_reading=None):
         #print(f' Energy {energy_step}')
-        time_step=energy_to_time_step[energy_step]
+        time_step=energy_to_time_step[step]
 
-        for det in dets:
+        for det in detectors:
             if det.name == 'apb_ave':
                 samples = 250*(np.ceil(time_step*1005/250)) #hn I forget what that does... let's look into the new PB OPI
                 yield from bps.abs_set(det.sample_len, samples, wait=True)
@@ -27,8 +27,8 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
             elif det.name == 'xs':
                 yield from bps.mv(det.settings.acquire_time, time_step)
 
-        yield from bps.mv(motor, energy_step)
-        devices = [*dets, motor]
+        yield from bps.mv(motor, step)
+        devices = [*detectors, motor]
         yield from bps.trigger_and_read(devices=devices)
 
     return per_step_pb
@@ -69,7 +69,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
     yield from bp.list_scan( #this is the scan
         detectors,
         hhm.energy,
-        energy_steps,
+        list(energy_steps),
         per_step=adaq_pb_step_per_step_factory(energy_steps,time_steps), #and this function is colled at every step
         md=md
     )
