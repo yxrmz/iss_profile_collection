@@ -25,6 +25,8 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
                 yield from bps.abs_set(det.wf_len, samples, wait=True)
             elif det.name == 'pil100k':
                 yield from bps.mv(det.cam.acquire_time, time_step)
+            elif det.name == 'xs':
+                yield from bps.mv(det.settings.acquire_time, time_step)
 
         yield from bps.mv(motor, energy_step)
         devices = [*dets, motor]

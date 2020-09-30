@@ -15,6 +15,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                     'Fly scan (new PB)' :        fly_scan_with_apb,
                                     'Step scan':                    step_scan,
                                     'Step scan w/Pilatus':          step_scan_w_pilatus,
+                                    'Step scan w/Xspress 3':        step_scan_w_xs,
                                     'Constant energy' :             constant_energy,
                                     'Spiral fly scan':              fly_scan_over_spiral,
                                     'Fly scan with SDD':            fly_scan_with_sdd,

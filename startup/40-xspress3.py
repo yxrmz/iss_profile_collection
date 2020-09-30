@@ -14,6 +14,7 @@ from ophyd import Signal, EpicsSignal, EpicsSignalRO
 from ophyd.status import SubscriptionStatus
 from ophyd.sim import NullStatus  # TODO: remove after complete/collect are defined
 from ophyd import Component as Cpt, set_and_wait
+from ophyd.status import SubscriptionStatus, DeviceStatus
 
 from pathlib import PurePath
 from nslsii.detectors.xspress3 import (XspressTrigger, Xspress3Detector,
@@ -135,6 +136,23 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self.hdf5.stop()
         return ret
 
+    def trigger(self):
+
+        self._status = DeviceStatus(self)
+        #self.settings.erase.put(1)
+        # self.settings.erase.put(1)    # this was
+        self._acquisition_signal.put(1, wait=False)
+        trigger_time = ttime.time()
+
+
+        for sn in self.read_attrs:
+            if sn.startswith('channel') and '.' not in sn:
+                ch = getattr(self, sn)
+                self.dispatch(ch.name, trigger_time)
+
+        self._abs_trigger_count += 1
+        return self._status
+
     def stage(self):
         if self.spectra_per_point.get() != 1:
             raise NotImplementedError(
@@ -236,6 +254,9 @@ xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs.channel2.vis_enabled.put(1)
 xs.channel3.vis_enabled.put(1)
 xs.dev_name = 'xs'
+RE(bps.mv(xs.total_points,1))
+
+
 
 # This is necessary for when the ioc restarts
 # we have to trigger one image for the hdf5 plugin to work correctly
