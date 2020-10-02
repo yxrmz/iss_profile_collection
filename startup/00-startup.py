@@ -19,9 +19,14 @@ if bluesky.__version__ < LooseVersion('1.6'):
 else:
     OLD_BLUESKY = False
 
+
 if OLD_BLUESKY:
     nslsii.configure_base(get_ipython().user_ns, 'iss') #, pbar=False)
 else:
+    import ophyd
+
+    ophyd.EpicsSignal.set_default_timeout(timeout=60, connection_timeout=60)
+
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
     from databroker.v0 import Broker
     db = Broker.named('iss')
