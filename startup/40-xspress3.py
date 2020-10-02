@@ -139,7 +139,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     def trigger(self):
 
         self._status = DeviceStatus(self)
-        #self.settings.erase.put(1)
+        self.settings.erase.put(1)
         # self.settings.erase.put(1)    # this was
         self._acquisition_signal.put(1, wait=False)
         trigger_time = ttime.time()
