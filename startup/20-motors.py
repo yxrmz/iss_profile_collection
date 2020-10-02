@@ -151,7 +151,16 @@ class HHM(Device):
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
+# TODO: move to the HHM class definition.
 hhm_z_home = Cpt(EpicsSignal,'XF:08IDA-OP{MC:06}Home-HHMY')
+
+# Try to read it first time to avoid the generic 'object' to be returned
+# as an old value from hhm.trajectory_running._readback.
+hhm.wait_for_connection()
+_ = hhm.trajectory_ready.read()
+_ = hhm.trajectory_running.read()
+
+
 #hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 # hinted also is automatically set as read so no need to set read_attrs
 #hhm.energy.kind = 'hinted'
