@@ -122,7 +122,7 @@ bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 
-camera_sp1 = CAMERA('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
+camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
 camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
@@ -152,6 +152,13 @@ tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',
 
 bpm_fm.stats1.kind = 'hinted'
 bpm_fm.stats1.total.kind = 'hinted'
+
+
+camera_sp1.stats1.kind = 'hinted'
+camera_sp1.stats1.total.kind = 'hinted'
+
+camera_sp1.stats2.kind = 'hinted'
+camera_sp1.stats2.total.kind = 'hinted'
 
 
 class Encoder(Device):
