@@ -301,6 +301,9 @@ for n, d in xs.channels.items():
 def xs_count(acq_time:int = 1, num_frames:int =1):
     yield from bps.mv(xs.settings.acquire, 0)
 
+##################################################################
+
+
 
 # class XSFlyer:
 #     def __init__(self, *, pb, di, motor_ts, pb_triggers, xs_dets, an_dets, motor):

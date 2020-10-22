@@ -87,6 +87,15 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
     ch7_mean = Cpt(EpicsSignal, 'FA:Ch7:Mean-I', kind=Kind.hinted)
     ch8_mean = Cpt(EpicsSignal, 'FA:Ch8:Mean-I', kind=Kind.hinted)
 
+    time_wf = Cpt(EpicsSignal, 'FA:Time-Wfm', kind=Kind.hinted)
+    ch1_wf = Cpt(EpicsSignal, 'FA:Ch1-Wfm', kind=Kind.hinted)
+    ch2_wf = Cpt(EpicsSignal, 'FA:Ch2-Wfm', kind=Kind.hinted)
+    ch3_wf = Cpt(EpicsSignal, 'FA:Ch3-Wfm', kind=Kind.hinted)
+    ch4_wf = Cpt(EpicsSignal, 'FA:Ch4-Wfm', kind=Kind.hinted)
+    ch5_wf = Cpt(EpicsSignal, 'FA:Ch5-Wfm', kind=Kind.hinted)
+    ch6_wf = Cpt(EpicsSignal, 'FA:Ch6-Wfm', kind=Kind.hinted)
+    ch7_wf = Cpt(EpicsSignal, 'FA:Ch7-Wfm', kind=Kind.hinted)
+    ch8_wf = Cpt(EpicsSignal, 'FA:Ch8-Wfm', kind=Kind.hinted)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._capturing = None

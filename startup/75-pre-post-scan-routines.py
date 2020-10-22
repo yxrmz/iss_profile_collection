@@ -8,6 +8,7 @@ import bluesky.preprocessors as bpp
 from random import random
 from xas.trajectory import trajectory_manager
 import json
+from xas.ft_analysis import data_ft
 
 
 def remove_pb_files(uid):
@@ -282,10 +283,55 @@ def adjust_ic_gains( **kwargs):
             # print('[Adjust Gain] Complete\n')
             # remove_pb_files(uid)
 
+def vibration_diagnostics(time=1):
+    cur_divide_value = apb_ave.divide.value
+    cur_sample_len = apb_ave.sample_len.value
+    cur_wf_len = apb_ave.wf_len.value
 
-def optimize_sample_plan(*args, **kwargs):
-    yield from adjust_ic_gains(**kwargs)
-    yield from get_offsets(*args, **kwargs)
+    yield from bps.abs_set(apb_ave.divide, 36, wait=True)
+    yield from bps.abs_set(apb_ave.sample_len, time*1e4, wait=True)
+    yield from bps.abs_set(apb_ave.wf_len, time*1e4, wait=True)
+
+    uid = (yield from bp.count([apb_ave], int(time), md={"plan_name": "vibration_diagnostics"}))
+
+    table = db[uid].table()
+
+    data = np.zeros((int(time * 1e4), 9))
+    # print(data.shape)
+    data[:, 0] = table['apb_ave_time_wf'][1]
+
+    for i in range(8):
+        col_name = 'apb_ave_ch' + str(i + 1) + '_wf'
+        data[:, i + 1] = table[col_name][1]
+
+    yield from bps.abs_set(apb_ave.divide, cur_divide_value, wait=True)
+    yield from bps.abs_set(apb_ave.sample_len, cur_sample_len, wait=True)
+    yield from bps.abs_set(apb_ave.wf_len, cur_wf_len, wait=True)
+
+    data_ft(data)
+
+
+
+
+
+# data = RE(vibration_diagnostics())
+
+
+# def get_offsets_plan(detectors = [apb_ave], time = 2):
+#     for detector in detectors:
+#         detector.divide_old = detector.divide.get()
+#
+#         yield from bps.abs_set(detector.divide,375) # set sampling to 1 kHz
+#         yield from bps.abs_set(detector.sample_len, int(time)*1e3)
+#         yield from bps.abs_set(detector.wf_len, int(time) * 1e3)
+#
+#     uid = (yield from bp.count(detectors,1, md={"plan_name": "get_offsets"}))
+#
+#     for detector in detectors:
+#         yield from bps.abs_set(detector.divide, detector.divide_old)
+#
+#     table = db[uid].table()
+
 
 
 

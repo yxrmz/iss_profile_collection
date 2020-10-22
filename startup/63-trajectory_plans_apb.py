@@ -109,7 +109,7 @@ def execute_trajectory_apb(name, **metadata):
           'pulses_per_degree': hhm.pulses_per_deg,
           }
     for indx in range(8):
-        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get() # should it be _adc_offset?
+        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
         amp = getattr(apb, f'amp_ch{indx+1}')
         if amp:
             md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
