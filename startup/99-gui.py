@@ -30,7 +30,6 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                 'adjust_ic_gains': adjust_ic_gains,
                                 'prepare_beamline_plan': prepare_beamline_plan,
                                 'tune_beamline_plan': tune_beamline_plan,
-                                'spiral_scan': spiral_scan,
                                 'optimize_beamline_plan' : optimize_beamline_plan,
                                 'optimize_sample_plan' : optimize_sample_plan,
                                 'xs_count': xs_count,
@@ -39,6 +38,7 @@ xlive_gui = xlive.XliveGui(plan_funcs={
                                'get_adc_readouts': get_adc_readouts,
                                'prepare_traj_plan': prep_traj_plan,
                                'general_scan': general_scan,
+                               'general_spiral_scan': general_spiral_scan,
                                'set_reference_foil': set_reference_foil,
 
                                'tuning_scan': tuning_scan,

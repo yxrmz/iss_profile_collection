@@ -3,26 +3,63 @@ import numpy as np
 from bluesky.plans import rel_spiral_square
 
 
-def spiral_scan():
-    detectors = [apb_ave]
-    channels = [apb_ave.ch1, apb_ave.ch2, apb_ave.ch3, apb_ave.ch4]
-    offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset, ]
+# def sample_spiral_scan():
+#     detectors = [apb_ave]
+#
+#     return general_spiral_scan(detectors, giantxy.x, giantxy.y, 15, 15, 15, 15, time_step=0.1)
 
-    plan = rel_spiral_square(detectors, giantxy.x, giantxy.y, 15, 15, 15, 15)
+    # channels = [apb_ave.ch1, apb_ave.ch2, apb_ave.ch3, apb_ave.ch4]
+    # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset, ]
 
-    time_step = 0.1
+    # plan = rel_spiral_square(detectors, giantxy.x, giantxy.y, 15, 15, 15, 15)
+
+    # time_step = 0.1
     # samples = 250 * (np.ceil(time_step * 10443 / 250))  # hn I forget what that does... let's look into the new PB OPI
-    yield from bps.abs_set(apb_ave.sample_len, time_step*1e3, wait=True)
-    yield from bps.abs_set(apb_ave.wf_len, time_step*1e3, wait=True)
-    yield from bps.abs_set(apb_ave.divide, 374, wait=True)
+    # yield from bps.abs_set(apb_ave.sample_len, time_step*1e3, wait=True)
+    # yield from bps.abs_set(apb_ave.wf_len, time_step*1e3, wait=True)
+    # yield from bps.abs_set(apb_ave.divide, 374, wait=True)
 
     # if hasattr(detector, 'kickoff'):
     # plan_with_flyers = bpp.fly_during_wrapper(plan, [detectors])
-    uid = (yield from plan)
+    # uid = (yield from plan)
     # table = db[uid].table()
     # row_num = table[detector.volt.name].idxmin()
     # x_pos = table['giantxy_x'][row_num]
     # y_pos = table['giantxy_y'][row_num]
+
+def general_spiral_scan(detectors_list, *, motor1=giantxy.x, motor2=giantxy.y, motor1_range=15, motor2_range=15, motor1_nsteps=15, motor2_nsteps=15, time_step=0.1, **kwargs):
+
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    print(f'Dets {detectors_list}')
+    print(f'Motors {motor1}, {motor2}')
+
+
+    plan = rel_spiral_square(detectors_list, motor1, motor2,
+                                        motor1_range, motor2_range, motor1_nsteps, motor2_nsteps,
+                                        md={"plan_name": "spiral scan"})
+
+    if apb_ave in detectors_list:
+        print('Preparing pizzabox')
+        cur_divide_value = apb_ave.divide.value
+        cur_sample_len = apb_ave.sample_len.value
+        cur_wf_len = apb_ave.wf_len.value
+
+    print('[General Spiral Scan] Starting scan...')
+    yield from bps.abs_set(apb_ave.divide, 374, wait=True)
+    yield from bps.abs_set(apb_ave.sample_len, int(time_step * 1e3), wait=True)
+    yield from bps.abs_set(apb_ave.wf_len, int(time_step * 1e3), wait=True)
+
+    yield from plan
+
+    if apb_ave in detectors_list:
+        print('Returning the pizzabox to its original state')
+        yield from bps.abs_set(apb_ave.divide, cur_divide_value, wait=True)
+        yield from bps.abs_set(apb_ave.sample_len, cur_sample_len, wait=True)
+        yield from bps.abs_set(apb_ave.wf_len, cur_wf_len, wait=True)
+
+
+
+
 
 
 from matplotlib import pyplot as plt
