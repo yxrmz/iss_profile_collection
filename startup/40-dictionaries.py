@@ -14,8 +14,27 @@ detector_dictionary =   {
                     'Focusing mirror BPM': {'device': bpm_fm, 'channels': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
                     'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Camera SP1': {'device': camera_sp1, 'channels': ['camera_sp1_stats1_total','camera_sp1_stats2_total']},
-                    #'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
-                    #                                                 'pil100k_stats3_total','pil100k_stats4_total']}
+                    'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
+                                                                    'pil100k_stats3_total','pil100k_stats4_total']}
+                    # 'Xspress3'
+                    # : {'device' : xs, 'channels' : [ 'xs_settings_acquire_time',
+                    #                                 'xs_channel1_rois_roi01_value',
+                    #                                 'xs_channel1_rois_roi02_value'
+                    #                                 'xs_channel1_rois_roi03_value'
+                    #                                 'xs_channel1_rois_roi04_value'
+                    #                                 'xs_channel2_rois_roi01_value'
+                    #                                 'xs_channel2_rois_roi02_value'
+                    #                                 'xs_channel2_rois_roi03_value'
+                    #                                 'xs_channel2_rois_roi04_value'
+                    #                                 'xs_channel3_rois_roi01_value'
+                    #                                 'xs_channel3_rois_roi02_value'
+                    #                                 'xs_channel3_rois_roi03_value'
+                    #                                 'xs_channel3_rois_roi04_value'
+                    #                                 'xs_channel4_rois_roi01_value'
+                    #                                 'xs_channel4_rois_roi02_value'
+                    #                                 'xs_channel4_rois_roi03_value'
+                    #                                 'xs_channel4_rois_roi04_value'
+                    #                                 ]}
                 }
 
 

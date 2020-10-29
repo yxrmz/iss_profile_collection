@@ -120,7 +120,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
                                    'spectra_per_point', 'settings',
                                    'rewindable']
         if read_attrs is None:
-            read_attrs = ['channel1', 'channel2', 'channel3', 'channel4', 'hdf5']
+            read_attrs = ['channel1', 'channel2', 'channel3', 'channel4', 'hdf5', 'settings.acquire_time']
         super().__init__(prefix, configuration_attrs=configuration_attrs,
                          read_attrs=read_attrs, **kwargs)
         self.set_channels_for_hdf5()
