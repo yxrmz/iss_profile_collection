@@ -60,7 +60,7 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
     roi3 = Cpt(ROIPlugin, 'ROI3:')
     roi4 = Cpt(ROIPlugin, 'ROI4:')
 
-    stats1 = Cpt(StatsPluginV33, 'Stats1:', read_attrs=['total'])
+    stats1 = Cpt(StatsPluginV33, 'Stats1:', read_attrs=['total', 'max_value'])
     stats2 = Cpt(StatsPluginV33, 'Stats2:', read_attrs=['total'])
     stats3 = Cpt(StatsPluginV33, 'Stats3:', read_attrs=['total'])
     stats4 = Cpt(StatsPluginV33, 'Stats4:', read_attrs=['total'])

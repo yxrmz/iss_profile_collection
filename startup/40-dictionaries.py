@@ -15,7 +15,8 @@ detector_dictionary =   {
                     'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Camera SP1': {'device': camera_sp1, 'channels': ['camera_sp1_stats1_total','camera_sp1_stats2_total']},
                     'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
-                                                                    'pil100k_stats3_total','pil100k_stats4_total']}
+                                                                    'pil100k_stats3_total','pil100k_stats4_total',
+                                                                     'pil100k_stats1_max_value']}
                     # 'Xspress3'
                     # : {'device' : xs, 'channels' : [ 'xs_settings_acquire_time',
                     #                                 'xs_channel1_rois_roi01_value',
@@ -99,8 +100,9 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'detstage_y': {'name': detstage.y.name, 'description': 'Detector Stage Y','object': detstage.y},
                'detstage_z': {'name': detstage.z.name, 'description': 'Detector Stage Z','object': detstage.z},
                'cm1_x' : {'name' : cm1.x.name, 'description': 'Collimating mirror X','object': cm1.x},
-              'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos},
-              'sample_shutter_angle' : {'name' : usermotor3.name, 'description' : 'sample shutter angle ', 'object' : usermotor3.pos}}
+               'crystal_z' : {'name' : usermotor1.name, 'description' : 'Crystal Z', 'object' : usermotor1.pos},
+               'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos},
+               'sample_shutter_angle' : {'name' : usermotor3.name, 'description' : 'sample shutter angle ', 'object' : usermotor3.pos}}
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),

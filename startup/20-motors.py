@@ -204,6 +204,8 @@ detstage = DetStageXYZ('XF:08IDB-OP{Stage:Det', name='detstage')
 class Usermotor(Device):
     pos = Cpt(EpicsMotor, '}Mtr')
 
+
+usermotor1 = Usermotor('XF:08IDB-OP{Misc-Ax:1', name='usermotor1')
 usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
 usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
 
