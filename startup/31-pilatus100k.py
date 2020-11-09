@@ -126,3 +126,7 @@ pil100k.stats3.total.kind = 'hinted'
 pil100k.stats4.kind = 'hinted'
 pil100k.stats4.total.kind = 'hinted'
 pil100k.cam.ensure_nonblocking()
+
+
+def pil_count(acq_time:int = 1, num_frames:int =1):
+    yield from bp.count(pil100k)
