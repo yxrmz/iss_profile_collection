@@ -93,6 +93,8 @@ class HHM(Device):
     fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
+    home_z = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
+
     #encoder = Cpt(EpicsSignal, 'XF:08IDA-CT{Enc09:1}Cnt:Pos-I', limits=True)
 
     def __init__(self, *args, enc = None, **kwargs):
@@ -148,6 +150,7 @@ class HHM(Device):
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
+hhm_z_home = Cpt(EpicsSignal,'XF:08IDA-OP{MC:06}Home-HHMY')
 #hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 # hinted also is automatically set as read so no need to set read_attrs
 #hhm.energy.kind = 'hinted'

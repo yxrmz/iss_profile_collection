@@ -78,7 +78,6 @@ def energy_multiple_scans(start, stop, repeats, name='', **metadata):
         yield from bps.unstage(flyer)
 
 
-
 def get_offsets_plan(detectors = [apb_ave], time = 2):
     for detector in detectors:
         detector.divide_old = detector.divide.get()
@@ -87,7 +86,7 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
         yield from bps.abs_set(detector.sample_len, int(time)*1e3)
         yield from bps.abs_set(detector.wf_len, int(time) * 1e3)
 
-    uid = (yield from bp.count(detectors,1, md={"plan_name": "get_offsets"}))
+    uid = (yield from bp.count(detectors, 1, md={"plan_name": "get_offsets"}))
 
     for detector in detectors:
         yield from bps.abs_set(detector.divide, detector.divide_old)
@@ -102,32 +101,6 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
             yield from bps.abs_set(ch_offset, mean)
 
     return uid
-
-
-
-def record_offsets_plan(suffix=''):
-    fpath = '/nsls2/xf08id/log/offsets/' + str(datetime.now()).replace(':', '-')[:-7] + suffix + '.dat'
-    uid = (yield from get_offsets_plan())
-    table = db[uid].table()
-    table.to_csv(fpath)
-
-
-def record_offsets_for_all_gains_plan():
-    amps = [i0_amp, it_amp, ir_amp, iff_amp]
-    # set_gains_plan(*args)
-    for gain_value in range(3, 8):
-        for amp in amps:
-            yield from amp.set_gain_plan(gain_value, bool(0))
-        # ttime.sleep(0.5)
-
-        # output = str(gain_value)
-        # for amp in amps:
-        #     output += ' ' + amp.name + ' ' + str(amp.get_gain())
-        # print(output)
-        suffix = f' gain-{gain_value}'
-        yield from record_offsets_plan(suffix=suffix)
-
-
 
 
 
