@@ -15,26 +15,26 @@ detector_dictionary =   {
                     'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Camera SP1': {'device': camera_sp1, 'channels': ['camera_sp1_stats1_total','camera_sp1_stats2_total']},
                     'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
-                                                                    'pil100k_stats3_total','pil100k_stats4_total']}
-                    # 'Xspress3'
-                    # : {'device' : xs, 'channels' : [ 'xs_settings_acquire_time',
-                    #                                 'xs_channel1_rois_roi01_value',
-                    #                                 'xs_channel1_rois_roi02_value'
-                    #                                 'xs_channel1_rois_roi03_value'
-                    #                                 'xs_channel1_rois_roi04_value'
-                    #                                 'xs_channel2_rois_roi01_value'
-                    #                                 'xs_channel2_rois_roi02_value'
-                    #                                 'xs_channel2_rois_roi03_value'
-                    #                                 'xs_channel2_rois_roi04_value'
-                    #                                 'xs_channel3_rois_roi01_value'
-                    #                                 'xs_channel3_rois_roi02_value'
-                    #                                 'xs_channel3_rois_roi03_value'
-                    #                                 'xs_channel3_rois_roi04_value'
-                    #                                 'xs_channel4_rois_roi01_value'
-                    #                                 'xs_channel4_rois_roi02_value'
-                    #                                 'xs_channel4_rois_roi03_value'
-                    #                                 'xs_channel4_rois_roi04_value'
-                    #                                 ]}
+                                                                    'pil100k_stats3_total','pil100k_stats4_total',
+                                                                     'pil100k_stats1_max_value']},
+                    'Xspress3': {'device' : xs, 'channels' : [ 'xs_settings_acquire_time',
+                                                    'xs_channel1_rois_roi01_value',
+                                                    'xs_channel1_rois_roi02_value',
+                                                    'xs_channel1_rois_roi03_value',
+                                                    'xs_channel1_rois_roi04_value',
+                                                    'xs_channel2_rois_roi01_value',
+                                                    'xs_channel2_rois_roi02_value',
+                                                    'xs_channel2_rois_roi03_value',
+                                                    'xs_channel2_rois_roi04_value',
+                                                    'xs_channel3_rois_roi01_value',
+                                                    'xs_channel3_rois_roi02_value',
+                                                    'xs_channel3_rois_roi03_value',
+                                                    'xs_channel3_rois_roi04_value',
+                                                    'xs_channel4_rois_roi01_value',
+                                                    'xs_channel4_rois_roi02_value',
+                                                    'xs_channel4_rois_roi03_value',
+                                                    'xs_channel4_rois_roi04_value',
+                                                    ]}
                 }
 
 
@@ -68,6 +68,7 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                 'usermotor2' : {'name' : usermotor2.name, 'description' : 'Sample stage Z', 'object' : usermotor2.pos, 'group': 'spectrometer'},
                'auxxy_x': {'name': auxxy.x.name, 'description':'Crystal X','object': auxxy.x, 'group': 'spectrometer'},
                'auxxy_y': {'name': auxxy.y.name, 'description':'Crystal Y','object': auxxy.y, 'group': 'spectrometer'},
+               'usermotor1' : {'name' : usermotor1.name, 'description' : 'Crystal Z', 'object' : usermotor1.pos, 'group': 'spectrometer'},
                'hhm_theta': {'name': hhm.theta.name,'description':'A Monochromator Theta', 'object': hhm.theta},
                'hhm_energy': {'name': hhm.energy.name, 'description':'A Monochromator Energy','object': hhm.energy, 'group': 'spectrometer'},
                'hhm_y': {'name': hhm.y.name,'description':'A Monochromator Y', 'object': hhm.y},
@@ -100,7 +101,7 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'detstage_y': {'name': detstage.y.name, 'description': 'PIPS Stage Y','object': detstage.y},
                'detstage_z': {'name': detstage.z.name, 'description': 'Pips Stage Z','object': detstage.z},
                'cm1_x' : {'name' : cm1.x.name, 'description': 'Collimating mirror X','object': cm1.x},
-              'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos, 'group': 'spectrometer'},
+             'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos, 'group': 'spectrometer'},
               'sample_shutter_angle' : {'name' : usermotor3.name, 'description' : 'sample shutter angle ', 'object' : usermotor3.pos}}
 
 

@@ -16,13 +16,15 @@ class FlyerAPB:
         # set_and_wait(self.motor, 'prepare')
 
         def callback(value, old_value, **kwargs):
-            print(f'kickoff: {ttime.ctime()} {old_value} ---> {value}')
+
             if int(round(old_value)) == 0 and int(round(value)) == 1:
                 # Now start mono move
                 self._motor_status = self.motor.set('start')
                 return True
             else:
                 return False
+
+            print(f'Flyer kickoff is complete at  {ttime.ctime()}')
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
         self.det.stream.set(1)
@@ -34,7 +36,6 @@ class FlyerAPB:
 
     def complete(self):
         def callback_det(value, old_value, **kwargs):
-            print(f'complete: {ttime.time()} {old_value} ---> {value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 return True
             else:
@@ -49,7 +50,7 @@ class FlyerAPB:
                 pb.complete()
 
         self._motor_status.add_callback(callback_motor)
-        print(f'complete operation is happening ({ttime.ctime(ttime.time())})')
+        # print(f'complete operation is happening ({ttime.ctime(ttime.time())})')
         return streaming_st & self._motor_status
 
     def describe_collect(self):
@@ -80,7 +81,7 @@ class FlyerAPB:
             for pb in self.pbs:
                 yield from pb.collect()
             yield from self.det.collect()
-        print(f'collect is being returned ({ttime.ctime(ttime.time())})')
+        # print(f'collect is being returned ({ttime.ctime(ttime.time())})')
         return collect_all()
 
 flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
@@ -89,7 +90,7 @@ flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 def execute_trajectory_apb(name, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
     interp_fn = validate_file_exists(interp_fn)
-    print(f'Filepath  {interp_fn}')
+    print(f'Storing data at {interp_fn}')
     curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
     try:
         full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()

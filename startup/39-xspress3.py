@@ -253,7 +253,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs.channel2.vis_enabled.put(1)
 xs.channel3.vis_enabled.put(1)
-xs.dev_name = 'xs'
+# xs.dev_name = 'xs'
 RE(bps.mv(xs.total_points,1))
 
 
