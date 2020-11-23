@@ -41,7 +41,7 @@ class HHM(Device):
     _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     "High Heat Load Monochromator"
-    ip = '10.8.2.86'
+    ip = '10.66.58.106'
     traj_filepath = '/GPFS/xf08id/trajectory/'
 
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')

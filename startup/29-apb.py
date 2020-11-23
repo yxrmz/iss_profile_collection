@@ -71,7 +71,7 @@ class AnalogPizzaBox(Device):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._IP = '10.8.0.19'
+        self._IP = '10.66.59.42'
 
 
 apb = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="apb")
@@ -201,7 +201,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
             print(f'Saving a text   file from {server} to {self.filename_txt}')
             sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
                      self.filename_txt)
-            print(f'collect is done {ttime.ctime(ttime.time())}')
+            print(f'APB collect is complete {ttime.ctime(ttime.time())}')
 
         # Copied from 10-detectors.py (class EncoderFS)
         now = ttime.time()
@@ -210,7 +210,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
             yield {'data': data,
                    'timestamps': {key: now for key in data}, 'time': now,
                    'filled': {key: False for key in data}}
-            print(f'yield data {ttime.ctime(ttime.time())}')
+            # print(f'yield data {ttime.ctime(ttime.time())}')
 
     def unstage(self, *args, **kwargs):
         self._datum_counter = None

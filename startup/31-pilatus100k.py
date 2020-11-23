@@ -49,9 +49,9 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
     tiff = Cpt(TIFFPluginWithFileStore,
                suffix="Proc1:TIFF:",
                # write_path_template="/GPFS/xf12id1/data/PLACEHOLDER",  # override this on instances using instance.tiff.write_file_path
-               write_path_template="/home/det/PilatusData/",
+               #write_path_template="/home/det/PilatusData/",
                root='/',
-               # write_path_template="/nsls2/xf08id/data/pil100k/%Y/%m/%d",
+               write_path_template="/nsls2/xf08id/data/pil100k/%Y/%m/%d",
                # root='/nsls2/xf08id/data/',
                )
 

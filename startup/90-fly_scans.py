@@ -11,7 +11,7 @@ from bluesky.utils import FailedStatus
 
 
 
-def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= True, **kwargs):
+def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
     '''
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
     Parameters
@@ -40,12 +40,12 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from prep_traj_plan()
-        print(f'Trajectory prepared at {print_now()}')
+        print(f'Trajectory preparation complete at {print_now()}')
         yield from shutter.open_plan()
         uid = (yield from execute_trajectory_apb(name_n, comment=comment))
         uids.append(uid)
         yield from shutter.close_plan()
-        print(f'Trajectory excecuted {print_now()}')
+        print(f'Trajectory is complete {print_now()}')
         yield from bps.sleep(float(delay))
     return uids
 

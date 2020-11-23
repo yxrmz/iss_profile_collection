@@ -255,7 +255,7 @@ class EncoderFS(Encoder):
             return super().unstage()
 
     def kickoff(self):
-        print('kickoff', self.name)
+        print(f'Kickoff {self.name} is starting')
         self._ready_to_collect = True
         "Start writing data into the file."
 
@@ -263,11 +263,11 @@ class EncoderFS(Encoder):
 
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
-        print('kickoff complete', self.name)
+        print(f'Kickoff {self.name} is complete')
         return NullStatus()
 
     def complete(self):
-        print('storing', self.name, 'in', self._full_path)
+        print('Storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -426,7 +426,7 @@ class DIFS(DigitalInput):
         return super().unstage()
 
     def kickoff(self):
-        print('kickoff', self.name)
+        # print('kickoff', self.name)
         self._ready_to_collect = True
         "Start writing data into the file."
 
@@ -437,7 +437,7 @@ class DIFS(DigitalInput):
         return NullStatus()
 
     def complete(self):
-        print('storing', self.name, 'in', self._full_path)
+        print('Storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.
@@ -665,7 +665,7 @@ class AdcFS(Adc):
         return st
 
     def complete(self):
-        print('storing', self.name, 'in', self._full_path)
+        print('Storing', self.name, 'in', self._full_path)
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.

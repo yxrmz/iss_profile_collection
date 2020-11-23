@@ -217,9 +217,9 @@ def prep_traj_plan(delay = 0.05):
         raise Exception('Could not read current energy')
 
     curr_energy = curr_energy['hhm_energy']['value']
-    print('Curr Energy: {}'.format(curr_energy))
+    # print('Curr Energy: {}'.format(curr_energy))
     if curr_energy >= 10000:
-        print('>10000')
+        # print('>10000')
         yield from bps.mv(hhm.energy, curr_energy + 200)
         yield from bps.sleep(1)
         yield from bps.mv(hhm.energy, curr_energy)
