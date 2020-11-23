@@ -267,7 +267,7 @@ class EncoderFS(Encoder):
         return NullStatus()
 
     def complete(self):
-        print('Storing', self.name, 'in', self._full_path)
+        print(f'Storing {self.name} in {self._full_path}')
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
         # Stop adding new data to the file.

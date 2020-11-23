@@ -195,10 +195,10 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         except paramiko.ssh_exception.SSHException:
             raise RuntimeError('SSH connection could not be established. Create SSH keys')
         with self.ssh.open_sftp() as sftp:
-            print(f'Saving a binary file from {server} to {self.filename_bin}')
+            print(f'Storing a binary file from {server} to {self.filename_bin}')
             sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
                      self.filename_bin)
-            print(f'Saving a text   file from {server} to {self.filename_txt}')
+            print(f'Storing a text   file from {server} to {self.filename_txt}')
             sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
                      self.filename_txt)
             print(f'APB collect is complete {ttime.ctime(ttime.time())}')

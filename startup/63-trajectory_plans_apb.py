@@ -36,7 +36,6 @@ class FlyerAPB:
 
     def complete(self):
         def callback_det(value, old_value, **kwargs):
-            print(f'Plan excecution complete at {ttime.ctime(ttime.time())}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 return True
             else:
