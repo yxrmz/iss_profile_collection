@@ -47,7 +47,7 @@ def step_scan_w_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from shutter.open_plan()
-        yield from step_scan_plan(name, comment, energy_grid, time_grid, [apb_ave, xs, hhm.enc.pos_I], element=element, e0=e0, edge=edge )
+        yield from step_scan_plan(name_n, comment, energy_grid, time_grid, [apb_ave, xs, hhm.enc.pos_I], element=element, e0=e0, edge=edge )
         yield from shutter.close_plan()
         yield from bps.sleep(float(delay))
 

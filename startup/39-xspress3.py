@@ -108,9 +108,9 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     mca4 = Cpt(EpicsSignal, 'ARR4:ArrayData')
 
     hdf5 = Cpt(Xspress3FileStoreFlyable, 'HDF5:',
-               read_path_template='/home/xspress3/data/',
-               root='/home/xspress3/',
-               write_path_template='/home/xspress3/data/',
+               read_path_template='/nsls2/xf08id/data/xspress3/%Y/%m/%d/',
+               root='/nsls2/xf08id/data/',
+               write_path_template='/nsls2/xf08id/data/xspress3/%Y/%m/%d/',
                )
 
     def __init__(self, prefix, *, configuration_attrs=None, read_attrs=None,
@@ -144,7 +144,6 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self._acquisition_signal.put(1, wait=False)
         trigger_time = ttime.time()
 
-
         for sn in self.read_attrs:
             if sn.startswith('channel') and '.' not in sn:
                 ch = getattr(self, sn)
@@ -157,7 +156,6 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         if self.spectra_per_point.get() != 1:
             raise NotImplementedError(
                 "multi spectra per point not supported yet")
-
 
         ret = super().stage()
         self._datum_counter = itertools.count()
@@ -299,8 +297,9 @@ for n, d in xs.channels.items():
 
 
 def xs_count(acq_time:int = 1, num_frames:int =1):
-    yield from bps.mv(xs.settings.acquire, 0)
 
+    yield from bps.mv(xs.settings.erase, 0)
+    yield from bps.mv(xs.settings.acquire, 0)
 ##################################################################
 
 
