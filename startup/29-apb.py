@@ -135,12 +135,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self._datum_counter = None
         self.num_points = None
 
-    def collect_asset_docs(self):
-        items = list(self._asset_docs_cache)
-        self._asset_docs_cache.clear()
-        for item in items:
-            yield item
-
+    # Step-scan interface
     def stage(self, *args, **kwargs):
         file_uid = str(uuid.uuid4())
         self.calc_num_points()
@@ -177,6 +172,19 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self.acquire.set(1)
         return status
 
+    def unstage(self, *args, **kwargs):
+        self._datum_counter = None
+        st = self.stream.set(0)
+        super().unstage(*args, **kwargs)
+
+    # # Fly-able interface
+
+    # Not sure if we need it here or in FlyerAPB (see 63-...)
+    # def kickoff(self):
+    #     status = self.stage()
+    #     status &= self.trigger()
+    #     return status
+
     def complete(self, *args, **kwargs):
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
@@ -212,10 +220,23 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                    'filled': {key: False for key in data}}
             # print(f'yield data {ttime.ctime(ttime.time())}')
 
-    def unstage(self, *args, **kwargs):
-        self._datum_counter = None
-        st = self.stream.set(0)
-        super().unstage(*args, **kwargs)
+        # self.unstage()
+
+    # def describe_collect(self):
+    #     return {
+    #         self.name:
+    #             {f'{self.name}': {'source': '...',
+    #                               'dtype': 'array',
+    #                               'shape': [-1, 9],
+    #                               'external': 'FILESTORE:'}
+    #              }
+    #     }
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
     def calc_num_points(self):
         tr = trajectory_manager(hhm)

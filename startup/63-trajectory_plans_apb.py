@@ -1,6 +1,7 @@
 from xas.file_io import validate_file_exists
 import time as ttime
 
+
 class FlyerAPB:
     def __init__(self, det, pbs, motor):
         self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
@@ -11,7 +12,7 @@ class FlyerAPB:
         self._motor_status = None
 
     def kickoff(self, *args, **kwargs):
-        set_and_wait(self.det.trig_source, 1)
+        # set_and_wait(self.det.trig_source, 1)
         # TODO: handle it on the plan level
         # set_and_wait(self.motor, 'prepare')
 
@@ -27,30 +28,36 @@ class FlyerAPB:
             print(f'Flyer kickoff is complete at  {ttime.ctime()}')
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
-        self.det.stream.set(1)
-        self.det.stage()
+
         for pb in self.pbs:
             pb.stage()
             pb.kickoff()
+
+        self.det.stage()
+        # Start apb after encoder pizza-boxes, which will trigger the motor.
+        self.det.stream.set(1)
+
         return streaming_st
 
     def complete(self):
         def callback_det(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
+                print(f'callback_det {ttime.ctime()}')
                 return True
             else:
                 return False
         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
 
         def callback_motor():
-            #print(f'callback_motor {ttime.time()}')
-            self.det.stream.set(0)
-            self.det.complete()
+            print(f'callback_motor {ttime.ctime()}')
+
             for pb in self.pbs:
                 pb.complete()
 
+            self.det.stream.set(0)
+            self.det.complete()
+
         self._motor_status.add_callback(callback_motor)
-        # print(f'complete operation is happening ({ttime.ctime(ttime.time())})')
         return streaming_st & self._motor_status
 
     def describe_collect(self):
