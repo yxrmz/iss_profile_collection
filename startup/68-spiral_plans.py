@@ -49,13 +49,14 @@ def general_spiral_scan(detectors_list, *, motor1=giantxy.x, motor2=giantxy.y, m
     yield from bps.abs_set(apb_ave.sample_len, int(time_step * 1e3), wait=True)
     yield from bps.abs_set(apb_ave.wf_len, int(time_step * 1e3), wait=True)
 
-    yield from plan
+    uid = (yield from plan)
 
     if apb_ave in detectors_list:
         print('Returning the pizzabox to its original state')
         yield from bps.abs_set(apb_ave.divide, cur_divide_value, wait=True)
         yield from bps.abs_set(apb_ave.sample_len, cur_sample_len, wait=True)
         yield from bps.abs_set(apb_ave.wf_len, cur_wf_len, wait=True)
+    return uid
 
 
 
