@@ -47,7 +47,7 @@ class TIFFPluginWithFileStore(TIFFPlugin, FileStoreTIFFIterativeWrite):
 
 class Pilatus(SingleTriggerV33, PilatusDetector):
     tiff = Cpt(TIFFPluginWithFileStore,
-               suffix="Proc1:TIFF:",
+               suffix="TIFF1:",
                # write_path_template="/GPFS/xf12id1/data/PLACEHOLDER",  # override this on instances using instance.tiff.write_file_path
                #write_path_template="/home/det/PilatusData/",
                root='/',
@@ -73,15 +73,14 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
         getattr(self, st).kind = 'hinted'
 
 
-# TODO: configure it once the mount on xf08id-pilatus (the IOC for Pilatus).
-# pil100k.tiff.write_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
-# pil100k.tiff.read_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
-
 pil100k = Pilatus("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
 pil100k.set_primary_roi(1)
 
-pil100k.tiff.write_path_template = '/home/det/PilatusData/'
-pil100k.tiff.read_path_template = '/home/xf08id/pilatusTest/'
+pil100k.tiff.write_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
+pil100k.tiff.read_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
+
+# pil100k.tiff.write_path_template = '/home/det/PilatusData/'
+# pil100k.tiff.read_path_template = '/home/xf08id/pilatusTest/'
 
 pil100kroi1 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats1:Total_RBV', name='pil100kroi1')
 pil100kroi2 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats2:Total_RBV', name='pil100kroi2')
