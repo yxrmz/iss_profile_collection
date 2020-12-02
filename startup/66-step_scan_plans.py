@@ -17,7 +17,6 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
         #print(f' Energy {energy_step}')
         time_step=energy_to_time_step[energy_step]
 
-
         for det in dets:
             if det.name == 'apb_ave':
                 samples = 250*(np.ceil(time_step*1005/250)) #hn I forget what that does... let's look into the new PB OPI
@@ -62,6 +61,10 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
           }
     #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
     yield from bps.abs_set(apb_ave.divide, 373, wait=True)
+
+    for det in detectors:
+        if det.name == 'xs':
+            yield from bps.mv(det.total_points, len(energy_steps))
 
     yield from bp.list_scan( #this is the scan
         detectors,

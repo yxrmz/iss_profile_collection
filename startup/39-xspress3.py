@@ -131,9 +131,14 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
         self.channel1.rois.roi01.configuration_attrs.append('bin_low')
 
-    def stop(self):
-        ret = super().stop()
-        self.hdf5.stop()
+    # Step-scan interface methods.
+    def stage(self):
+        if self.spectra_per_point.get() != 1:
+            raise NotImplementedError(
+                "multi spectra per point not supported yet")
+
+        ret = super().stage()
+        self._datum_counter = itertools.count()
         return ret
 
     def trigger(self):
@@ -152,19 +157,20 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self._abs_trigger_count += 1
         return self._status
 
-    def stage(self):
-        if self.spectra_per_point.get() != 1:
-            raise NotImplementedError(
-                "multi spectra per point not supported yet")
-
-        ret = super().stage()
-        self._datum_counter = itertools.count()
-        return ret
-
     def unstage(self):
         self.settings.trigger_mode.put(1)  # 'Software'
         super().unstage()
         self._datum_counter = None
+
+    def stop(self):
+        ret = super().stop()
+        self.hdf5.stop()
+        return ret
+
+    # Fly-able interface methods.
+    def kickoff(self):
+        # TODO: implement the kickoff method for the flying mode once the hardware is ready.
+        raise NotImplementedError()
 
     def complete(self, *args, **kwargs):
         for resource in self.hdf5._asset_docs_cache:
@@ -220,11 +226,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
                    'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
                    'filled': {key: False for key in data}}
 
-    def collect_asset_docs(self):
-        items = list(self._asset_docs_cache)
-        self._asset_docs_cache.clear()
-        for item in items:
-            yield item
+    # The collect_asset_docs(...) method was removed as it exists on the hdf5 component and should be used there.
 
     def set_channels_for_hdf5(self, channels=(1, 2, 3, 4)):
         """
@@ -251,10 +253,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs.channel2.vis_enabled.put(1)
 xs.channel3.vis_enabled.put(1)
-# xs.dev_name = 'xs'
-RE(bps.mv(xs.total_points,1))
-
-
+xs.total_points.put(1)
 
 # This is necessary for when the ioc restarts
 # we have to trigger one image for the hdf5 plugin to work correctly
