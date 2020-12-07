@@ -96,6 +96,8 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
     ch6_wf = Cpt(EpicsSignal, 'FA:Ch6-Wfm', kind=Kind.hinted)
     ch7_wf = Cpt(EpicsSignal, 'FA:Ch7-Wfm', kind=Kind.hinted)
     ch8_wf = Cpt(EpicsSignal, 'FA:Ch8-Wfm', kind=Kind.hinted)
+
+    saved_status = None
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._capturing = None
@@ -116,6 +118,17 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         status = SubscriptionStatus(self.acquiring, callback)
         self.acquire.set(1)
         return status
+
+    def save_current_status(self):
+        self.saved_status = {}
+        self.saved_status['divide'] = self.divide.get()
+        self.saved_status['sample_len'] = self.sample_len.get()
+        self.saved_status['wf_len'] = self.wf_len.get()
+
+    def restore_to_saved_status(self):
+        yield from bps.abs_set(self.divide, self.saved_status['divide'])
+        yield from bps.abs_set(self.sample_len, self.saved_status['sample_len'])
+        yield from bps.abs_set(self.wf_len, self.saved_status['wf_len'])
 
 
 apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")

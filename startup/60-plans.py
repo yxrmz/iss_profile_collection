@@ -80,7 +80,8 @@ def energy_multiple_scans(start, stop, repeats, name='', **metadata):
 
 def get_offsets_plan(detectors = [apb_ave], time = 2):
     for detector in detectors:
-        detector.divide_old = detector.divide.get()
+        # detector.divide_old = detector.divide.get()
+        detector.save_current_status()
 
         yield from bps.abs_set(detector.divide,375) # set sampling to 1 kHz
         yield from bps.abs_set(detector.sample_len, int(time)*1e3)
@@ -89,7 +90,8 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
     uid = (yield from bp.count(detectors, 1, md={"plan_name": "get_offsets"}))
 
     for detector in detectors:
-        yield from bps.abs_set(detector.divide, detector.divide_old)
+        # yield from bps.abs_set(detector.divide, detector.divide_old)
+        yield from detector.restore_to_saved_status()
 
     table = db[uid].table()
 
