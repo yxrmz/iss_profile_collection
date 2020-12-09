@@ -276,7 +276,6 @@ xs.settings.configuration_attrs = ['acquire_period',
                                    'temperature_actual',
                                    'trigger_mode',
                                    'config_path',
-
                                    'config_save_path',
                                    'invert_f0',
                                    'invert_veto',

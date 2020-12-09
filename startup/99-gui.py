@@ -16,7 +16,6 @@ import time as ttime
 
 xlive_gui = xlive.XliveGui(plan_funcs={
 
-<<<<<<< HEAD
     'Fly scan (new PB)': fly_scan_with_apb,
     'Step scan': step_scan,
     'Step scan w/Pilatus': step_scan_w_pilatus,
