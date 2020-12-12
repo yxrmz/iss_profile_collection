@@ -4,7 +4,7 @@ import atexit
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
+import time as ttime
 
 # sample_stages = [{'x': giantxy.x.name, 'y': giantxy.y.name},
 #                  {'x': samplexy.x.name, 'y': samplexy.y.name},
@@ -66,7 +66,8 @@ def xlive():
     xlive_gui.show()
 
 xlive()
-print('Startup complete')
+print(f'Startup complete at {ttime.ctime()}')
+
 
 sys.stdout = xlive_gui.emitstream_out
 sys.stderr = xlive_gui.emitstream_err
