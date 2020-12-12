@@ -173,7 +173,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def trigger(self):
         def callback(value, old_value, **kwargs):
-            print(f'{ttime.time()} {old_value} ---> {value}')
+            # print(f'{ttime.time()} {old_value} ---> {value}')
             if self._acquiring and int(round(old_value)) == 1 and int(round(value)) == 0:
                 self._acquiring = False
                 return True
@@ -326,7 +326,7 @@ class APBBinFileHandler(HandlerBase):
         self.raw_data = raw_data
 
     def __call__(self):
-        print(f'Returning {self.df}')
+        #print(f'Returning {self.df}')
         return self.df
 
 
