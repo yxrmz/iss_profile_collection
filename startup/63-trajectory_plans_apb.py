@@ -1,5 +1,7 @@
 from xas.file_io import validate_file_exists
 import time as ttime
+from datetime import datetime
+from ophyd.status import SubscriptionStatus
 
 
 class FlyerAPB:
@@ -25,7 +27,7 @@ class FlyerAPB:
             else:
                 return False
 
-            print(f'Flyer kickoff is complete at  {ttime.ctime()}')
+        print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
@@ -42,34 +44,35 @@ class FlyerAPB:
     def complete(self):
         def callback_det(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
-                print(f'callback_det {ttime.ctime()}')
+                print(f'     !!!!! {datetime.now()} callback_det')
                 return True
             else:
                 return False
         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
 
         def callback_motor():
-            print(f'callback_motor {ttime.ctime()}')
+            print(f'     !!!!! {datetime.now()} callback_motor')
 
-            for pb in self.pbs:
-                pb.complete()
+            # print('      I am sleeping for 10 seconds')
+            # ttime.sleep(10.0)
+            # print('      Done sleeping for 10 seconds')
 
             # TODO: see if this 'set' is still needed (also called in self.det.unstage()).
             # Change it to 'put' to have a blocking call.
-            self.det.stream.set(0)
+            # self.det.stream.set(0)
+
+            # self.det.stream.put(0)
+
             self.det.complete()
+
+            for pb in self.pbs:
+                pb.complete()
 
         self._motor_status.add_callback(callback_motor)
         return streaming_st & self._motor_status
 
     def describe_collect(self):
-        return_dict = {self.det.name:
-                        {f'{self.det.name}': {'source': 'APB',
-                                              'dtype': 'array',
-                                              'shape': [-1, -1],
-                                              'filename_bin': self.det.filename_bin,
-                                              'filename_txt': self.det.filename_txt,
-                                              'external': 'FILESTORE:'}}}
+        return_dict = self.det.describe_collect()
         # Also do it for all pizza-boxes
         for pb in self.pbs:
             return_dict[pb.name] = pb.describe_collect()[pb.name]
