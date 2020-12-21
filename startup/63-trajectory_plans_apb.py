@@ -54,6 +54,8 @@ class FlyerAPB:
             for pb in self.pbs:
                 pb.complete()
 
+            # TODO: see if this 'set' is still needed (also called in self.det.unstage()).
+            # Change it to 'put' to have a blocking call.
             self.det.stream.set(0)
             self.det.complete()
 
