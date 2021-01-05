@@ -31,27 +31,29 @@ class FlyerAPB:
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
-        for pb in self.pbs:
-            pb.stage()
-            pb.kickoff()
+
 
         self.det.stage()
         # Start apb after encoder pizza-boxes, which will trigger the motor.
         self.det.stream.set(1)
+
+        for pb in self.pbs:
+            pb.stage()
+            pb.kickoff()
 
         return streaming_st
 
     def complete(self):
         def callback_det(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
-                print(f'     !!!!! {datetime.now()} callback_det')
+                # print(f'     !!!!! {datetime.now()} callback_det')
                 return True
             else:
                 return False
         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
 
         def callback_motor():
-            print(f'     !!!!! {datetime.now()} callback_motor')
+            # print(f'     !!!!! {datetime.now()} callback_motor')
 
             # print('      I am sleeping for 10 seconds')
             # ttime.sleep(10.0)

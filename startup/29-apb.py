@@ -199,6 +199,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     #     return status
 
     def complete(self, *args, **kwargs):
+        self.stream.put(0)
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
         datum = {'resource': self._resource_uid,
