@@ -2,7 +2,7 @@ import datetime as dt
 import itertools
 import os
 import time as ttime
-import uuid
+# import uuid
 from collections import deque
 
 import numpy as np
@@ -10,6 +10,7 @@ import paramiko
 from ophyd import Component as Cpt, Device, EpicsSignal, Kind
 from ophyd.sim import NullStatus
 from ophyd.status import SubscriptionStatus
+from bluesky.utils import new_uid
 
 
 class AnalogPizzaBox(Device):
@@ -69,6 +70,11 @@ class AnalogPizzaBox(Device):
 
     trig_source = Cpt(EpicsSignal, 'Machine:Clk-SP')
 
+    filename_bin = Cpt(EpicsSignal, 'FA:Stream:Bin:File-SP')
+    filebin_status = Cpt(EpicsSignal, 'FA:Stream:Bin:File:Status-I')
+    filename_txt = Cpt(EpicsSignal, 'FA:Stream:Txt:File-SP')
+    filetxt_status = Cpt(EpicsSignal, 'FA:Stream:Txt:File:Status-I')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._IP = '10.66.59.42'
@@ -102,8 +108,6 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         super().__init__(*args, **kwargs)
         self._capturing = None
         self._ready_to_collect = False
-
-
 
     def trigger(self):
         def callback(value, old_value, **kwargs):
@@ -139,9 +143,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._acquiring = None
-        self.ssh = paramiko.SSHClient()
-        self.filename_bin = None
-        self.filename_txt = None
+        # self.ssh = paramiko.SSHClient()
 
         self._asset_docs_cache = deque()
         self._resource_uid = None
@@ -150,17 +152,19 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     # Step-scan interface
     def stage(self, *args, **kwargs):
-        file_uid = str(uuid.uuid4())
+        file_uid = new_uid()
         self.calc_num_points()
         self.stream_samples.put(self.num_points)
-        filename = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
-        self.filename_bin = f'{filename}.bin'
-        self.filename_txt = f'{filename}.txt'
+        self.filename_target = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
+        # Note: temporary static file name in GPFS, due to the limitation of 40 symbols in the filename field.
+        self.filename = f'{ROOT_PATH}/data/apb/{file_uid[:8]}'
+        self.filename_bin.put(f'{self.filename}.bin')
+        self.filename_txt.put(f'{self.filename}.txt')
 
-        self._resource_uid = str(uuid.uuid4())
+        self._resource_uid = new_uid()
         resource = {'spec': 'APB',
                     'root': ROOT_PATH,  # from 00-startup.py (added by mrakitin for future generations :D)
-                    'resource_path': self.filename_bin,
+                    'resource_path': f'{self.filename_target}.bin',
                     'resource_kwargs': {},
                     'path_semantics': os.name,
                     'uid': self._resource_uid}
@@ -187,7 +191,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def unstage(self, *args, **kwargs):
         self._datum_counter = None
-        st = self.stream.set(0)
+        # st = self.stream.set(0)
         super().unstage(*args, **kwargs)
 
     # # Fly-able interface
@@ -199,7 +203,16 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     #     return status
 
     def complete(self, *args, **kwargs):
-        self.stream.put(0)
+        def callback_saving(value, old_value, **kwargs):
+            print(f'     !!!!! {datetime.now()} callback_saving\n{value} --> {old_value}')
+            if int(round(old_value)) == 1 and int(round(value)) == 0:
+                print(f'     !!!!! {datetime.now()} callback_saving')
+                return True
+            else:
+                return False
+        filebin_st = SubscriptionStatus(self.filebin_status, callback_saving)
+        filetxt_st = SubscriptionStatus(self.filetxt_status, callback_saving)
+
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
         datum = {'resource': self._resource_uid,
@@ -207,23 +220,28 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                  'datum_id': datum_id}
         self._asset_docs_cache.append(('datum', datum))
         self._datum_ids.append(datum_id)
-        return NullStatus()
+        return filebin_st & filetxt_st
 
     def collect(self):
-        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        server = self._IP
-        try:
-            self.ssh.connect(server, username='root')
-        except paramiko.ssh_exception.SSHException:
-            raise RuntimeError('SSH connection could not be established. Create SSH keys')
-        with self.ssh.open_sftp() as sftp:
-            print(f'Storing a binary file from {server} to {self.filename_bin}')
-            sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
-                     self.filename_bin)
-            print(f'Storing a text   file from {server} to {self.filename_txt}')
-            sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
-                     self.filename_txt)
-            print(f'APB collect is complete {ttime.ctime(ttime.time())}')
+        # self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # server = self._IP
+        # try:
+        #     self.ssh.connect(server, username='root')
+        # except paramiko.ssh_exception.SSHException:
+        #     raise RuntimeError('SSH connection could not be established. Create SSH keys')
+        # with self.ssh.open_sftp() as sftp:
+        #     print(f'Storing a binary file from {server} to {self.filename_bin}')
+        #     sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
+        #              self.filename_bin)
+        #     print(f'Storing a text   file from {server} to {self.filename_txt}')
+        #     sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
+        #              self.filename_txt)
+        import shutil
+        for ext in ['bin', 'txt']:
+            ret = shutil.move(f'{self.filename}.{ext}', f'{self.filename_target}.{ext}')
+            print(f'File moved: {ret}')
+
+        print(f'APB collect is complete {ttime.ctime(ttime.time())}')
 
         # Copied from 10-detectors.py (class EncoderFS)
         now = ttime.time()
@@ -241,8 +259,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                         {f'{self.name}': {'source': 'APB',
                                               'dtype': 'array',
                                               'shape': [-1, -1],
-                                              'filename_bin': self.filename_bin,
-                                              'filename_txt': self.filename_txt,
+                                              'filename_bin': f'{self.filename_target}.bin',
+                                              'filename_txt': f'{self.filename_target}.txt',
                                               'external': 'FILESTORE:'}}}
         return return_dict
 
