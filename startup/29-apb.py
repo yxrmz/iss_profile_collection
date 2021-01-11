@@ -155,16 +155,17 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         file_uid = new_uid()
         self.calc_num_points()
         self.stream_samples.put(self.num_points)
-        self.filename_target = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
+        #self.filename_target = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         # Note: temporary static file name in GPFS, due to the limitation of 40 symbols in the filename field.
-        self.filename = f'{ROOT_PATH}/data/apb/{file_uid[:8]}'
+        #self.filename = f'{ROOT_PATH}/data/apb/{file_uid[:8]}'
+        self.filename = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         self.filename_bin.put(f'{self.filename}.bin')
         self.filename_txt.put(f'{self.filename}.txt')
 
         self._resource_uid = new_uid()
         resource = {'spec': 'APB',
                     'root': ROOT_PATH,  # from 00-startup.py (added by mrakitin for future generations :D)
-                    'resource_path': f'{self.filename_target}.bin',
+                    'resource_path': f'{self.filename}.bin',
                     'resource_kwargs': {},
                     'path_semantics': os.name,
                     'uid': self._resource_uid}
@@ -236,10 +237,10 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         #     print(f'Storing a text   file from {server} to {self.filename_txt}')
         #     sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
         #              self.filename_txt)
-        import shutil
-        for ext in ['bin', 'txt']:
-            ret = shutil.move(f'{self.filename}.{ext}', f'{self.filename_target}.{ext}')
-            print(f'File moved: {ret}')
+        # import shutil
+        # for ext in ['bin', 'txt']:
+        #     ret = shutil.move(f'{self.filename}.{ext}', f'{self.filename_target}.{ext}')
+        #     print(f'File moved: {ret}')
 
         print(f'APB collect is complete {ttime.ctime(ttime.time())}')
 
@@ -259,8 +260,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                         {f'{self.name}': {'source': 'APB',
                                               'dtype': 'array',
                                               'shape': [-1, -1],
-                                              'filename_bin': f'{self.filename_target}.bin',
-                                              'filename_txt': f'{self.filename_target}.txt',
+                                              'filename_bin': f'{self.filename}.bin',
+                                              'filename_txt': f'{self.filename}.txt',
                                               'external': 'FILESTORE:'}}}
         return return_dict
 
