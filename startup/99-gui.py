@@ -2,6 +2,7 @@ from isstools import xlive
 from PyQt5.QtWidgets import QApplication
 import atexit
 import requests
+import os
 import sys
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -70,7 +71,9 @@ xlive_gui = xlive.XliveGui(plan_funcs={
 def xlive():
     xlive_gui.show()
 
-xlive()
+if not os.environ.get('AZURE_TESTING'):
+    xlive()
+
 print(f'Startup complete at {ttime.ctime()}')
 #sys.exit(app.exec_())
 
