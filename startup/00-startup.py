@@ -20,6 +20,37 @@ else:
     OLD_BLUESKY = False
 
 
+###############################################################################
+# TODO: remove this block once https://github.com/bluesky/ophyd/pull/959 is
+# merged/released.
+from ophyd.signal import EpicsSignalBase, EpicsSignal, DEFAULT_CONNECTION_TIMEOUT
+
+def wait_for_connection_base(self, timeout=DEFAULT_CONNECTION_TIMEOUT):
+    '''Wait for the underlying signals to initialize or connect'''
+    if timeout is DEFAULT_CONNECTION_TIMEOUT:
+        timeout = self.connection_timeout
+    try:
+        self._ensure_connected(self._read_pv, timeout=timeout)
+    except TimeoutError:
+        if self._destroyed:
+            raise DestroyedError('Signal has been destroyed')
+        raise
+
+def wait_for_connection(self, timeout=DEFAULT_CONNECTION_TIMEOUT):
+    '''Wait for the underlying signals to initialize or connect'''
+    if timeout is DEFAULT_CONNECTION_TIMEOUT:
+        timeout = self.connection_timeout
+    self._ensure_connected(self._read_pv, self._write_pv, timeout=timeout)
+
+EpicsSignalBase.wait_for_connection = wait_for_connection_base
+EpicsSignal.wait_for_connection = wait_for_connection
+###############################################################################
+
+from ophyd.signal import EpicsSignalBase
+if not OLD_BLUESKY:
+    EpicsSignalBase.set_defaults(connection_timeout=5)
+
+
 if OLD_BLUESKY:
     nslsii.configure_base(get_ipython().user_ns, 'iss') #, pbar=False)
 else:
