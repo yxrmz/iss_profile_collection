@@ -52,16 +52,12 @@ EpicsSignal.wait_for_connection = wait_for_connection
 
 from ophyd.signal import EpicsSignalBase
 if not OLD_BLUESKY:
-    EpicsSignalBase.set_defaults(connection_timeout=5)
+    EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
 
 if OLD_BLUESKY:
     nslsii.configure_base(get_ipython().user_ns, 'iss') #, pbar=False)
 else:
-    import ophyd
-
-    ophyd.EpicsSignal.set_default_timeout(timeout=60, connection_timeout=60)
-
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
     from databroker.v0 import Broker
     db = Broker.named('iss')
