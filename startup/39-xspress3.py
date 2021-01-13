@@ -251,6 +251,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
 
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
+# TODO: do not put on startup or do it conditionally, if on beamline.
 xs.channel2.vis_enabled.put(1)
 xs.channel3.vis_enabled.put(1)
 xs.total_points.put(1)
