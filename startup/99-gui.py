@@ -1,5 +1,5 @@
 from isstools import xlive
-from PyQt5.QtWidgets import QApplication
+# from PyQt5.QtWidgets import QApplication
 import atexit
 import requests
 import os
