@@ -1,6 +1,7 @@
 print(__file__)
 
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -13,6 +14,9 @@ from bluesky.simulators import summarize_plan
 
 # Check version of bluesky and act accordingly
 from distutils.version import LooseVersion
+
+# Qt config for 4K displays.
+os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
 
 if bluesky.__version__ < LooseVersion('1.6'):
     OLD_BLUESKY = True
