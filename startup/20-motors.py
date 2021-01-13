@@ -99,7 +99,10 @@ class HHM(Device):
 
     def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pulses_per_deg = 1/self.main_motor_res.get()
+        try:
+            self.pulses_per_deg = 1 / self.main_motor_res.get()
+        except ZeroDivisionError:
+            self.pulses_per_deg = -1
 
         self.enc = enc
         self._preparing = None
