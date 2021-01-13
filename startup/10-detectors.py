@@ -172,8 +172,7 @@ class Encoder(Device):
     filter_dt = Cpt(EpicsSignal, '}Fltr:dT-SP')
     reset_counts = Cpt(EpicsSignal, '}Rst-Cmd')
 
-    ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
-    ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
+    ignore_sel = Cpt(EpicsSignal, suffix='}Ignore-RB', write_pv='}Ignore-Sel')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -270,8 +269,14 @@ class EncoderFS(Encoder):
         print(f'Storing {self.name} in {self._full_path}')
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
+
+        print(f'     !!!!! {datetime.now()} complete in {self.name} before stop writing')
+
         # Stop adding new data to the file.
         set_and_wait(self.ignore_sel, 1)
+
+        print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
+
         #while not os.path.isfile(self._full_path):
         #    ttime.sleep(.1)
 
@@ -304,6 +309,7 @@ class EncoderFS(Encoder):
 
         Return a dictionary with references to these documents.
         """
+        print(f'     !!!!! {datetime.now()} collect in {self.name}')
         print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
@@ -359,8 +365,12 @@ class DigitalInput(Device):
     filepath = Cpt(EpicsSignal, '}ID:File.VAL', string=True)
     dev_name = Cpt(EpicsSignal, '}DevName')
 
-    ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
-    ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
+    # ignore_rb = Cpt(EpicsSignal, '}Ignore-RB')
+    # ignore_sel = Cpt(EpicsSignal, '}Ignore-Sel')
+
+    # Combined PVs into one components (to provide correct put-complete behavior).
+    ignore_sel = Cpt(EpicsSignal, suffix='}Ignore-RB', write_pv='}Ignore-Sel')
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

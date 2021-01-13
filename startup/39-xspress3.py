@@ -295,7 +295,7 @@ for n, d in xs.channels.items():
 
 
 
-def xs_count(acq_time:int = 1, num_frames:int =1):
+def xs_count(acq_time:float = 1, num_frames:int =1):
 
     yield from bps.mv(xs.settings.erase, 0)
     yield from bp.count([xs], acq_time)

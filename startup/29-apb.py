@@ -199,6 +199,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     #     return status
 
     def complete(self, *args, **kwargs):
+        self.stream.put(0)
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
         datum = {'resource': self._resource_uid,
@@ -235,15 +236,16 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
         # self.unstage()
 
-    # def describe_collect(self):
-    #     return {
-    #         self.name:
-    #             {f'{self.name}': {'source': '...',
-    #                               'dtype': 'array',
-    #                               'shape': [-1, 9],
-    #                               'external': 'FILESTORE:'}
-    #              }
-    #     }
+    def describe_collect(self):
+        return_dict = {self.name:
+                        {f'{self.name}': {'source': 'APB',
+                                              'dtype': 'array',
+                                              'shape': [-1, -1],
+                                              'filename_bin': self.filename_bin,
+                                              'filename_txt': self.filename_txt,
+                                              'external': 'FILESTORE:'}}}
+        return return_dict
+
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
