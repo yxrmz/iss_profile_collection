@@ -75,6 +75,8 @@ class AnalogPizzaBox(Device):
 
 
 apb = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="apb")
+apb.wait_for_connection(10)
+
 
 class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
@@ -132,6 +134,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
 
 apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")
+apb_ave.wait_for_connection(10)
 
 
 class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
@@ -263,7 +266,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
 
 apb_stream = AnalogPizzaBoxStream(prefix="XF:08IDB-CT{PBA:1}:", name="apb_stream")
-apb_stream.wait_for_connection()
+apb_stream.wait_for_connection(10)
 _ = apb_stream.streaming.read()
 
 apb.amp_ch1 = i0_amp
