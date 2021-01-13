@@ -241,7 +241,7 @@ def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
         scan_range = (scan_positions[-1] - scan_positions[0])
         min_threshold = scan_positions[0] + scan_range / 10
         max_threshold = scan_positions[-1] - scan_range / 10
-        plan = bp.list_scan([detector], motor,scan_positions)
+        plan = bp.list_scan([detector], motor, scan_positions.tolist())
         if hasattr(detector, 'kickoff'):
             plan = bpp.fly_during_wrapper(plan, [detector])
         uid = (yield from plan)
