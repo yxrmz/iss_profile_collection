@@ -1,4 +1,3 @@
-from isstools import xlive
 # from PyQt5.QtWidgets import QApplication
 import atexit
 import requests
@@ -16,6 +15,7 @@ import time as ttime
 #app = QApplication(sys.argv)
 
 if not os.environ.get('AZURE_TESTING'):
+    from isstools import xlive
     xlive_gui = xlive.XliveGui(plan_funcs={
 
         'Fly scan (new PB)': fly_scan_with_apb,
