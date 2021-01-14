@@ -206,55 +206,46 @@ class EncoderFS(Encoder):
         self._datum_counter = None
         self._datum_ids = None
 
-    def collect_asset_docs(self):
-        items = list(self._asset_docs_cache)
-        self._asset_docs_cache.clear()
-        for item in items:
-            yield item
-
-    def stage(self):
+    def stage(self, *args, **kwargs):
         "Set the filename and record it in a 'resource' document in the filestore database."
+        super().stage(*args, **kwargs)
 
-        if self.connected:
-            print('Staging of {} starting'.format(self.name))
+        print('Staging of {} starting'.format(self.name))
 
-            filename = 'en_' + str(uuid.uuid4())[:8]
+        filename = 'en_' + str(uuid.uuid4())[:8]
 
-            # without the root, but with data path + date folders
-            full_path = make_filename(filename)
-            # with the root
-            self._full_path = os.path.join(ROOT_PATH, full_path)  # stash for future reference
+        # without the root, but with data path + date folders
+        full_path = make_filename(filename)
+        # with the root
+        self._full_path = os.path.join(ROOT_PATH, full_path)  # stash for future reference
 
+        # FIXME: Quick TEMPORARY fix for beamline disaster
+        # we are writing the file to a temp directory in the ioc and
+        # then moving it to the GPFS system.
+        #
+        ioc_file_root = '/home/softioc/tmp/'
+        self._ioc_full_path = os.path.join(ioc_file_root, filename)
+        self._filename = filename
 
-            # FIXME: Quick TEMPORARY fix for beamline disaster
-            # we are writing the file to a temp directory in the ioc and
-            # then moving it to the GPFS system.
-            #
-            ioc_file_root = '/home/softioc/tmp/'
-            self._ioc_full_path = os.path.join(ioc_file_root, filename)
-            self._filename = filename
+        #self.filepath.put(self._full_path)   # commented out during disaster
+        self.filepath.put(self._ioc_full_path)
 
-            #self.filepath.put(self._full_path)   # commented out during disaster
-            self.filepath.put(self._ioc_full_path)
+        self._resource_uid = str(uuid.uuid4())
+        resource = {'spec': 'PIZZABOX_ENC_FILE_TXT_PD',
+                    'root': ROOT_PATH,
+                    'resource_path': full_path,
+                    'resource_kwargs': {},
+                    'path_semantics': os.name,
+                    'uid': self._resource_uid}
+        self._asset_docs_cache.append(('resource', resource))
+        self._datum_counter = itertools.count()
 
-            self._resource_uid = str(uuid.uuid4())
-            resource = {'spec': 'PIZZABOX_ENC_FILE_TXT_PD',
-                        'root': ROOT_PATH,
-                        'resource_path': full_path,
-                        'resource_kwargs': {},
-                        'path_semantics': os.name,
-                        'uid': self._resource_uid}
-            self._asset_docs_cache.append(('resource', resource))
-            self._datum_counter = itertools.count()
-
-            super().stage()
-            print('Staging of {} complete'.format(self.name))
+        print('Staging of {} complete'.format(self.name))
 
     def unstage(self):
-        if(self.connected):
-            set_and_wait(self.ignore_sel, 1)
-            self._datum_counter = None
-            return super().unstage()
+        set_and_wait(self.ignore_sel, 1)
+        self._datum_counter = None
+        return super().unstage()
 
     def kickoff(self):
         print(f'Kickoff {self.name} is starting')
@@ -289,7 +280,6 @@ class EncoderFS(Encoder):
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
         print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
-
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs
         # before collect() is called. May need changes to RE to do this properly. - Dan A.
@@ -338,6 +328,13 @@ class EncoderFS(Encoder):
                       'external': 'FILESTORE:',
                       'shape': [-1, -1],
                       'dtype': 'array'}}}
+
+    def collect_asset_docs(self):
+        print(f'\ncollecting asset docs for {self.name}\n')
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
 
 
 class DigitalOutput(Device):
@@ -555,7 +552,7 @@ pb6 = PizzaBoxFS('XF:08IDA-CT{Enc06', name = 'pb6')
 pb7 = PizzaBoxFS('XF:08IDA-CT{Enc07', name = 'pb7')
 pb9 = PizzaBoxFS('XF:08IDA-CT{Enc09', name = 'pb9')
 pb9.enc1.pulses_per_deg = 360000
-
+pb9.enc1.wait_for_connection(timeout=10)
 
 class Adc(Device):
     file_size = Cpt(EpicsSignal, '}FileSize')
@@ -667,7 +664,7 @@ class AdcFS(Adc):
     def kickoff(self):
         print('kickoff', self.name)
         self._ready_to_collect = True
-    
+
         "Start writing data into the file."
         # set_and_wait(self.enable_sel, 0)
         st = self.enable_sel.set(0)
@@ -774,9 +771,6 @@ for jj in [1, 6, 7]:
     getattr(pba2, f'adc{jj}').volt.kind = 'hinted'
     getattr(pba1, f'adc{jj}').kind = 'hinted'
     getattr(pba2, f'adc{jj}').kind = 'hinted'
-
-
-
 
 
 class PizzaBoxEncHandlerTxt(HandlerBase):
