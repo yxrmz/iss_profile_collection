@@ -31,8 +31,6 @@ class FlyerAPB:
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
-
-
         self.det.stage()
         # Start apb after encoder pizza-boxes, which will trigger the motor.
         self.det.stream.set(1)
