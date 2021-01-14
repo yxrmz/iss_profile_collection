@@ -209,6 +209,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache = deque()
         self._resource_uid = None
         self._datum_counter = None
+        self._datum_ids = None
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
