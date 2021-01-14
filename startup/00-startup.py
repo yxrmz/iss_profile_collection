@@ -14,6 +14,11 @@ from bluesky.simulators import summarize_plan
 
 # Check version of bluesky and act accordingly
 from distutils.version import LooseVersion
+from datetime import datetime
+
+
+def print_now():
+    return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
 
 # Qt config for 4K displays.
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
