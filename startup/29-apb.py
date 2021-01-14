@@ -75,6 +75,8 @@ class AnalogPizzaBox(Device):
 
 
 apb = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="apb")
+apb.wait_for_connection(timeout=10)
+
 
 class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
@@ -103,8 +105,6 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         self._capturing = None
         self._ready_to_collect = False
 
-
-
     def trigger(self):
         def callback(value, old_value, **kwargs):
             #print(f'{ttime.time()} {old_value} ---> {value}')
@@ -132,6 +132,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
 
 apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")
+apb_ave.wait_for_connection(timeout=10)
 
 
 class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
@@ -173,7 +174,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def trigger(self):
         def callback(value, old_value, **kwargs):
-            print(f'{ttime.time()} {old_value} ---> {value}')
+            # print(f'{ttime.time()} {old_value} ---> {value}')
             if self._acquiring and int(round(old_value)) == 1 and int(round(value)) == 0:
                 self._acquiring = False
                 return True
@@ -187,7 +188,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def unstage(self, *args, **kwargs):
         self._datum_counter = None
-        st = self.stream.set(0)
+        # This is done in 63-trajectory_plans_apb.py.
+        # self.stream.put(0)
         super().unstage(*args, **kwargs)
 
     # # Fly-able interface
@@ -263,6 +265,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
 
 apb_stream = AnalogPizzaBoxStream(prefix="XF:08IDB-CT{PBA:1}:", name="apb_stream")
+apb_stream.wait_for_connection(timeout=10)
+_ = apb_stream.streaming.read()
 
 apb.amp_ch1 = i0_amp
 apb.amp_ch2 = it_amp
@@ -324,6 +328,7 @@ class APBBinFileHandler(HandlerBase):
         self.raw_data = raw_data
 
     def __call__(self):
+        #print(f'Returning {self.df}')
         return self.df
 
 

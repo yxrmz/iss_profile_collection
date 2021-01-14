@@ -74,6 +74,8 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                'hhm_y': {'name': hhm.y.name,'description':'A Monochromator Y', 'object': hhm.y},
                'hhm_pitch': {'name': hhm.pitch.name, 'description':'A Monochromator Pitch','object': hhm.pitch},
                'hhm_roll': {'name': hhm.roll.name, 'description':'A Monochromator Roll', 'object': hhm.roll},
+                # TODO remove when done
+               'fm_pitch': {'name': fm.pitch.name, 'description':'Focusing Mirror Pitch', 'object': fm.pitch},
                #'hhrm_yu': {'name': hhrm.yu.name, 'object': hhrm.yu},
                #'hhrm_yd1': {'name': hhrm.yd1.name, 'object': hhrm.yd1},
                #'hhrm_yd2': {'name': hhrm.yd2.name, 'object': hhrm.yd2},

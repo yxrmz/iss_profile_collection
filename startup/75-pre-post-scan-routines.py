@@ -18,8 +18,6 @@ def remove_pb_files(uid):
             os.remove(i['data_keys'][i['name']]['filename'])
 
 
-
-
 def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, step=100):
     table = []
     for energy in range(start_energy, stop_energy + 1, step):
@@ -250,7 +248,7 @@ def get_adc_readouts(times: int = 20, *args, **kwargs):
         readout = np.mean(df[key][2:int(times)])
 
         readouts.append(readout)
-        print('Channel readout for {}  is {} V'.format(adc.dev_name.value, readout))
+        print('Channel readout for {}  is {} V'.format(adc.dev_name.get(), readout))
         adc.averaging_points.put(old_avers[index])
 
     remove_pb_files(uid)
@@ -267,7 +265,7 @@ def adjust_ic_gains( **kwargs):
         offsets = [apb.ch1_offset, apb.ch2_offset,apb.ch3_offset,apb.ch4_offset,]
 
 
-    current_lut = int(hhm.lut_number_rbv.value)
+    current_lut = int(hhm.lut_number_rbv.get())
     traj_manager = trajectory_manager(hhm)
     info = traj_manager.read_info(silent=True)
     if 'max' not in info[str(current_lut)] or 'min' not in info[str(current_lut)]:

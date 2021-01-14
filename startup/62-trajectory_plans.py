@@ -18,28 +18,28 @@ def execute_trajectory(name, **metadata):
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
         interp_fn = validate_file_exists(interp_fn)
         print(f'Filepath  {interp_fn}')
-        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.get()))
         try:
-            full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+            full_element_name = getattr(elements, curr_traj.elem.get()).name.capitalize()
         except:
-            full_element_name = curr_traj.elem.value
+            full_element_name = curr_traj.elem.get()
         md = {'plan_args': {},
               'plan_name': 'execute_trajectory',
               'experiment': 'fly_energy_scan',
               'name': name,
               'interp_filename': interp_fn,
-              'angle_offset': str(hhm.angle_offset.value),
-              'trajectory_name': hhm.trajectory_name.value,
-              'element': curr_traj.elem.value,
+              'angle_offset': str(hhm.angle_offset.get()),
+              'trajectory_name': hhm.trajectory_name.get(),
+              'element': curr_traj.elem.get(),
               'element_full': full_element_name,
-              'edge': curr_traj.edge.value,
-              'e0': curr_traj.e0.value,
+              'edge': curr_traj.edge.get(),
+              'e0': curr_traj.e0.get(),
               'pulses_per_degree': hhm.pulses_per_deg,
               }
         for flyer in flyers:
             # print(f'Flyer is {flyer}')
             if hasattr(flyer, 'offset'):
-                md['{} offset'.format(flyer.name)] = flyer.offset.value
+                md['{} offset'.format(flyer.name)] = flyer.offset.get()
             if hasattr(flyer, 'amp'):
                 md['{} gain'.format(flyer.name)] = flyer.amp.get_gain()[0]
         md.update(**metadata)
@@ -115,7 +115,7 @@ def execute_camera_trajectory(name, **metadata):
     flyers = [pb4.di, pba2.adc7, pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
 
     def inner():
-        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.get()))
 
         ret = (yield from bps.read(bpm_ms1.tiff_filenumber))
         if ret is None:
@@ -162,14 +162,14 @@ def execute_camera_trajectory(name, **metadata):
               'images_name': ''.join(chr(i) for i in tiff_filename)[:-1],
               'images_name_fmt': ''.join(chr(i) for i in tiff_filefmt)[:-1],
               'first_image_number': tiff_filenumber,
-              'angle_offset': str(hhm.angle_offset.value),
-              'trajectory_name': hhm.trajectory_name.value,
-              'element': curr_traj.elem.value,
-              'edge': curr_traj.edge.value,
-              'e0': curr_traj.e0.value}
+              'angle_offset': str(hhm.angle_offset.get()),
+              'trajectory_name': hhm.trajectory_name.get(),
+              'element': curr_traj.elem.get(),
+              'edge': curr_traj.edge.get(),
+              'e0': curr_traj.e0.get()}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
-                md['{} offset'.format(flyer.name)] = flyer.offset.value
+                md['{} offset'.format(flyer.name)] = flyer.offset.get()
 
         md.update(**metadata)
         yield from bps.open_run(md=md)
@@ -237,54 +237,54 @@ def execute_xia_trajectory(name, **metadata):
     def inner():
         # Setting the name of the file
         xia1.netcdf_filename.put(name)
-        next_file_number = xia1.netcdf_filenumber_rb.value
+        next_file_number = xia1.netcdf_filenumber_rb.get()
 
         xia_rois = {}
-        max_energy = xia1.mca_max_energy.value
+        max_energy = xia1.mca_max_energy.get()
         for mca in xia1.mcas:
             if mca.kind & Kind.normal:
                 for roi_number in range(12):
-                    # if not (eval('xia1.{}.roi{}.low.value'.format(mca, roi)) < 0 or eval('xia1.{}.roi{}.high.value'.format(mca, roi)) < 0):
+                    # if not (eval('xia1.{}.roi{}.low.get()'.format(mca, roi)) < 0 or eval('xia1.{}.roi{}.high.get()'.format(mca, roi)) < 0):
                     roi = getattr(mca, f'roi{roi_number}')
-                    if not roi.low.value < 0 or roi.high.value < 0:
-                        # xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.value'.format(mca, roi)) * max_energy / 2048
-                        # xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.value'.format(mca, roi)) * max_energy / 2048
-                        xia_rois[roi.high.name] = roi.high.value * max_energy / 2048
-                        xia_rois[roi.low.name] = roi.low.value * max_energy / 2048
+                    if not roi.low.get() < 0 or roi.high.get() < 0:
+                        # xia_rois[eval('xia1.{}.roi{}.high.name'.format(mca, roi))] = eval('xia1.{}.roi{}.high.get()'.format(mca, roi)) * max_energy / 2048
+                        # xia_rois[eval('xia1.{}.roi{}.low.name'.format(mca, roi))] = eval('xia1.{}.roi{}.low.get()'.format(mca, roi)) * max_energy / 2048
+                        xia_rois[roi.high.name] = roi.high.get() * max_energy / 2048
+                        xia_rois[roi.low.name] = roi.low.get() * max_energy / 2048
 
         interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}.{RE.md['cycle']}.{RE.md['PROPOSAL']}/{name}.txt"
-        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+        curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.get()))
         try:
-            full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+            full_element_name = getattr(elements, curr_traj.elem.get()).name.capitalize()
         except:
-            full_element_name = curr_traj.elem.value
+            full_element_name = curr_traj.elem.get()
         md = {'plan_args': {},
               'plan_name': 'execute_xia_trajectory',
               'experiment': 'fluorescence_sdd',
               'name': name,
               'interp_filename': interp_fn,
-              'xia_max_energy': xia1.mca_max_energy.value,
+              'xia_max_energy': xia1.mca_max_energy.get(),
               'xia_filename': '{}_{:03}.nc'.format(name, next_file_number),
               'xia_rois': xia_rois,
-              'angle_offset': str(hhm.angle_offset.value),
-              'trajectory_name': hhm.trajectory_name.value,
-              'element': curr_traj.elem.value,
+              'angle_offset': str(hhm.angle_offset.get()),
+              'trajectory_name': hhm.trajectory_name.get(),
+              'element': curr_traj.elem.get(),
               'element_full': full_element_name,
-              'edge': curr_traj.edge.value,
-              'e0': curr_traj.e0.value}
+              'edge': curr_traj.edge.get(),
+              'e0': curr_traj.e0.get()}
         for flyer in flyers:
             if hasattr(flyer, 'offset'):
-                md['{} offset'.format(flyer.name)] = flyer.offset.value
+                md['{} offset'.format(flyer.name)] = flyer.offset.get()
         md.update(**metadata)
         yield from bps.open_run(md=md)
 
         # TODO Replace this with actual status object logic.
         yield from bps.clear_checkpoint()
 
-        fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
+        fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.get()))
         fname = fname[0:len(fname) - 1]
         while (fname != name):
-            fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.value))
+            fname = ''.join(chr(i) for i in list(xia1.netcdf_filename_rb.get()))
             fname = name[0:len(fname) - 1]
             yield from bps.sleep(.05)
 
@@ -335,7 +335,7 @@ def execute_xia_trajectory(name, **metadata):
     def final_plan():
         yield from bps.abs_set(hhm.trajectory_running, 0, wait=True)
         #        yield from xia1.stop_scan()
-        while xia1.capt_start_stop.value:
+        while xia1.capt_start_stop.get():
             pass
         print('Stopped XIA')
         for flyer in flyers:
@@ -368,9 +368,9 @@ def execute_loop_trajectory(name, **metadata):
     # flyers = [pba1.adc6, pb9.enc1, pba1.adc1, pba1.adc7]
     def inner():
         md = {'plan_args': {}, 'plan_name': 'execute_loop_trajectory', 'experiment': 'transmission', 'name': name,
-              pba1.adc1.name + ' offset': pba1.adc1.offset.value, pba1.adc6.name + ' offset': pba1.adc6.offset.value,
-              pba2.adc6.name + ' offset': pba2.adc6.offset.value, pba1.adc7.name + ' offset': pba1.adc7.offset.value,
-              'trajectory_name': hhm.trajectory_name.value}
+              pba1.adc1.name + ' offset': pba1.adc1.offset.get(), pba1.adc6.name + ' offset': pba1.adc6.offset.get(),
+              pba2.adc6.name + ' offset': pba2.adc6.offset.get(), pba1.adc7.name + ' offset': pba1.adc7.offset.get(),
+              'trajectory_name': hhm.trajectory_name.get()}
         md.update(**metadata)
         yield from bps.open_run(md=md)
 

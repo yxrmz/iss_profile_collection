@@ -125,8 +125,6 @@ def tune(detectors, motor, start, stop, num, name='', **metadata):
     yield from plan
 
 
-
-
 def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
     
     plan = bp.relative_scan(detectors, motor, rel_start, rel_stop, num)
@@ -228,7 +226,7 @@ def set_gains_plan(*args):
         if type(hs) != bool:
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
-        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.value, val, hs))
+        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.get(), val, hs))
 
 
 def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
@@ -243,7 +241,7 @@ def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
         scan_range = (scan_positions[-1] - scan_positions[0])
         min_threshold = scan_positions[0] + scan_range / 10
         max_threshold = scan_positions[-1] - scan_range / 10
-        plan = bp.list_scan([detector], motor,scan_positions)
+        plan = bp.list_scan([detector], motor, scan_positions.tolist())
         if hasattr(detector, 'kickoff'):
             plan = bpp.fly_during_wrapper(plan, [detector])
         uid = (yield from plan)
@@ -298,11 +296,11 @@ def set_gains_and_offsets_plan(*args):
         if type(hs) != bool:
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
-        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.value, val, hs))
+        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.get(), val, hs))
         if hs:
             hs_str = 'hs'
         else:
             hs_str = 'ln'
-        yield from bps.mv(ic.par.offset, lut_offsets[ic.par.dev_name.value][hs_str][str(val)])
-        print('{}.offset -> {}'.format(ic.par.dev_name.value, lut_offsets[ic.par.dev_name.value][hs_str][str(val)]))
+        yield from bps.mv(ic.par.offset, lut_offsets[ic.par.dev_name.get()][hs_str][str(val)])
+        print('{}.offset -> {}'.format(ic.par.dev_name.get(), lut_offsets[ic.par.dev_name.get()][hs_str][str(val)]))
 

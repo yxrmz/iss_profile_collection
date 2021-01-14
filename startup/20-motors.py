@@ -99,7 +99,11 @@ class HHM(Device):
 
     def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pulses_per_deg = 1/self.main_motor_res.value
+        try:
+            self.pulses_per_deg = 1 / self.main_motor_res.get()
+        except ZeroDivisionError:
+            self.pulses_per_deg = -1
+
         self.enc = enc
         self._preparing = None
         self._starting = None
@@ -150,7 +154,16 @@ class HHM(Device):
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
+# TODO: move to the HHM class definition.
 hhm_z_home = Cpt(EpicsSignal,'XF:08IDA-OP{MC:06}Home-HHMY')
+
+# Try to read it first time to avoid the generic 'object' to be returned
+# as an old value from hhm.trajectory_running._readback.
+hhm.wait_for_connection()
+_ = hhm.trajectory_ready.read()
+_ = hhm.trajectory_running.read()
+
+
 #hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 # hinted also is automatically set as read so no need to set read_attrs
 #hhm.energy.kind = 'hinted'
@@ -211,6 +224,9 @@ class Usermotor(Device):
 usermotor1 = Usermotor('XF:08IDB-OP{Misc-Ax:1', name='usermotor1')
 usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
 usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
+
+usermotor2.wait_for_connection()
+usermotor3.wait_for_connection()
 
 
 class FilterBox(Device):
