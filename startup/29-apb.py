@@ -188,7 +188,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def unstage(self, *args, **kwargs):
         self._datum_counter = None
-        st = self.stream.set(0)
+        # This is done in 63-trajectory_plans_apb.py.
+        # self.stream.put(0)
         super().unstage(*args, **kwargs)
 
     # # Fly-able interface
