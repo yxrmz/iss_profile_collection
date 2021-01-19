@@ -31,8 +31,6 @@ class FlyerAPB:
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
-
-
         self.det.stage()
         # Start apb after encoder pizza-boxes, which will trigger the motor.
         self.det.stream.set(1)
@@ -44,34 +42,24 @@ class FlyerAPB:
         return streaming_st
 
     def complete(self):
+        def callback_motor():
+            # When motor arrives to the position, it should stop streaming on
+            # the detector. That will run 'callback_det' defined below, which
+            # will perform the 'complete' step for all involved detectors.
+            self.det.stream.put(0)
+        self._motor_status.add_callback(callback_motor)
+
         def callback_det(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
-                # print(f'     !!!!! {datetime.now()} callback_det')
+                self.det.complete()
+                for pb in self.pbs:
+                    pb.complete()
                 return True
             else:
                 return False
         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
 
-        def callback_motor():
-            # print(f'     !!!!! {datetime.now()} callback_motor')
-
-            # print('      I am sleeping for 10 seconds')
-            # ttime.sleep(10.0)
-            # print('      Done sleeping for 10 seconds')
-
-            # TODO: see if this 'set' is still needed (also called in self.det.unstage()).
-            # Change it to 'put' to have a blocking call.
-            # self.det.stream.set(0)
-
-            # self.det.stream.put(0)
-
-            self.det.complete()
-
-            for pb in self.pbs:
-                pb.complete()
-
-        self._motor_status.add_callback(callback_motor)
-        return streaming_st & self._motor_status
+        return self._motor_status & streaming_st
 
     def describe_collect(self):
         return_dict = self.det.describe_collect()
@@ -81,46 +69,48 @@ class FlyerAPB:
 
         return return_dict
 
+    def collect(self):
+        def collect_and_unstage_all():
+            for pb in self.pbs:
+                yield from pb.collect()
+            yield from self.det.collect()
+
+            # The .unstage() method resets self._datum_counter, which is needed
+            # by .collect(), so calling .unstage() afteer .collect().
+            self.det.unstage()
+            for pb in self.pbs:
+                pb.unstage()
+
+        return (yield from collect_and_unstage_all())
+
     def collect_asset_docs(self):
         yield from self.det.collect_asset_docs()
         for pb in self.pbs:
             yield from pb.collect_asset_docs()
 
-    def collect(self):
-        self.det.unstage()
-        for pb in self.pbs:
-            pb.unstage()
-
-        def collect_all():
-            for pb in self.pbs:
-                yield from pb.collect()
-            yield from self.det.collect()
-        # print(f'collect is being returned ({ttime.ctime(ttime.time())})')
-        return collect_all()
 
 flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
-
 
 def execute_trajectory_apb(name, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
     interp_fn = validate_file_exists(interp_fn)
     print(f'Storing data at {interp_fn}')
-    curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
+    curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.get()))
     try:
-        full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
+        full_element_name = getattr(elements, curr_traj.elem.get()).name.capitalize()
     except:
-        full_element_name = curr_traj.elem.value
+        full_element_name = curr_traj.elem.get()
     md = {'plan_args': {},
           'plan_name': 'execute_trajectory_apb',
           'experiment': 'fly_energy_scan_apb',
           'name': name,
           'interp_filename': interp_fn,
-          'angle_offset': str(hhm.angle_offset.value),
-          'trajectory_name': hhm.trajectory_name.value,
-          'element': curr_traj.elem.value,
+          'angle_offset': str(hhm.angle_offset.get()),
+          'trajectory_name': hhm.trajectory_name.get(),
+          'element': curr_traj.elem.get(),
           'element_full': full_element_name,
-          'edge': curr_traj.edge.value,
-          'e0': curr_traj.e0.value,
+          'edge': curr_traj.edge.get(),
+          'e0': curr_traj.e0.get(),
           'pulses_per_degree': hhm.pulses_per_deg,
           }
     for indx in range(8):

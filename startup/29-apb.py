@@ -81,6 +81,8 @@ class AnalogPizzaBox(Device):
 
 
 apb = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="apb")
+apb.wait_for_connection(timeout=10)
+
 
 class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
@@ -136,6 +138,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
 
 apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")
+apb_ave.wait_for_connection(timeout=10)
 
 
 class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
@@ -178,7 +181,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def trigger(self):
         def callback(value, old_value, **kwargs):
-            print(f'{ttime.time()} {old_value} ---> {value}')
+            # print(f'{ttime.time()} {old_value} ---> {value}')
             if self._acquiring and int(round(old_value)) == 1 and int(round(value)) == 0:
                 self._acquiring = False
                 return True
@@ -193,6 +196,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     def unstage(self, *args, **kwargs):
         self._datum_counter = None
         # st = self.stream.set(0)
+
+
         super().unstage(*args, **kwargs)
 
     # # Fly-able interface
@@ -282,6 +287,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
 
 apb_stream = AnalogPizzaBoxStream(prefix="XF:08IDB-CT{PBA:1}:", name="apb_stream")
+apb_stream.wait_for_connection(timeout=10)
+_ = apb_stream.streaming.read()
 
 apb.amp_ch1 = i0_amp
 apb.amp_ch2 = it_amp
@@ -335,7 +342,11 @@ class APBBinFileHandler(HandlerBase):
         raw_data = raw_data.reshape((raw_data.size // num_columns, num_columns))
 
         derived_data = np.zeros((raw_data.shape[0], raw_data.shape[1] - 1))
-        derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
+        deriv​
+200
+​
+201
+  ed_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
         for i in range(num_columns - 2):
             derived_data[:, i+1] = raw_data[:, i] #((raw_data[:, i] ) - Offsets[i]) / Gains[i]
 
@@ -343,6 +354,7 @@ class APBBinFileHandler(HandlerBase):
         self.raw_data = raw_data
 
     def __call__(self):
+        #print(f'Returning {self.df}')
         return self.df
 
 
