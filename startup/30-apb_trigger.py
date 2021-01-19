@@ -148,6 +148,81 @@ class AnalogPizzaBoxTrigger(Device):
 apb_trigger = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:1:", name="apb_trigger")
 
 
+class APBTriggerFileHandler(HandlerBase):
+    "Read APB trigger *.bin files"
+    def __init__(self, fpath):
+        # It's a text config file, which we don't store in the resources yet, parsing for now
 
+        raw_data = np.fromfile(fpath, dtype=np.int)
+'''
+        columns = ['timestamp', 'i0', 'it', 'ir', 'iff', 'aux1', 'aux2', 'aux3', 'aux4']
+        num_columns = len(columns) + 1  # TODO: figure out why 1
+        raw_data = raw_data.reshape((raw_data.size // num_columns, num_columns))
+
+        derived_data = np.zeros((raw_data.shape[0], raw_data.shape[1] - 1))
+        derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
+        for i in range(num_columns - 2):
+            derived_data[:, i+1] = raw_data[:, i] #((raw_data[:, i] ) - Offsets[i]) / Gains[i]
+
+        self.df = pd.DataFrame(data=derived_data, columns=columns)
+        self.raw_data = raw_data
+'''        
+# Each data point in the binary file is made up of 3 "int" numbers.
+# The first number is the transition type where 0 means a transition
+# from 1->0 and a 1 is a transition from 0->1.
+# The second number is the epoch time in seconds.
+# The third number is the fractional seconds which comes from counting 
+# pulses from the recovered system clock (124.92 MHz)
+
+
+''' 
+X = np.fromfile("Pulse1Stream.bin",dtype=int)
+print(len(X))
+
+CH1 = []
+T = []
+TS = []
+TN = []
+
+N = int(len(X)/3)
+
+for i in range(0,N):
+    CH1.append(int(X[i*3]))
+    #Combine the two timestamp entries to form the transition time stamp
+    T.append(float(X[i*3+1]) + float(X[i*3+2])/124920000.0 )
+    TS.append(float(X[i*3+1]))
+    #Dividing by 8.00512327 converts the system clock tick count to nanoseconds.
+    TN.append(float(X[i*3+2])/8.00512327)
+              
+T = np.array(T)
+# Subtract the first timestamp from all other timestamps to make timestamp 
+# array relative to start time.
+T = np.subtract(T,T[0])
+
+CH = []
+TT = []
+# Convert the transition times to a pulser output for viewing in the plot
+for i in range(0,len(CH1)):
+    if CH1[i]==1:
+        CH.append(0)
+        CH.append(1)
+    else:
+        CH.append(1)
+        CH.append(0)
+    TT.append(T[i])
+    TT.append(T[i])
+    
+'''
+        
+
+    def __call__(self):
+        #print(f'Returning {self.df}')
+        return self.df
+
+
+
+
+db.reg.register_handler('APB_TRIGGER',
+                        APBTriggerFileHandler, overwrite=True)
 
 
