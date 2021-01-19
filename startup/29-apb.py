@@ -342,11 +342,7 @@ class APBBinFileHandler(HandlerBase):
         raw_data = raw_data.reshape((raw_data.size // num_columns, num_columns))
 
         derived_data = np.zeros((raw_data.shape[0], raw_data.shape[1] - 1))
-        deriv​
-200
-​
-201
-  ed_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
+        derived_data[:, 0] = raw_data[:, -2] + raw_data[:, -1]  * 8.0051232 * 1e-9  # Unix timestamp with nanoseconds
         for i in range(num_columns - 2):
             derived_data[:, i+1] = raw_data[:, i] #((raw_data[:, i] ) - Offsets[i]) / Gains[i]
 
