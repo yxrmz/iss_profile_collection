@@ -7,7 +7,7 @@ from ophyd.areadetector.cam import PilatusDetectorCam
 from ophyd.areadetector.detectors import PilatusDetector
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector import TIFFPlugin
-
+from ophyd.sim import NullStatus
 from nslsii.ad33 import StatsPluginV33
 from nslsii.ad33 import SingleTriggerV33
 
@@ -67,10 +67,23 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
 
     over1 = Cpt(OverlayPlugin, 'Over1:')
 
+    readout = 0.0025 # seconds
+
     def set_primary_roi(self, num):
         st = f'stats{num}'
         self.read_attrs = [st, 'tiff']
         getattr(self, st).kind = 'hinted'
+
+    def set_exposure_time(self, exp_t):
+        self.cam.acquire_time.put(exp_t)
+        self.cam.acquire_period.put(exp_t + self.readout)
+
+    def set_num_images(self, num):
+        self.cam.num_images.put(num)
+
+    def det_next_file(self, n):
+        self.cam.file_number.put(n)
+
 
 
 pil100k = Pilatus("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
@@ -88,33 +101,119 @@ pil100kroi3 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats3:Total_RBV', name='pil100
 pil100kroi4 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats4:Total_RBV', name='pil100kroi4')
 
 
-def det_exposure_time(exp_t, meas_t=1):
-    pil100k.cam.acquire_time.put(exp_t)
-    pil100k.cam.acquire_period.put(exp_t + 0.002)
-    pil100k.cam.num_images.put(int(meas_t / exp_t))
 
 
-def det_next_file(n):
-    pil100k.cam.file_number.put(n)
+class PilatusStream(Pilatus):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._acquire = None
+        # self._datum_counter = None
 
 
-class FakeDetector(Device):
-    acq_time = Cpt(Signal, value=10)
 
-    _default_configuration_attrs = ('acq_time',)
-    _default_read_attrs = ()
+
+    def stage(self, *args, **kwargs):
+        super().stage(*args, **kwargs)
+        # self.set_exposure_time(EXPOSURE_TIME)
+        self.calc_num_of_points()
+        self.set_num_images(self.num_points)
+
+        self.cam.trigger_mode.put(3)
+        # self._datum_counter = itertools.count()
+        # self.cam.acquire.put(1)
+
 
     def trigger(self):
-        st = self.st = DeviceStatus(self)
+        def callback(value, old_value, **kwargs):
+            # print(f'{ttime.time()} {old_value} ---> {value}')
+            if self._acquire and int(round(old_value)) == 1 and int(round(value)) == 0:
+                self._acquire = False
+                return True
+            else:
+                self._acquire = True
+                return False
 
-        from threading import Timer
-
-        self.t = Timer(self.acq_time.get(), st._finished)
-        self.t.start()
-        return st
+        status = SubscriptionStatus(self.acquire, callback)
+        self.acquire.put(1)
+        return status
 
 
-fd = FakeDetector(name='fd')
+
+    def unstage(self, *args, **kwargs):
+        # self._datum_counter = None
+        # st = self.stream.set(0)
+        super().unstage(*args, **kwargs)
+
+
+
+    def complete(self, *args, **kwargs):
+        # def callback_saving(value, old_value, **kwargs):
+        #     # print(f'     !!!!! {datetime.now()} callback_saving\n{value} --> {old_value}')
+        #     if int(round(old_value)) == 1 and int(round(value)) == 0:
+        #         # print(f'     !!!!! {datetime.now()} callback_saving')
+        #         return True
+        #     else:
+        #         return False
+        # filebin_st = SubscriptionStatus(self.filebin_status, callback_saving)
+        # filetxt_st = SubscriptionStatus(self.filetxt_status, callback_saving)
+
+        # self._datum_ids = []
+        # datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
+        # datum = {'resource': self._resource_uid,
+        #          'datum_kwargs': {},
+        #          'datum_id': datum_id}
+        # self._asset_docs_cache.append(('datum', datum))
+        # self._datum_ids.append(datum_id)
+        return NullStatus()
+
+
+
+
+
+
+
+
+
+
+    def calc_num_of_points(self):
+        tr = trajectory_manager(hhm)
+        info = tr.read_info(silent=True)
+        lut = str(int(hhm.lut_number_rbv.get()))
+        traj_duration = int(info[lut]['size']) / 16000
+
+        acq_rate = 1/self.cam.acquire_period.get()
+
+        acq_num_points = traj_duration * acq_rate * 1000 * 1.3
+        self.num_points = int(round(acq_num_points, ndigits=-3))
+
+
+
+
+pil100k_stream = PilatusStream("XF:08IDB-ES{Det:PIL1}:", name="pil100k")
+
+
+
+
+
+
+# class FakeDetector(Device):
+#     acq_time = Cpt(Signal, value=10)
+#
+#     _default_configuration_attrs = ('acq_time',)
+#     _default_read_attrs = ()
+#
+#     def trigger(self):
+#         st = self.st = DeviceStatus(self)
+#
+#         from threading import Timer
+#
+#         self.t = Timer(self.acq_time.get(), st._finished)
+#         self.t.start()
+#         return st
+#
+#
+# fd = FakeDetector(name='fd')
 
 pil100k.stats1.kind = 'hinted'
 pil100k.stats1.total.kind = 'hinted'

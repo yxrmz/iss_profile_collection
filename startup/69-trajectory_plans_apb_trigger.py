@@ -5,7 +5,7 @@ from ophyd.status import SubscriptionStatus
 
 
 class FlyerAPBwithTrigger:
-    def __init__(self, det, pbs, motor, trigger):
+    def __init__(self, det, pbs, motor, trigger, fancy_dets):
         self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
         self.parent = None
         self.det = det
@@ -33,7 +33,6 @@ class FlyerAPBwithTrigger:
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
         self.det.stage()
-        # Start apb after encoder pizza-boxes, which will trigger the motor.
         self.det.stream.set(1)
         self.trigger.stage()
 
@@ -103,7 +102,9 @@ class FlyerAPBwithTrigger:
         # print(f'collect is being returned ({ttime.ctime(ttime.time())})')
         return collect_all()
 
-flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger = apb_trigger)
+flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm,
+                                        trigger=apb_trigger, fancy_dets=[pil100k_stream])
+# flyer_apb_trigger = FlyerAPBwithTrigger(det=, pbs=[pb9.enc1], motor=hhm, trigger = apb_trigger)
 
 
 def execute_trajectory_apb_trigger(name, **metadata):
