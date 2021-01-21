@@ -249,60 +249,112 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     # channel7 = C(Xspress3Channel, 'C7_', channel_num=7)
     # channel8 = C(Xspress3Channel, 'C8_', channel_num=8)
 
-
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
-# TODO: do not put on startup or do it conditionally, if on beamline.
-xs.channel2.vis_enabled.put(1)
-xs.channel3.vis_enabled.put(1)
-xs.total_points.put(1)
 
-# This is necessary for when the ioc restarts
-# we have to trigger one image for the hdf5 plugin to work correctly
-# else, we get file writing errors
-xs.hdf5.warmup()
+def initialize_Xspress3(xs):
+    # TODO: do not put on startup or do it conditionally, if on beamline.
+    xs.channel2.vis_enabled.put(1)
+    xs.channel3.vis_enabled.put(1)
+    xs.total_points.put(1)
 
-# Hints:
-for n in [1, 2]:
-    getattr(xs, f'channel{n}').rois.roi01.value.kind = 'hinted'
+    # This is necessary for when the ioc restarts
+    # we have to trigger one image for the hdf5 plugin to work correctly
+    # else, we get file writing errors
+    xs.hdf5.warmup()
 
-xs.settings.configuration_attrs = ['acquire_period',
-                                   'acquire_time',
-                                   'gain',
-                                   'image_mode',
-                                   'manufacturer',
-                                   'model',
-                                   'num_exposures',
-                                   'num_images',
-                                   'temperature',
-                                   'temperature_actual',
-                                   'trigger_mode',
-                                   'config_path',
-                                   'config_save_path',
-                                   'invert_f0',
-                                   'invert_veto',
-                                   'xsp_name',
-                                   'num_channels',
-                                   'num_frames_config',
-                                   'run_flags',
-                                   'trigger_signal']
+    # Hints:
+    for n in [1, 2]:
+        getattr(xs, f'channel{n}').rois.roi01.value.kind = 'hinted'
 
-for n, d in xs.channels.items():
-    roi_names = ['roi{:02}'.format(j) for j in [1, 2, 3, 4]]
-    d.rois.read_attrs = roi_names
-    d.rois.configuration_attrs = roi_names
-    for roi_n in roi_names:
-        getattr(d.rois, roi_n).value_sum.kind = 'omitted'
+    xs.settings.configuration_attrs = ['acquire_period',
+                                       'acquire_time',
+                                       'gain',
+                                       'image_mode',
+                                       'manufacturer',
+                                       'model',
+                                       'num_exposures',
+                                       'num_images',
+                                       'temperature',
+                                       'temperature_actual',
+                                       'trigger_mode',
+                                       'config_path',
+                                       'config_save_path',
+                                       'invert_f0',
+                                       'invert_veto',
+                                       'xsp_name',
+                                       'num_channels',
+                                       'num_frames_config',
+                                       'run_flags',
+                                       'trigger_signal']
 
+    for n, d in xs.channels.items():
+        roi_names = ['roi{:02}'.format(j) for j in [1, 2, 3, 4]]
+        d.rois.read_attrs = roi_names
+        d.rois.configuration_attrs = roi_names
+        for roi_n in roi_names:
+            getattr(d.rois, roi_n).value_sum.kind = 'omitted'
+
+initialize_Xspress3(xs)
 
 
 def xs_count(acq_time:float = 1, num_frames:int =1):
 
     yield from bps.mv(xs.settings.erase, 0)
     yield from bp.count([xs], acq_time)
-##################################################################
 
 
 
+
+class ISSXspress3DetectorStream(ISSXspress3Detector):
+
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+
+
+    def stage(self, acq_rate, traj_time, *args, **kwargs):
+        super().stage(*args, **kwargs)
+        self.set_expected_number_of_points(acq_rate, traj_time)
+        self.hdf5.file_write_mode.put(2) # put it to Stream
+        self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
+
+        self.hdf5.capture.put(1)  # start capturing
+        self.settings.acquire.put(1) # start recording data
+
+
+    # def unstage(self, *args, **kwargs):
+    #     super().unstage(*args, **kwargs)
+
+
+    # def
+
+    def set_expected_number_of_points(self, acq_rate, traj_time):
+        self._num_points = int(acq_rate * traj_time * 1.3)
+        self.settings.num_images.put(self._num_points)
+
+
+
+
+
+xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream')
+initialize_Xspress3(xs_stream)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+#
 # class XSFlyer:
 #     def __init__(self, *, pb, di, motor_ts, pb_triggers, xs_dets, an_dets, motor):
 #         """
@@ -321,8 +373,7 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 #             a list of analog detectors to be triggered
 #         motor : a monochromator motor
 #         """
-#         self.name = f'{pb.name}-{"-".join([xs_det.name for xs_det in xs_dets])}-' \
-#             f'{"-".join([an_det.name for an_det in an_dets])}-{motor.name}-{self.__class__.__name__}'
+#         self.name = f'{pb.name}-{"-".join([xs_det.name for xs_det in xs_dets])}-{"-".join([an_det.name for an_det in an_dets])}-{motor.name}-{self.__class__.__name__}'
 #         self.pb = pb
 #         self.di = di
 #         self.motor_ts = motor_ts
@@ -417,8 +468,7 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 #                 xs_det.settings.acquire.put(0)
 #                 # TODO: check what happens when the number of collected frames is the same as expected.
 #                 # There is a chance the stop saving button is pressed twice.
-#                 xs_det.hdf5.capture.put(
-#                     0)  # this is to save the file is the number of collected frames is less than expected
+#                 xs_det.hdf5.capture.put(0)  # this is to save the file is the number of collected frames is less than expected
 #                 # "Acquisition Controls and Status" (top left pane) -->
 #                 # "Trigger" selection button 'Internal'
 #                 xs_det.settings.trigger_mode.put('Internal')
@@ -478,7 +528,7 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 #                                                            'shape': [xs_det.settings.num_images.get(),
 #                                                                      xs_det.hdf5.array_size.height.get(),
 #                                                                      xs_det.hdf5.array_size.width.get()],
-#                                                            'external': 'FILESTORE:'}}
+#                                                            'external': 'FILESTORE:'}   }
 #
 #         # analog pizza-boxes:
 #         for an_det in self.an_dets:
@@ -493,7 +543,7 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 #     def collect_asset_docs(self):
 #         for xs_det in self.xs_dets:
 #             yield from xs_det.collect_asset_docs()
-#         # TODO: Investigate below
+#         #TODO: Investigate below
 #         # for an_det in self.an_dets:
 #         #     yield from an_det.collect_asset_docs()
 #
@@ -527,9 +577,9 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 #         for pb_trigger, xs_det in zip(self.pb_triggers, self.xs_dets):
 #             units = getattr(self.pb, pb_trigger).unit_sel.get(as_string=True)
 #             if units == 'us':
-#                 multip = 1e-6  # micro-seconds
+#                  multip = 1e-6  # micro-seconds
 #             elif units == 'ms':
-#                 multip = 1e-3  # milli-seconds
+#                  multip = 1e-3  # milli-seconds
 #             else:
 #                 raise RuntimeError(f'The units "{units}" are not supported yet.')
 #             acq_num_points = traj_duration / (getattr(self.pb, pb_trigger).period_sp.get() * multip) * 1.3
@@ -538,7 +588,7 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 #             # WARNING! This is needed only for tests, should not be used for production!
 #             # acq_num_points = 5000
 #
-#             xs_max_num_images = 16384  # TODO: get from xspress3 EPICS PV
+#             xs_max_num_images = 16384 # TODO: get from xspress3 EPICS PV
 #             if acq_num_points > xs_max_num_images:
 #                 raise ValueError(f'The calculated number of points {acq_num_points} is greater than maximum allowed '
 #                                  f'number of frames by Xspress3 {xs_max_num_images}')

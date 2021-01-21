@@ -154,9 +154,9 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self.num_points = None
 
     # Step-scan interface
-    def stage(self, *args, **kwargs):
+    def stage(self, traj_duration, *args, **kwargs):
         file_uid = new_uid()
-        self.calc_num_points()
+        self.calc_num_points(traj_duration)
         self.stream_samples.put(self.num_points)
         #self.filename_target = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         # Note: temporary static file name in GPFS, due to the limitation of 40 symbols in the filename field.
@@ -210,7 +210,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def complete(self, *args, **kwargs):
         def callback_saving(value, old_value, **kwargs):
-            print(f'     !!!!! {datetime.now()} callback_saving\n{value} --> {old_value}')
+            print(f'     !!!!! {datetime.now()} callback_saving {value} --> {old_value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 print(f'     !!!!! {datetime.now()} callback_saving')
                 return True
@@ -277,11 +277,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         for item in items:
             yield item
 
-    def calc_num_points(self):
-        tr = trajectory_manager(hhm)
-        info = tr.read_info(silent=True)
-        lut = str(int(hhm.lut_number_rbv.get()))
-        traj_duration = int(info[lut]['size']) / 16000
+    def calc_num_points(self, traj_duration):
+        # traj_duration = get_traj_duration()
         acq_num_points = traj_duration * self.acq_rate.get() * 1000 * 1.3
         self.num_points = int(round(acq_num_points, ndigits=-3))
 
@@ -313,6 +310,9 @@ apb.amp_ch5 = None
 apb.amp_ch6 = None
 apb.amp_ch7 = None
 apb.amp_ch8 = None
+
+
+
 
 
 

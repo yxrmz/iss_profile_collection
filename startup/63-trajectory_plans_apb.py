@@ -13,7 +13,7 @@ class FlyerAPB:
         self.motor = motor
         self._motor_status = None
 
-    def kickoff(self, *args, **kwargs):
+    def kickoff(self, traj_duration=None, *args, **kwargs):
         # set_and_wait(self.det.trig_source, 1)
         # TODO: handle it on the plan level
         # set_and_wait(self.motor, 'prepare')
@@ -31,7 +31,10 @@ class FlyerAPB:
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
-        self.det.stage()
+        if traj_duration is None:
+            traj_duration = get_traj_duration()
+
+        self.det.stage(traj_duration)
         # Start apb after encoder pizza-boxes, which will trigger the motor.
         self.det.stream.set(1)
 
@@ -90,6 +93,15 @@ class FlyerAPB:
 
 
 flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
+
+
+### aux function
+def get_traj_duration():
+    tr = trajectory_manager(hhm)
+    info = tr.read_info(silent=True)
+    lut = str(int(hhm.lut_number_rbv.get()))
+    return int(info[lut]['size']) / 16000
+
 
 def execute_trajectory_apb(name, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
