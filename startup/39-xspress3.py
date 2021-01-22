@@ -113,6 +113,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
                write_path_template='/nsls2/xf08id/data/xspress3/%Y/%m/%d/',
                )
 
+
     def __init__(self, prefix, *, configuration_attrs=None, read_attrs=None,
                  **kwargs):
         if configuration_attrs is None:
@@ -335,6 +336,28 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                                             # 'filename': f'{self.hdf5.full_file_name.get()}',
                                              'external': 'FILESTORE:'}}}
         return return_dict
+
+    def complete(self):
+        st = super().complete()
+        # def callback_saving(value, old_value, **kwargs):
+        #     if int(round(old_value)) == 1 and int(round(value)) == 0:
+        #
+        #         self.settings.acquire.put(0)
+        #         return True
+        #     else:
+        #         return False
+        #
+        # filebin_st = SubscriptionStatus(self.filebin_status, callback_saving)
+        # # filetxt_st = SubscriptionStatus(self.filetxt_status, callback_saving)
+        #
+        # self._datum_ids = []
+        # datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
+        # datum = {'resource': self._resource_uid,
+        #          'datum_kwargs': {},
+        #          'datum_id': datum_id}
+        # self._asset_docs_cache.append(('datum', datum))
+        # self._datum_ids.append(datum_id)
+        return filebin_st & st
 
 
 

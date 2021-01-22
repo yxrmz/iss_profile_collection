@@ -87,6 +87,8 @@ class FlyerXS(FlyerAPBwithTrigger):
         yield from self.xs_det.collect()
 
 
+
+
 flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
 flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
 
