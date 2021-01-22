@@ -69,6 +69,104 @@ def fly_scan_over_spiral(name: str, comment: str, n_cycles: int = 1, delay: floa
 
     yield from bps.mv(motor_x,x_center,motor_y,y_center)
 
+
+
+def fly_scan_with_apb_trigger(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
+    '''
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+    delay : float (default = 0)
+        Delay in seconds between scans
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+    '''
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    uids = []
+    if autofoil:
+        current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+        try:
+            yield from set_reference_foil(current_element)
+        except:
+            pass
+
+    for indx in range(int(n_cycles)):
+        name_n = '{} {:04d}'.format(name, indx + 1)
+        yield from prep_traj_plan()
+        print(f'Trajectory preparation complete at {print_now()}')
+        yield from shutter.open_plan()
+        uid = (yield from execute_trajectory_apb_trigger(name_n, comment=comment))
+        uids.append(uid)
+        yield from shutter.close_plan()
+        print(f'Trajectory is complete {print_now()}')
+        yield from bps.sleep(float(delay))
+    return uids
+
+
+
+
+def fly_scan_with_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
+    '''
+    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
+    Parameters
+    ----------
+    name : str
+        Name of the scan - it will be stored in the metadata
+    n_cycles : int (default = 1)
+        Number of times to run the scan automatically
+    delay : float (default = 0)
+        Delay in seconds between scans
+    Returns
+    -------
+    uid : list(str)
+        Lists containing the unique ids of the scans
+
+    '''
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    uids = []
+    if autofoil:
+        current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
+        try:
+            yield from set_reference_foil(current_element)
+        except:
+            pass
+
+    for indx in range(int(n_cycles)):
+        name_n = '{} {:04d}'.format(name, indx + 1)
+        yield from prep_traj_plan()
+        print(f'Trajectory preparation complete at {print_now()}')
+        yield from shutter.open_plan()
+        uid = (yield from execute_trajectory_xs(name_n, comment=comment))
+        uids.append(uid)
+        yield from shutter.close_plan()
+        print(f'Trajectory is complete {print_now()}')
+        yield from bps.sleep(float(delay))
+    return uids
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################
+
 def fly_scan_with_sdd(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
     """
     Trajectory Scan XIA - Runs the monochromator along the trajectory that is previously loaded in the controller and get data from the XIA N times
@@ -213,84 +311,6 @@ def fly_scan_with_camera(name: str, comment: str, n_cycles: int = 1, delay: floa
 
 
 #WIP tests of teh trigger
-
-def fly_scan_with_apb_trigger(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
-    '''
-    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
-    Parameters
-    ----------
-    name : str
-        Name of the scan - it will be stored in the metadata
-    n_cycles : int (default = 1)
-        Number of times to run the scan automatically
-    delay : float (default = 0)
-        Delay in seconds between scans
-    Returns
-    -------
-    uid : list(str)
-        Lists containing the unique ids of the scans
-
-    '''
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
-    uids = []
-    if autofoil:
-        current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
-        try:
-            yield from set_reference_foil(current_element)
-        except:
-            pass
-
-    for indx in range(int(n_cycles)):
-        name_n = '{} {:04d}'.format(name, indx + 1)
-        yield from prep_traj_plan()
-        print(f'Trajectory preparation complete at {print_now()}')
-        yield from shutter.open_plan()
-        uid = (yield from execute_trajectory_apb_trigger(name_n, comment=comment))
-        uids.append(uid)
-        yield from shutter.close_plan()
-        print(f'Trajectory is complete {print_now()}')
-        yield from bps.sleep(float(delay))
-    return uids
-
-
-
-def fly_scan_with_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
-    '''
-    Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
-    Parameters
-    ----------
-    name : str
-        Name of the scan - it will be stored in the metadata
-    n_cycles : int (default = 1)
-        Number of times to run the scan automatically
-    delay : float (default = 0)
-        Delay in seconds between scans
-    Returns
-    -------
-    uid : list(str)
-        Lists containing the unique ids of the scans
-
-    '''
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
-    uids = []
-    if autofoil:
-        current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
-        try:
-            yield from set_reference_foil(current_element)
-        except:
-            pass
-
-    for indx in range(int(n_cycles)):
-        name_n = '{} {:04d}'.format(name, indx + 1)
-        yield from prep_traj_plan()
-        print(f'Trajectory preparation complete at {print_now()}')
-        yield from shutter.open_plan()
-        uid = (yield from execute_trajectory_xs(name_n, comment=comment))
-        uids.append(uid)
-        yield from shutter.close_plan()
-        print(f'Trajectory is complete {print_now()}')
-        yield from bps.sleep(float(delay))
-    return uids
 
 
 

@@ -87,6 +87,9 @@ class FlyerXS(FlyerAPBwithTrigger):
         yield from self.xs_det.collect()
 
 
+flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
+flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
+
 ############################################
     # def describe_collect(self):
     #     return_dict = self.det.describe_collect()
@@ -231,8 +234,7 @@ class FlyerXS(FlyerAPBwithTrigger):
 
 
 
-flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
-flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
+
 
 # flyer_apb_trigger = FlyerAPBwithTrigger(det=, pbs=[pb9.enc1], motor=hhm, trigger = apb_trigger)
 

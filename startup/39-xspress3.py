@@ -308,29 +308,33 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 class ISSXspress3DetectorStream(ISSXspress3Detector):
 
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-
-
     def stage(self, acq_rate, traj_time, *args, **kwargs):
         super().stage(*args, **kwargs)
         self.set_expected_number_of_points(acq_rate, traj_time)
         self.hdf5.file_write_mode.put(2) # put it to Stream
         self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
 
-        self.hdf5.capture.put(1)  # start capturing
+        # note, hdf5 is already capturing at this point
         self.settings.acquire.put(1) # start recording data
 
 
-    # def unstage(self, *args, **kwargs):
-    #     super().unstage(*args, **kwargs)
-
-
-    # def
-
     def set_expected_number_of_points(self, acq_rate, traj_time):
-        self._num_points = int(acq_rate * traj_time * 1.3)
+        self._num_points = int(acq_rate * traj_time * 1.3 *2)
         self.settings.num_images.put(self._num_points)
+        self.hdf5.num_capture.put(self._num_points)
+
+
+    def describe_collect(self):
+        return_dict = {self.name:
+                           {f'{self.name}': {'source': 'XS',
+                                             'dtype': 'array',
+                                             'shape': [self.settings.num_images.get(),
+                                                       #self.settings.array_counter.get()
+                                                       self.hdf5.array_size.height.get(),
+                                                       self.hdf5.array_size.width.get()],
+                                            # 'filename': f'{self.hdf5.full_file_name.get()}',
+                                             'external': 'FILESTORE:'}}}
+        return return_dict
 
 
 
