@@ -252,7 +252,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 
-def initialize_Xspress3(xs):
+def initialize_Xspress3(xs, hdf5_warmup=True):
     # TODO: do not put on startup or do it conditionally, if on beamline.
     xs.channel2.vis_enabled.put(1)
     xs.channel3.vis_enabled.put(1)
@@ -261,7 +261,8 @@ def initialize_Xspress3(xs):
     # This is necessary for when the ioc restarts
     # we have to trigger one image for the hdf5 plugin to work correctly
     # else, we get file writing errors
-    xs.hdf5.warmup()
+    if hdf5_warmup:
+        xs.hdf5.warmup()
 
     # Hints:
     for n in [1, 2]:
@@ -310,19 +311,21 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
 
     def stage(self, acq_rate, traj_time, *args, **kwargs):
-        super().stage(*args, **kwargs)
+        self.hdf5.file_write_mode.put(2) # put it to Stream |||| IS ALREADY STREAMING
         self.set_expected_number_of_points(acq_rate, traj_time)
-        self.hdf5.file_write_mode.put(2) # put it to Stream
         self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
 
+        super().stage(*args, **kwargs)
         # note, hdf5 is already capturing at this point
         self.settings.acquire.put(1) # start recording data
 
 
+
+
     def set_expected_number_of_points(self, acq_rate, traj_time):
-        self._num_points = int(acq_rate * traj_time * 1.3 *2)
+        self._num_points = int(acq_rate * traj_time * 1.3 )
         self.settings.num_images.put(self._num_points)
-        self.hdf5.num_capture.put(self._num_points)
+        # self.hdf5.num_capture.put(self._num_points)
 
 
     def describe_collect(self):
@@ -364,7 +367,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
 
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream')
-initialize_Xspress3(xs_stream)
+initialize_Xspress3(xs_stream, hdf5_warmup=True)
 
 
 
