@@ -312,7 +312,9 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
     def stage(self, acq_rate, traj_time, *args, **kwargs):
         self.hdf5.file_write_mode.put(2) # put it to Stream |||| IS ALREADY STREAMING
+        self.external_trig.put(True)
         self.set_expected_number_of_points(acq_rate, traj_time)
+        self.spectra_per_point.put(1)
         self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
 
         super().stage(*args, **kwargs)
@@ -324,7 +326,10 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
     def set_expected_number_of_points(self, acq_rate, traj_time):
         self._num_points = int(acq_rate * traj_time * 1.3 )
-        self.settings.num_images.put(self._num_points)
+        self.total_points.put(self._num_points)
+
+        # self.settings.num_images.put(self._num_points)
+        # self.settings.num_images.put(self._num_points)
         # self.hdf5.num_capture.put(self._num_points)
 
 
@@ -336,7 +341,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                                                        #self.settings.array_counter.get()
                                                        self.hdf5.array_size.height.get(),
                                                        self.hdf5.array_size.width.get()],
-                                            # 'filename': f'{self.hdf5.full_file_name.get()}',
+                                            'filename': f'{self.hdf5.full_file_name.get()}',
                                              'external': 'FILESTORE:'}}}
         return return_dict
 
