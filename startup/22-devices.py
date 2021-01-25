@@ -371,21 +371,51 @@ class ICAmplifier(Device):
         '''
 
 
-i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',
-                     gain_2='ES-DO}2_8_2', hspeed_bit='ES-DO}2_8_3', bw_10mhz_bit='ES-DO}2_8_4', bw_1mhz_bit='ES-DO}2_8_5',
-                     lnoise='Amp-LN}I0', hspeed='Amp-HS}I0', bwidth='Amp-BW}I0', name='i0_amp')
+i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-I0}GainBit:0-Sel', gain_1='Amp-I0}GainBit:1-Sel',
+                     gain_2='Amp-I0}GainBit:2-Sel', hspeed_bit='Amp-I0}GainMode-Sel', bw_10mhz_bit='Amp-I0}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-I0}1MHzMode-Sel',
+                     lnoise='Amp-I0}LowNoise-Sel', hspeed='Amp-I0}HighSpeed-Sel', bwidth='Amp-I0}Bandwidth-Sel',
+                     name='i0_amp')
 
-it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_9_0', gain_1='ES-DO}2_9_1',
-                     gain_2='ES-DO}2_9_2', hspeed_bit='ES-DO}2_9_3', bw_10mhz_bit='ES-DO}2_9_4', bw_1mhz_bit='ES-DO}2_9_5',
-                     lnoise='Amp-LN}It', hspeed='Amp-HS}It', bwidth='Amp-BW}It', name='it_amp')
+it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-It}GainBit:0-Sel', gain_1='Amp-It}GainBit:1-Sel',
+                     gain_2='Amp-It}GainBit:2-Sel', hspeed_bit='Amp-It}GainMode-Sel', bw_10mhz_bit='Amp-It}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-It}1MHzMode-Sel',
+                     lnoise='Amp-It}LowNoise-Sel', hspeed='Amp-It}HighSpeed-Sel', bwidth='Amp-It}Bandwidth-Sel',
+                     name='it_amp')
 
-ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_10_0', gain_1='ES-DO}2_10_1',
-                     gain_2='ES-DO}2_10_2', hspeed_bit='ES-DO}2_10_3', bw_10mhz_bit='ES-DO}2_10_4', bw_1mhz_bit='ES-DO}2_10_5',
-                     lnoise='Amp-LN}Ir', hspeed='Amp-HS}Ir', bwidth='Amp-BW}Ir', name='ir_amp')
+ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-Ir}GainBit:0-Sel', gain_1='Amp-Ir}GainBit:1-Sel',
+                     gain_2='Amp-Ir}GainBit:2-Sel', hspeed_bit='Amp-Ir}GainMode-Sel', bw_10mhz_bit='Amp-Ir}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-Ir}1MHzMode-Sel',
+                     lnoise='Amp-Ir}LowNoise-Sel', hspeed='Amp-Ir}HighSpeed-Sel', bwidth='Amp-Ir}Bandwidth-Sel',
+                     name='ir_amp')
 
-iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_11_0', gain_1='ES-DO}2_11_1',
-                     gain_2='ES-DO}2_11_2', hspeed_bit='ES-DO}2_11_3', bw_10mhz_bit='ES-DO}2_11_4', bw_1mhz_bit='ES-DO}2_11_5',
-                     lnoise='Amp-LN}If', hspeed='Amp-HS}If', bwidth='Amp-BW}If', name='iff_amp')
+iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-I}GainBit:0-Sel', gain_1='Amp-I}GainBit:1-Sel',
+                     gain_2='Amp-I}GainBit:2-Sel', hspeed_bit='Amp-I}GainMode-Sel', bw_10mhz_bit='Amp-I}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-I}1MHzMode-Sel',
+                     lnoise='Amp-I}LowNoise-Sel', hspeed='Amp-I}HighSpeed-Sel', bwidth='Amp-I}Bandwidth-Sel',
+                     name='iff_amp')
+
+
+
+
+#
+# i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',
+#                      gain_2='ES-DO}2_8_2', hspeed_bit='ES-DO}2_8_3', bw_10mhz_bit='ES-DO}2_8_4', bw_1mhz_bit='ES-DO}2_8_5',
+#                      lnoise='Amp-LN}I0', hspeed='Amp-HS}I0', bwidth='Amp-BW}I0', name='i0_amp')
+#
+# it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_9_0', gain_1='ES-DO}2_9_1',
+#                      gain_2='ES-DO}2_9_2', hspeed_bit='ES-DO}2_9_3', bw_10mhz_bit='ES-DO}2_9_4', bw_1mhz_bit='ES-DO}2_9_5',
+#                      lnoise='Amp-LN}It', hspeed='Amp-HS}It', bwidth='Amp-BW}It', name='it_amp')
+#
+# ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_10_0', gain_1='ES-DO}2_10_1',
+#                      gain_2='ES-DO}2_10_2', hspeed_bit='ES-DO}2_10_3', bw_10mhz_bit='ES-DO}2_10_4', bw_1mhz_bit='ES-DO}2_10_5',
+#                      lnoise='Amp-LN}Ir', hspeed='Amp-HS}Ir', bwidth='Amp-BW}Ir', name='ir_amp')
+#
+# iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_11_0', gain_1='ES-DO}2_11_1',
+#                      gain_2='ES-DO}2_11_2', hspeed_bit='ES-DO}2_11_3', bw_10mhz_bit='ES-DO}2_11_4', bw_1mhz_bit='ES-DO}2_11_5',
+#                      lnoise='Amp-LN}If', hspeed='Amp-HS}If', bwidth='Amp-BW}If', name='iff_amp')
+
+
 
 
 #old pizzabox
