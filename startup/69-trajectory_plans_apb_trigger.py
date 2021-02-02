@@ -22,13 +22,10 @@ class FlyerAPBwithTrigger(FlyerAPB):
 
     def complete(self):
         st_super = super().complete()
-        # st_trig = self.trigger.complete()
         def callback_motor():
             self.trigger.complete()
 
-
         self._motor_status.add_callback(callback_motor)
-        # st_xs = self.xs_det.complete()
         return st_super & self._motor_status #& st_xs
 
     def describe_collect(self):
@@ -66,10 +63,24 @@ class FlyerXS(FlyerAPBwithTrigger):
 
     def complete(self):
         st_super = super().complete()
-        def callback_motor():
-            self.xs_det.complete()
-        self._motor_status.add_callback(callback_motor)
-        return st_super & self._motor_status
+
+        ###
+        # def callback_xs():
+        #     self.xs_det.complete()
+        #
+        # self._motor_status.add_callback(callback_xs)
+        # return st_super & self._motor_status #& st_xs
+        ###
+        def callback_xs(value, old_value, **kwargs):
+            print(f'callback_xs: {old_value} --> {value}')
+            if int(round(old_value)) == 1 and int(round(value)) == 0:
+                self.xs_det.complete()
+                return True
+            else:
+                return False
+
+        saving_st = SubscriptionStatus(self.xs_det.hdf5.capture, callback_xs)
+        return st_super & saving_st
 
     def describe_collect(self):
         dict_super = super().describe_collect()
@@ -79,6 +90,7 @@ class FlyerXS(FlyerAPBwithTrigger):
 
     def collect_asset_docs(self):
         yield from super().collect_asset_docs()
+        print(f'xs_det._asset_docs_cache     : {self.xs_det._asset_docs_cache}')
         yield from self.xs_det.collect_asset_docs()
 
     def collect(self):

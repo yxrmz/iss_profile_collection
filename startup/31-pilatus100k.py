@@ -113,15 +113,21 @@ class PilatusStream(Pilatus):
 
 
 
-    def stage(self, *args, **kwargs):
+    def stage(self, acq_rate, traj_time, *args, **kwargs):
         super().stage(*args, **kwargs)
-        # self.set_exposure_time(EXPOSURE_TIME)
-        self.calc_num_of_points()
-        self.set_num_images(self.num_points)
+        # deal with expected number of points
+        self.set_expected_number_of_points(acq_rate, traj_time)
 
+        # deal with acquire time
+        acquire_period = 1 / acq_rate
+        acquire_time = acquire_period - self.readout
+        self.cam.acquire_period.put(acquire_period)
+        self.cam.acquire_time.put(acquire_time)
+
+        # deal with the trigger
         self.cam.trigger_mode.put(3)
-        # self._datum_counter = itertools.count()
-        # self.cam.acquire.put(1)
+        pil100k.cam.image_mode.put(1)
+
 
 
     def trigger(self):
@@ -134,8 +140,8 @@ class PilatusStream(Pilatus):
                 self._acquire = True
                 return False
 
-        status = SubscriptionStatus(self.acquire, callback)
-        self.acquire.put(1)
+        status = SubscriptionStatus(self.cam.acquire, callback)
+        self.cam.acquire.put(1)
         return status
 
 
@@ -144,10 +150,13 @@ class PilatusStream(Pilatus):
         # self._datum_counter = None
         # st = self.stream.set(0)
         super().unstage(*args, **kwargs)
+        self.cam.trigger_mode.put(0)
+        pil100k.cam.image_mode.put(0)
 
 
 
-    def complete(self, *args, **kwargs):
+
+    # def complete(self, *args, **kwargs):
         # def callback_saving(value, old_value, **kwargs):
         #     # print(f'     !!!!! {datetime.now()} callback_saving\n{value} --> {old_value}')
         #     if int(round(old_value)) == 1 and int(round(value)) == 0:
@@ -165,27 +174,27 @@ class PilatusStream(Pilatus):
         #          'datum_id': datum_id}
         # self._asset_docs_cache.append(('datum', datum))
         # self._datum_ids.append(datum_id)
-        return NullStatus()
+        # return NullStatus()
 
 
 
 
 
 
+    def set_expected_number_of_points(self, acq_rate, traj_time):
+        self.set_num_images(int(acq_rate * traj_time * 1.3 ))
+        self.cam.array_counter.put(0)
 
-
-
-
-    def calc_num_of_points(self):
-        tr = trajectory_manager(hhm)
-        info = tr.read_info(silent=True)
-        lut = str(int(hhm.lut_number_rbv.get()))
-        traj_duration = int(info[lut]['size']) / 16000
-
-        acq_rate = 1/self.cam.acquire_period.get()
-
-        acq_num_points = traj_duration * acq_rate * 1000 * 1.3
-        self.num_points = int(round(acq_num_points, ndigits=-3))
+    # def calc_num_of_points(self):
+    #     tr = trajectory_manager(hhm)
+    #     info = tr.read_info(silent=True)
+    #     lut = str(int(hhm.lut_number_rbv.get()))
+    #     traj_duration = int(info[lut]['size']) / 16000
+    #
+    #     acq_rate = 1/self.cam.acquire_period.get()
+    #
+    #     acq_num_points = traj_duration * acq_rate * 1000 * 1.3
+    #     self.num_points = int(round(acq_num_points, ndigits=-3))
 
 
 

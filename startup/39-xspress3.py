@@ -181,6 +181,8 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
         num_frames = xs.hdf5.num_captured.get()
 
+        print(f'\n!!! num_frames: {num_frames}\n')
+
         for frame_num in range(num_frames):
             datum_id = '{}/{}'.format(self.hdf5._resource_uid, next(self._datum_counter))
             datum = {'resource': self.hdf5._resource_uid,
@@ -222,6 +224,9 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
             data = {self.name: datum_id}
             # TODO: fix the lost precision as pymongo complained about np.float128.
             ts = float(ts)
+
+            print(f'data: {data}\nlen_di_timestamps: {len_di_timestamps}\nlen_datum_ids: {len_di_timestamps}')
+
             yield {'data': data,
                    'timestamps': {key: ts for key in data},
                    'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
@@ -251,6 +256,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     # channel8 = C(Xspress3Channel, 'C8_', channel_num=8)
 
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
+
 
 def initialize_Xspress3(xs, hdf5_warmup=True):
     # TODO: do not put on startup or do it conditionally, if on beamline.
@@ -309,7 +315,6 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 
 class ISSXspress3DetectorStream(ISSXspress3Detector):
 
-
     def stage(self, acq_rate, traj_time, *args, **kwargs):
         self.hdf5.file_write_mode.put(2) # put it to Stream |||| IS ALREADY STREAMING
         self.external_trig.put(True)
@@ -321,16 +326,9 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         # note, hdf5 is already capturing at this point
         self.settings.acquire.put(1) # start recording data
 
-
-
-
     def set_expected_number_of_points(self, acq_rate, traj_time):
-        self._num_points = int(acq_rate * traj_time * 1.3 )
+        self._num_points = int(acq_rate * (traj_time + 1) )
         self.total_points.put(self._num_points)
-
-        # self.settings.num_images.put(self._num_points)
-        # self.settings.num_images.put(self._num_points)
-        # self.hdf5.num_capture.put(self._num_points)
 
 
     def describe_collect(self):
@@ -345,8 +343,14 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                                              'external': 'FILESTORE:'}}}
         return return_dict
 
-    def complete(self):
-        st = super().complete()
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
+
+    # def complete(self):
+    #     st = super().complete()
         # def callback_saving(value, old_value, **kwargs):
         #     if int(round(old_value)) == 1 and int(round(value)) == 0:
         #
@@ -365,7 +369,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         #          'datum_id': datum_id}
         # self._asset_docs_cache.append(('datum', datum))
         # self._datum_ids.append(datum_id)
-        return filebin_st & st
+        # return filebin_st & st
 
 
 
@@ -374,19 +378,32 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream')
 initialize_Xspress3(xs_stream, hdf5_warmup=True)
 
+from itertools import product
+import pandas as pd
+from databroker.assets.handlers import HandlerBase, Xspress3HDF5Handler
 
+class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
+    def __call__(self, *args, frame=None, **kwargs):
+        self._get_dataset()
+        shape = self.dataset.shape
+        if len(shape) != 3:
+            raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
+        num_channels = shape[1]
+        # print(num_channels)
+        chanrois = [f'CHAN{c}ROI{r}' for c, r in product([1, 2, 3, 4], [1, 2, 3, 4])]
+        attrsdf = pd.DataFrame.from_dict(
+            {chanroi: self._file['/entry/instrument/detector/']['NDAttributes'][chanroi] for chanroi in chanrois}
+        )
+        ##print(attrsdf)
+        df = pd.DataFrame(data=self._dataset[frame, :, :].T,
+                          columns=[f'ch_{n+1}' for n in range(num_channels)])
 
+        gggg
+        # return pd.concat([df]+[attrsdf])
+        return df
 
-
-
-
-
-
-
-
-
-
-
+db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
+                        ISSXspress3HDF5Handler, overwrite=True)
 
 #
 #
