@@ -395,12 +395,14 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
             {chanroi: self._file['/entry/instrument/detector/']['NDAttributes'][chanroi] for chanroi in chanrois}
         )
         ##print(attrsdf)
-        df = pd.DataFrame(data=self._dataset[frame, :, :].T,
-                          columns=[f'ch_{n+1}' for n in range(num_channels)])
-
-        gggg
+        # df = pd.DataFrame(data=self._dataset[frame, :, :].T,
+        #                   columns=[f'ch_{n+1}' for n in range(num_channels)])
+        return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(num_channels)}
+        return_dict_rois = {chanroi: self._file['/entry/instrument/detector/']['NDAttributes'][chanroi][()][frame] for chanroi in chanrois}
+        return {**return_dict, **return_dict_rois}
+        # gggg
         # return pd.concat([df]+[attrsdf])
-        return df
+        # return df
 
 db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
                         ISSXspress3HDF5Handler, overwrite=True)
