@@ -2,7 +2,11 @@ from xas.spectrometer import Crystal, analyze_many_elastic_scans
 import copy
 
 
-# from ophyd import (PseudoPositioner, PseudoSingle)
+
+from ophyd import (PseudoPositioner, PseudoSingle)
+from ophyd.pseudopos import (pseudo_position_argument,
+                             real_position_argument)
+from ophyd import SoftPositioner
 # from ophyd import (Component as Cpt)
 #
 # class SpectrometerEnergy(PseudoPositioner):
@@ -17,9 +21,49 @@ import copy
 
 
 
-class EmissionEnergyMotor:
+class SPseudo3x3(PseudoPositioner):
+    pseudo1 = Cpt(PseudoSingle, limits=(-10, 10), egu='a')
+    pseudo2 = Cpt(PseudoSingle, limits=(-10, 10), egu='b')
+    pseudo3 = Cpt(PseudoSingle, limits=None, egu='c')
 
-    def __init__(self, energy0, cr_x0, cr_y0, det_y0, kind, hkl):
+    # real1 = Cpt(SoftPositioner, init_pos=0.)
+    # real2 = Cpt(SoftPositioner, init_pos=0.)
+    # real3 = Cpt(SoftPositioner, init_pos=0.)
+
+    real1 = huber_stage.z
+    real2 = auxxy.x
+    real3 = auxxy.y
+
+    sig = Cpt(Signal, value=0)
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        # logger.debug('forward %s', pseudo_pos)
+        return self.RealPosition(real1=-pseudo_pos.pseudo1,
+                                    real2=-pseudo_pos.pseudo2,
+                                    real3=-pseudo_pos.pseudo3)
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        # logger.debug('inverse %s', real_pos)
+        return self.PseudoPosition(pseudo1=-real_pos.real1,
+                                    pseudo2=-real_pos.real2,
+                                    pseudo3=-real_pos.real3)
+
+
+p3 = SPseudo3x3(name='p3')
+
+
+
+class EmissionEnergyMotor(PseudoPositioner):
+
+    detector_y = huber_stage.z
+    crystal_x = auxxy.x
+    crystal_y = auxxy.y
+
+
+    def __init__(self, energy0, cr_x0, cr_y0, det_y0, kind, hkl, *args, **kwargs):
+
         self.energy0 = energy0
         self.cr_x0 = cr_x0
         self.cr_y0 = cr_y0
@@ -31,27 +75,89 @@ class EmissionEnergyMotor:
         self.cry_0_nom = copy.copy(self.crystal.y)
         self.det_y0_nom = copy.copy(self.crystal.d_y)
 
+        # self.energy = Cpt(SoftPositioner, init_pos=energy0)
+        self.energy = Cpt(PseudoSingle, init_pos=energy0, egu='emission_energy')
+        super().__init__(*args, **kwargs)
 
-    def _get_postion_for_energy(self, energy):
-
-        # print(self.cr_x0_nom, self.crystal.x)
+    @pseudo_position_argument
+    def forward(self, energy):
         self.crystal.place_E(energy)
-        # print(self.cr_x0_nom, self.crystal.x)
         dcr_x = self.crystal.x - self.cr_x0_nom
         dcr_y = self.crystal.y - self.cry_0_nom
         ddet_y = self.crystal.d_y - self.det_y0_nom
-        return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
 
-    def get_positions_for_energies(self, energy_list):
-        crystal_x_list = []
-        crystal_y_list = []
-        detector_y_list = []
-        for energy in energy_list:
-            crystal_x, crystal_y, detector_y = self._get_postion_for_energy(energy)
-            crystal_x_list.append(crystal_x)
-            crystal_y_list.append(crystal_y)
-            detector_y_list.append(detector_y)
-        return crystal_x_list, crystal_y_list, detector_y_list
+        # detector_y
+        return self.RealPosition(detector_y=(self.det_y0 - ddet_y),
+                                 crystal_x=(self.cr_x0 - dcr_x),
+                                 crystal_y=(self.cr_y0 + dcr_y))
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        return
+
+        # return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
+
+# emission_energy = EmissionEnergyMotor(7649.2, -129.570, 16.285, 331.731, 'Ge', [4, 4, 4])
+
+
+    # def _get_postion_for_energy(self, energy):
+    #
+    #     # print(self.cr_x0_nom, self.crystal.x)
+    #     self.crystal.place_E(energy)
+    #     # print(self.cr_x0_nom, self.crystal.x)
+    #     dcr_x = self.crystal.x - self.cr_x0_nom
+    #     dcr_y = self.crystal.y - self.cry_0_nom
+    #     ddet_y = self.crystal.d_y - self.det_y0_nom
+    #     return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
+    #
+    # def get_positions_for_energies(self, energy_list):
+    #     crystal_x_list = []
+    #     crystal_y_list = []
+    #     detector_y_list = []
+    #     for energy in energy_list:
+    #         crystal_x, crystal_y, detector_y = self._get_postion_for_energy(energy)
+    #         crystal_x_list.append(crystal_x)
+    #         crystal_y_list.append(crystal_y)
+    #         detector_y_list.append(detector_y)
+    #     return crystal_x_list, crystal_y_list, detector_y_list
+
+
+
+# class EmissionEnergyMotor:
+#
+#     def __init__(self, energy0, cr_x0, cr_y0, det_y0, kind, hkl):
+#         self.energy0 = energy0
+#         self.cr_x0 = cr_x0
+#         self.cr_y0 = cr_y0
+#         self.det_y0 = det_y0
+#
+#         self.crystal = Crystal(1000, 50, hkl, kind)
+#         self.crystal.place_E(energy0)
+#         self.cr_x0_nom = copy.copy(self.crystal.x)
+#         self.cry_0_nom = copy.copy(self.crystal.y)
+#         self.det_y0_nom = copy.copy(self.crystal.d_y)
+#
+#
+#     def _get_postion_for_energy(self, energy):
+#
+#         # print(self.cr_x0_nom, self.crystal.x)
+#         self.crystal.place_E(energy)
+#         # print(self.cr_x0_nom, self.crystal.x)
+#         dcr_x = self.crystal.x - self.cr_x0_nom
+#         dcr_y = self.crystal.y - self.cry_0_nom
+#         ddet_y = self.crystal.d_y - self.det_y0_nom
+#         return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
+#
+#     def get_positions_for_energies(self, energy_list):
+#         crystal_x_list = []
+#         crystal_y_list = []
+#         detector_y_list = []
+#         for energy in energy_list:
+#             crystal_x, crystal_y, detector_y = self._get_postion_for_energy(energy)
+#             crystal_x_list.append(crystal_x)
+#             crystal_y_list.append(crystal_y)
+#             detector_y_list.append(detector_y)
+#         return crystal_x_list, crystal_y_list, detector_y_list
 
 
 def define_spectrometer_motor(kind, hkl):
@@ -172,13 +278,13 @@ def rixs_scan_from_mara_at_each_new_point(energies_out, positions, energies_kbet
 #                                      positions[:energies_emission.size],
 #                                      energies_kbeta)
 
-start_position_idx = 21
-for i in range(4):
-   idx1 = i*energies_emission.size + start_position_idx
-   idx2 = (i+1) * energies_emission.size + start_position_idx
-   print(idx1, idx2)
-   rixs_scan_from_mara_at_each_new_point(energies_emission, positions_co3mno4[idx1:idx2], energies_kbeta)
-   print(f'last position used was {idx2}')
+# start_position_idx = 21
+# for i in range(4):
+#    idx1 = i*energies_emission.size + start_position_idx
+#    idx2 = (i+1) * energies_emission.size + start_position_idx
+#    print(idx1, idx2)
+#    rixs_scan_from_mara_at_each_new_point(energies_emission, positions_co3mno4[idx1:idx2], energies_kbeta)
+#    print(f'last position used was {idx2}')
 
 #positions_co3mno4[0] = [-26.502437515, -29.168950962, -23.0959375]
 #positions_co3mno4 = get_snake_trajectory(3.5, 4, 0.15)
@@ -212,9 +318,9 @@ def herfd_scan_in_pieces_plan(energies_herfd, positions, pos_start_index, n=4, e
 
 
 
-energies_herfd = db['5bcffa42-fa10-48cb-a8ea-f77172456976'].table()['hhm_energy'].values
-this_herfd_plan = herfd_scan_in_pieces_plan(energies_herfd, positions, 21, n=4, exp_time=1)
-RE(this_herfd_plan)
+# energies_herfd = db['5bcffa42-fa10-48cb-a8ea-f77172456976'].table()['hhm_energy'].values
+# this_herfd_plan = herfd_scan_in_pieces_plan(energies_herfd, positions, 21, n=4, exp_time=1)
+# RE(this_herfd_plan)
 
 def calibration_scan_plan(energies):
     # uids = []
@@ -285,9 +391,9 @@ def define_energy_range():
 
 
 
-energies_vtc_cubanes = np.hstack((np.arange(7670, 7684+2, 2),
-                                  np.arange(7685, 7712+0.5, 0.5),
-                                  np.arange(7714, 7725+2, 2)))[::-1]
+# energies_vtc_cubanes = np.hstack((np.arange(7670, 7684+2, 2),
+#                                   np.arange(7685, 7712+0.5, 0.5),
+#                                   np.arange(7714, 7725+2, 2)))[::-1]
 def scan_vtc_plan(energies_vtc, positions, start_index):
     idx = start_index + 0
 
