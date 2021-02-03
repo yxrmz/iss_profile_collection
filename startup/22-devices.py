@@ -5,7 +5,8 @@ from nslsii.devices import TwoButtonShutter
 import bluesky.plans as bp
 from ophyd.status import SubscriptionStatus
 print(__file__)
-
+import time
+import datetime
 
 class MFC(Device):
     flow = Cpt(EpicsSignal, '-RB', write_pv='-SP')
@@ -61,7 +62,7 @@ class WPS(Device):
     '''
 
 
-    
+
     lv0 = Cpt(EpicsSignal, '-LV:u0}V-Sense', write_pv='-LV:u0}V-Set')
     lv1 = Cpt(EpicsSignal, '-LV:u1}V-Sense', write_pv='-LV:u1}V-Set')
     lv2 = Cpt(EpicsSignal, '-LV:u2}V-Sense', write_pv='-LV:u2}V-Set')
@@ -95,7 +96,7 @@ class Shutter(Device):
 
     def unsubscribe(self):
         self.function_call = None
-        
+
     def update_state(self, pvname=None, value=None, char_value=None, **kwargs):
         if value == 1:
             self.state = 'closed'
@@ -103,12 +104,12 @@ class Shutter(Device):
             self.state = 'open'
         if self.function_call is not None:
             self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
-        
+
     def open(self):
         print('Opening {}'.format(self.name))
         self.output.put(0)
         self.state = 'open'
-        
+
     def close(self):
         print('Closing {}'.format(self.name))
         self.output.put(1)
@@ -183,12 +184,81 @@ shutter = ShutterMotor(name='User Shutter')
 shutter.shutter_type = 'SP'
 
 
-
 class TwoButtonShutterISS(TwoButtonShutter):
+    RETRY_PERIOD = 1
+
     def stop(self, success=False):
         pass
 
+    def set(self, val):
+        if self._set_st is not None:
+            raise RuntimeError(f'trying to set {self.name}'
+                               ' while a set is in progress')
 
+        cmd_map = {self.open_str: self.open_cmd,
+                   self.close_str: self.close_cmd}
+        target_map = {self.open_str: self.open_val,
+                      self.close_str: self.close_val}
+
+        cmd_sig = cmd_map[val]
+        target_val = target_map[val]
+
+        st = DeviceStatus(self)
+        if self.status.get() == target_val:
+            st._finished()
+            return st
+
+        self._set_st = st
+        print(self.name, val, id(st))
+        # enums = self.status.enum_strs
+
+        def shutter_cb(value, timestamp, **kwargs):
+            # At some point ophyd/pyepics started to do this
+            # remapping before passing to the callbacks so `int` call
+            # here was failing. this means that we were never getting to
+            # the next check which means we were never flipping that status
+            # object to done.
+
+            # value = enums[int(value)]
+            if value == target_val:
+                self._set_st = None
+                self.status.clear_sub(shutter_cb)
+                st._finished()
+
+        # cmd_enums = cmd_sig.enum_strs
+        count = 0
+        _time_fmtstr = '%Y-%m-%d %H:%M:%S'
+
+        def cmd_retry_cb(value, timestamp, **kwargs):
+            nonlocal count
+            # At some point ophyd/pyepics started to do this
+            # remapping before passing to the callbacks so `int` call
+            # here was failing
+            # value = cmd_enums[int(value)]
+            count += 1
+            if count > self.MAX_ATTEMPTS:
+                cmd_sig.clear_sub(cmd_retry_cb)
+                self._set_st = None
+                self.status.clear_sub(shutter_cb)
+                st._finished(success=False)
+            if value == 'None':
+                if not st.done:
+                    time.sleep(self.RETRY_PERIOD)
+                    cmd_sig.set(1)
+
+                    ts = datetime.datetime.fromtimestamp(timestamp) \
+                        .strftime(_time_fmtstr)
+                    if count > 2:
+                        msg = '** ({}) Had to reactuate shutter while {}ing'
+                        print(msg.format(ts, val if val != 'Close'
+                                         else val[:-1]))
+                else:
+                    cmd_sig.clear_sub(cmd_retry_cb)
+
+        cmd_sig.subscribe(cmd_retry_cb, run=False)
+        self.status.subscribe(shutter_cb)
+        cmd_sig.set(1)
+        return st
 
 
 shutter_ph_2b = TwoButtonShutterISS('XF:08IDA-PPS{PSh}', name='shutter_ph_2b')
@@ -301,21 +371,51 @@ class ICAmplifier(Device):
         '''
 
 
-i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',
-                     gain_2='ES-DO}2_8_2', hspeed_bit='ES-DO}2_8_3', bw_10mhz_bit='ES-DO}2_8_4', bw_1mhz_bit='ES-DO}2_8_5',
-                     lnoise='Amp-LN}I0', hspeed='Amp-HS}I0', bwidth='Amp-BW}I0', name='i0_amp')
+i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-I0}GainBit:0-Sel', gain_1='Amp-I0}GainBit:1-Sel',
+                     gain_2='Amp-I0}GainBit:2-Sel', hspeed_bit='Amp-I0}GainMode-Sel', bw_10mhz_bit='Amp-I0}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-I0}1MHzMode-Sel',
+                     lnoise='Amp-I0}LowNoise-Sel', hspeed='Amp-I0}HighSpeed-Sel', bwidth='Amp-I0}Bandwidth-Sel',
+                     name='i0_amp')
 
-it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_9_0', gain_1='ES-DO}2_9_1',
-                     gain_2='ES-DO}2_9_2', hspeed_bit='ES-DO}2_9_3', bw_10mhz_bit='ES-DO}2_9_4', bw_1mhz_bit='ES-DO}2_9_5',
-                     lnoise='Amp-LN}It', hspeed='Amp-HS}It', bwidth='Amp-BW}It', name='it_amp')
+it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-It}GainBit:0-Sel', gain_1='Amp-It}GainBit:1-Sel',
+                     gain_2='Amp-It}GainBit:2-Sel', hspeed_bit='Amp-It}GainMode-Sel', bw_10mhz_bit='Amp-It}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-It}1MHzMode-Sel',
+                     lnoise='Amp-It}LowNoise-Sel', hspeed='Amp-It}HighSpeed-Sel', bwidth='Amp-It}Bandwidth-Sel',
+                     name='it_amp')
 
-ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_10_0', gain_1='ES-DO}2_10_1',
-                     gain_2='ES-DO}2_10_2', hspeed_bit='ES-DO}2_10_3', bw_10mhz_bit='ES-DO}2_10_4', bw_1mhz_bit='ES-DO}2_10_5',
-                     lnoise='Amp-LN}Ir', hspeed='Amp-HS}Ir', bwidth='Amp-BW}Ir', name='ir_amp')
+ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-Ir}GainBit:0-Sel', gain_1='Amp-Ir}GainBit:1-Sel',
+                     gain_2='Amp-Ir}GainBit:2-Sel', hspeed_bit='Amp-Ir}GainMode-Sel', bw_10mhz_bit='Amp-Ir}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-Ir}1MHzMode-Sel',
+                     lnoise='Amp-Ir}LowNoise-Sel', hspeed='Amp-Ir}HighSpeed-Sel', bwidth='Amp-Ir}Bandwidth-Sel',
+                     name='ir_amp')
 
-iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_11_0', gain_1='ES-DO}2_11_1',
-                     gain_2='ES-DO}2_11_2', hspeed_bit='ES-DO}2_11_3', bw_10mhz_bit='ES-DO}2_11_4', bw_1mhz_bit='ES-DO}2_11_5',
-                     lnoise='Amp-LN}If', hspeed='Amp-HS}If', bwidth='Amp-BW}If', name='iff_amp')
+iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-If}GainBit:0-Sel', gain_1='Amp-If}GainBit:1-Sel',
+                     gain_2='Amp-If}GainBit:2-Sel', hspeed_bit='Amp-If}GainMode-Sel', bw_10mhz_bit='Amp-If}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-If}1MHzMode-Sel',
+                     lnoise='Amp-If}LowNoise-Sel', hspeed='Amp-If}HighSpeed-Sel', bwidth='Amp-If}Bandwidth-Sel',
+                     name='iff_amp')
+
+
+
+
+#
+# i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',
+#                      gain_2='ES-DO}2_8_2', hspeed_bit='ES-DO}2_8_3', bw_10mhz_bit='ES-DO}2_8_4', bw_1mhz_bit='ES-DO}2_8_5',
+#                      lnoise='Amp-LN}I0', hspeed='Amp-HS}I0', bwidth='Amp-BW}I0', name='i0_amp')
+#
+# it_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_9_0', gain_1='ES-DO}2_9_1',
+#                      gain_2='ES-DO}2_9_2', hspeed_bit='ES-DO}2_9_3', bw_10mhz_bit='ES-DO}2_9_4', bw_1mhz_bit='ES-DO}2_9_5',
+#                      lnoise='Amp-LN}It', hspeed='Amp-HS}It', bwidth='Amp-BW}It', name='it_amp')
+#
+# ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_10_0', gain_1='ES-DO}2_10_1',
+#                      gain_2='ES-DO}2_10_2', hspeed_bit='ES-DO}2_10_3', bw_10mhz_bit='ES-DO}2_10_4', bw_1mhz_bit='ES-DO}2_10_5',
+#                      lnoise='Amp-LN}Ir', hspeed='Amp-HS}Ir', bwidth='Amp-BW}Ir', name='ir_amp')
+#
+# iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_11_0', gain_1='ES-DO}2_11_1',
+#                      gain_2='ES-DO}2_11_2', hspeed_bit='ES-DO}2_11_3', bw_10mhz_bit='ES-DO}2_11_4', bw_1mhz_bit='ES-DO}2_11_5',
+#                      lnoise='Amp-LN}If', hspeed='Amp-HS}If', bwidth='Amp-BW}If', name='iff_amp')
+
+
 
 
 #old pizzabox
@@ -323,4 +423,3 @@ pba1.adc7.amp = i0_amp
 pba1.adc1.amp = it_amp
 pba1.adc6.amp = iff_amp
 pba2.adc6.amp = i0_amp
-
