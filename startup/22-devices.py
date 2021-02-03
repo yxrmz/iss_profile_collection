@@ -389,10 +389,10 @@ ir_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-Ir}GainBit:0-Sel', gain_1='Amp-
                      lnoise='Amp-Ir}LowNoise-Sel', hspeed='Amp-Ir}HighSpeed-Sel', bwidth='Amp-Ir}Bandwidth-Sel',
                      name='ir_amp')
 
-iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-I}GainBit:0-Sel', gain_1='Amp-I}GainBit:1-Sel',
-                     gain_2='Amp-I}GainBit:2-Sel', hspeed_bit='Amp-I}GainMode-Sel', bw_10mhz_bit='Amp-I}10MHzMode-Sel',
-                     bw_1mhz_bit='Amp-I}1MHzMode-Sel',
-                     lnoise='Amp-I}LowNoise-Sel', hspeed='Amp-I}HighSpeed-Sel', bwidth='Amp-I}Bandwidth-Sel',
+iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-If}GainBit:0-Sel', gain_1='Amp-If}GainBit:1-Sel',
+                     gain_2='Amp-If}GainBit:2-Sel', hspeed_bit='Amp-If}GainMode-Sel', bw_10mhz_bit='Amp-If}10MHzMode-Sel',
+                     bw_1mhz_bit='Amp-If}1MHzMode-Sel',
+                     lnoise='Amp-If}LowNoise-Sel', hspeed='Amp-If}HighSpeed-Sel', bwidth='Amp-If}Bandwidth-Sel',
                      name='iff_amp')
 
 
