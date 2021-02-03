@@ -21,46 +21,15 @@ from ophyd import SoftPositioner
 
 
 
-class SPseudo3x3(PseudoPositioner):
-    pseudo1 = Cpt(PseudoSingle, limits=(-10, 10), egu='a')
-    pseudo2 = Cpt(PseudoSingle, limits=(-10, 10), egu='b')
-    pseudo3 = Cpt(PseudoSingle, limits=None, egu='c')
-
-    # real1 = Cpt(SoftPositioner, init_pos=0.)
-    # real2 = Cpt(SoftPositioner, init_pos=0.)
-    # real3 = Cpt(SoftPositioner, init_pos=0.)
-
-    real1 = huber_stage.z
-    real2 = auxxy.x
-    real3 = auxxy.y
-
-    sig = Cpt(Signal, value=0)
-
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        # logger.debug('forward %s', pseudo_pos)
-        return self.RealPosition(real1=-pseudo_pos.pseudo1,
-                                    real2=-pseudo_pos.pseudo2,
-                                    real3=-pseudo_pos.pseudo3)
-
-    @real_position_argument
-    def inverse(self, real_pos):
-        # logger.debug('inverse %s', real_pos)
-        return self.PseudoPosition(pseudo1=-real_pos.real1,
-                                    pseudo2=-real_pos.real2,
-                                    pseudo3=-real_pos.real3)
-
-
-p3 = SPseudo3x3(name='p3')
-
-
 
 class EmissionEnergyMotor(PseudoPositioner):
-
-    detector_y = huber_stage.z
-    crystal_x = auxxy.x
-    crystal_y = auxxy.y
-
+    energy = Cpt(PseudoSingle, name='emission_energy')
+    motor_crystal_x = auxxy.x
+    motor_crystal_y = auxxy.y
+    motor_detector_y = huber_stage.z
+    _real = ['motor_crystal_x',
+             'motor_crystal_y',
+             'motor_detector_y']
 
     def __init__(self, energy0, cr_x0, cr_y0, det_y0, kind, hkl, *args, **kwargs):
 
@@ -75,125 +44,102 @@ class EmissionEnergyMotor(PseudoPositioner):
         self.cry_0_nom = copy.copy(self.crystal.y)
         self.det_y0_nom = copy.copy(self.crystal.d_y)
 
-        # self.energy = Cpt(SoftPositioner, init_pos=energy0)
-        self.energy = Cpt(PseudoSingle, init_pos=energy0, egu='emission_energy')
+        self.energy_converter = None
+
         super().__init__(*args, **kwargs)
 
+    def append_energy_converter(self, ec):
+        self.energy_converter = ec
+
     @pseudo_position_argument
-    def forward(self, energy):
+    def forward(self, energy_input_object):
+        # logger.debug('forward %s', pseudo_pos)
+        energy = energy_input_object.energy
+        if self.energy_converter is not None:
+            energy = self.energy_converter.act2nom(energy)
         self.crystal.place_E(energy)
         dcr_x = self.crystal.x - self.cr_x0_nom
         dcr_y = self.crystal.y - self.cry_0_nom
         ddet_y = self.crystal.d_y - self.det_y0_nom
 
-        # detector_y
-        return self.RealPosition(detector_y=(self.det_y0 - ddet_y),
-                                 crystal_x=(self.cr_x0 - dcr_x),
-                                 crystal_y=(self.cr_y0 + dcr_y))
+        position_detector_y = self.det_y0 - ddet_y
+        position_crystal_y = self.cr_y0 + dcr_y
+        position_crystal_x = self.cr_x0 - dcr_x
+
+        # print(f'moving detector_y to {position_detector_y}')
+        # print(f'moving crystal_y to {position_crystal_y}')
+        # print(f'moving crystal_x to {position_crystal_x}')
+
+        return self.RealPosition(motor_detector_y = position_detector_y,
+                                 motor_crystal_y = position_crystal_y,
+                                 motor_crystal_x = position_crystal_x)
 
     @real_position_argument
     def inverse(self, real_pos):
-        return
+        x = self.cr_x0 + self.cr_x0_nom  - real_pos.motor_crystal_x
+        y = self.cry_0_nom - self.cr_y0 + real_pos.motor_crystal_y
+        d_y = self.det_y0 + self.det_y0_nom - real_pos.motor_detector_y
+        energy = self.crystal.compute_energy_from_positions(x, y, d_y)
+        if self.energy_converter is not None:
+            energy = self.energy_converter.nom2act(energy)
+        return [energy]
 
-        # return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
-
-# emission_energy = EmissionEnergyMotor(7649.2, -129.570, 16.285, 331.731, 'Ge', [4, 4, 4])
-
-
-    # def _get_postion_for_energy(self, energy):
-    #
-    #     # print(self.cr_x0_nom, self.crystal.x)
-    #     self.crystal.place_E(energy)
-    #     # print(self.cr_x0_nom, self.crystal.x)
-    #     dcr_x = self.crystal.x - self.cr_x0_nom
-    #     dcr_y = self.crystal.y - self.cry_0_nom
-    #     ddet_y = self.crystal.d_y - self.det_y0_nom
-    #     return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
-    #
-    # def get_positions_for_energies(self, energy_list):
-    #     crystal_x_list = []
-    #     crystal_y_list = []
-    #     detector_y_list = []
-    #     for energy in energy_list:
-    #         crystal_x, crystal_y, detector_y = self._get_postion_for_energy(energy)
-    #         crystal_x_list.append(crystal_x)
-    #         crystal_y_list.append(crystal_y)
-    #         detector_y_list.append(detector_y)
-    #     return crystal_x_list, crystal_y_list, detector_y_list
-
-
-
-# class EmissionEnergyMotor:
-#
-#     def __init__(self, energy0, cr_x0, cr_y0, det_y0, kind, hkl):
-#         self.energy0 = energy0
-#         self.cr_x0 = cr_x0
-#         self.cr_y0 = cr_y0
-#         self.det_y0 = det_y0
-#
-#         self.crystal = Crystal(1000, 50, hkl, kind)
-#         self.crystal.place_E(energy0)
-#         self.cr_x0_nom = copy.copy(self.crystal.x)
-#         self.cry_0_nom = copy.copy(self.crystal.y)
-#         self.det_y0_nom = copy.copy(self.crystal.d_y)
-#
-#
-#     def _get_postion_for_energy(self, energy):
-#
-#         # print(self.cr_x0_nom, self.crystal.x)
-#         self.crystal.place_E(energy)
-#         # print(self.cr_x0_nom, self.crystal.x)
-#         dcr_x = self.crystal.x - self.cr_x0_nom
-#         dcr_y = self.crystal.y - self.cry_0_nom
-#         ddet_y = self.crystal.d_y - self.det_y0_nom
-#         return (self.cr_x0 - dcr_x), (self.cr_y0 + dcr_y), (self.det_y0 - ddet_y)
-#
-#     def get_positions_for_energies(self, energy_list):
-#         crystal_x_list = []
-#         crystal_y_list = []
-#         detector_y_list = []
-#         for energy in energy_list:
-#             crystal_x, crystal_y, detector_y = self._get_postion_for_energy(energy)
-#             crystal_x_list.append(crystal_x)
-#             crystal_y_list.append(crystal_y)
-#             detector_y_list.append(detector_y)
-#         return crystal_x_list, crystal_y_list, detector_y_list
-
-
-def define_spectrometer_motor(kind, hkl):
-    energy = hhm.energy.user_readback.get()
+def define_spectrometer_motor(energy, kind, hkl):
+    # energy = hhm.energy.user_readback.get()
     cr_x0 = auxxy.x.user_readback.get()
     cr_y0 = auxxy.y.user_readback.get()
     det_y0 = huber_stage.z.user_readback.get()
-    eem = EmissionEnergyMotor(energy, cr_x0, cr_y0, det_y0, kind, hkl)
-    return eem
-
-# eem_calculator = define_spectrometer_motor('Ge', [4, 4, 4])
+    global motor_emission
+    motor_emission = EmissionEnergyMotor(energy, cr_x0, cr_y0, det_y0, kind, hkl, name='motor_emission')
 
 
-def move_emission_energy_plan(energy):
-    cr_x, cr_y, det_y = eem_calculator._get_postion_for_energy(energy)
-    # print(cr_x, cr_y, det_y)
-
-    yield from bps.mv(auxxy.x, cr_x)
-    yield from bps.mv(auxxy.y, cr_y)
-    yield from bps.mv(huber_stage.z, det_y)
-
-
-# energies = np.linspace(7625, 7730, npt)
-#RE(emission_scan_plan(energies))
-
-def emission_scan_plan(energies):
-    crystal_x_list, crystal_y_list, detector_y_list = eem_calculator.get_positions_for_energies(energies)
+def johann_emission_scan_plan(energies):
     plan = bp.list_scan([pil100k, apb_ave],
-                            auxxy.x, crystal_x_list,
-                            auxxy.y, crystal_y_list,
-                            huber_stage.z, detector_y_list, md={'plan_name' : 'johann_emission_scan'})
-    yield from move_emission_energy_plan(energies[0])
-    yield from shutter.open_plan()
-    uid = (yield from plan)
-    yield from shutter.close_plan()
-    # return energies
+                            motor_emission, energies,
+                            md={'plan_name' : 'johann_emission_step_scan'})
+    yield from plan
+
+def johann_emission_scan_plan(name, comment, energy_steps, time_steps, detectors, element='', e0=0, line=''):
+    print(f'Line in plan {line}')
+    fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
+    fn = validate_file_exists(fn)
+
+    try:
+        full_element_name = getattr(elements, element).name.capitalize()
+    except:
+        full_element_name = element
+
+    md = {'plan_args': {},
+          'experiment': 'step_scan_emission',
+          'name': name,
+          'comment': comment,
+          'interp_filename': fn,
+          'element': element,
+          'element_full': full_element_name,
+          'line': line,
+          'e0': e0,
+          }
+    #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
+    yield from bps.abs_set(apb_ave.divide, 373, wait=True)
+
+    # for det in detectors:
+    #     if det.name == 'xs':
+    #         yield from bps.mv(det.total_points, len(energy_steps))
+
+    yield from bp.list_scan( #this is the scan
+        detectors,
+        motor_emission, list(energy_steps),
+        per_step=adaq_pb_step_per_step_factory(energy_steps, time_steps), #and this function is colled at every step
+        md=md
+    )
+
+
+
+def johann_rixs_scan_plan(name, comment, emission_energy_steps, time_steps, detectors, element='', e0_edge=0, e0_line, edge='', line=''):
+    pass
+
+
+
 
 def rixs_scan_plan(energies_in, energies_out):
     for energy_in in energies_in:
