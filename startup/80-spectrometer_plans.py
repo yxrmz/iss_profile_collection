@@ -135,8 +135,8 @@ def johann_emission_scan_plan(name, comment, energy_steps, time_steps, detectors
 
 
 
-def johann_rixs_scan_plan(name, comment, emission_energy_steps, time_steps, detectors, element='', e0_edge=0, e0_line, edge='', line=''):
-    pass
+# def johann_rixs_scan_plan(name, comment, emission_energy_steps, time_steps, detectors, element='', e0_edge=0, e0_line, edge='', line=''):
+#     pass
 
 
 
