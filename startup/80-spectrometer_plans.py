@@ -140,6 +140,23 @@ def johann_emission_scan_plan(name, comment, energy_steps, time_steps, detectors
 
 
 
+def function_for_measuing_samples():
+    sample_1_x, sample_1_y, sample_1_z = -25.586,  1.613, -20.301
+    sample_2_x, sample_2_y, sample_2_z = -25.741,-15.287, -20.401
+    sample_3_x, sample_3_y, sample_3_z = -25.146, -29.887, -21.301
+    RE(move_sample(sample_1_x, sample_1_y, sample_1_z))
+    xlive_gui.widget_run.parameter_values[0].setText(f'FeTiO3 HERFD')
+    xlive_gui.widget_run.run_scan()
+    for i in range(3):
+        RE(move_sample(sample_2_x, sample_2_y, sample_2_z))
+        xlive_gui.widget_run.parameter_values[0].setText(f'LiTi2O3 HERFD')
+        xlive_gui.widget_run.run_scan()
+
+        RE(move_sample(sample_3_x, sample_3_y, sample_3_z))
+        xlive_gui.widget_run.parameter_values[0].setText(f'CaTiO3 HERFD')
+        xlive_gui.widget_run.run_scan()
+
+
 
 def rixs_scan_plan(energies_in, energies_out):
     for energy_in in energies_in:
