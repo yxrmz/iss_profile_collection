@@ -24,7 +24,7 @@ if not os.environ.get('AZURE_TESTING'):
         'Step scan w/Xspress 3': step_scan_w_xs,
         'Constant energy': constant_energy,
         'Spiral fly scan': fly_scan_over_spiral,
-        'Fly scan with SDD': fly_scan_with_sdd,
+        'Fly scan w/Xspress 3': fly_scan_with_xs3,
         'Fly scan with Area Detector': fly_scan_with_camera,
 
     },

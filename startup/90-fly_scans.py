@@ -112,7 +112,7 @@ def fly_scan_with_apb_trigger(name: str, comment: str, n_cycles: int = 1, delay:
 
 
 
-def fly_scan_with_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
+def fly_scan_with_xs3(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
     '''
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
     Parameters
