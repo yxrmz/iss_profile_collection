@@ -10,12 +10,8 @@ class FlyerAPBwithTrigger(FlyerAPB):
     def __init__(self, det, pbs, motor, trigger): #, xs_det):
         super().__init__( det, pbs, motor)
         self.trigger = trigger
-        # self.xs_det = xs_det
 
     def kickoff(self, traj_duration=None):
-        # traj_duration = get_traj_duration()
-        # acq_rate = self.trigger.freq.get()
-        # self.xs_det.stage(acq_rate, traj_duration)
         self.trigger.stage()
         st_super = super().kickoff(traj_duration=traj_duration)
         return st_super
@@ -31,7 +27,6 @@ class FlyerAPBwithTrigger(FlyerAPB):
     def describe_collect(self):
         dict_super = super().describe_collect()
         dict_trig = self.trigger.describe_collect()
-        # dict_xs = self.xs_det.describe_collect()
         return {**dict_super, **dict_trig}#, **dict_xs}
 
     def collect_asset_docs(self):
@@ -63,16 +58,7 @@ class FlyerXS(FlyerAPBwithTrigger):
 
     def complete(self):
         st_super = super().complete()
-
-        ###
-        # def callback_xs():
-        #     self.xs_det.complete()
-        #
-        # self._motor_status.add_callback(callback_xs)
-        # return st_super & self._motor_status #& st_xs
-        ###
         def callback_xs(value, old_value, **kwargs):
-            # print(f'callback_xs: {old_value} --> {value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 self.xs_det.complete()
                 return True
@@ -84,13 +70,11 @@ class FlyerXS(FlyerAPBwithTrigger):
 
     def describe_collect(self):
         dict_super = super().describe_collect()
-        # dict_trig = self.trigger.describe_collect()
         dict_xs = self.xs_det.describe_collect()
-        return {**dict_super, **dict_xs}#, **dict_xs}
+        return {**dict_super, **dict_xs}
 
     def collect_asset_docs(self):
         yield from super().collect_asset_docs()
-        # print(f'xs_det._asset_docs_cache     : {self.xs_det._asset_docs_cache}')
         yield from self.xs_det.collect_asset_docs()
 
     def collect(self):
