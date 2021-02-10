@@ -179,7 +179,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
         self._datum_ids = []
 
-        num_frames = xs.hdf5.num_captured.get()
+        num_frames = self.hdf5.num_captured.get()
 
         # print(f'\n!!! num_frames: {num_frames}\n')
 

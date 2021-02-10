@@ -10,6 +10,8 @@ from ophyd.areadetector import TIFFPlugin
 from ophyd.sim import NullStatus
 from nslsii.ad33 import StatsPluginV33
 from nslsii.ad33 import SingleTriggerV33
+import itertools
+from collections import deque, OrderedDict
 
 print(__file__)
 class PilatusDetectorCamV33(PilatusDetectorCam):
@@ -80,6 +82,7 @@ class Pilatus(SingleTriggerV33, PilatusDetector):
 
     def set_num_images(self, num):
         self.cam.num_images.put(num)
+        self.tiff.num_capture.put(num)
 
     def det_next_file(self, n):
         self.cam.file_number.put(n)
@@ -107,6 +110,9 @@ class PilatusStream(Pilatus):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self._asset_docs_cache = deque()
+        self._datum_counter = None
         self._acquire = None
         # self._datum_counter = None
 
@@ -124,10 +130,14 @@ class PilatusStream(Pilatus):
         self.cam.acquire_period.put(acquire_period)
         self.cam.acquire_time.put(acquire_time)
 
+        # saving files
+        self.tiff.file_write_mode.put(2)
+
         # deal with the trigger
         self.cam.trigger_mode.put(3)
-        pil100k.cam.image_mode.put(1)
+        self.cam.image_mode.put(1)
 
+        self._datum_counter = itertools.count()
 
 
     def trigger(self):
@@ -141,9 +151,9 @@ class PilatusStream(Pilatus):
                 return False
 
         status = SubscriptionStatus(self.cam.acquire, callback)
+        self.tiff.capture.put(1)
         self.cam.acquire.put(1)
         return status
-
 
 
     def unstage(self, *args, **kwargs):
@@ -151,55 +161,79 @@ class PilatusStream(Pilatus):
         # st = self.stream.set(0)
         super().unstage(*args, **kwargs)
         self.cam.trigger_mode.put(0)
-        pil100k.cam.image_mode.put(0)
+        self.cam.image_mode.put(0)
+        self.tiff.file_write_mode.put(0)
+        self.tiff.capture.put(0)
+        self._datum_counter = None
 
 
+    def complete(self, *args, **kwargs):
+        for resource in self.tiff._asset_docs_cache:
+            self._asset_docs_cache.append(('resource', resource[1]))
+
+        self._datum_ids = []
+
+        num_frames = self.tiff.num_captured.get()
+
+        # print(f'\n!!! num_frames: {num_frames}\n')
+
+        for frame_num in range(num_frames):
+            datum_id = '{}/{}'.format(self.tiff._resource_uid, next(self._datum_counter))
+            datum = {'resource': self.tiff._resource_uid,
+                     # 'datum_kwargs': {'frame': frame_num},
+                     'datum_kwargs': {'frame': frame_num},
+                     'datum_id': datum_id}
+            self._asset_docs_cache.append(('datum', datum))
+            self._datum_ids.append(datum_id)
+
+        return NullStatus()
 
 
-    # def complete(self, *args, **kwargs):
-        # def callback_saving(value, old_value, **kwargs):
-        #     # print(f'     !!!!! {datetime.now()} callback_saving\n{value} --> {old_value}')
-        #     if int(round(old_value)) == 1 and int(round(value)) == 0:
-        #         # print(f'     !!!!! {datetime.now()} callback_saving')
-        #         return True
-        #     else:
-        #         return False
-        # filebin_st = SubscriptionStatus(self.filebin_status, callback_saving)
-        # filetxt_st = SubscriptionStatus(self.filetxt_status, callback_saving)
+    def collect(self):
+        num_frames = len(self._datum_ids)
 
-        # self._datum_ids = []
-        # datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
-        # datum = {'resource': self._resource_uid,
-        #          'datum_kwargs': {},
-        #          'datum_id': datum_id}
-        # self._asset_docs_cache.append(('datum', datum))
-        # self._datum_ids.append(datum_id)
-        # return NullStatus()
+        for frame_num in range(num_frames):
+            datum_id = self._datum_ids[frame_num]
+            data = {self.name: datum_id}
 
+            ts = ttime.time()
+
+            yield {'data': data,
+                   'timestamps': {key: ts for key in data},
+                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
+                   'filled': {key: False for key in data}}
+
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
+
+
+    def describe_collect(self):
+        return_dict = {self.name:
+                           {f'{self.name}': {'source': 'pil100k',
+                                             'dtype': 'array',
+                                             'shape': [self.cam.num_images.get(),
+                                                       #self.settings.array_counter.get()
+                                                       self.tiff.array_size.height.get(),
+                                                       self.tiff.array_size.width.get()],
+                                            'filename': f'{self.tiff.full_file_name.get()}',
+                                             'external': 'FILESTORE:'}}}
+        return return_dict
 
 
 
 
 
     def set_expected_number_of_points(self, acq_rate, traj_time):
-        self.set_num_images(int(acq_rate * traj_time * 1.3 ))
+        n = int(acq_rate * (traj_time + 1 ))
+        self.set_num_images(n)
         self.cam.array_counter.put(0)
 
-    # def calc_num_of_points(self):
-    #     tr = trajectory_manager(hhm)
-    #     info = tr.read_info(silent=True)
-    #     lut = str(int(hhm.lut_number_rbv.get()))
-    #     traj_duration = int(info[lut]['size']) / 16000
-    #
-    #     acq_rate = 1/self.cam.acquire_period.get()
-    #
-    #     acq_num_points = traj_duration * acq_rate * 1000 * 1.3
-    #     self.num_points = int(round(acq_num_points, ndigits=-3))
 
-
-
-
-pil100k_stream = PilatusStream("XF:08IDB-ES{Det:PIL1}:", name="pil100k")
+pil100k_stream = PilatusStream("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
 
 
 
@@ -237,3 +271,65 @@ pil100k.cam.ensure_nonblocking()
 
 def pil_count(acq_time:int = 1, num_frames:int =1):
     yield from bp.count([pil100k])
+
+
+
+from itertools import product
+import pandas as pd
+from databroker.assets.handlers import HandlerBase, PilatusCBFHandler, AreaDetectorTiffHandler
+
+
+#
+#     # def __init__(self, *args, **kwargs):
+#     #     super().__init__(*args, **kwargs)
+#     #     self._roi_data = None
+#     #     self._num_channels = None
+#     #
+#     # def _get_dataset(self): # readpout of the following stuff should be done only once, this is why I redefined _get_dataset method - Denis Leshchev Feb 9, 2021
+#     #     # dealing with parent
+#     #     super()._get_dataset()
+#     #
+#     #     # finding number of channels
+#     #     if self._num_channels is not None:
+#     #         return
+#     #     print('determening number of channels')
+#     #     shape = self.dataset.shape
+#     #     if len(shape) != 3:
+#     #         raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
+#     #     self._num_channels = shape[1]
+#     #
+#     #     if self._roi_data is not None:
+#     #         return
+#     #     print('reading ROI data')
+#     #     self.chanrois = [f'CHAN{c}ROI{r}' for c, r in product([1, 2, 3, 4], [1, 2, 3, 4])]
+#     #     _data_columns = [self._file['/entry/instrument/detector/NDAttributes'][chanroi][()] for chanroi in
+#     #                      self.chanrois]
+#     #     data_columns = np.vstack(_data_columns).T
+#     #     self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
+#
+#     def __call__(self, *args, frame=None, **kwargs):
+#             self._get_dataset()
+#
+#             grrr
+#             return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(self._num_channels)}
+#             return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+#             return {**return_dict, **return_dict_rois}
+#
+#
+
+ # class ISSPilatusTIFFHandler(PilatusCBFHandler):
+
+
+class ISSPilatusTIFFHandler(AreaDetectorTiffHandler):
+
+    def __init__(self, fpath, template, filename, frame_per_point=1):
+        super().__init__(fpath, template, filename,
+                         frame_per_point=1)
+
+
+    def __call__(self, *args, frame=None, **kwargs):
+        return super().__call__(*args, point_number=frame, **kwargs)
+
+
+db.reg.register_handler('AD_TIFF',
+                         ISSPilatusTIFFHandler, overwrite=True)
