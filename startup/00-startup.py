@@ -1,5 +1,6 @@
 print(__file__)
 
+import glob
 import logging
 import os
 import sys
@@ -213,3 +214,23 @@ USER_FILEPATH = 'users'
 
 def print_to_gui(string, stdout=sys.stdout):
     print(string, file=stdout, flush=True)
+
+
+###############################################################################
+# Check the following directories are mounted and have contents:
+required_mounts = ['/mnt/xf08idb-ioc1', '/mnt/xf08ida-ioc1',
+                   '/nsls2/xf07bm', '/nsls2/xf08id']
+
+class EmptyDirException(Exception):
+    ...
+
+logger = logging.getLogger('bluesky')
+for mnt in required_mounts:
+    contents = glob.glob(f'{mnt}/*')
+    if not contents:
+        raise EmptyDirException(f'There are no files in {mnt}')
+    else:
+        msg = f'Found {len(contents)} files in {mnt}'
+        print(msg)
+        logger.info(msg)
+###############################################################################
