@@ -228,7 +228,12 @@ logger = logging.getLogger('bluesky')
 for mnt in required_mounts:
     contents = glob.glob(f'{mnt}/*')
     if not contents:
-        raise EmptyDirException(f'There are no files in {mnt}')
+        msg = f'There are no files in {mnt}'
+        if not os.environ.get('AZURE_TESTING'):
+            raise EmptyDirException(msg)
+        else:
+            print(msg)
+            logger.info(msg)
     else:
         msg = f'Found {len(contents)} files in {mnt}'
         print(msg)
