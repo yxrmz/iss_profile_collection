@@ -414,7 +414,51 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
             return {**return_dict, **return_dict_rois}
 
 
-db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
-                        ISSXspress3HDF5Handler, overwrite=True)
 
+# heavy-weight file handler
+# db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
+#                         ISSXspress3HDF5Handler, overwrite=True)
+
+
+
+
+class ISSXspress3HDF5Handler_light(Xspress3HDF5Handler):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._roi_data = None
+        self._num_channels = None
+
+    def _get_dataset(self): # readpout of the following stuff should be done only once, this is why I redefined _get_dataset method - Denis Leshchev Feb 9, 2021
+        # dealing with parent
+        # super()._get_dataset()
+
+        # finding number of channels
+        # if self._num_channels is not None:
+        #     return
+        # print('determening number of channels')
+        # shape = self.dataset.shape
+        # if len(shape) != 3:
+        #     raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
+        # self._num_channels = shape[1]
+
+        if self._roi_data is not None:
+            return
+        print('reading ROI data')
+        self.chanrois = [f'CHAN{c}ROI{r}' for c, r in product([1, 2, 3, 4], [1, 2, 3, 4])]
+        _data_columns = [self._file['/entry/instrument/detector/NDAttributes'][chanroi][()] for chanroi in
+                         self.chanrois]
+        data_columns = np.vstack(_data_columns).T
+        self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
+
+    def __call__(self, *args, frame=None, **kwargs):
+            self._get_dataset()
+            # return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(self._num_channels)}
+            return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+            # return {**return_dict, **return_dict_rois}
+            return return_dict_rois
+
+
+db.reg.register_handler(ISSXspress3HDF5Handler_light.HANDLER_NAME,
+                        ISSXspress3HDF5Handler_light, overwrite=True)
 
