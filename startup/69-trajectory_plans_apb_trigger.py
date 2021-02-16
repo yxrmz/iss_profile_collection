@@ -229,6 +229,18 @@ def execute_trajectory_pil100k(name, **metadata):
           'e0': curr_traj.e0.value,
           'pulses_per_degree': hhm.pulses_per_deg,
           }
+
+    roi_data = [[pil100k.roi1.min_xyz.min_x.get(), pil100k.roi1.min_xyz.min_y.get(),
+                 pil100k.roi1.size.x.get(),        pil100k.roi1.size.y.get()        ],
+                [pil100k.roi2.min_xyz.min_x.get(), pil100k.roi2.min_xyz.min_y.get(),
+                 pil100k.roi2.size.x.get(),        pil100k.roi2.size.y.get()        ],
+                [pil100k.roi3.min_xyz.min_x.get(), pil100k.roi3.min_xyz.min_y.get(),
+                 pil100k.roi3.size.x.get(),        pil100k.roi3.size.y.get()],
+                [pil100k.roi4.min_xyz.min_x.get(), pil100k.roi4.min_xyz.min_y.get(),
+                 pil100k.roi4.size.x.get(),        pil100k.roi4.size.y.get()]]
+    md['roi'] = roi_data
+
+
     for indx in range(8):
         md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
         amp = getattr(apb, f'amp_ch{indx+1}')

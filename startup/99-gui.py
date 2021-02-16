@@ -25,7 +25,7 @@ if not os.environ.get('AZURE_TESTING'):
         'Constant energy': constant_energy,
         'Spiral fly scan': fly_scan_over_spiral,
         'Fly scan w/Xspress 3': fly_scan_with_xs3,
-        'Fly scan with Area Detector': fly_scan_with_camera,
+        'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
 
     },
         service_plan_funcs={
