@@ -1,6 +1,5 @@
 
 
-
 tune_elements =  [{'motor': hhm.pitch.name,
                    'detector': 'Focusing mirror BPM',
                    'range': 10,
@@ -33,7 +32,7 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'comment': 'fine monochromator pitch tune'},
                 ]
 
-def tune_beamline_plan(stdout=sys.stdout, enable_fb_in_the_end=True):
+def tune_beamline_plan(stdout=sys.stdout, enable_fb_in_the_end=True, truncate_data=True):
 
     print_to_gui(f'[Beamline tuning] Starting...',stdout=stdout)
     yield from bps.mv(hhm.fb_status,0)
@@ -59,5 +58,6 @@ def tune_beamline_plan(stdout=sys.stdout, enable_fb_in_the_end=True):
 
     yield from bps.mv(bpm_fm, 'retract')
     if enable_fb_in_the_end:
+        yield from update_hhm_fb_center(truncate_data=truncate_data)
         yield from bps.mv(hhm.fb_status, 1)
     print('[Beamline tuning] Beamline tuning complete')

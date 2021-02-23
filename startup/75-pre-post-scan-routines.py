@@ -281,7 +281,7 @@ def adjust_ic_gains( **kwargs):
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
     yield from shutter.open_plan()
-    scan_positions = np.arange(e_max + 50, e_min - 50, -100)
+    scan_positions = np.arange(e_max + 50, e_min - 50, -100).tolist()
 
     # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
     flyers = []

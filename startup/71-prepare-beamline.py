@@ -2,6 +2,7 @@
 import time as ttime
 import sys
 import numpy as np
+from xas.image_analysis import determine_beam_position_from_fb_image
 
 def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys.stdout):
 
@@ -188,6 +189,15 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor', stdout=stdout)
     yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
     print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)
+
+def update_hhm_fb_center(truncate_data=True):
+    line = hhm.fb_line.get()
+    center = hhm.fb_center.get()
+    n_lines = hhm.fb_nlines.get()
+    image = bpm_es.image.image
+    new_center = determine_beam_position_from_fb_image(image, line=line, center_point=center, n_lines=n_lines, truncate_data=truncate_data)
+    if new_center is not None:
+        yield from bps.mv(hhm.fb_center, new_center)
 
 
 

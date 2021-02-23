@@ -416,8 +416,8 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
 
 
 # heavy-weight file handler
-# db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
-#                         ISSXspress3HDF5Handler, overwrite=True)
+db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
+                        ISSXspress3HDF5Handler, overwrite=True)
 
 
 
@@ -459,6 +459,6 @@ class ISSXspress3HDF5Handler_light(Xspress3HDF5Handler):
             return return_dict_rois
 
 
-db.reg.register_handler(ISSXspress3HDF5Handler_light.HANDLER_NAME,
-                        ISSXspress3HDF5Handler_light, overwrite=True)
+# db.reg.register_handler(ISSXspress3HDF5Handler_light.HANDLER_NAME,
+#                         ISSXspress3HDF5Handler_light, overwrite=True)
 
