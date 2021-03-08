@@ -210,9 +210,9 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def complete(self, *args, **kwargs):
         def callback_saving(value, old_value, **kwargs):
-            print(f'     !!!!! {datetime.now()} callback_saving {value} --> {old_value}')
+            # print(f'     !!!!! {datetime.now()} callback_saving {value} --> {old_value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
-                print(f'     !!!!! {datetime.now()} callback_saving')
+                # print(f'     !!!!! {datetime.now()} callback_saving')
                 return True
             else:
                 return False

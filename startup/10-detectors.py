@@ -264,12 +264,12 @@ class EncoderFS(Encoder):
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
 
-        print(f'     !!!!! {datetime.now()} complete in {self.name} before stop writing')
+        # print(f'     !!!!! {datetime.now()} complete in {self.name} before stop writing')
 
         # Stop adding new data to the file.
         set_and_wait(self.ignore_sel, 1)
 
-        print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
+        # print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
 
         #while not os.path.isfile(self._full_path):
         #    ttime.sleep(.1)
@@ -302,7 +302,7 @@ class EncoderFS(Encoder):
 
         Return a dictionary with references to these documents.
         """
-        print(f'     !!!!! {datetime.now()} collect in {self.name}')
+        # print(f'     !!!!! {datetime.now()} collect in {self.name}')
         print('Collect of {} starting'.format(self.name))
         self._ready_to_collect = False
 
@@ -330,7 +330,7 @@ class EncoderFS(Encoder):
                       'dtype': 'array'}}}
 
     def collect_asset_docs(self):
-        print(f'\ncollecting asset docs for {self.name}\n')
+        # print(f'\ncollecting asset docs for {self.name}\n')
         items = list(self._asset_docs_cache)
         self._asset_docs_cache.clear()
         for item in items:

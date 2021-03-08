@@ -79,6 +79,8 @@ else:
 # # Temporary fix before it's fixed in ophyd
 # logger = logging.getLogger('ophyd')
 # logger.setLevel('WARNING')
+logger_db = logging.getLogger('databroker')
+logger_db.setLevel('WARNING')
 
 bec.disable_plots()
 bec.disable_table()

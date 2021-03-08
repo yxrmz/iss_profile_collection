@@ -27,7 +27,7 @@ class FlyerAPB:
             else:
                 return False
 
-        print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
+        # print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
@@ -91,6 +91,8 @@ class FlyerAPB:
         for pb in self.pbs:
             yield from pb.collect_asset_docs()
 
+    # def stop(self,*args, **kwargs):
+    #     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.. AT STOP ')
 
 flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 

@@ -151,6 +151,11 @@ class HHM(Device):
             self.start_trajectory.set('1')
 
             return status
+    # def stop(self, *args, **kwargs):
+    #     print('Stopping trajectory')
+    #     self.stop_trajectory.put('1')
+    #     super().stop(*args, **kwargs)
+    #     print('Done stopping trajectory')
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
