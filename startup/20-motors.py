@@ -38,14 +38,18 @@ class HHMTrajDesc(Device):
 
 
 class HHM(Device):
-    _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
-    _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+    #_default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+    #_default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+
+    _default_configuration_attrs = ( 'theta', 'y', 'energy')
+    _default_read_attrs = ( 'theta', 'y', 'energy')
+
     "High Heat Load Monochromator"
     ip = '10.66.58.106'
     traj_filepath = '/GPFS/xf08id/trajectory/'
 
-    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
-    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
+    #pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
+    #roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
     energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
@@ -85,12 +89,12 @@ class HHM(Device):
     traj8 = Cpt(HHMTrajDesc, 'MC:06}Traj:8')
     traj9 = Cpt(HHMTrajDesc, 'MC:06}Traj:9')
 
-    fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
-    fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
-    fb_line = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Line')
-    fb_nlines = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NLines')
-    fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
-    fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
+    # fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
+    # fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
+    # fb_line = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Line')
+    # fb_nlines = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NLines')
+    # fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
+    # fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
     home_z = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
@@ -177,8 +181,8 @@ _ = hhm.trajectory_running.read()
 #hhm.theta.kind = 'hinted'
 #hhm.y.kind = 'hinted'
 
-hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
-
+#hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
+hhm.read_attrs = ['theta', 'y', 'energy']
 
 class HRM(Device):
     """High Resolution Monochromator"""
