@@ -169,13 +169,13 @@ _ = hhm.trajectory_ready.read()
 _ = hhm.trajectory_running.read()
 
 
-#hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
+# hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 # hinted also is automatically set as read so no need to set read_attrs
-#hhm.energy.kind = 'hinted'
-#hhm.pitch.kind = 'hinted'
-#hhm.roll.kind = 'hinted'
-#hhm.theta.kind = 'hinted'
-#hhm.y.kind = 'hinted'
+# hhm.energy.kind = 'hinted'
+# hhm.pitch.kind = 'hinted'
+# hhm.roll.kind = 'hinted'
+# hhm.theta.kind = 'hinted'
+# hhm.y.kind = 'hinted'
 
 hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
 
