@@ -16,7 +16,8 @@ import time as ttime
 
 if not os.environ.get('AZURE_TESTING'):
     from isstools import xlive
-    xlive_gui = xlive.XliveGui(plan_funcs={
+
+    plan_funcs = {
 
         'Fly scan (new PB)': fly_scan_with_apb,
         'Step scan': step_scan,
@@ -26,32 +27,36 @@ if not os.environ.get('AZURE_TESTING'):
         'Spiral fly scan': fly_scan_over_spiral,
         'Fly scan w/Xspress 3': fly_scan_with_xs3,
         'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
+        'Johann emission step scan': johann_emission_scan_plan
+    }
 
-    },
-        service_plan_funcs={
-            'get_offsets': get_offsets,
-            'sleep': sleep,
-            'random_step': random_step,
-            'set_gains': set_gains,
-            'adjust_ic_gains': adjust_ic_gains,
-            'prepare_beamline_plan': prepare_beamline_plan,
-            'tune_beamline_plan': tune_beamline_plan,
-            'optimize_beamline_plan': optimize_beamline_plan,
-            'optimize_sample_plan': optimize_sample_plan,
-            'xs_count': xs_count,
-            'pil_count': pil_count,
+    service_plan_funcs = {
+        'get_offsets': get_offsets,
+        'sleep': sleep,
+        'random_step': random_step,
+        'set_gains': set_gains,
+        'adjust_ic_gains': adjust_ic_gains,
+        'prepare_beamline_plan': prepare_beamline_plan,
+        'tune_beamline_plan': tune_beamline_plan,
+        'optimize_beamline_plan': optimize_beamline_plan,
+        'optimize_sample_plan': optimize_sample_plan,
+        'xs_count': xs_count,
+        'pil_count': pil_count,
+    }
 
-        },
-        aux_plan_funcs={
-            'get_adc_readouts': get_adc_readouts,
-            'prepare_traj_plan': prep_traj_plan,
-            'general_scan': general_scan,
-            'general_spiral_scan': general_spiral_scan,
-            'set_reference_foil': set_reference_foil,
 
-            'tuning_scan': tuning_scan,
+    aux_plan_funcs = {
+        'get_adc_readouts': get_adc_readouts,
+        'prepare_traj_plan': prep_traj_plan,
+        'general_scan': general_scan,
+        'general_spiral_scan': general_spiral_scan,
+        'set_reference_foil': set_reference_foil,
+        'tuning_scan': tuning_scan,
+    }
 
-        },
+    xlive_gui = xlive.XliveGui(plan_funcs=plan_funcs,
+        service_plan_funcs=service_plan_funcs,
+        aux_plan_funcs=aux_plan_funcs,
         RE=RE,
         db=db,
         accelerator=nsls_ii,

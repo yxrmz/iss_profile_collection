@@ -238,6 +238,12 @@ usermotor2.wait_for_connection()
 usermotor3.wait_for_connection()
 
 
+class Bender(Device):
+    pos = Cpt(EpicsMotor, '}Mtr')
+    load_cell = EpicsSignalRO('XF:08IDA-OP{Mir:CM-Ax:Bender}W-I', name='bender_loading')
+bender = Bender('XF:08IDA-OP{Mir:CM-Bender', name='bender')
+
+
 class FilterBox(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
     pos1 = Cpt(EpicsSignal, '}Fltr1:In-Sts')
