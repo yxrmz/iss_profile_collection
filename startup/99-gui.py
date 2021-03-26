@@ -42,6 +42,7 @@ if not os.environ.get('AZURE_TESTING'):
         'optimize_sample_plan': optimize_sample_plan,
         'xs_count': xs_count,
         'pil_count': pil_count,
+        'johann_calibration_scan_plan' : johann_calibration_scan_plan
     }
 
 

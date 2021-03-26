@@ -69,7 +69,6 @@ class EmissionEnergyMotor(PseudoPositioner):
 
     @pseudo_position_argument
     def forward(self, energy_input_object):
-        # logger.debug('forward %s', pseudo_pos)
         energy = energy_input_object.energy
         if self.energy_converter is not None:
             energy = self.energy_converter.act2nom(energy)
@@ -81,10 +80,6 @@ class EmissionEnergyMotor(PseudoPositioner):
         position_detector_y = self.det_y0 - ddet_y
         position_crystal_y = self.cr_y0 + dcr_y
         position_crystal_x = self.cr_x0 - dcr_x
-
-        # print(f'moving detector_y to {position_detector_y}')
-        # print(f'moving crystal_y to {position_crystal_y}')
-        # print(f'moving crystal_x to {position_crystal_x}')
 
         return self.RealPosition(motor_detector_y = position_detector_y,
                                  motor_crystal_y = position_crystal_y,
@@ -257,12 +252,12 @@ def herfd_scan_in_pieces_plan(energies_herfd, positions, pos_start_index, n=4, e
 # this_herfd_plan = herfd_scan_in_pieces_plan(energies_herfd, positions, 21, n=4, exp_time=1)
 # RE(this_herfd_plan)
 
-def calibration_scan_plan(energies):
+def johann_calibration_scan_plan(energies, DE=5, dE=0.1):
     # uids = []
     for energy in energies:
         yield from bps.mv(hhm.energy, energy)
         yield from move_emission_energy_plan(energy)
-        yield from elastic_scan_plan()
+        yield from elastic_scan_plan(DE=DE, dE=dE)
         # uid = (yield from elastic_scan_plan())
     #     if type(uid) == tuple:
     #         uid = uid[0]
