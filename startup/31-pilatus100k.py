@@ -118,7 +118,7 @@ class PilatusStream(Pilatus):
 
 
 
-
+    # TODO: change blocking to NO upon staging of this class !!!
     def stage(self, acq_rate, traj_time, *args, **kwargs):
         super().stage(*args, **kwargs)
         # deal with expected number of points
