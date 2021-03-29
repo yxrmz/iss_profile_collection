@@ -151,6 +151,11 @@ class HHM(Device):
             self.start_trajectory.set('1')
 
             return status
+    # def stop(self, *args, **kwargs):
+    #     print('Stopping trajectory')
+    #     self.stop_trajectory.put('1')
+    #     super().stop(*args, **kwargs)
+    #     print('Done stopping trajectory')
 
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
@@ -164,13 +169,13 @@ _ = hhm.trajectory_ready.read()
 _ = hhm.trajectory_running.read()
 
 
-#hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
+# hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
 # hinted also is automatically set as read so no need to set read_attrs
-#hhm.energy.kind = 'hinted'
-#hhm.pitch.kind = 'hinted'
-#hhm.roll.kind = 'hinted'
-#hhm.theta.kind = 'hinted'
-#hhm.y.kind = 'hinted'
+# hhm.energy.kind = 'hinted'
+# hhm.pitch.kind = 'hinted'
+# hhm.roll.kind = 'hinted'
+# hhm.theta.kind = 'hinted'
+# hhm.y.kind = 'hinted'
 
 hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
 
