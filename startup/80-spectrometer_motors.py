@@ -221,12 +221,6 @@ def rixs_scan_from_mara_at_each_new_point(energies_out, positions, energies_kbet
 
 
 
-def elastic_scan_plan(DE=5, dE=0.1):
-    npt = np.round(DE/dE + 1)
-    name = 'elastic spectrometer scan'
-    plan = bp.relative_scan([pil100k, apb_ave], hhm.energy, -DE/2, DE/2, npt, md={'plan_name': 'elastic_scan ' + motor.name, 'name' : name})
-    yield from plan
-
 
 def herfd_scan_in_pieces_plan(energies_herfd, positions, pos_start_index, n=4, exp_time=0.5):
     idx_e = np.round(np.linspace(0, energies_herfd.size-1, n+1))
@@ -252,19 +246,6 @@ def herfd_scan_in_pieces_plan(energies_herfd, positions, pos_start_index, n=4, e
 # this_herfd_plan = herfd_scan_in_pieces_plan(energies_herfd, positions, 21, n=4, exp_time=1)
 # RE(this_herfd_plan)
 
-def johann_calibration_scan_plan(energies, DE=5, dE=0.1):
-    # uids = []
-    for energy in energies:
-        yield from bps.mv(hhm.energy, energy)
-        yield from move_emission_energy_plan(energy)
-        yield from elastic_scan_plan(DE=DE, dE=dE)
-        # uid = (yield from elastic_scan_plan())
-    #     if type(uid) == tuple:
-    #         uid = uid[0]
-    #     uids.append(uid)
-    #
-    # energy_converter = analyze_many_elastic_scans(db, uids, energies, plotting=True)
-    # return energy_converter
 
 
 # energies_calibration = np.array([7625,7650,7675,7700,7725])
@@ -273,16 +254,6 @@ def johann_calibration_scan_plan(energies, DE=5, dE=0.1):
 
 
 
-def plot_radiation_damage_scan_data(db, uid):
-    t = db[uid].table()
-    plt.figure()
-    plt.plot(t['time'], t['pil100k_stats1_total']/np.abs(t['apb_ave_ch1_mean']))
-
-
-def n_exposures_plan(n):
-    yield from shutter.open_plan()
-    yield from bp.count([pil100k, apb_ave], n)
-    yield from shutter.close_plan()
 
 
 

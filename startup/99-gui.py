@@ -20,14 +20,14 @@ if not os.environ.get('AZURE_TESTING'):
     plan_funcs = {
 
         'Fly scan (new PB)': fly_scan_with_apb,
+        'Fly scan w/Xspress 3': fly_scan_with_xs3,
+        'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
         'Step scan': step_scan,
         'Step scan w/Pilatus': step_scan_w_pilatus,
         'Step scan w/Xspress 3': step_scan_w_xs,
-        'Constant energy': constant_energy,
-        'Spiral fly scan': fly_scan_over_spiral,
-        'Fly scan w/Xspress 3': fly_scan_with_xs3,
-        'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
-        'Johann emission step scan': johann_emission_scan_plan
+        # 'Constant energy': constant_energy,
+        # 'Spiral fly scan': fly_scan_over_spiral,
+        'Johann emission step scan': step_scan_emission_w_pilatus
     }
 
     service_plan_funcs = {
@@ -42,7 +42,8 @@ if not os.environ.get('AZURE_TESTING'):
         'optimize_sample_plan': optimize_sample_plan,
         'xs_count': xs_count,
         'pil_count': pil_count,
-        'johann_calibration_scan_plan' : johann_calibration_scan_plan
+        'johann_calibration_scan_plan' : johann_calibration_scan_plan,
+        'n_pil100k_exposures_plan' : n_pil100k_exposures_plan,
     }
 
 
