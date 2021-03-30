@@ -229,6 +229,15 @@ def execute_trajectory_pil100k(name, **metadata):
           'e0': curr_traj.e0.value,
           'pulses_per_degree': hhm.pulses_per_deg,
           }
+    for indx in range(8):
+        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
+        amp = getattr(apb, f'amp_ch{indx+1}')
+        if amp:
+            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
+        else:
+            md[f'ch{indx+1}_amp_gain']=0
+    md.update(**metadata)
+
 
     roi_data = [[pil100k.roi1.min_xyz.min_x.get(), pil100k.roi1.min_xyz.min_y.get(),
                  pil100k.roi1.size.x.get(),        pil100k.roi1.size.y.get()        ],
@@ -241,12 +250,5 @@ def execute_trajectory_pil100k(name, **metadata):
     md['roi'] = roi_data
 
 
-    for indx in range(8):
-        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
-        amp = getattr(apb, f'amp_ch{indx+1}')
-        if amp:
-            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
-        else:
-            md[f'ch{indx+1}_amp_gain']=0
-    md.update(**metadata)
+
     yield from bp.fly([flyer_pil], md=md)

@@ -104,8 +104,7 @@ def get_traj_duration():
     lut = str(int(hhm.lut_number_rbv.get()))
     return int(info[lut]['size']) / 16000
 
-
-def execute_trajectory_apb(name, **metadata):
+def get_md_for_scan(name, mono_scan_type, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
     interp_fn = validate_file_exists(interp_fn)
     print(f'Storing data at {interp_fn}')
@@ -126,6 +125,17 @@ def execute_trajectory_apb(name, **metadata):
           'edge': curr_traj.edge.get(),
           'e0': curr_traj.e0.get(),
           'pulses_per_degree': hhm.pulses_per_deg,
+          'nslsii_current' : nsls_ii.beam_current.get(),
+          'nslsii_status' : nsls_ii.return_status_string(),
+          'nslsii_energy' : nsls_ii.energy_str,
+          'i0_gain' : i0.amp.get_gain()[0],
+          'it_gain' : it.amp.get_gain()[0],
+          'ir_gain' : ir.amp.get_gain()[0],
+          'iff_gain' : iff.amp.get_gain()[0],
+          'mono_offset' : f'{np.round(hhm.angle_offset.get()*180/np.pi, 3)} deg',
+          'mono_scan_type' : mono_scan_type,
+          'sample_x_position' : giantxy.x.user_readback.get(),
+          'sample_y_position' : giantxy.y.user_readback.get(),
           }
     for indx in range(8):
         md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
@@ -135,4 +145,10 @@ def execute_trajectory_apb(name, **metadata):
         else:
             md[f'ch{indx+1}_amp_gain']=0
     md.update(**metadata)
+    return md
+
+
+
+def execute_trajectory_apb(name, **metadata):
+    md = get_md_for_scan(name, 'flyscan', **metadata)
     yield from bp.fly([flyer_apb], md=md)
