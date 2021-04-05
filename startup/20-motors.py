@@ -205,6 +205,15 @@ class HHRM(Device):
     y = Cpt(EpicsMotor, 'Mir:HRM:TY}Mtr')
 
 
+    def current_sripe(self):
+        pos = self.hor_translation.user_readback.get()
+        if pos < 40:
+            stripe = 'Pt'
+        else:
+            stripe = 'Rh'
+        return stripe
+
+
 hhrm = HHRM('XF:08IDB-OP{', name='hhrm')
 
 
