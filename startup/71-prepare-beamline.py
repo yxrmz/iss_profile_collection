@@ -36,7 +36,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'He_flow': 5,
             'N2_flow': 5,
             'IC_voltage': 1700,
-            'HHRM': 8,
+            'HHRM': 8, # IS THIS SUPPOSED TO BE 80?
             'CM1':0,
             'Filterbox': -139,
             'ES BPM exposure': 0.3

@@ -3,12 +3,14 @@ i0.channel = 'I0'
 i0_amp.par = i0
 i0.amp = i0_amp
 i0.ave_ch = 'apb_ave_ch1'
+i0.ic_length = 17
 
 it = pba1.adc1
 it.channel = 'It'
 it_amp.par = it
 it.amp = it_amp
 it.ave_ch = 'apb_ave_ch2'
+it.ic_length = 30
 
 iff = pba1.adc6
 iff.channel = 'If'
@@ -21,5 +23,6 @@ ir.channel = 'Ir'
 ir_amp.par = ir
 ir.amp = ir_amp
 iff.ave_ch = 'apb_ave_ch3'
+ir.ic_length = 17
 
 
