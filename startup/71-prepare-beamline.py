@@ -202,15 +202,15 @@ def update_hhm_fb_center(truncate_data=True):
 
 from xas.energy_calibration import get_energy_offset
 from xas import xray
-def calibrate_energy_plan(element, edge, dE=25, plotting=False):
-    name = f'{element} {edge} foil scan'
-    uid = yield from execute_trajectory_apb(name)
-    e0_nom, e0_act = get_energy_offset(uid, db, db_proc, dE=dE, plotting=plotting)
-    _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
-    _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
-    delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
-    new_offset = hhm.angle_offset.value - delta_offset
-    yield from bps.mv(hhm.angle_offset, new_offset)
+# def calibrate_energy_plan(element, edge, dE=25, plotting=False):
+#     name = f'{element} {edge} foil scan'
+#     uid = yield from execute_trajectory_apb(name)
+#     e0_nom, e0_act = get_energy_offset(uid, db, db_proc, dE=dE, plotting=plotting)
+#     _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
+#     _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
+#     delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
+#     new_offset = hhm.angle_offset.value - delta_offset
+#     yield from bps.mv(hhm.angle_offset, new_offset)
 
 
 

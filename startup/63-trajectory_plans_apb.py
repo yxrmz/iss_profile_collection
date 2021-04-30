@@ -27,10 +27,10 @@ class FlyerAPB:
             else:
                 return False
 
-        # print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
+        # print(f'     !!!!streaming_st! {datetime.now()} Flyer kickoff is complete at')
 
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
-
+        print(f'Streaming !!!!!! {streaming_st}')
         if traj_duration is None:
             traj_duration = get_traj_duration()
 
