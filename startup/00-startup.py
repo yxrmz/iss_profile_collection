@@ -222,7 +222,7 @@ def print_to_gui(string, stdout=sys.stdout):
 # Check the following directories are mounted and have contents:
 required_mounts = ['/mnt/xf08idb-ioc1', '/mnt/xf08ida-ioc1',
                    '/nsls2/xf07bm', '/nsls2/xf08id']
-
+'''
 class EmptyDirException(Exception):
     ...
 
@@ -241,3 +241,5 @@ for mnt in required_mounts:
         print(msg)
         logger.info(msg)
 ###############################################################################
+'''
+

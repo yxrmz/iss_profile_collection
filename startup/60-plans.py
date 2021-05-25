@@ -232,16 +232,31 @@ def set_gains_plan(*args):
 def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
+    if type(motor) == list:
+        motor2 = motor[1]
+        motor = motor[0]
+    else:
+        motor2 = None
+
     channel = detector.hints['fields'][0]
     for jj in range(n_tries):
         motor_init_position = motor.read()[motor.name]['value']
         min_limit = motor_init_position - scan_range / 2
         max_limit = motor_init_position + scan_range / 2 + scan_step / 2
-        scan_positions = np.arange(min_limit,max_limit,scan_step)
+        scan_positions = np.arange(min_limit, max_limit, scan_step)
+        if motor2:
+            motor2_init_position = motor2.read()[motor2.name]['value']
+            min_limit = motor2_init_position - scan_range / 2
+            max_limit = motor2_init_position + scan_range / 2 + scan_step / 2
+            scan_positions2 = np.arange(min_limit, max_limit, scan_step)
         scan_range = (scan_positions[-1] - scan_positions[0])
         min_threshold = scan_positions[0] + scan_range / 10
         max_threshold = scan_positions[-1] - scan_range / 10
-        plan = bp.list_scan([detector], motor, scan_positions.tolist())
+        if motor2:
+            plan = bp.list_scan([detector], motor, scan_positions.tolist(),
+                                            motor2, scan_positions2.tolist())
+        else:
+            plan = bp.list_scan([detector], motor, scan_positions.tolist())
         if hasattr(detector, 'kickoff'):
             plan = bpp.fly_during_wrapper(plan, [detector])
         uid = (yield from plan)

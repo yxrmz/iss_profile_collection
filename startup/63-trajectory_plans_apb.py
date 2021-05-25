@@ -135,4 +135,5 @@ def execute_trajectory_apb(name, **metadata):
         else:
             md[f'ch{indx+1}_amp_gain']=0
     md.update(**metadata)
+    print(f'Launching the flyer')
     yield from bp.fly([flyer_apb], md=md)

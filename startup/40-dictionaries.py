@@ -14,6 +14,7 @@ detector_dictionary =   {
                     'Focusing mirror BPM': {'device': bpm_fm, 'channels': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
                     'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Camera SP1': {'device': camera_sp1, 'channels': ['camera_sp1_stats1_total','camera_sp1_stats2_total']},
+                    'Camera SP2': {'device': camera_sp2, 'channels': ['camera_sp2_stats1_total', 'camera_sp2_stats2_total']},
                     'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
                                                                     'pil100k_stats3_total','pil100k_stats4_total',
                                                                      'pil100k_stats1_max_value']},
@@ -82,6 +83,8 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'hhrm_mir_pitch': {'name': hhrm.mir_pitch.name, 'description':'B1 HHR Mirror Pitch','object': hhrm.mir_pitch},
                     'hhrm_table_pitch': {'name': hhrm.table_pitch.name, 'description':'B1 HR Mirror Table Pitch','object': hhrm.table_pitch},
                     'hhrm_y': {'name': hhrm.y.name, 'description':'B1 HHR Mirror Table Height','object': hhrm.y},
+                    'hhrm_yu': {'name': hhrm.yu.name,  'description':'B1 HHR Mirror Y Upstream','object': hhrm.yu},
+                    'hhrm_yd': {'name': hhrm.yd1.name, 'description':'B1 HHR Mirror Y Downstream','object': hhrm.yd1},
                     #'hrm_theta': {'name': hrm.theta.name, 'object': hrm.theta},
                     #'hrm_pitch': {'name': hrm.pitch.name, 'object': hrm.pitch},
                     #'hrm_y': {'name': hrm.y.name, 'object': hrm.y},
@@ -106,7 +109,10 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'usermotor2' : {'name' : usermotor2.name, 'description' : 'Small sample Z', 'object' : usermotor2.pos, 'group': 'spectrometer'},
                     'sample_shutter_angle' : {'name' : usermotor3.name, 'description' : 'sample shutter angle ', 'object' : usermotor3.pos},
                     'foil_wheel_wheel1' : {'name' : foil_wheel.wheel1.name, 'description' : 'Reference foil wheel 1', 'object' : foil_wheel.wheel1},
-                    'foil_wheel_wheel2' : {'name' : foil_wheel.wheel2.name, 'description' : 'Reference foil wheel 2', 'object' : foil_wheel.wheel2}}
+                    'foil_wheel_wheel2' : {'name' : foil_wheel.wheel2.name, 'description' : 'Reference foil wheel 2', 'object' : foil_wheel.wheel2},
+                    'i0_y_pos': {'name': i0_y.pos.name, 'description':'I0 Chamber height','object': i0_y.pos},
+                    'it_y_pos': {'name': it_y.pos.name, 'description':'It Chamber height','object': it_y.pos},
+                    'ir_y_pos': {'name': ir_y.pos.name, 'description':'Ir Chamber height','object': ir_y.pos},}
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),

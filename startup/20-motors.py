@@ -42,7 +42,7 @@ class HHM(Device):
     _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     "High Heat Load Monochromator"
     ip = '10.66.58.106'
-    traj_filepath = '/GPFS/xf08id/trajectory/'
+    traj_filepath = '/nsls2/xf08id/trajectory/'
 
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
@@ -232,6 +232,14 @@ usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
 
 usermotor2.wait_for_connection()
 usermotor3.wait_for_connection()
+
+class IonChamberMotor(Device):
+    pos = Cpt(EpicsMotor, '}Mtr')
+
+i0_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:1', name='i0_y')
+it_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:2', name='it_y')
+ir_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:3', name='ir_y')
+
 
 
 class FilterBox(Device):
