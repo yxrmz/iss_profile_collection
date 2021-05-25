@@ -6,19 +6,11 @@ import copy
 from ophyd import (PseudoPositioner, PseudoSingle)
 from ophyd.pseudopos import (pseudo_position_argument,
                              real_position_argument)
-from ophyd import SoftPositioner
-# from ophyd import (Component as Cpt)
-#
-# class SpectrometerEnergy(PseudoPositioner):
-#     # pseudo motor
-#     energy = Cpt(PseudoSingle)
-#
-#     # real motors
-#     crystal_x = auxxy.x
-#     crystal_y = auxxy.y
-#     det_y0 = huber_stage.z
 
 
+def move_crystal_plan(x, y):
+    yield from bps.mv(auxxy.x, x)
+    yield from bps.mv(auxxy.y, y)
 
 
 
@@ -31,29 +23,52 @@ class EmissionEnergyMotor(PseudoPositioner):
              'motor_crystal_y',
              'motor_detector_y']
 
-    def __init__(self, energy0, cr_x0, cr_y0, det_y0, kind, hkl, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.energy0 = None
+        self.cr_x0 = None
+        self.cr_x0=None
+        self.cr_y0=None
+        self.det_y0=None
+        self.spectrometer_root_path = f"{ROOT_PATH}/{USER_FILEPATH}"
+        self._initialized = False
+
+
+    def define_motor_coordinates(self, energy0, kind, hkl,
+                                  cr_x0=None, cr_y0=None, det_y0=None,
+                 energy_limits=None):
 
         self.energy0 = energy0
-        self.cr_x0 = cr_x0
-        self.cr_y0 = cr_y0
-        self.det_y0 = det_y0
-
+        if cr_x0 is None:
+            self.cr_x0 = self.motor_crystal_x.user_readback.get()
+        else:
+            self.cr_x0 = cr_x0
+        if cr_y0 is None:
+            self.cr_y0 = self.motor_crystal_y.user_readback.get()
+        else:
+            self.cr_y0 = cr_y0
+        if det_y0 is None:
+            self.det_y0 = self.motor_detector_y.user_readback.get()
+        else:
+            self.det_y0 = det_y0
         self.crystal = Crystal(1000, 50, hkl, kind)
         self.crystal.place_E(energy0)
         self.cr_x0_nom = copy.copy(self.crystal.x)
         self.cry_0_nom = copy.copy(self.crystal.y)
         self.det_y0_nom = copy.copy(self.crystal.d_y)
 
+        if energy_limits is not None:
+            condition = ((type(energy_limits) == tuple) and (len(energy_limits)==2))
+            assert condition, 'Invalid limits for emission energy motor'
+            self.energy._limits = energy_limits
         self.energy_converter = None
-
-        super().__init__(*args, **kwargs)
+        self._initialized = True
 
     def append_energy_converter(self, ec):
         self.energy_converter = ec
 
     @pseudo_position_argument
     def forward(self, energy_input_object):
-        # logger.debug('forward %s', pseudo_pos)
         energy = energy_input_object.energy
         if self.energy_converter is not None:
             energy = self.energy_converter.act2nom(energy)
@@ -65,10 +80,6 @@ class EmissionEnergyMotor(PseudoPositioner):
         position_detector_y = self.det_y0 - ddet_y
         position_crystal_y = self.cr_y0 + dcr_y
         position_crystal_x = self.cr_x0 - dcr_x
-
-        # print(f'moving detector_y to {position_detector_y}')
-        # print(f'moving crystal_y to {position_crystal_y}')
-        # print(f'moving crystal_x to {position_crystal_x}')
 
         return self.RealPosition(motor_detector_y = position_detector_y,
                                  motor_crystal_y = position_crystal_y,
@@ -84,59 +95,15 @@ class EmissionEnergyMotor(PseudoPositioner):
             energy = self.energy_converter.nom2act(energy)
         return [energy]
 
-def define_spectrometer_motor(energy, kind, hkl):
-    # energy = hhm.energy.user_readback.get()
-    cr_x0 = auxxy.x.user_readback.get()
-    cr_y0 = auxxy.y.user_readback.get()
-    det_y0 = huber_stage.z.user_readback.get()
-    global motor_emission
-    motor_emission = EmissionEnergyMotor(energy, cr_x0, cr_y0, det_y0, kind, hkl, name='motor_emission')
 
+motor_emission = EmissionEnergyMotor(name='motor_emission')
 
-def johann_emission_scan_plan(energies):
-    plan = bp.list_scan([pil100k, apb_ave],
-                            motor_emission, energies,
-                            md={'plan_name' : 'johann_emission_step_scan'})
-    yield from plan
-
-def johann_emission_scan_plan(name, comment, energy_steps, time_steps, detectors, element='', e0=0, line=''):
-    print(f'Line in plan {line}')
-    fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
-    fn = validate_file_exists(fn)
-
-    try:
-        full_element_name = getattr(elements, element).name.capitalize()
-    except:
-        full_element_name = element
-
-    md = {'plan_args': {},
-          'experiment': 'step_scan_emission',
-          'name': name,
-          'comment': comment,
-          'interp_filename': fn,
-          'element': element,
-          'element_full': full_element_name,
-          'line': line,
-          'e0': e0,
-          }
-    #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
-    yield from bps.abs_set(apb_ave.divide, 373, wait=True)
-
-    # for det in detectors:
-    #     if det.name == 'xs':
-    #         yield from bps.mv(det.total_points, len(energy_steps))
-
-    yield from bp.list_scan( #this is the scan
-        detectors,
-        motor_emission, list(energy_steps),
-        per_step=adaq_pb_step_per_step_factory(energy_steps, time_steps), #and this function is colled at every step
-        md=md
-    )
+motor_emission_key = 'motor_emission'
+motor_emission_dict = {'name': motor_emission.name, 'description' : 'Emission energy', 'object': motor_emission, 'group': 'spectrometer'}
+motor_dictionary['motor_emission'] = motor_emission_dict
 
 
 
-# def johann_rixs_scan_plan(name, comment, emission_energy_steps, time_steps, detectors, element='', e0_edge=0, e0_line, edge='', line=''):
-#     pass
 
 
 
@@ -254,12 +221,6 @@ def rixs_scan_from_mara_at_each_new_point(energies_out, positions, energies_kbet
 
 
 
-def elastic_scan_plan(DE=5, dE=0.1):
-    npt = np.round(DE/dE + 1)
-    name = 'elastic spectrometer scan'
-    plan = bp.relative_scan([pil100k, apb_ave], hhm.energy, -DE/2, DE/2, npt, md={'plan_name': 'elastic_scan ' + motor.name, 'name' : name})
-    yield from plan
-
 
 def herfd_scan_in_pieces_plan(energies_herfd, positions, pos_start_index, n=4, exp_time=0.5):
     idx_e = np.round(np.linspace(0, energies_herfd.size-1, n+1))
@@ -285,19 +246,6 @@ def herfd_scan_in_pieces_plan(energies_herfd, positions, pos_start_index, n=4, e
 # this_herfd_plan = herfd_scan_in_pieces_plan(energies_herfd, positions, 21, n=4, exp_time=1)
 # RE(this_herfd_plan)
 
-def calibration_scan_plan(energies):
-    # uids = []
-    for energy in energies:
-        yield from bps.mv(hhm.energy, energy)
-        yield from move_emission_energy_plan(energy)
-        yield from elastic_scan_plan()
-        # uid = (yield from elastic_scan_plan())
-    #     if type(uid) == tuple:
-    #         uid = uid[0]
-    #     uids.append(uid)
-    #
-    # energy_converter = analyze_many_elastic_scans(db, uids, energies, plotting=True)
-    # return energy_converter
 
 
 # energies_calibration = np.array([7625,7650,7675,7700,7725])
@@ -306,16 +254,9 @@ def calibration_scan_plan(energies):
 
 
 
-def plot_radiation_damage_scan_data(db, uid):
-    t = db[uid].table()
-    plt.figure()
-    plt.plot(t['time'], t['pil100k_stats1_total']/np.abs(t['apb_ave_ch1_mean']))
 
 
-def n_exposures_plan(n):
-    yield from shutter.open_plan()
-    yield from bp.count([pil100k, apb_ave], n)
-    yield from shutter.close_plan()
+
 
 
 # def test():

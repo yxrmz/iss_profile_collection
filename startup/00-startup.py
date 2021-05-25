@@ -16,7 +16,7 @@ from bluesky.simulators import summarize_plan
 # Check version of bluesky and act accordingly
 from distutils.version import LooseVersion
 from datetime import datetime
-
+from xview.spectra_db.db_io import get_spectrum_catalog
 
 def print_now():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
@@ -73,6 +73,7 @@ else:
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
     from databroker.v0 import Broker
     db = Broker.named('iss')
+    db_proc = get_spectrum_catalog()
     nslsii.configure_base(get_ipython().user_ns, db, pbar=False)
 
 # nslsii.configure_base(get_ipython().user_ns, 'iss',  publish_documents_to_kafka=True)
@@ -216,30 +217,3 @@ USER_FILEPATH = 'users'
 
 def print_to_gui(string, stdout=sys.stdout):
     print(string, file=stdout, flush=True)
-
-
-###############################################################################
-# Check the following directories are mounted and have contents:
-required_mounts = ['/mnt/xf08idb-ioc1', '/mnt/xf08ida-ioc1',
-                   '/nsls2/xf07bm', '/nsls2/xf08id']
-'''
-class EmptyDirException(Exception):
-    ...
-
-logger = logging.getLogger('bluesky')
-for mnt in required_mounts:
-    contents = glob.glob(f'{mnt}/*')
-    if not contents:
-        msg = f'There are no files in {mnt}'
-        if not os.environ.get('AZURE_TESTING'):
-            raise EmptyDirException(msg)
-        else:
-            print(msg)
-            logger.info(msg)
-    else:
-        msg = f'Found {len(contents)} files in {mnt}'
-        print(msg)
-        logger.info(msg)
-###############################################################################
-'''
-

@@ -38,14 +38,18 @@ class HHMTrajDesc(Device):
 
 
 class HHM(Device):
-    _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
-    _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+    #_default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+    #_default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
+
+    _default_configuration_attrs = ( 'theta', 'y', 'energy')
+    _default_read_attrs = ( 'theta', 'y', 'energy')
+
     "High Heat Load Monochromator"
     ip = '10.66.58.106'
     traj_filepath = '/nsls2/xf08id/trajectory/'
 
-    pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
-    roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
+    #pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
+    #roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
     energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
@@ -85,12 +89,12 @@ class HHM(Device):
     traj8 = Cpt(HHMTrajDesc, 'MC:06}Traj:8')
     traj9 = Cpt(HHMTrajDesc, 'MC:06}Traj:9')
 
-    fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
-    fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
-    fb_line = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Line')
-    fb_nlines = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NLines')
-    fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
-    fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
+    # fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
+    # fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
+    # fb_line = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Line')
+    # fb_nlines = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NLines')
+    # fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
+    # fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
     home_z = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
@@ -177,8 +181,8 @@ _ = hhm.trajectory_running.read()
 # hhm.theta.kind = 'hinted'
 # hhm.y.kind = 'hinted'
 
-hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
-
+#hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
+hhm.read_attrs = ['theta', 'y', 'energy']
 
 class HRM(Device):
     """High Resolution Monochromator"""
@@ -199,6 +203,15 @@ class HHRM(Device):
 
     table_pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
     y = Cpt(EpicsMotor, 'Mir:HRM:TY}Mtr')
+
+
+    def current_sripe(self):
+        pos = self.hor_translation.user_readback.get()
+        if pos < 40:
+            stripe = 'Pt'
+        else:
+            stripe = 'Rh'
+        return stripe
 
 
 hhrm = HHRM('XF:08IDB-OP{', name='hhrm')
@@ -240,6 +253,12 @@ i0_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:1', name='i0_y')
 it_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:2', name='it_y')
 ir_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:3', name='ir_y')
 
+
+
+class Bender(Device):
+    pos = Cpt(EpicsMotor, '}Mtr')
+    load_cell = EpicsSignalRO('XF:08IDA-OP{Mir:CM-Ax:Bender}W-I', name='bender_loading')
+bender = Bender('XF:08IDA-OP{Mir:CM-Bender', name='bender')
 
 
 class FilterBox(Device):

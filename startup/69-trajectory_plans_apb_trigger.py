@@ -139,96 +139,34 @@ flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_
 
 
 def execute_trajectory_apb_trigger(name, **metadata):
-    interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
-    interp_fn = validate_file_exists(interp_fn)
-    print(f'Storing data at {interp_fn}')
-    curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-    try:
-        full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
-    except:
-        full_element_name = curr_traj.elem.value
-    md = {'plan_args': {},
-          'plan_name': 'execute_trajectory_apb',
-          'experiment': 'fly_energy_scan_apb',
-          'name': name,
-          'interp_filename': interp_fn,
-          'angle_offset': str(hhm.angle_offset.value),
-          'trajectory_name': hhm.trajectory_name.value,
-          'element': curr_traj.elem.value,
-          'element_full': full_element_name,
-          'edge': curr_traj.edge.value,
-          'e0': curr_traj.e0.value,
-          'pulses_per_degree': hhm.pulses_per_deg,
-          }
-    for indx in range(8):
-        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
-        amp = getattr(apb, f'amp_ch{indx+1}')
-        if amp:
-            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
-        else:
-            md[f'ch{indx+1}_amp_gain']=0
-    md.update(**metadata)
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_apb_trigger',
+                         'fly_energy_scan_apb_trigger',
+                         **metadata)
     yield from bp.fly([flyer_apb_trigger], md=md)
 
 
 
 
 def execute_trajectory_xs(name, **metadata):
-    interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
-    interp_fn = validate_file_exists(interp_fn)
-    print(f'Storing data at {interp_fn}')
-    curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-    try:
-        full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
-    except:
-        full_element_name = curr_traj.elem.value
-    md = {'plan_args': {},
-          'plan_name': 'execute_trajectory_apb',
-          'experiment': 'fly_energy_scan_xs3',
-          'name': name,
-          'interp_filename': interp_fn,
-          'angle_offset': str(hhm.angle_offset.value),
-          'trajectory_name': hhm.trajectory_name.value,
-          'element': curr_traj.elem.value,
-          'element_full': full_element_name,
-          'edge': curr_traj.edge.value,
-          'e0': curr_traj.e0.value,
-          'pulses_per_degree': hhm.pulses_per_deg,
-          }
-    for indx in range(8):
-        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
-        amp = getattr(apb, f'amp_ch{indx+1}')
-        if amp:
-            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
-        else:
-            md[f'ch{indx+1}_amp_gain']=0
-    md.update(**metadata)
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_xs',
+                         'fly_energy_scan_xs3',
+                         **metadata)
+    md['aux_detector'] = 'XSpress3'
     yield from bp.fly([flyer_xs], md=md)
 
 
 
 def execute_trajectory_pil100k(name, **metadata):
-    interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
-    interp_fn = validate_file_exists(interp_fn)
-    print(f'Storing data at {interp_fn}')
-    curr_traj = getattr(hhm, 'traj{:.0f}'.format(hhm.lut_number_rbv.value))
-    try:
-        full_element_name = getattr(elements, curr_traj.elem.value).name.capitalize()
-    except:
-        full_element_name = curr_traj.elem.value
-    md = {'plan_args': {},
-          'plan_name': 'execute_trajectory_apb',
-          'experiment': 'fly_energy_scan_pil100k',
-          'name': name,
-          'interp_filename': interp_fn,
-          'angle_offset': str(hhm.angle_offset.value),
-          'trajectory_name': hhm.trajectory_name.value,
-          'element': curr_traj.elem.value,
-          'element_full': full_element_name,
-          'edge': curr_traj.edge.value,
-          'e0': curr_traj.e0.value,
-          'pulses_per_degree': hhm.pulses_per_deg,
-          }
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_pil100k',
+                         'fly_energy_scan_pil100k',
+                         **metadata)
+    md['aux_detector'] = 'Pilatus100k'
 
     roi_data = [[pil100k.roi1.min_xyz.min_x.get(), pil100k.roi1.min_xyz.min_y.get(),
                  pil100k.roi1.size.x.get(),        pil100k.roi1.size.y.get()        ],
@@ -240,13 +178,4 @@ def execute_trajectory_pil100k(name, **metadata):
                  pil100k.roi4.size.x.get(),        pil100k.roi4.size.y.get()]]
     md['roi'] = roi_data
 
-
-    for indx in range(8):
-        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
-        amp = getattr(apb, f'amp_ch{indx+1}')
-        if amp:
-            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
-        else:
-            md[f'ch{indx+1}_amp_gain']=0
-    md.update(**metadata)
     yield from bp.fly([flyer_pil], md=md)

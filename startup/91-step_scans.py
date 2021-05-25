@@ -54,10 +54,18 @@ def step_scan_w_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
 
 
 
-def step_scan_emission_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
+def step_scan_emission_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
+                                 energy_min: float = motor_emission.energy.limits[0],
+                                 energy_max: float = motor_emission.energy.limits[1],
+                                 energy_step: float = 0.5,
+                                 exposure_time: float = 1.0):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    emission_energies = kwargs.pop('emission_energies', [])
-    time_grid = kwargs.pop('time_grid', [])
+    # emission_energies = kwargs.pop('emission_energies', [])
+    # time_grid = kwargs.pop('time_grid', [])
+    emission_energies = np.arange(energy_min,
+                                  energy_max + energy_step,
+                                  energy_step)
+    time_grid = np.ones(emission_energies.size) * exposure_time
     element = kwargs.pop('element', [])
     e0 = kwargs.pop('e0', [])
     line = kwargs.pop('line', [])

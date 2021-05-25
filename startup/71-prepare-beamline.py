@@ -36,7 +36,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
             'He_flow': 5,
             'N2_flow': 5,
             'IC_voltage': 1700,
-            'HHRM': 8,
+            'HHRM': 8, # IS THIS SUPPOSED TO BE 80?
             'CM1':0,
             'Filterbox': -139,
             'ES BPM exposure': 0.3
@@ -198,6 +198,19 @@ def update_hhm_fb_center(truncate_data=True):
     new_center = determine_beam_position_from_fb_image(image, line=line, center_point=center, n_lines=n_lines, truncate_data=truncate_data)
     if new_center is not None:
         yield from bps.mv(hhm.fb_center, new_center)
+
+
+from xas.energy_calibration import get_energy_offset
+from xas import xray
+# def calibrate_energy_plan(element, edge, dE=25, plotting=False):
+#     name = f'{element} {edge} foil scan'
+#     uid = yield from execute_trajectory_apb(name)
+#     e0_nom, e0_act = get_energy_offset(uid, db, db_proc, dE=dE, plotting=plotting)
+#     _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
+#     _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
+#     delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
+#     new_offset = hhm.angle_offset.value - delta_offset
+#     yield from bps.mv(hhm.angle_offset, new_offset)
 
 
 

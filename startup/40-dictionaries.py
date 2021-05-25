@@ -66,15 +66,15 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     #'samplexy_y': {'name': samplexy.y.name, 'description':'B2 Sample Stage Y','object': samplexy.y},
                     'giantxy_x': {'name': giantxy.x.name, 'description':'Sample stage X','object': giantxy.x, 'group': 'spectrometer'},
                     'giantxy_y': {'name': giantxy.y.name, 'description':'Sample stage Y','object': giantxy.y, 'group': 'spectrometer'},
-                    'usermotor2' : {'name' : usermotor2.name, 'description' : 'Sample stage Z', 'object' : usermotor2.pos, 'group': 'spectrometer'},
+                    'bender' : {'name' : bender.name, 'description' : 'CM2 bender', 'object' : bender.pos, 'group': 'spectrometer'},
                     'auxxy_x': {'name': auxxy.x.name, 'description':'Crystal X','object': auxxy.x, 'group': 'spectrometer'},
                     'auxxy_y': {'name': auxxy.y.name, 'description':'Crystal Y','object': auxxy.y, 'group': 'spectrometer'},
                     'usermotor1' : {'name' : usermotor1.name, 'description' : 'Crystal Z', 'object' : usermotor1.pos, 'group': 'spectrometer'},
                     'hhm_theta': {'name': hhm.theta.name,'description':'A Monochromator Theta', 'object': hhm.theta},
                     'hhm_energy': {'name': hhm.energy.name, 'description':'A Monochromator Energy','object': hhm.energy, 'group': 'spectrometer'},
                     'hhm_y': {'name': hhm.y.name,'description':'A Monochromator Y', 'object': hhm.y},
-                    'hhm_pitch': {'name': hhm.pitch.name, 'description':'A Monochromator Pitch','object': hhm.pitch},
-                    'hhm_roll': {'name': hhm.roll.name, 'description':'A Monochromator Roll', 'object': hhm.roll},
+                    #'hhm_pitch': {'name': hhm.pitch.name, 'description':'A Monochromator Pitch','object': hhm.pitch},
+                    #'hhm_roll': {'name': hhm.roll.name, 'description':'A Monochromator Roll', 'object': hhm.roll},
                     # TODO remove when done
                     'fm_pitch': {'name': fm.pitch.name, 'description':'Focusing Mirror Pitch', 'object': fm.pitch},
                     #'hhrm_yu': {'name': hhrm.yu.name, 'object': hhrm.yu},
@@ -129,4 +129,9 @@ camera_dictionary = {'camera_sample1': camera_sp1,
                      'camera_sample4': camera_sp4,
 
                      }
+
+# dictionaries for plans:
+plan_funcs = None
+service_plan_funcs = None
+aux_plan_funcs = None
 
