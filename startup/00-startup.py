@@ -102,8 +102,8 @@ except ImportError:
         The contents are stored as msgpack-serialized files, with one file per item
         in the mapping.
         Note that when an item is *mutated* it is not immediately synced:
-        >>> d['sample'] = {"color": "red"}  # immediately synced
-        >>> d['sample']['shape'] = 'bar'  # not immediately synced
+        # >>> d['sample'] = {"color": "red"}  # immediately synced
+        # >>> d['sample']['shape'] = 'bar'  # not immediately synced
         but that the full contents are synced to disk when the PersistentDict
         instance is garbage collected.
         """

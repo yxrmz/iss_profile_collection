@@ -8,8 +8,10 @@ def elastic_scan_plan(DE=5, dE=0.1):
 def johann_calibration_scan_plan(energies, DE=5, dE=0.1):
     for energy in energies:
         yield from bps.mv(hhm.energy, energy)
-        yield from move_emission_energy_plan(energy)
+        # yield from move_emission_energy_plan(energy)
+        yield from bps.mv(motor_emission, energy)
         yield from elastic_scan_plan(DE=DE, dE=dE)
+
 
 
 def plot_radiation_damage_scan_data(db, uid):
