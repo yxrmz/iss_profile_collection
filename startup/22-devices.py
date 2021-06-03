@@ -137,6 +137,7 @@ class ShutterMotor:
             self.output = usermotor3.pos
             self.open_value = 0.01
             self.open_range = 1
+            self.closed_value = 1.1
 
             self.value = self.output.read()[self.output.name]['value']
 
@@ -171,12 +172,14 @@ class ShutterMotor:
 
     def open_plan(self):
         print('Opening {}'.format(self.name))
-        yield from bps.abs_set(self.output, self.open_value, wait=True)
+        # yield from bps.abs_set(self.output, self.open_value, wait=True)
+        yield from bps.mv(self.output, self.open_value, wait=True)
         self.state = 'open'
 
     def close_plan(self):
         print('Closing {}'.format(self.name))
-        yield from bps.abs_set(self.output, self.open_value+self.open_range, wait=True)
+        # yield from bps.abs_set(self.output, self.closed_value, wait=True)
+        yield from bps.mv(self.output, self.closed_value, wait=True)
         self.state = 'closed'
 
 

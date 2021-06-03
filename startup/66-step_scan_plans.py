@@ -65,7 +65,7 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
     for det in detectors:
         if det.name == 'xs':
             yield from bps.mv(det.total_points, len(energy_steps))
-
+    yield from shutter.open_plan()
     yield from bp.list_scan( #this is the scan
         detectors,
         hhm.energy,
@@ -73,3 +73,4 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
         per_step=adaq_pb_step_per_step_factory(energy_steps,time_steps), #and this function is colled at every step
         md=md
     )
+    yield from shutter.close_plan()

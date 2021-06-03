@@ -149,6 +149,7 @@ def execute_trajectory_apb_trigger(name, **metadata):
 
 
 
+
 def execute_trajectory_xs(name, **metadata):
     md = get_md_for_scan(name,
                          'fly_scan',
@@ -177,5 +178,4 @@ def execute_trajectory_pil100k(name, **metadata):
                 [pil100k.roi4.min_xyz.min_x.get(), pil100k.roi4.min_xyz.min_y.get(),
                  pil100k.roi4.size.x.get(),        pil100k.roi4.size.y.get()]]
     md['roi'] = roi_data
-
     yield from bp.fly([flyer_pil], md=md)
