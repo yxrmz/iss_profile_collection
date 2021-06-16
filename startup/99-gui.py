@@ -27,7 +27,8 @@ if not os.environ.get('AZURE_TESTING'):
         'Step scan w/Xspress 3': step_scan_w_xs,
         # 'Constant energy': constant_energy,
         # 'Spiral fly scan': fly_scan_over_spiral,
-        'Johann emission step scan': step_scan_emission_w_pilatus
+        'step scan Johann Emission w/Pilatus': step_scan_emission_w_pilatus,
+        'step scan Johann RIXS w/Pilatus': step_scan_rixs_w_pilatus,
     }
 
     service_plan_funcs = {
