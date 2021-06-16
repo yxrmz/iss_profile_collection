@@ -194,6 +194,42 @@ def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: flo
 
 
 
+def fly_scan_rixs_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
+                             energy_min: float = motor_emission.energy.limits[0],
+                             energy_max: float = motor_emission.energy.limits[1],
+                             energy_step: float = 0.5,
+                             reference=True, **kwargs):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
+    # energy_grid = kwargs.pop('energy_grid', [])
+    # time_grid = kwargs.pop('time_grid', [])
+    # element = kwargs.pop('element', [])
+    # e0 = kwargs.pop('e0', [])
+    # edge = kwargs.pop('edge', [])
+
+    emission_energies = np.arange(energy_min,
+                                  energy_max + energy_step,
+                                  energy_step)
+
+    filename_uid_bundle = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.uids"
+    print(f'Uids will be stored under  {filename_uid_bundle}')
+
+    for indx in range(int(n_cycles)):
+        for emission_energy in emission_energies:
+            print(f'Emission moving to {emission_energy} ')
+            yield from bps.mv(motor_emission, emission_energy)
+            name_n = '{} {:04d}'.format(f'{name} {np.round(emission_energy,3)} ', indx + 1)
+            yield from shutter.open_plan()
+            print('Starting HERFD Scan...')
+            yield from fly_scan_with_pil100k(name_n, comment, n_cycles=1, delay=0, autofoil=False, **kwargs)
+            uid_herfd = db[-1].start['uid']
+            yield from shutter.close_plan()
+            print('HERFD Scan complete...')
+            yield from bps.sleep(float(delay))
+            with open(filename_uid_bundle, "a") as text_file:
+                text_file.write(f'{ttime.ctime()} {emission_energy} {uid_herfd}\n')
+
+
+
 
 
 
@@ -203,6 +239,7 @@ def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: flo
 
 
 ##############################################################
+# LEGACY
 
 def fly_scan_with_sdd(name: str, comment: str, n_cycles: int = 1, delay: float = 0, **kwargs):
     """
