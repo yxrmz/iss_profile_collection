@@ -65,59 +65,60 @@ class TIFFPluginEnsuredOff(TIFFPlugin):
 
 # Making ROIStatPlugin that is actually useful
 class ROIStatPlugin(ROIStatPlugin_V34):
-    roi1_minx = Cpt(SignalWithRBV, '1:MinX', kind='normal')
-    roi2_minx = Cpt(SignalWithRBV, '2:MinX', kind='normal')
-    roi3_minx = Cpt(SignalWithRBV, '3:MinX', kind='normal')
-    roi4_minx = Cpt(SignalWithRBV, '4:MinX', kind='normal')
-
-    roi1_miny = Cpt(SignalWithRBV, '1:MinY', kind='normal')
-    roi2_miny = Cpt(SignalWithRBV, '2:MinY', kind='normal')
-    roi3_miny = Cpt(SignalWithRBV, '3:MinY', kind='normal')
-    roi4_miny = Cpt(SignalWithRBV, '4:MinY', kind='normal')
-
-    roi1_sizex = Cpt(SignalWithRBV, '1:SizeX', kind='normal')
-    roi2_sizex = Cpt(SignalWithRBV, '2:SizeX', kind='normal')
-    roi3_sizex = Cpt(SignalWithRBV, '3:SizeX', kind='normal')
-    roi4_sizex = Cpt(SignalWithRBV, '4:SizeX', kind='normal')
-
-    roi1_sizey = Cpt(SignalWithRBV, '1:SizeY', kind='normal')
-    roi2_sizey = Cpt(SignalWithRBV, '2:SizeY', kind='normal')
-    roi3_sizey = Cpt(SignalWithRBV, '3:SizeY', kind='normal')
-    roi4_sizey = Cpt(SignalWithRBV, '4:SizeY', kind='normal')
-
-    # for i in range(1,4):
-    #     _attr = f'roi{i}'
-    #     _attr_min_x = f'min_x'
-    #     _attr_min_y = f'min_y'
-    #     _pv_min_x = f'{i}:MinX'
-    #     _pv_min_y = f'{i}:MinY'
-    #     _attr_size_x = f'size_x'
-    #     _attr_size_y = f'size_y'
-    #     _pv_size_x = f'{i}:SizeX'
-    #     _pv_size_y = f'{i}:SizeY'
+    # roi1_minx = Cpt(SignalWithRBV, '1:MinX', kind='normal')
+    # roi2_minx = Cpt(SignalWithRBV, '2:MinX', kind='normal')
+    # roi3_minx = Cpt(SignalWithRBV, '3:MinX', kind='normal')
+    # roi4_minx = Cpt(SignalWithRBV, '4:MinX', kind='normal')
     #
-    #     _attr_instance = DDC_SignalWithRBV(
-    #         (_attr_min_x, _pv_min_x),
-    #         (_attr_min_y, _pv_min_y),
-    #         (_attr_size_x, _pv_size_x),
-    #         (_attr_size_y, _pv_size_y),
-    #         doc='ROI position and size in XY',
-    #         kind='normal',
-    #     )
-    #     vars()[_attr] = _attr_instance
+    # roi1_miny = Cpt(SignalWithRBV, '1:MinY', kind='normal')
+    # roi2_miny = Cpt(SignalWithRBV, '2:MinY', kind='normal')
+    # roi3_miny = Cpt(SignalWithRBV, '3:MinY', kind='normal')
+    # roi4_miny = Cpt(SignalWithRBV, '4:MinY', kind='normal')
+    #
+    # roi1_sizex = Cpt(SignalWithRBV, '1:SizeX', kind='normal')
+    # roi2_sizex = Cpt(SignalWithRBV, '2:SizeX', kind='normal')
+    # roi3_sizex = Cpt(SignalWithRBV, '3:SizeX', kind='normal')
+    # roi4_sizex = Cpt(SignalWithRBV, '4:SizeX', kind='normal')
+    #
+    # roi1_sizey = Cpt(SignalWithRBV, '1:SizeY', kind='normal')
+    # roi2_sizey = Cpt(SignalWithRBV, '2:SizeY', kind='normal')
+    # roi3_sizey = Cpt(SignalWithRBV, '3:SizeY', kind='normal')
+    # roi4_sizey = Cpt(SignalWithRBV, '4:SizeY', kind='normal')
 
-        # _attr = f'stats{i}'
-        # _attr_total = f'total'
-        # _pv_total = f'{i}:Total_RBV'
-        # _attr_max = f'max_value'
-        # _pv_max = f'{i}:MaxValue_RBV'
-        # _attr_instance = DDC_EpicsSignalRO(
-        #     (_attr_total, _pv_total),
-        #     (_attr_max, _pv_max),
-        #     doc='ROI stats',
-        #     kind='normal',
-        # )
-        # vars()[_attr] = _attr_instance
+    for i in range(1,5):
+        _attr = f'roi{i}'
+        _attr_min_x = f'min_x'
+        _attr_min_y = f'min_y'
+        _pv_min_x = f'{i}:MinX'
+        _pv_min_y = f'{i}:MinY'
+        _attr_size_x = f'size_x'
+        _attr_size_y = f'size_y'
+        _pv_size_x = f'{i}:SizeX'
+        _pv_size_y = f'{i}:SizeY'
+
+        vars()[_attr] = DDC_SignalWithRBV(
+            (_attr_min_x, _pv_min_x),
+            (_attr_min_y, _pv_min_y),
+            (_attr_size_x, _pv_size_x),
+            (_attr_size_y, _pv_size_y),
+            doc='ROI position and size in XY',
+            kind='normal',
+        )
+
+        _attr = f'stats{i}'
+        _attr_total = f'total'
+        _pv_total = f'{i}:Total_RBV'
+        _attr_max = f'max_value'
+        _pv_max = f'{i}:MaxValue_RBV'
+        vars()[_attr] = DDC_EpicsSignalRO(
+            (_attr_total, _pv_total),
+            (_attr_max, _pv_max),
+            doc='ROI stats',
+            kind='normal',
+        )
+
+
+
 
 
 
@@ -166,11 +167,11 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
             _y = _attr.min_xyz.min_y.get()
             _xs = _attr.size.x.get()
             _ys = _attr.size.y.get()
-
-            getattr(self.roistat, f'roi{i}_minx').set(_x)
-            getattr(self.roistat, f'roi{i}_miny').set(_y)
-            getattr(self.roistat, f'roi{i}_sizex').set(_xs)
-            getattr(self.roistat, f'roi{i}_sizey').set(_ys)
+            _attr2 = getattr(self.roistat, f'roi{i}')
+            _attr2.min_x.set(_x)
+            _attr2.min_y.set(_y)
+            _attr2.size_x.set(_xs)
+            _attr2.size_y.set(_ys)
 
 
     @property
