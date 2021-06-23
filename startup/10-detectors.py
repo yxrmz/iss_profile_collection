@@ -119,9 +119,10 @@ bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 
 camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+
 #camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
 camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
-#camera_sp5 = CAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
+camera_sp5 = CAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
 #bpm_ms1 = CAMERA('XF:08IDB-BI{BPM:MS-1}', name='bpm_ms1')
 
 for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es,]: #camera_sp1, camera_sp2, camera_sp3, camera_sp4]:

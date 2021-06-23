@@ -135,7 +135,8 @@ class FlyerPilatus(FlyerAPBwithTrigger):
         yield from self.pil_det.collect()
 
 
-flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
+# flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
+flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_hdf5_stream)
 
 
 def execute_trajectory_apb_trigger(name, **metadata):

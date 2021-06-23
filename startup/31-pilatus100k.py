@@ -96,6 +96,7 @@ class ROIStatPlugin(ROIStatPlugin_V34):
         _pv_size_x = f'{i}:SizeX'
         _pv_size_y = f'{i}:SizeY'
 
+        # this does work:
         vars()[_attr] = DDC_SignalWithRBV(
             (_attr_min_x, _pv_min_x),
             (_attr_min_y, _pv_min_y),
@@ -104,6 +105,17 @@ class ROIStatPlugin(ROIStatPlugin_V34):
             doc='ROI position and size in XY',
             kind='normal',
         )
+
+        # this does not work
+        # bla = DDC_SignalWithRBV(
+        #     (_attr_min_x, _pv_min_x),
+        #     (_attr_min_y, _pv_min_y),
+        #     (_attr_size_x, _pv_size_x),
+        #     (_attr_size_y, _pv_size_y),
+        #     doc='ROI position and size in XY',
+        #     kind='normal',
+        # )
+        # vars()[_attr] = bla
 
         _attr = f'stats{i}'
         _attr_total = f'total'
@@ -116,9 +128,6 @@ class ROIStatPlugin(ROIStatPlugin_V34):
             doc='ROI stats',
             kind='normal',
         )
-
-
-
 
 
 
@@ -155,7 +164,10 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     def set_num_images(self, num):
         self.cam.num_images.put(num)
-        self.tiff.num_capture.put(num)
+        if hasattr(self, 'tiff'):
+            self.tiff.num_capture.put(num)
+        if hasattr(self, 'hdf5'):
+            self.hdf5.num_capture.put(num)
 
     def det_next_file(self, n):
         self.cam.file_number.put(n)
@@ -258,6 +270,7 @@ class PilatusStreamTIFF(PilatusTIFF):
 
     # TODO: change blocking to NO upon staging of this class !!!
     def stage(self, acq_rate, traj_time, *args, **kwargs):
+        print('>>>>>>>>>>>>>>> STAGING TIFF VERSION')
         super().stage(*args, **kwargs)
         # deal with expected number of points
         self.set_expected_number_of_points(acq_rate, traj_time)
@@ -306,6 +319,7 @@ class PilatusStreamTIFF(PilatusTIFF):
         self._datum_counter = None
         self.set_num_images(1)
         self.cam.array_counter.put(0)
+        self.set_exposure_time(1)
 
 
     def complete(self, *args, **kwargs):
@@ -380,6 +394,160 @@ pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_strea
 
 
 
+class PilatusStreamHDF5(PilatusHDF5):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._asset_docs_cache = deque()
+        self._datum_counter = None
+        self._acquire = None
+        # self._datum_counter = None
+
+
+
+    # TODO: change blocking to NO upon staging of this class !!!
+    def stage(self, acq_rate, traj_time, *args, **kwargs):
+        print('>>>>>>>>>>>>>>> STAGING HDF5 VERSION')
+        # deal with expected number of points
+        print('>>>>>>>>>>>>>>>> 1', self.hdf5.full_file_name.get())
+        super().stage(*args, **kwargs)
+        print('>>>>>>>>>>>>>>>> 2', self.hdf5.full_file_name.get())
+        self.is_flying = True
+        self.hdf5._asset_docs_cache[0][1]['spec'] = 'PIL100k_HDF5'  # This is to make the files to go to correct handler
+        self.hdf5._asset_docs_cache[0][1]['resource_kwargs'] = {}  # This is to make the files to go to correct handler
+        self.set_expected_number_of_points(acq_rate, traj_time)
+        print('>>>>>>>>>>>>>>>> 3', self.hdf5.full_file_name.get())
+        # deal with acquire time
+        # acquire_period = 1 / acq_rate
+        self.set_exposure_time(1 / acq_rate)
+        # acquire_time = acquire_period - self.readout
+        # self.cam.acquire_period.put(acquire_period)
+        # self.cam.acquire_time.put(acquire_time)
+
+        # saving files
+        # self.tiff.file_write_mode.put(2)
+        # self.hdf5.file_write_mode.put(2)
+
+        # deal with the trigger
+        self.cam.trigger_mode.put(3)
+        self.cam.image_mode.put(1)
+
+        self._datum_counter = itertools.count()
+        print('>>>>>>>>>>>>>>>> 4', self.hdf5.full_file_name.get())
+
+
+
+    def trigger(self):
+        def callback(value, old_value, **kwargs):
+            # print(f'{ttime.time()} {old_value} ---> {value}')
+            if self._acquire and int(round(old_value)) == 1 and int(round(value)) == 0:
+                self._acquire = False
+                return True
+            else:
+                self._acquire = True
+                return False
+
+        status = SubscriptionStatus(self.cam.acquire, callback)
+        # self.tiff.capture.put(1)
+        # self.hdf5.capture.put(1)
+        self.cam.acquire.put(1)
+        return status
+
+
+    def unstage(self, *args, **kwargs):
+        # self._datum_counter = None
+        # st = self.stream.set(0)
+        super().unstage(*args, **kwargs)
+        self.is_flying = False
+        self.cam.trigger_mode.put(0)
+        self.cam.image_mode.put(0)
+        # self.tiff.file_write_mode.put(0)
+        # self.tiff.capture.put(0)
+        self.hdf5.capture.put(0)
+        self._datum_counter = None
+        self.set_num_images(1)
+        self.cam.array_counter.put(0)
+        self.set_exposure_time(1)
+
+
+
+    def complete(self, *args, **kwargs):
+        for resource in self.hdf5._asset_docs_cache:
+            self._asset_docs_cache.append(('resource', resource[1]))
+
+        self._datum_ids = []
+
+        num_frames = self.hdf5.num_captured.get()
+
+        # print(f'\n!!! num_frames: {num_frames}\n')
+
+        for frame_num in range(num_frames):
+            datum_id = '{}/{}'.format(self.hdf5._resource_uid, next(self._datum_counter))
+            datum = {'resource': self.hdf5._resource_uid,
+                     'datum_kwargs': {'frame': frame_num},
+                     # 'datum_kwargs': {},
+                     'datum_id': datum_id}
+            self._asset_docs_cache.append(('datum', datum))
+            self._datum_ids.append(datum_id)
+
+        return NullStatus()
+
+
+    def collect(self):
+        num_frames = len(self._datum_ids)
+
+        for frame_num in range(num_frames):
+            datum_id = self._datum_ids[frame_num]
+            data = {self.name: datum_id}
+
+            ts = ttime.time()
+
+            yield {'data': data,
+                   'timestamps': {key: ts for key in data},
+                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
+                   'filled': {key: False for key in data}}
+
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
+
+
+    def describe_collect(self):
+        return_dict = {self.name:
+                           {f'{self.name}': {'source': 'PIL100k_HDF5',
+                                             'dtype': 'array',
+                                             'shape': [self.cam.num_images.get(),
+                                                       #self.settings.array_counter.get()
+                                                       self.hdf5.array_size.height.get(),
+                                                       self.hdf5.array_size.width.get()],
+                                            'filename': f'{self.hdf5.full_file_name.get()}',
+                                             'external': 'FILESTORE:'}}}
+        return return_dict
+
+
+
+
+
+    def set_expected_number_of_points(self, acq_rate, traj_time):
+        n = int(acq_rate * (traj_time + 1 ))
+        self.set_num_images(n)
+        self.cam.array_counter.put(0)
+
+
+pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
+pil100k_hdf5_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_hdf5_stream")
+
+
+
+
+
+
+
+
 
 # class FakeDetector(Device):
 #     acq_time = Cpt(Signal, value=10)
@@ -417,7 +585,7 @@ def pil_count(acq_time:int = 1, num_frames:int =1):
 
 from itertools import product
 import pandas as pd
-from databroker.assets.handlers import HandlerBase, PilatusCBFHandler, AreaDetectorTiffHandler
+from databroker.assets.handlers import HandlerBase, PilatusCBFHandler, AreaDetectorTiffHandler, Xspress3HDF5Handler
 
 
 
@@ -435,3 +603,35 @@ class ISSPilatusTIFFHandler(AreaDetectorTiffHandler):
 
 db.reg.register_handler('AD_TIFF',
                          ISSPilatusTIFFHandler, overwrite=True)
+
+
+PIL100k_HDF_DATA_KEY = 'entry/instrument/NDAttributes'
+class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Handler as basis since it has all the basic functionality and I more or less understand how it works
+    specs = {'PIL100k_HDF5'} | HandlerBase.specs
+    HANDLER_NAME = 'PIL100k_HDF5'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, key=PIL100k_HDF_DATA_KEY, **kwargs)
+        self._roi_data = None
+        self.hdfrois = [f'ROI{i + 1}' for i in range(4)]
+        self.chanrois = [f'pil100k_ROI{i + 1}' for i in range(4)]
+
+
+    def _get_dataset(self):
+        if self._dataset is not None:
+            return
+
+        _data_columns = [self._file[self._key + f'/_{chanroi}Total'][()] for chanroi in self.hdfrois]
+        data_columns = np.vstack(_data_columns).T
+
+        self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
+        self._dataset = data_columns
+
+    def __call__(self, *args, frame=None,  **kwargs):
+        self._get_dataset()
+        return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+        return return_dict_rois
+        # return self._roi_data
+
+db.reg.register_handler('PIL100k_HDF5',
+                         ISSPilatusHDF5Handler, overwrite=True)
