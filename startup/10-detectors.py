@@ -77,10 +77,10 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
     tiff_filefmt = Cpt(EpicsSignal, 'TIFF1:FileTemplate_RBV', write_pv='TIFF1:FileTemplate')
 
     bar1 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage1_RBV')
-    bar2 = Cpt(EpicsSignal, 'Bar2:BarcodeMessage2_RBV')
-    bar3 = Cpt(EpicsSignal, 'Bar3:BarcodeMessage3_RBV')
-    bar4 = Cpt(EpicsSignal, 'Bar4:BarcodeMessage4_RBV')
-    bar5 = Cpt(EpicsSignal, 'Bar5:BarcodeMessage5_RBV')
+    bar2 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage2_RBV')
+    bar3 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage3_RBV')
+    bar4 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage4_RBV')
+    bar5 = Cpt(EpicsSignal, 'Bar1:BarcodeMessage5_RBV')
 
     bar1Corner1X = Cpt(EpicsSignal, 'Bar1:UpperLeftX_RBV')
     bar1Corner2X = Cpt(EpicsSignal, 'Bar1:UpperRightX_RBV')
@@ -118,7 +118,8 @@ bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 
 camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
-camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+# camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+camera_sp2 = BPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 
 #camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
 camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
