@@ -578,8 +578,10 @@ pil100k.stats4.total.kind = 'hinted'
 pil100k.cam.ensure_nonblocking()
 
 
-def pil_count(acq_time:int = 1, num_frames:int =1):
-    yield from bp.count([pil100k])
+def pil_count(acq_time:int = 1, num_frames:int =1, open_shutter:bool=True):
+    if open_shutter: yield from shutter.open_plan()
+    yield from bp.count([pil100k, apb_ave])
+    if open_shutter: yield from shutter.close_plan()
 
 
 

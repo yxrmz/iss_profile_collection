@@ -100,6 +100,7 @@ class FlyerPilatus(FlyerAPBwithTrigger):
 
         st_pil = self.pil_det.trigger()
         st_super = super().kickoff(traj_duration=traj_duration)
+        ttime.sleep(0.1)
         return st_super & st_pil
 
     def complete(self):

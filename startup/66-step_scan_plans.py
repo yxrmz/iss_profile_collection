@@ -29,7 +29,9 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
 
         yield from bps.mv(motor, step)
         devices = [*detectors, motor]
+        # if close_shutter: yield from shutter.open_plan()
         yield from bps.trigger_and_read(devices=devices)
+        # if close_shutter: yield from shutter.close_plan()
 
     return per_step_pb
 

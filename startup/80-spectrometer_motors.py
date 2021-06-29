@@ -104,6 +104,210 @@ motor_dictionary['motor_emission'] = motor_emission_dict
 
 
 
+class SamplePointRegistry:
+    position_list = []
+    sample_x = giantxy.x
+    sample_y = giantxy.y
+    sample_z = usermotor2.pos
+    current_index = None
+    xyz1 = None
+    xyz2 = None
+    root_path = f"{ROOT_PATH}/{USER_FILEPATH}"
+    _dumpfile = None
+
+    def __init__(self):
+        pass
+
+    def initialize(self, x1, y1, z1, x2, y2, z2, step=0.2):
+        self.xyz1 = [x1, y1, z1]
+        self.xyz2 = [x2, y2, z2]
+
+        f = np.cos(np.deg2rad(45))
+        _xs = np.arange(x1, x2 + step/f, step/f)
+        _ys = np.arange(y1, y2 + step, step)
+        npt = _xs.size
+        _zs = np.linspace(z1, z2, npt)
+        self.position_list = []
+        for _x, _z in zip(_xs, _zs):
+            for _y in _ys:
+                point = {'x' : _x, 'y' : _y, 'z' : _z, 'exposed' : False}
+                self.position_list.append(point)
+        self.current_index = 0
+
+    def reset(self):
+        self.position_list = []
+        current_index = None
+        xyz1 = None
+        xyz2 = None
+
+    def _get_point(self, index):
+        return self.position_list[index]
+
+    def _move_to_point_plan(self, point):
+        print(f'moving stage to x={point["x"]}, y={point["y"]}, z={point["z"]}')
+        yield from bps.mv(self.sample_x, point['x'],
+                          self.sample_y, point['y'],
+                          self.sample_z, point['z'],
+                          )
+
+    def goto_start_plan(self):
+        point = self._get_point(0)
+        yield from self._move_to_point_plan(point)
+
+    def goto_next_point_plan(self):
+        self.current_index += 1
+        point = self._get_point(self.current_index)
+        yield from self._move_to_point_plan(point)
+
+    def goto_index_plan(self, idx):
+        self.current_index = idx
+        point = self._get_point(idx)
+        yield from self._move_to_point_plan(point)
+
+    def find_first_unexposed_point(self):
+        for i, p in enumerate(self.position_list):
+            if not p['exposed']:
+                return i, p
+        return None
+
+    def set_current_point_exposed(self):
+        self.position_list[self.current_index]['exposed'] = True
+
+    def record_herfd_uid_for_current_point(self, uid):
+        self.position_list[self.current_index]['uid'] = uid
+
+    def get_list_of_herfd_positions(self):
+        herfd_index_list = []
+        for idx, point in enumerate(self.position_list):
+            if 'uid' in point.keys():
+                herfd_index_list.append(idx)
+        return herfd_index_list
+
+    def get_current_point(self):
+        point = self._get_point(self, self.current_index)
+        return point['x'], point['y'], point['z']
+
+    def goto_unexposed_point_plan(self):
+        i, point = self.find_first_unexposed_point()
+        self.current_index = i
+        yield from self._move_to_point_plan(point)
+
+    def save(self, filename):
+        with open(filename, 'w') as f:
+            f.write(json.dumps(self.position_list))
+
+    def load(self, filename):
+        with open(filename, 'r') as f:
+            self.position_list = json.loads(f.read())
+
+    def set_dump_file(self, filename):
+        self._dumpfile = filename
+
+    def dump_data(self):
+        self.save(self._dumpfile)
+
+    def get_nom_and_act_positions(self):
+        x_act = self.sample_x.user_readback.get()
+        y_act = self.sample_y.user_readback.get()
+        z_act = self.sample_z.user_readback.get()
+
+        point = self.position_list[self.current_index]
+        return point['x'], point['y'], point['z'], x_act, y_act, z_act
+
+
+sample_registry = SamplePointRegistry()
+
+
+import h5py
+class RIXSLogger:
+    scanned_emission_energies = np.array([])
+    normalized_points = np.array([])
+    herfd_list = []
+
+    def __init__(self, filepath, resume_flag=False):
+        self.filepath = filepath
+        if resume_flag:
+            self._find_scanned_emission_energies()
+        else:
+            try:
+                f = h5py.File(self.filepath, 'w-')
+                f.close()
+            except OSError:
+                raise OSError('rixs log file with this name already exists')
+
+
+
+    def _find_scanned_emission_energies(self):
+        f = h5py.File(self.filepath, 'r')
+        self.herfd_list = list(f.keys())
+        for uid in self.herfd_list:
+            ee = f[f'{uid}/emission_energy'][()]
+            # self.scanned_emission_energies.append(ee)
+            self.scanned_emission_energies = np.append(self.scanned_emission_energies, ee)
+            # print(ee)
+            if 'uid_norm' in f[f'{uid}'].keys():
+                # self.normalized_points.append(True)
+                self.normalized_points = np.append(self.normalized_points, True)
+            else:
+                self.normalized_points = np.append(self.normalized_points, False)
+        f.close()
+        self.scanned_emission_energies = np.array(self.scanned_emission_energies)
+        self.normalized_points = np.array(self.normalized_points)
+
+    def energy_was_measured(self, emission_energy, threshold=1e-3):
+        if len(self.scanned_emission_energies) == 0:
+            return False
+        d = np.min(np.abs(self.scanned_emission_energies - emission_energy))
+        return d < threshold
+
+    def point_was_normalized(self, herfd_uid_to_check):
+        for i, herfd_uid in enumerate(self.herfd_list):
+            if herfd_uid_to_check == herfd_uid:
+                return self.normalized_points[i]
+        return
+
+    def set_point_as_normalized(self, herfd_uid_to_check):
+        for i, herfd_uid in enumerate(self.herfd_list):
+            if herfd_uid_to_check == herfd_uid:
+                self.normalized_points[i] = True
+
+    def write_uid_herfd(self, uid_herfd, emission_energy):
+        f = h5py.File(self.filepath, 'r+')
+        f.create_group(uid_herfd)
+        f[uid_herfd]['emission_energy'] = emission_energy
+        f.close()
+        self.herfd_list.append(uid_herfd)
+        self.scanned_emission_energies = np.array(self.scanned_emission_energies.tolist() + [emission_energy])
+        self.normalized_points = np.array(self.normalized_points.tolist() + [False])
+
+    def write_herfd_pos(self, uid_herfd, x_nom, y_nom, z_nom, x_act, y_act, z_act):
+        f = h5py.File(self.filepath, 'r+')
+        f[uid_herfd]['x_nom'] = x_nom
+        f[uid_herfd]['y_nom'] = y_nom
+        f[uid_herfd]['z_nom'] = z_nom
+        f[uid_herfd]['x_act'] = x_act
+        f[uid_herfd]['y_act'] = y_act
+        f[uid_herfd]['z_act'] = z_act
+        f.close()
+
+    def write_uid_norm(self, uid_herfd, uid_norm, energy_in_norm, energy_out_norm,
+                       x_norm_nom, y_norm_nom, z_norm_nom,
+                       x_norm_act, y_norm_act, z_norm_act):
+        f = h5py.File(self.filepath, 'r+')
+        f[uid_herfd]['uid_norm'] = uid_norm
+        f[uid_herfd]['x_norm_nom'] = x_norm_nom
+        f[uid_herfd]['y_norm_nom'] = y_norm_nom
+        f[uid_herfd]['z_norm_nom'] = z_norm_nom
+        f[uid_herfd]['x_norm_act'] = x_norm_act
+        f[uid_herfd]['y_norm_act'] = y_norm_act
+        f[uid_herfd]['z_norm_act'] = z_norm_act
+        f[uid_herfd]['energy_in_norm'] = energy_in_norm
+        f[uid_herfd]['energy_out_norm'] = energy_out_norm
+        f.close()
+        self.set_point_as_normalized(uid_herfd)
+
+
+
 
 
 

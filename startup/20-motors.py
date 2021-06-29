@@ -157,6 +157,23 @@ class HHM(Device):
     #     super().stop(*args, **kwargs)
     #     print('Done stopping trajectory')
 
+# # BANDAID THAT HAS TO BE REMOVED AT SOME POINT
+# from PyQt5.QtCore import QThread
+# class mono_unstuck_thread(QThread):
+#     def __init__(self, hhm : HHM):
+#         QThread.__init__(self)
+#         self.go = False
+#         self.hhm = hhm
+#
+#     def run(self):
+#         while self.go:
+#             is_mono_moving = hhm.energy.
+#             mono_value =
+#             for i in range(5):
+#                 mono_value_2 =
+#                 if (mono_value == mono_value_2) and is_mono_moving:
+#                     STOP
+#
 
 hhm = HHM('XF:08IDA-OP{', enc = pb9.enc1, name='hhm')
 # TODO: move to the HHM class definition.

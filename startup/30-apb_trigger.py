@@ -54,9 +54,27 @@ class AnalogPizzaBoxTrigger(Device):
                     'uid': self._resource_uid}
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
+
+        # def callback(value, old_value, **kwargs):
+        #     # print(f'{ttime.time()} {old_value} ---> {value}')
+        #     if self._acquiring and int(round(old_value)) == 1 and int(round(value)) == 0:
+        #         self._acquiring = False
+        #         return True
+        #     else:
+        #         self._acquiring = True
+        #         return False
+        #
+        # status = SubscriptionStatus(self.acquire, callback)
+        # self.tiff.capture.put(1)
+        # self.hdf5.capture.put(1)
+        # self.cam.acquire.put(1)
+
+
         self.acquire.put(2)
         self.stream.put(1)
+        # st_super = super().stage(*args, **kwargs)
         return super().stage(*args, **kwargs)
+
 
     def unstage(self, *args, **kwargs):
         self._datum_counter = None
