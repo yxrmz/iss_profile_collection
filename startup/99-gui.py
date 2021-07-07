@@ -30,7 +30,8 @@ if not os.environ.get('AZURE_TESTING'):
         # 'Spiral fly scan': fly_scan_over_spiral,
         'Step scan Johann Emission w/Pilatus': step_scan_emission_w_pilatus,
         'Step scan Johann RIXS w/Pilatus': step_scan_rixs_w_pilatus,
-    }
+        'Calibration scan w PIL' : calibration_scan_w_pilatus,
+        'Point scan w PIL' : point_scan_w_pilatus}
 
     service_plan_funcs = {
         'get_offsets': get_offsets,

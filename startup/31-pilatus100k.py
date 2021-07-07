@@ -210,7 +210,6 @@ class PilatusTIFF(PilatusBase):
 
 
 
-
 pil100k = PilatusTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
 pil100k.set_primary_roi(1)
 
@@ -603,8 +602,8 @@ class ISSPilatusTIFFHandler(AreaDetectorTiffHandler):
         return super().__call__(*args, point_number=frame, **kwargs)
 
 
-db.reg.register_handler('AD_TIFF',
-                         ISSPilatusTIFFHandler, overwrite=True)
+# db.reg.register_handler('AD_TIFF',
+#                          ISSPilatusTIFFHandler, overwrite=True)
 
 
 PIL100k_HDF_DATA_KEY = 'entry/instrument/NDAttributes'
