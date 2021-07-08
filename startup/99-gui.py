@@ -67,6 +67,7 @@ if not os.environ.get('AZURE_TESTING'):
         accelerator=nsls_ii,
         hhm=hhm,
         sdd=xs,
+        encoder_pb = pb9.enc1,
         shutters_dict=shutter_dictionary,
         det_dict=detector_dictionary,
         motors_dict=motor_dictionary,
