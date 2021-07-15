@@ -47,6 +47,7 @@ if not os.environ.get('AZURE_TESTING'):
         'pil_count': pil_count,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'n_pil100k_exposures_plan' : n_pil100k_exposures_plan,
+        'set_reference_foil': set_reference_foil,
     }
 
 
@@ -72,6 +73,7 @@ if not os.environ.get('AZURE_TESTING'):
         det_dict=detector_dictionary,
         motors_dict=motor_dictionary,
         camera_dict=camera_dictionary,
+        #sample_stage=giantxy,
         sample_stage=giantxy,
         tune_elements=tune_elements,
         ic_amplifiers=ic_amplifiers,

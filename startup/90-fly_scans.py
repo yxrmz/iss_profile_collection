@@ -30,7 +30,8 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
     '''
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     uids = []
-    if autofoil:
+    # if autofoil:
+    if True:
         current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
         try:
             yield from set_reference_foil(current_element)
@@ -131,7 +132,8 @@ def fly_scan_with_xs3(name: str, comment: str, n_cycles: int = 1, delay: float =
     '''
     sys.stdout = kwargs.pop('stdout', sys.stdout)
     uids = []
-    if autofoil:
+    # if autofoil:
+    if True:
         current_element = getattr(hhm, f'traj{int(hhm.lut_number_rbv.value)}').elem.value
         try:
             yield from set_reference_foil(current_element)

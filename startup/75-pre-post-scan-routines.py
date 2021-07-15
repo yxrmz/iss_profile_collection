@@ -30,7 +30,7 @@ def generate_tune_table(motor=hhm.energy, start_energy=5000, stop_energy=13000, 
 
 
 
-def set_reference_foil(element = None):
+def set_reference_foil(element:str = 'Mn'):
     # Adding reference foil element list
     with open('/nsls2/xf08id/settings/json/foil_wheel.json') as fp:
         reference_foils = json.load(fp)
