@@ -207,9 +207,8 @@ def step_scan_rixs_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: 
                 print('moving mono/emission energies')
                 yield from bps.mv(motor_emission, energy_out_norm)
                 yield from bps.mv(hhm.energy, energy_in_norm)
-                herfd_index_list = sample_registry.get_list_of_herfd_positions()
-                for herfd_index in herfd_index_list:
-                    _herfd_uid = sample_registry.position_list[herfd_index]['uid']
+                herfd_uid_list = sample_registry.get_list_of_herfd_positions()
+                for _herfd_uid in herfd_uid_list:
                     if _herfd_uid in rixs_logger.herfd_list:
                         if not rixs_logger.point_was_normalized(_herfd_uid):
                             yield from sample_registry.goto_index_plan(herfd_index)

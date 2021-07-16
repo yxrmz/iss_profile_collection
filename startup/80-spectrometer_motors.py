@@ -1,3 +1,4 @@
+import pandas as pd
 from xas.spectrometer import Crystal, analyze_many_elastic_scans
 import copy
 
@@ -105,7 +106,7 @@ motor_dictionary['motor_emission'] = motor_emission_dict
 
 
 class SamplePointRegistry:
-    position_list = []
+    position_list = pd.DataFrame(columns=['x', 'y', 'z', 'exposed', 'uid'])
     sample_x = giantxy.x
     sample_y = giantxy.y
     sample_z = usermotor2.pos
@@ -114,6 +115,7 @@ class SamplePointRegistry:
     xyz2 = None
     root_path = f"{ROOT_PATH}/{USER_FILEPATH}"
     _dumpfile = None
+    npoints = None
 
     def __init__(self):
         pass
@@ -123,25 +125,26 @@ class SamplePointRegistry:
         self.xyz2 = [x2, y2, z2]
 
         f = np.cos(np.deg2rad(45))
-        _xs = np.arange(x1, x2 + step/f, step/f)
-        _ys = np.arange(y1, y2 + step, step)
+        _xs = np.arange(x1, x2 + step/f, step / f * np.sign(x2 - x1))
+        _ys = np.arange(y1, y2 + step, step * np.sign(y2 - y1))
         npt = _xs.size
         _zs = np.linspace(z1, z2, npt)
-        self.position_list = []
+        # self.position_list = []
         for _x, _z in zip(_xs, _zs):
             for _y in _ys:
-                point = {'x' : _x, 'y' : _y, 'z' : _z, 'exposed' : False}
-                self.position_list.append(point)
+                point = {'x' : _x, 'y' : _y, 'z' : _z, 'exposed' : False, 'uid' : ''}
+                self.position_list = self.position_list.append(point, ignore_index=True)
         self.current_index = 0
+        self.npoints = len(self.position_list.index)
 
     def reset(self):
-        self.position_list = []
-        current_index = None
-        xyz1 = None
-        xyz2 = None
+        self.position_list = pd.DataFrame(columns=['x', 'y', 'z', 'exposed', 'uid'])
+        self.current_index = None
+        self.xyz1 = None
+        self.xyz2 = None
 
     def _get_point(self, index):
-        return self.position_list[index]
+        return self.position_list.iloc[index]
 
     def _move_to_point_plan(self, point):
         print(f'moving stage to x={point["x"]}, y={point["y"]}, z={point["z"]}')
@@ -151,7 +154,13 @@ class SamplePointRegistry:
                           )
 
     def goto_start_plan(self):
+        self.current_index = 0
         point = self._get_point(0)
+        yield from self._move_to_point_plan(point)
+
+    def goto_end_plan(self):
+        self.current_index = self.npoints - 1
+        point = self.position_list.iloc[self.current_index]
         yield from self._move_to_point_plan(point)
 
     def goto_next_point_plan(self):
@@ -165,23 +174,26 @@ class SamplePointRegistry:
         yield from self._move_to_point_plan(point)
 
     def find_first_unexposed_point(self):
-        for i, p in enumerate(self.position_list):
-            if not p['exposed']:
-                return i, p
-        return None
+        idx = self.position_list['exposed'].ne('False').idxmin()
+        p = self.position_list.iloc[idx]
+        return idx, p
+        # for i, p in enumerate(self.position_list):
+        #     if not p['exposed']:
+        #         return i, p
+        # return None
 
     def set_current_point_exposed(self):
-        self.position_list[self.current_index]['exposed'] = True
+        self.position_list.at[self.current_index, 'exposed'] = True
 
-    def record_herfd_uid_for_current_point(self, uid):
-        self.position_list[self.current_index]['uid'] = uid
+    def record_uid_for_current_point(self, uid):
+        self.position_list.at[self.current_index, 'uid'] = uid
 
-    def get_list_of_herfd_positions(self):
-        herfd_index_list = []
-        for idx, point in enumerate(self.position_list):
-            if 'uid' in point.keys():
-                herfd_index_list.append(idx)
-        return herfd_index_list
+    def get_list_of_uid_positions(self):
+        # herfd_index_list = []
+        # for idx, point in enumerate(self.position_list):
+        #     if 'uid' in point.keys():
+        #         herfd_index_list.append(idx)
+        return self.position_list['uid'].loc[lambda x: x != ''].values
 
     def get_current_point(self):
         point = self._get_point(self, self.current_index)
@@ -193,12 +205,16 @@ class SamplePointRegistry:
         yield from self._move_to_point_plan(point)
 
     def save(self, filename):
-        with open(filename, 'w') as f:
-            f.write(json.dumps(self.position_list))
+        # with open(filename, 'w') as f:
+        #     f.write(json.dumps(self.position_list))
+        self.position_list.to_json(filename)
 
     def load(self, filename):
-        with open(filename, 'r') as f:
-            self.position_list = json.loads(f.read())
+        # with open(filename, 'r') as f:
+        #     self.position_list = json.loads(f.read())
+        self.position_list = pd.read_json(filename)
+        self.nrows = len(self.position_list.index)
+
 
     def set_dump_file(self, filename):
         self._dumpfile = filename
