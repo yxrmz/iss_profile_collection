@@ -96,7 +96,7 @@ if not os.environ.get('AZURE_TESTING'):
 
 
     def cleaning():
-       if xlive_gui.piezo_thread.isRunning():
-           xlive_gui.toggle_piezo_fb(0)
+       if xlive_gui.widget_beamline_setup.piezo_thread.isRunning():
+           xlive_gui.widget_beamline_setup.toggle_piezo_fb(0)
 
     atexit.register(cleaning)

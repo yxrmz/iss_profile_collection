@@ -124,7 +124,7 @@ def step_scan_emission_w_pilatus(name: str, comment: str, n_cycles: int = 1, del
             if sample_registry.position_list is not None:
                 sample_registry.set_current_point_exposed()
                 yield from sample_registry.goto_next_point_plan()
-                sample_registry.dump_data()
+                # sample_registry.dump_data()
 
 
 def step_scan_rixs_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0, energy_down: bool = True,

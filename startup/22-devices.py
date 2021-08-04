@@ -182,6 +182,9 @@ class ShutterMotor:
         yield from bps.mv(self.output, self.closed_value, wait=True)
         self.state = 'closed'
 
+    def _close_direct(self):
+        self.output.user_setpoint.put(self.closed_value)
+
 
 shutter = ShutterMotor(name='User Shutter')
 shutter.shutter_type = 'SP'

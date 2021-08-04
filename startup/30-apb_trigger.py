@@ -69,9 +69,9 @@ class AnalogPizzaBoxTrigger(Device):
         # self.hdf5.capture.put(1)
         # self.cam.acquire.put(1)
 
-
-        self.acquire.put(2)
         self.stream.put(1)
+        ttime.sleep(0.2)
+        self.acquire.put(2)
         # st_super = super().stage(*args, **kwargs)
         return super().stage(*args, **kwargs)
 

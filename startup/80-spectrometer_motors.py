@@ -174,7 +174,7 @@ class SamplePointRegistry:
         yield from self._move_to_point_plan(point)
 
     def find_first_unexposed_point(self):
-        idx = self.position_list['exposed'].ne('False').idxmin()
+        idx = self.position_list['exposed'].ne(False).idxmin()
         p = self.position_list.iloc[idx]
         return idx, p
         # for i, p in enumerate(self.position_list):
@@ -183,7 +183,11 @@ class SamplePointRegistry:
         # return None
 
     def set_current_point_exposed(self):
-        self.position_list.at[self.current_index, 'exposed'] = True
+        if self.current_index is not None:
+            self.position_list.at[self.current_index, 'exposed'] = True
+            if self._dumpfile is not None:
+                self.dump_data()
+
 
     def record_uid_for_current_point(self, uid):
         self.position_list.at[self.current_index, 'uid'] = uid
@@ -207,6 +211,7 @@ class SamplePointRegistry:
     def save(self, filename):
         # with open(filename, 'w') as f:
         #     f.write(json.dumps(self.position_list))
+        print(f'sample registry - saving data - {ttime.ctime()}')
         self.position_list.to_json(filename)
 
     def load(self, filename):

@@ -409,14 +409,14 @@ class PilatusStreamHDF5(PilatusHDF5):
     def stage(self, acq_rate, traj_time, *args, **kwargs):
         print('>>>>>>>>>>>>>>> STAGING HDF5 VERSION')
         # deal with expected number of points
-        print('>>>>>>>>>>>>>>>> 1', self.hdf5.full_file_name.get())
+        # print('>>>>>>>>>>>>>>>> 1', self.hdf5.full_file_name.get())
         super().stage(*args, **kwargs)
-        print('>>>>>>>>>>>>>>>> 2', self.hdf5.full_file_name.get())
+        # print('>>>>>>>>>>>>>>>> 2', self.hdf5.full_file_name.get())
         self.is_flying = True
         self.hdf5._asset_docs_cache[0][1]['spec'] = 'PIL100k_HDF5'  # This is to make the files to go to correct handler
         self.hdf5._asset_docs_cache[0][1]['resource_kwargs'] = {}  # This is to make the files to go to correct handler
         self.set_expected_number_of_points(acq_rate, traj_time)
-        print('>>>>>>>>>>>>>>>> 3', self.hdf5.full_file_name.get())
+        # print('>>>>>>>>>>>>>>>> 3', self.hdf5.full_file_name.get())
         # deal with acquire time
         # acquire_period = 1 / acq_rate
         self.set_exposure_time(1 / acq_rate)
@@ -433,7 +433,7 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.cam.image_mode.put(1)
 
         self._datum_counter = itertools.count()
-        print('>>>>>>>>>>>>>>>> 4', self.hdf5.full_file_name.get())
+        # print('>>>>>>>>>>>>>>>> 4', self.hdf5.full_file_name.get())
 
 
 

@@ -155,7 +155,8 @@ def fly_scan_with_xs3(name: str, comment: str, n_cycles: int = 1, delay: float =
 
 
 
-def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
+def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False,
+                          use_sample_registry: bool = False, **kwargs):
     '''
     Trajectory Scan - Runs the monochromator along the trajectory that is previously loaded in the controller N times
     Parameters
@@ -182,6 +183,9 @@ def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: flo
             pass
 
     for indx in range(int(n_cycles)):
+        if use_sample_registry:
+            if sample_registry.position_list is not None:
+                yield from sample_registry.goto_unexposed_point_plan()
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from prep_traj_plan()
         print(f'Trajectory preparation complete at {print_now()}')
@@ -190,6 +194,10 @@ def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: flo
         uids.append(uid)
         yield from shutter.close_plan()
         print(f'Trajectory is complete {print_now()}')
+        if use_sample_registry:
+            if sample_registry.position_list is not None:
+                sample_registry.set_current_point_exposed()
+
         yield from bps.sleep(float(delay))
     return uids
 
