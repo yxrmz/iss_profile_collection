@@ -66,3 +66,22 @@ def general_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
 
     print('[General Scan] Done!')
     return
+
+def bender_scan():
+    bender_current_position = bender.pos.user_readback.get()
+    bender_positions = bender_current_position + np.arange(-15, 20, 5)
+    for bender_position in bender_positions:
+        yield from bps.mv(bender.pos, bender_position)
+        yield from bps.sleep(3)
+        loading = bender.load_cell.get()
+        fname = f'Bender scan - {loading} N - {bender_position} um'
+
+        yield from fly_scan_with_apb(fname,'')
+    yield from bps.mv(bender.pos, bender_current_position)
+
+
+
+
+
+
+

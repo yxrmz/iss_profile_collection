@@ -19,8 +19,8 @@ if not os.environ.get('AZURE_TESTING'):
 
     plan_funcs = {
 
-        'Fly scan (new PB)': fly_scan_with_apb,
-        'Fly scan w/Xspress 3': fly_scan_with_xs3,
+        'Fly scan ': fly_scan_with_apb,
+        'Fly scan w/SDD': fly_scan_with_xs3,
         'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
         'fly scan Johann RIXS w/Pilatus': fly_scan_rixs_w_pilatus,
         'Step scan': step_scan,
@@ -58,6 +58,7 @@ if not os.environ.get('AZURE_TESTING'):
         'general_spiral_scan': general_spiral_scan,
         'set_reference_foil': set_reference_foil,
         'tuning_scan': tuning_scan,
+        'bender_scan': bender_scan,
     }
 
     xlive_gui = xlive.XliveGui(plan_funcs=plan_funcs,
