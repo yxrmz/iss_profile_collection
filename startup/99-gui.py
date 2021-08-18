@@ -48,6 +48,7 @@ if not os.environ.get('AZURE_TESTING'):
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'n_pil100k_exposures_plan' : n_pil100k_exposures_plan,
         'set_reference_foil': set_reference_foil,
+        'set_attenuator': set_attenuator
     }
 
 
@@ -59,6 +60,7 @@ if not os.environ.get('AZURE_TESTING'):
         'set_reference_foil': set_reference_foil,
         'tuning_scan': tuning_scan,
         'bender_scan': bender_scan,
+        'set_attenuator': set_attenuator
     }
 
     xlive_gui = xlive.XliveGui(plan_funcs=plan_funcs,
