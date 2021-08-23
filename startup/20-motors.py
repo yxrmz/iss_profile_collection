@@ -256,6 +256,8 @@ usermotor1 = Usermotor('XF:08IDB-OP{Misc-Ax:1', name='usermotor1')
 usermotor2 = Usermotor('XF:08IDB-OP{Misc-Ax:2', name='usermotor2')
 usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
 
+attenuator_motor = Usermotor('XF:08IDB-OP{Misc-Ax:4', name='attenuator_motor')
+
 usermotor2.wait_for_connection()
 usermotor3.wait_for_connection()
 

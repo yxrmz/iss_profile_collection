@@ -52,6 +52,20 @@ def set_reference_foil(element:str = 'Mn'):
         #yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
         #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
 
+def set_attenuator(thickness:int  = 0):
+    # Adding reference foil element list
+    with open('/nsls2/xf08id/settings/json/attenuator.json') as fp:
+        attenuators_list = json.load(fp)
+    thickness_list = [item['attenuator'] for item in attenuators_list]
+
+    if thickness in thickness_list:
+        indx = thickness_list.index(thickness)
+        yield from mv(attenuator_motor.pos, attenuators_list[indx]['position'])
+    else:
+        yield from mv(attenuator_motor.pos,0)
+
+
+
 
 def random_step(x: float = 0,y: float = 0, **kwargs):
 
