@@ -105,7 +105,7 @@ def execute_trajectory(name, **metadata):
                                       flyers)
     # TODO : Add in when suspend_wrapper is avaialable
     # if not ignore_shutter:
-    # this will use suspenders defined in 23-suspenders.py
+    # this will use suspenders defined in 24-suspenders.py
     # fly_plan = bpp.suspend_wrapper(fly_plan, suspenders)
 
     return (yield from fly_plan)
@@ -356,7 +356,7 @@ def execute_xia_trajectory(name, **metadata):
  #                                      flyers)
  #    # TODO : Add in when suspend_wrapper is avaialable
  #    # if not ignore_shutter:
- #    # this will use suspenders defined in 23-suspenders.py
+ #    # this will use suspenders defined in 24-suspenders.py
  #    # fly_plan = bpp.suspend_wrapper(fly_plan, suspenders)
  #
  #    return (yield from fly_plan)
