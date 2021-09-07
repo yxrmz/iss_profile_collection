@@ -469,9 +469,9 @@ class DIFS(DigitalInput):
         # Let's move the file to the correct place
         workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path), end=' ... ')
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
-
+        print('done')
         # HACK: Make datum documents here so that they are available for collect_asset_docs
         # before collect() is called. May need changes to RE to do this properly. - Dan A.
         self._datum_ids = []

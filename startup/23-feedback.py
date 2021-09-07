@@ -14,7 +14,7 @@ class _PiezoFeedback(PiezoFeedback):
                          bpm_es,
                          {shutter_fe.name: shutter_fe,
                           shutter_ph.name: shutter_ph},
-                         host='local')
+                         local_hostname='ws01')
 
 
 class PiezoFeedbackThread(QThread, _PiezoFeedback):
@@ -23,5 +23,6 @@ class PiezoFeedbackThread(QThread, _PiezoFeedback):
 
 
 hhm_feedback = PiezoFeedbackThread()
+# hhm_feedback.start()
 
 

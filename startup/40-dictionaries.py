@@ -4,6 +4,25 @@ import collections
 
 from ophyd.sim import motor
 motor.move = motor.set
+try:
+    detector_device_dictionary = {
+        'apb_ave' : apb_ave,
+        'apb_stream': apb_stream,
+        'hhm_encoder' : pb9,
+        'pil100k_hdf5_stream' : pil100k_hdf5_stream,
+        'pil100k_hdf5': pil100k_hdf5,
+        'xs' : xs,
+        'xs_stream' : xs_stream
+    }
+except:
+    detector_device_dictionary = {}
+
+def unstage_all_detectors():
+    for k in detector_device_dictionary.keys():
+        try:
+            detector_device_dictionary[k].unstage()
+        except:
+            pass
 
 
 detector_dictionary =   {

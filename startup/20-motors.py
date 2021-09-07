@@ -91,6 +91,8 @@ class HHM(Device):
     fb_nlines = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NLines')
     fb_nmeasures = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-NMeasures')
     fb_pcoeff = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-PCoeff')
+    fb_hostname = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Hostname')
+    fb_heartbeat = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Heartbeat')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
     home_z = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
