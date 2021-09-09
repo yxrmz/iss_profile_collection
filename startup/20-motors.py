@@ -37,6 +37,28 @@ class HHMTrajDesc(Device):
     e0 = Cpt(EpicsSignal, '-E0')
 
 
+class InfirmEpicsMotor(EpicsMotor):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dwell_time = 2
+        self.n_tries = 2
+
+    def append_homing_pv(self, homing):
+        self.homing = homing
+
+    def move(self, position, wait=True, **kwargs):
+        for i in range(self.n_tries):
+            status = super().move(position, wait=True, **kwargs)
+            self.homing.put('1')
+            ttime.sleep(self.dwell_time)
+        return status
+
+# _hhm_home_y = EpicsSignal('XF:08IDA-OP{MC:06}Home-HHMY')
+# _hhmy = SpecialEpicsMotor(_hhm_home_y, 'XF:08IDA-OP{Mono:HHM-Ax:Y}Mtr', kind='hinted', name='bla')
+
+
+
 class HHM(Device):
     _default_configuration_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
@@ -95,9 +117,9 @@ class HHM(Device):
     fb_heartbeat = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Heartbeat')
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
-    home_z = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
+    home_y = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
+    y_precise = Cpt(InfirmEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
 
-    #encoder = Cpt(EpicsSignal, 'XF:08IDA-CT{Enc09:1}Cnt:Pos-I', limits=True)
 
     def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -109,6 +131,7 @@ class HHM(Device):
         self.enc = enc
         self._preparing = None
         self._starting = None
+        self.y_precise.append_homing_pv(self.home_y)
 
     def set(self, command):
         if command == 'prepare':
@@ -153,6 +176,10 @@ class HHM(Device):
             self.start_trajectory.set('1')
 
             return status
+
+    def home_y_pos(self):
+        self.home_y.put('1')
+
     # def stop(self, *args, **kwargs):
     #     print('Stopping trajectory')
     #     self.stop_trajectory.put('1')

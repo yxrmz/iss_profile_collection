@@ -94,6 +94,7 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'hhm_theta': {'name': hhm.theta.name,'description':'A Monochromator Theta', 'object': hhm.theta},
                     'hhm_energy': {'name': hhm.energy.name, 'description':'A Monochromator Energy','object': hhm.energy, 'group': 'spectrometer','user':True},
                     'hhm_y': {'name': hhm.y.name,'description':'A Monochromator Y', 'object': hhm.y, 'user':True},
+                    'hhm_y_precise': {'name': hhm.y_precise.name, 'description':'A Monochromator Y precise', 'object': hhm.y_precise, 'user':True},
                     'hhm_pitch': {'name': hhm.pitch.name, 'description':'A Monochromator Pitch','object': hhm.pitch,'user':True},
                     'hhm_roll': {'name': hhm.roll.name, 'description':'A Monochromator Roll', 'object': hhm.roll, },
                     # TODO remove when done

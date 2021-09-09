@@ -24,8 +24,13 @@ class BPM(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
     stats1 = Cpt(StatsPluginV33, 'Stats1:')
     stats2 = Cpt(StatsPluginV33, 'Stats2:')
+    stats3 = Cpt(StatsPluginV33, 'Stats3:')
+    stats4 = Cpt(StatsPluginV33, 'Stats4:')
+
     roi1 = Cpt(ROIPlugin, 'ROI1:')
     roi2 = Cpt(ROIPlugin, 'ROI2:')
+    roi3 = Cpt(ROIPlugin, 'ROI3:')
+    roi4 = Cpt(ROIPlugin, 'ROI4:')
     counts = Cpt(EpicsSignal, 'Pos:Counts')
     exp_time = Cpt(EpicsSignal, 'cam1:AcquireTime_RBV', write_pv='cam1:AcquireTime')
     image_mode = Cpt(EpicsSignal,'cam1:ImageMode')
@@ -134,6 +139,12 @@ for bpm in [bpm_fm, bpm_cm, bpm_bt1, bpm_bt2, bpm_es,]: #camera_sp1, camera_sp2,
     bpm.image.read_attrs = ['array_data']
     bpm.stats1.read_attrs = ['total', 'centroid']
     bpm.stats2.read_attrs = ['total', 'centroid']
+
+bpm_fm.read_attrs = ['stats1', 'stats2', 'stats3', 'stats4']
+bpm_fm.stats1.read_attrs = ['total', 'centroid']
+bpm_fm.stats2.read_attrs = ['total', 'centroid']
+bpm_fm.stats3.read_attrs = ['total', 'centroid']
+bpm_fm.stats4.read_attrs = ['total', 'centroid']
 
 for camera in [ camera_sp1, camera_sp2, camera_sp4]:   #camera_sp3,
     bpm.read_attrs = ['stats1', 'stats2']

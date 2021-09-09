@@ -4,10 +4,7 @@ import sys
 import numpy as np
 from xas.image_analysis import determine_beam_position_from_fb_image
 
-def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys.stdout):
-
-
-    energy_ranges = [
+bl_prepare_energy_ranges = [
         {
             'energy_start': 4500,
             'energy_end': 6000,
@@ -77,6 +74,9 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
 
         },
     ]
+
+def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_ranges, move_cm_mirror = False, stdout = sys.stdout):
+
     BPM_exposure_setter = bpm_es.exp_time
     He_flow_setter = gas_he.flow
     N2_flow_setter = gas_n2.flow
@@ -214,14 +214,70 @@ from xas import xray
 
 
 
-def optimize_beamline_plan(energy: int = -1,  stdout = sys.stdout, force_prepare = False):
+def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdout = sys.stdout, force_prepare = False, enable_fb_in_the_end=True):
     old_energy = hhm.energy.read()['hhm_energy']['value']
     if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
         yield from shutter.close_plan()
         yield from prepare_beamline_plan(energy, move_cm_mirror = True, stdout = sys.stdout)
-        yield from tune_beamline_plan(stdout=sys.stdout)
+        yield from tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb_in_the_end=enable_fb_in_the_end)
     else:
         print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
         yield from bps.mv(hhm.energy, energy)
 
 
+
+
+
+
+def tabulate_hhmy_position_plan(stdout=sys.stdout):
+    _energies = [7000]  # np.arange(5000, 11000, 1000)
+    data_df = pd.DataFrame(columns=['energy', 'hhmy', 'hhrmy', 'uid'])
+
+    for energy in _energies:
+        enable_fb_in_the_end = energy>13000
+
+        yield from optimize_beamline_plan(energy, tune_elements=tune_elements_ext, force_prepare=True, enable_fb_in_the_end=enable_fb_in_the_end)
+        uid = db[-1].start['uid']
+        data_df = data_df.append({'energy' : energy,
+                                  'hhmy' : hhm.y.user_readback.get(),
+                                  'hhrmy' : hhrm.y.user_readback.get(),
+                                  'uid' : uid},
+                                   ignore_index=True)
+        data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation.json')
+
+
+
+
+
+# def adjust_filter_plan(energy: int = -1, energy_ranges=bl_prepare_energy_ranges, plan_description='HHM_Y tabulating'):
+#     filter_box_setter = filterbox.y
+#     current_filterbox_position = filterbox.y.read()[filterbox.y.name]['value']
+#
+#     energy_range = [e_range for e_range in energy_ranges if
+#                     e_range['energy_end'] > energy >= e_range['energy_start']][0]
+#     if not energy_range:
+#         print_to_gui('ERROR: Energy is outside of the beamline energy range', stdout=stdout)
+#         return
+#
+#     if (abs(energy_range['Filterbox'] - current_filterbox_position)) < 0.1:
+#         move_filter = False
+#     else:
+#         move_filter = True
+#
+#     if move_filter:
+#         print_to_gui(f'[{plan_description}] Closing frontend shutter before selecting filter', stdout=stdout)
+#         print('moving')
+#         # close shutter before moving the filter
+#         try:
+#             yield from bps.mv(shutter_fe_2b, 'Close')
+#         except FailedStatus:
+#             raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
+#
+#         yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
+#         print_to_gui(f'[{plan_description}] Filter set',stdout=stdout)
+#         print_to_gui(f'[{plan_description}] Closing frontend shutter before selecting filter',stdout=stdout)
+#
+#         try:
+#             yield from bps.mv(shutter_fe_2b, 'Open')
+#         except FailedStatus:
+#             print_to_gui(f'Error: Photon shutter failed to open.',stdout=stdout)
