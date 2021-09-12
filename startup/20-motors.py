@@ -37,17 +37,47 @@ class HHMTrajDesc(Device):
     e0 = Cpt(EpicsSignal, '-E0')
 
 
-class InfirmEpicsMotor(EpicsMotor):
+class StuckingEpicsMotor(EpicsMotor):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        def subscription(value, old_value, **kwargs):
+            if value == 1:
+                cur_sp = self.user_setpoint.get()
+                old_pos = self.user_readback.get()
+                while self.motor_is_moving.get() == 1:
+                    ttime.sleep(2)
+                    new_pos = self.user_readback.get()
+                    if new_pos == old_pos:
+                        print(f'{ttime.ctime()}: {self.name} motor got stuck ... unstucking it')
+                        self.stop()
+                        self.move(cur_sp, wait=True, **kwargs)
+                    else:
+                        old_pos = new_pos
+
+        self.motor_is_moving.subscribe(subscription)
+
+
+    def move(self, position, wait=True, **kwargs):
+        status = super().move(position, wait=True, **kwargs)
+        return status
+
+
+class InfirmEpicsMotor(StuckingEpicsMotor):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dwell_time = 2
         self.n_tries = 2
+        self.low_lim = 8.5
 
     def append_homing_pv(self, homing):
         self.homing = homing
 
     def move(self, position, wait=True, **kwargs):
+        if position < self.low_lim:
+            position = self.low_lim
         for i in range(self.n_tries):
             status = super().move(position, wait=True, **kwargs)
             self.homing.put('1')

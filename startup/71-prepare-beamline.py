@@ -230,14 +230,14 @@ def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdou
 
 
 def tabulate_hhmy_position_plan(stdout=sys.stdout):
-    _energies = [7000]  # np.arange(5000, 11000, 1000)
+    _energies = [4800, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000]  # np.arange(5000, 11000, 1000)
     data_df = pd.DataFrame(columns=['energy', 'hhmy', 'hhrmy', 'uid'])
 
     for energy in _energies:
         enable_fb_in_the_end = energy>13000
 
         yield from optimize_beamline_plan(energy, tune_elements=tune_elements_ext, force_prepare=True, enable_fb_in_the_end=enable_fb_in_the_end)
-        uid = db[-1].start['uid']
+        uid = db[-3].start['uid']
         data_df = data_df.append({'energy' : energy,
                                   'hhmy' : hhm.y.user_readback.get(),
                                   'hhrmy' : hhrm.y.user_readback.get(),

@@ -35,7 +35,7 @@ class EmissionEnergyMotor(PseudoPositioner):
         self._initialized = False
 
 
-    def define_motor_coordinates(self, energy0, kind, hkl,
+    def define_motor_coordinates(self, energy0, R, kind, hkl,
                                   cr_x0=None, cr_y0=None, det_y0=None,
                  energy_limits=None):
 
@@ -52,7 +52,7 @@ class EmissionEnergyMotor(PseudoPositioner):
             self.det_y0 = self.motor_detector_y.user_readback.get()
         else:
             self.det_y0 = det_y0
-        self.crystal = Crystal(1000, 50, hkl, kind)
+        self.crystal = Crystal(R, 50, hkl, kind)
         self.crystal.place_E(energy0)
         self.cr_x0_nom = copy.copy(self.crystal.x)
         self.cry_0_nom = copy.copy(self.crystal.y)
