@@ -114,8 +114,9 @@ def tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb
 
     # yield from bps.mv(bpm_fm, 'retract')
     if enable_fb_in_the_end:
-        yield from update_hhm_fb_center(truncate_data=truncate_data)
-        yield from bps.mv(hhm.fb_status, 1)
+        hhm_feedback.update_center()
+        # yield from update_hhm_fb_center(truncate_data=truncate_data)
+        hhm.fb_status.put(1)
     print('[Beamline tuning] Beamline tuning complete')
 
 

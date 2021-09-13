@@ -70,6 +70,7 @@ if not os.environ.get('AZURE_TESTING'):
         db=db,
         accelerator=nsls_ii,
         hhm=hhm,
+        hhm_feedback=hhm_feedback,
         motor_emission=motor_emission,
         sdd=xs,
         encoder_pb = pb9.enc1,
@@ -99,8 +100,8 @@ if not os.environ.get('AZURE_TESTING'):
     sys.stderr = xlive_gui.emitstream_err
 
 
-    def cleaning():
-       if xlive_gui.widget_beamline_setup.piezo_thread.isRunning():
-           xlive_gui.widget_beamline_setup.toggle_piezo_fb(0)
-
-    atexit.register(cleaning)
+    # def cleaning():
+    #    if xlive_gui.widget_beamline_setup.piezo_thread.isRunning():
+    #        xlive_gui.widget_beamline_setup.toggle_piezo_fb(0)
+    #
+    # atexit.register(cleaning)

@@ -190,14 +190,14 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
     yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
     print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)
 
-def update_hhm_fb_center(truncate_data=True):
-    line = hhm.fb_line.get()
-    center = hhm.fb_center.get()
-    n_lines = hhm.fb_nlines.get()
-    image = bpm_es.image.image
-    new_center = determine_beam_position_from_fb_image(image, line=line, center_point=center, n_lines=n_lines, truncate_data=truncate_data)
-    if new_center is not None:
-        yield from bps.mv(hhm.fb_center, new_center)
+# def update_hhm_fb_center(truncate_data=True):
+#     line = hhm.fb_line.get()
+#     center = hhm.fb_center.get()
+#     n_lines = hhm.fb_nlines.get()
+#     image = bpm_es.image.image
+#     new_center = determine_beam_position_from_fb_image(image, line=line, center_point=center, n_lines=n_lines, truncate_data=truncate_data)
+#     if new_center is not None:
+#         yield from bps.mv(hhm.fb_center, new_center)
 
 
 from xas.energy_calibration import get_energy_offset

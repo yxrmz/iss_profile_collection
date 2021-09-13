@@ -23,6 +23,6 @@ class PiezoFeedbackThread(QThread, _PiezoFeedback):
 
 
 hhm_feedback = PiezoFeedbackThread()
-# hhm_feedback.start()
+hhm_feedback.start()
 
 
