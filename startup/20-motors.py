@@ -41,43 +41,57 @@ class StuckingEpicsMotor(EpicsMotor):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._stuck_check_delay = 2
 
-        def subscription(value, old_value, **kwargs):
-            if value == 1:
-                cur_sp = self.user_setpoint.get()
-                old_pos = self.user_readback.get()
-                while self.motor_is_moving.get() == 1:
-                    ttime.sleep(2)
-                    new_pos = self.user_readback.get()
-                    if new_pos == old_pos:
-                        print(f'{ttime.ctime()}: {self.name} motor got stuck ... unstucking it')
-                        self.stop()
-                        self.move(cur_sp, wait=True, **kwargs)
-                    else:
-                        old_pos = new_pos
+    def _stuck_check(self, value, old_value, **kwargs):
+        if value == 1: # here value == self.motor_is_moving
+            cur_sp = self.user_setpoint.get()
+            old_pos = self.user_readback.get()
 
-        self.motor_is_moving.subscribe(subscription)
+            while self.motor_is_moving.get() == 1:
+                ttime.sleep(self._stuck_check_delay)
+                new_pos = self.user_readback.get()
+                if new_pos == old_pos:
+                    print(f'[Debug message]: {ttime.ctime()}: {self.name} motor got stuck ... unstucking it')
+                    self.stop()
+                    self.move(cur_sp, wait=True, **kwargs)
+                else:
+                    old_pos = new_pos
 
 
     def move(self, position, wait=True, **kwargs):
+        cid = self.motor_is_moving.subscribe(self._stuck_check)
         status = super().move(position, wait=True, **kwargs)
+        self.motor_is_moving.unsubscribe(cid)
         return status
 
 
-class InfirmEpicsMotor(StuckingEpicsMotor):
+
+
+class InfirmStuckingEpicsMotor(StuckingEpicsMotor):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dwell_time = 2
         self.n_tries = 2
-        self.low_lim = 8.5
+        self.low_lim = None
+
+    def set_low_lim(self, low_lim=8.5):
+        self.low_lim = low_lim
+
+    def check_position_vs_low_lim(self, position):
+        if self.low_lim is not None:
+            if position < self.low_lim:
+                position = self.low_lim
+        return position
+
 
     def append_homing_pv(self, homing):
         self.homing = homing
 
+
     def move(self, position, wait=True, **kwargs):
-        if position < self.low_lim:
-            position = self.low_lim
+        position = self.check_position_vs_low_lim(position)
         for i in range(self.n_tries):
             status = super().move(position, wait=True, **kwargs)
             self.homing.put('1')
@@ -98,9 +112,9 @@ class HHM(Device):
 
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
-    y = Cpt(EpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
+    y = Cpt(StuckingEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
-    energy = Cpt(EpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
+    energy = Cpt(StuckingEpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 
@@ -148,7 +162,7 @@ class HHM(Device):
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
     home_y = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
-    y_precise = Cpt(InfirmEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
+    y_precise = Cpt(InfirmStuckingEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
 
 
     def __init__(self, *args, enc = None, **kwargs):
@@ -162,6 +176,7 @@ class HHM(Device):
         self._preparing = None
         self._starting = None
         self.y_precise.append_homing_pv(self.home_y)
+        self.y_precise.set_low_lim(low_lim=8.5)
 
     def set(self, command):
         if command == 'prepare':
@@ -259,7 +274,7 @@ hhm.read_attrs = ['pitch', 'roll', 'theta', 'y', 'energy']
 class HRM(Device):
     """High Resolution Monochromator"""
     theta = Cpt(EpicsMotor, '-Ax:Th}Mtr')
-    y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
+    y = Cpt(StuckingEpicsMotor, '-Ax:Y}Mtr')
     pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')
 
 hrm = HRM('XF:08IDA-OP{Mono:HRM', name='hrm')
@@ -274,7 +289,7 @@ class HHRM(Device):
     hor_translation = Cpt(EpicsMotor, 'Mir:HRM:H}Mtr')
 
     table_pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
-    y = Cpt(EpicsMotor, 'Mir:HRM:TY}Mtr')
+    y = Cpt(StuckingEpicsMotor, 'Mir:HRM:TY}Mtr')
 
 
     def current_sripe(self):
