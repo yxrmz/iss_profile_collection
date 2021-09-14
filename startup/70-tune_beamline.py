@@ -68,6 +68,12 @@ tune_elements_ext =  [{'motor': hhm.pitch.name,
                    'step': 0.025,
                    'retries': 3,
                    'comment': 'fine monochromator crystal distance tune'},
+                  {'motor': hhm.pitch.name,
+                   'detector': 'I0 ion Chamber',
+                   'range': 0.3,
+                   'step': 0.02,
+                   'retries': 3,
+                   'comment': 'fine monochromator pitch tune'},
                   {'motor': hhrm.y.name, #'motor': [hhrm.y.name, i0_y.pos.name],
                    'detector': 'I0 ion Chamber',
                    'range': 1,
@@ -80,7 +86,13 @@ tune_elements_ext =  [{'motor': hhm.pitch.name,
                    'step': 0.02,
                    'retries': 3,
                    'comment': 'fine monochromator pitch tune'},
-
+                  {'motor': hhm.y_precise.name,
+                   'detector':'I0 ion Chamber',
+                   'range': 0.6,
+                   'step': 0.025,
+                   'retries': 3,
+                   'comment': 'fine monochromator crystal distance tune',
+                   'fb_enable': True},
                 ]
 
 def tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb_in_the_end=True, truncate_data=False):
@@ -93,6 +105,12 @@ def tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb
 
     for element in tune_elements:
         detector = detector_dictionary[element['detector']]['device']
+
+        if 'fb_enable' in element.keys():
+            if element['fb_enable']:
+                hhm_feedback.update_center()
+                hhm.fb_status.put(1)
+
 
         if detector == bpm_fm:
             yield from bps.mv(bpm_fm, 'insert')
