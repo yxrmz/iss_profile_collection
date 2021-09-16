@@ -169,9 +169,9 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         return ret
 
     # Fly-able interface methods.
-    def kickoff(self):
-        # TODO: implement the kickoff method for the flying mode once the hardware is ready.
-        raise NotImplementedError()
+    # def kickoff(self):
+    #     # TODO: implement the kickoff method for the flying mode once the hardware is ready.
+    #     raise NotImplementedError()
 
     def complete(self, *args, **kwargs):
         for resource in self.hdf5._asset_docs_cache:

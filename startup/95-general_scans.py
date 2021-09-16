@@ -53,19 +53,12 @@ def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=5,
 def general_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
 
     sys.stdout = kwargs.pop('stdout', sys.stdout)
-    print(f'Dets {detectors}')
-    print(f'Motors {motor}')
-
+    #print(f'Dets {detectors}')
+    #print(f'Motors {motor}')
     print('[General Scan] Starting scan...')
-
-
-
-
     uid =  yield from (general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)))
-
-
     print('[General Scan] Done!')
-    return
+    return uid
 
 def bender_scan():
     bender_current_position = bender.pos.user_readback.get()
