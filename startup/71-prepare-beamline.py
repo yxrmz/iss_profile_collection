@@ -184,7 +184,9 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
     print_to_gui('[Prepare Beamline] Moving vertical position of the second monochromator crystal', stdout=stdout)
     hhmy_position = _compute_hhmy_value(energy)
     yield from bps.mv(hhm.y_precise, hhmy_position)
-    print_to_gui('[Prepare Beamline] HHM_Y', stdout=stdout)
+    if np.abs(hhm.y_precise.user_readback.get() - hhmy_position)>0.05:
+        yield from bps.mv(hhm.y_precise, hhmy_position)
+
 
     while ttime.time() < (start_time + settling_time):
         print_to_gui(f'[Prepare Beamline] {int(settling_time - (ttime.time()-start_time))} s left to settle the ion chamber gas flow',stdout=stdout)
@@ -220,6 +222,9 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
     print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor', stdout=stdout)
     yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
     print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)
+
+    if np.abs(hhm.y_precise.user_readback.get() - hhmy_position) > 0.05:
+        print_to_gui(f'Error: vertical position of the second monochromator crystal is not set. Set manually to {hhmy_position}',stdout=stdout)
 
 # def update_hhm_fb_center(truncate_data=True):
 #     line = hhm.fb_line.get()
