@@ -21,6 +21,8 @@ from xview.spectra_db.db_io import get_spectrum_catalog
 import time as ttime
 import numpy as np
 import pandas as pd
+import xraydb
+
 
 def print_now():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')

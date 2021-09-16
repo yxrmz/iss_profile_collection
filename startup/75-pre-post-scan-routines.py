@@ -269,6 +269,10 @@ def get_adc_readouts(times: int = 20, *args, **kwargs):
 
     print('ADC readout complete!')
 
+
+
+
+
 def adjust_ic_gains( **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
 
@@ -279,17 +283,17 @@ def adjust_ic_gains( **kwargs):
         offsets = [apb.ch1_offset, apb.ch2_offset,apb.ch3_offset,apb.ch4_offset,]
 
 
-    current_lut = int(hhm.lut_number_rbv.get())
-    traj_manager = trajectory_manager(hhm)
-    info = traj_manager.read_info(silent=True)
-    if 'max' not in info[str(current_lut)] or 'min' not in info[str(current_lut)]:
-        raise Exception(
-            'Could not find max or min information in the trajectory.'
-            ' Try sending it again to the controller.')
-
-    e_min = int(info[str(current_lut)]['min'])
-    e_max = int(info[str(current_lut)]['max'])
-
+    # current_lut = int(hhm.lut_number_rbv.get())
+    # traj_manager = trajectory_manager(hhm)
+    # info = traj_manager.read_info(silent=True)
+    # if 'max' not in info[str(current_lut)] or 'min' not in info[str(current_lut)]:
+    #     raise Exception(
+    #         'Could not find max or min information in the trajectory.'
+    #         ' Try sending it again to the controller.')
+    #
+    # e_min = int(info[str(current_lut)]['min'])
+    # e_max = int(info[str(current_lut)]['max'])
+    e_min, e_max = read_trajectory_limits()
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:

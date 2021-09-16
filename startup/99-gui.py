@@ -19,7 +19,7 @@ if not os.environ.get('AZURE_TESTING'):
 
     plan_funcs = {
 
-        'Fly scan ': fly_scan_with_apb,
+        'Fly scan': fly_scan_with_apb,
         'Fly scan w/SDD': fly_scan_with_xs3,
         'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
         'fly scan Johann RIXS w/Pilatus': fly_scan_rixs_w_pilatus,
@@ -68,6 +68,7 @@ if not os.environ.get('AZURE_TESTING'):
         aux_plan_funcs=aux_plan_funcs,
         RE=RE,
         db=db,
+        db_proc=db_proc,
         accelerator=nsls_ii,
         hhm=hhm,
         hhm_feedback=hhm_feedback,

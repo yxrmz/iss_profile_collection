@@ -236,18 +236,31 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
 #         yield from bps.mv(hhm.fb_center, new_center)
 
 
-from xas.energy_calibration import get_energy_offset
-from xas import xray
-def calibrate_energy_plan(element, edge, dE=25, plotting=False):
-    name = f'{element} {edge} foil scan'
-    uid = yield from execute_trajectory_apb(name)
-    e0_nom, e0_act = get_energy_offset(uid, db, db_proc, dE=dE, plotting=plotting)
-    # _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
-    # _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
-    # delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
-    # new_offset = hhm.angle_offset.value - delta_offset
-    # yield from bps.mv(hhm.angle_offset, new_offset)
 
+# def calibrate_energy_plan(element, edge, dE=25, plotting=False):
+#     # # check if current trajectory is good for this calibration
+#     #
+#     # r = db_proc.search({'Sample_name': element + ' foil'})
+#     # if len(r) == 0:
+#     #     raise ValueError(f'Error: No matching foil has been found')
+#     #
+#     # e_min, e_max = read_trajectory_limits()
+#     # edge_energy = xraydb.xray_edge(element, edge).energy
+#     # if not ((edge_energy > e_min) and (edge_energy < e_max)):
+#     #     raise ValueError(f'Error: invalid trajectory for this calibration')
+#
+#     name = f'{element} {edge} foil scan'
+#     yield from fly_scan_with_apb(name, '')
+#
+#     # print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> UID OF THIS SCAN: {uid}')
+#
+#      # e_shift = get_energy_offset(-1, db, db_proc, dE=dE)
+#      #    print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> ENERGY SHIFT OF THIS SCAN: {e_shift}')
+#      #    # _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
+#      #    # _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
+#      #    # delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
+#      #    # new_offset = hhm.angle_offset.value - delta_offset
+#      #    # yield from bps.mv(hhm.angle_offset, new_offset)
 
 
 def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdout = sys.stdout, force_prepare = False, enable_fb_in_the_end=True):
