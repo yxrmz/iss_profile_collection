@@ -2,7 +2,34 @@
 import time as ttime
 import sys
 import numpy as np
-from xas.image_analysis import determine_beam_position_from_fb_image
+from xas.xray import energy2angle
+# from xas.image_analysis import determine_beam_position_from_fb_image
+
+
+# def _compute_hhmy_value(energy):
+#     # tabulation is done using data collected on 2021-09-12 and 2021-09-13
+#     # data is stored in two files:
+#     # /nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation.json
+#     # /nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation_high_energies.json
+#     energy_tab = np.array([ 4800,  5000,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
+#     hhmy_tab = np.array([9.71275, 9.62515, 9.3645 , 9.202  , 9.09365, 9.03125, 8.99405, 8.9373 , 8.9378 , 8.86945, 8.8442 , 8.68795, 8.70085, 8.62675, 8.65015, 8.55135, 8.55645])
+#
+#     def get_matrix_from_energy(energy_in, offset=0):
+#         theta_deg = energy2angle(energy_in)
+#         V = 1 / np.cos(np.deg2rad(theta_deg - offset))
+#         A = np.vstack((V, energy_in, np.ones(V.size))).T
+#         return A
+#
+#     def fit_hhmy(offset=0):
+#         A = get_matrix_from_energy(energy_tab, offset=offset)
+#         c, _, _, _ = np.linalg.lstsq(A, hhmy_tab, rcond=-1)
+#         return c
+#
+#     coefs = fit_hhmy()
+#     a = get_matrix_from_energy(np.array(energy))
+#     return a @ coefs
+
+
 
 bl_prepare_energy_ranges = [
         {
@@ -154,6 +181,10 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
         except FailedStatus:
             print_to_gui(f'Error: Photon shutter failed to open.',stdout=stdout)
 
+    # print_to_gui('[Prepare Beamline] Moving vertical position of the second monochromator crystal', stdout=stdout)
+    # hhmy_position = _compute_hhmy_value(energy)
+    # yield from bps.mv(hhm.y_precise, hhmy_position)
+    # print_to_gui('[Prepare Beamline] HHM_Y', stdout=stdout)
 
     while ttime.time() < (start_time + settling_time):
         print_to_gui(f'[Prepare Beamline] {int(settling_time - (ttime.time()-start_time))} s left to settle the ion chamber gas flow',stdout=stdout)

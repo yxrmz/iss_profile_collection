@@ -84,6 +84,8 @@ if not os.environ.get('AZURE_TESTING'):
         ic_amplifiers=ic_amplifiers,
         window_title="XLive @ISS/08-ID NSLS-II",
         apb=apb_ave,
+        apb_trigger_xs=apb_trigger,
+        apb_trigger_pil100k=apb_trigger_pil100k,
         sample_registry=sample_registry
     )
 
