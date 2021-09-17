@@ -1,6 +1,7 @@
 
 
 from ophyd.status import SubscriptionStatus
+from ophyd import utils as ophyd_utils
 
 print(__file__)
 
@@ -159,6 +160,19 @@ class HHM(Device):
 
     def home_y_pos(self):
         self.home_y.put('1')
+
+
+    def set_new_angle_offset(self, value):
+        try:
+            self.angle_offset.put(float(value))
+        except Exception as exc:
+            if type(exc) == ophyd_utils.errors.LimitError:
+                print('[Energy calibration] Limit error.'.format(exc))
+            else:
+                print('[Energy calibration] Something went wrong, not the limit: {}'.format(exc))
+            return 0
+        return 1
+
 
     # def stop(self, *args, **kwargs):
     #     print('Stopping trajectory')
