@@ -367,6 +367,13 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
             yield item
 
 
+    def unstage(self, *args, **kwargs):
+        super().unstage(*args, **kwargs)
+        self.settings.trigger_mode.put(1)
+        self.total_points.put(1)
+
+
+
 
 
 
