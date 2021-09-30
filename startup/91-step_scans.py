@@ -51,6 +51,19 @@ def step_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float
                 sample_registry.dump_data()
 
 
+def vonhamos_calibration_scan_plan(name: str, comment: str, n_cycles: int = 1, e_min : int = 4902, e_max : int = 4977, e_step : int = 5, exp_time : float= 10.0, **kwargs):
+    energy_grid = np.arange(e_min, e_max + e_step, e_step)
+    time_grid = np.ones(energy_grid.size) * exp_time
+    kwargs['energy_grid'] = [int(i) for i in energy_grid]
+    kwargs['time_grid'] = [int(i) for i in time_grid]
+
+    if 'n_cycles' in kwargs:
+        n_cycles = kwargs['n_cycles']
+        kwargs.pop('n_cycles', [])
+
+    yield from step_scan_w_pilatus(name, comment, n_cycles=n_cycles, energy_down=True, use_sample_registry=False, reference=False, **kwargs)
+
+
 
 
 def step_scan_w_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0, energy_down: bool = True, use_sample_registry: bool = False, autofoil=True, **kwargs):

@@ -173,6 +173,12 @@ class HHM(Device):
             return 0
         return 1
 
+    def trigger(self, *args, **kwargs):
+        start_trigger = ttime.time()
+        status = super().trigger(*args, **kwargs)
+        print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
+        return status
+
 
     # def stop(self, *args, **kwargs):
     #     print('Stopping trajectory')

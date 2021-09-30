@@ -563,6 +563,12 @@ class PizzaBoxFS(Device):
         for attr_name in ['enc1', 'enc2', 'enc3', 'enc4']:
             yield from getattr(self, attr_name).collect()
 
+    # def trigger(self, *args, **kwargs):
+    #     start_trigger = ttime.time()
+    #     status = super().trigger(*args, **kwargs)
+    #     print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
+    #     return status
+
 
 
 pb1 = PizzaBoxFS('XF:08IDA-CT{Enc01', name = 'pb1')

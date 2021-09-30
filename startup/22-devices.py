@@ -170,14 +170,14 @@ class ShutterMotor:
     def close(self):
         RE(self.close_plan())
 
-    def open_plan(self):
-        print('Opening {}'.format(self.name))
+    def open_plan(self, printing=True):
+        if printing: print('Opening {}'.format(self.name))
         # yield from bps.abs_set(self.output, self.open_value, wait=True)
         yield from bps.mv(self.output, self.open_value, wait=True)
         self.state = 'open'
 
-    def close_plan(self):
-        print('Closing {}'.format(self.name))
+    def close_plan(self, printing=True):
+        if printing: print('Closing {}'.format(self.name))
         # yield from bps.abs_set(self.output, self.closed_value, wait=True)
         yield from bps.mv(self.output, self.closed_value, wait=True)
         self.state = 'closed'

@@ -29,9 +29,20 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
 
         yield from bps.mv(motor, step)
         devices = [*detectors, motor]
-        # if close_shutter: yield from shutter.open_plan()
+        # devices = [*detectors]
+        # if close_shutter:
+        start = ttime.time()
+        yield from shutter.open_plan(printing=False)
+        # for device in devices:
+        #     start_trigger = ttime.time()
+        #     yield from bps.trigger_and_read(devices=[device])
+        #     print(f'{device.name} trigger took {ttime.time() - start_trigger}')
+        # print(devices)
+        # sdf
         yield from bps.trigger_and_read(devices=devices)
-        # if close_shutter: yield from shutter.close_plan()
+        yield from shutter.close_plan(printing=False)
+        print(f'Total exposure time for this point is {ttime.time() - start} s')
+        # if close_shutter:
 
     return per_step_pb
 

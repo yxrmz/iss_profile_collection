@@ -31,7 +31,8 @@ if not os.environ.get('AZURE_TESTING'):
         'Step scan Johann Emission w/Pilatus': step_scan_emission_w_pilatus,
         'Step scan Johann RIXS w/Pilatus': step_scan_rixs_w_pilatus,
         'Calibration scan w PIL' : calibration_scan_w_pilatus,
-        'Point scan w PIL' : point_scan_w_pilatus}
+        'Point scan w PIL' : point_scan_w_pilatus,
+        'Von Hamos Calibration w/ Pilatus' : vonhamos_calibration_scan_plan}
 
     service_plan_funcs = {
         'get_offsets': get_offsets,
@@ -60,7 +61,8 @@ if not os.environ.get('AZURE_TESTING'):
         'set_reference_foil': set_reference_foil,
         'tuning_scan': tuning_scan,
         'bender_scan': bender_scan,
-        'set_attenuator': set_attenuator
+        'set_attenuator': set_attenuator,
+        'n_pil100k_exposures_plan': n_pil100k_exposures_plan,
     }
 
     xlive_gui = xlive.XliveGui(plan_funcs=plan_funcs,

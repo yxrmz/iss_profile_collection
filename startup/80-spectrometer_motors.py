@@ -121,6 +121,7 @@ class SamplePointRegistry:
         pass
 
     def initialize(self, x1, y1, z1, x2, y2, z2, step=0.2):
+        self.reset()
         self.xyz1 = [x1, y1, z1]
         self.xyz2 = [x2, y2, z2]
 
@@ -218,7 +219,7 @@ class SamplePointRegistry:
         # with open(filename, 'r') as f:
         #     self.position_list = json.loads(f.read())
         self.position_list = pd.read_json(filename)
-        self.nrows = len(self.position_list.index)
+        self.npoints = len(self.position_list.index)
 
 
     def set_dump_file(self, filename):

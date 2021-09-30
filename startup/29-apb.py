@@ -112,6 +112,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         self._ready_to_collect = False
 
     def trigger(self):
+        start_trigger = ttime.time()
         def callback(value, old_value, **kwargs):
             #print(f'{ttime.time()} {old_value} ---> {value}')
             if self._capturing and int(round(old_value)) == 1 and int(round(value)) == 0:
@@ -123,6 +124,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
         status = SubscriptionStatus(self.acquiring, callback)
         self.acquire.set(1)
+        print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
         return status
 
     def save_current_status(self):
@@ -135,6 +137,18 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         yield from bps.abs_set(self.divide, self.saved_status['divide'])
         yield from bps.abs_set(self.sample_len, self.saved_status['sample_len'])
         yield from bps.abs_set(self.wf_len, self.saved_status['wf_len'])
+
+    def read(self, *args, **kwargs):
+        start_read = ttime.time()
+        output = super().read(*args, **kwargs)
+        print(f'{self.name} took {ttime.time() - start_read} to read')
+        return output
+
+# def trigger(self, *args, **kwargs):
+#     start_trigger = ttime.time()
+#     status = super().trigger(*args, **kwargs)
+#     print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
+#     return status
 
 
 apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")

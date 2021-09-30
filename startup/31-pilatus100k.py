@@ -210,8 +210,7 @@ class PilatusTIFF(PilatusBase):
 
 
 
-pil100k = PilatusTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
-pil100k.set_primary_roi(1)
+
 
 class PilatusHDF5(PilatusBase):
     hdf5 = Cpt(HDF5PluginWithFileStore,
@@ -226,18 +225,6 @@ class PilatusHDF5(PilatusBase):
 
 
 
-pil100k_hdf5 = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_hdf5")  # , detector_id="SAXS")
-
-
-pil100k_hdf5.stats1.kind = 'hinted'
-pil100k_hdf5.stats1.total.kind = 'hinted'
-pil100k_hdf5.stats2.kind = 'hinted'
-pil100k_hdf5.stats2.total.kind = 'hinted'
-pil100k_hdf5.stats3.kind = 'hinted'
-pil100k_hdf5.stats3.total.kind = 'hinted'
-pil100k_hdf5.stats4.kind = 'hinted'
-pil100k_hdf5.stats4.total.kind = 'hinted'
-pil100k_hdf5.cam.ensure_nonblocking()
 
 
 
@@ -387,7 +374,7 @@ class PilatusStreamTIFF(PilatusTIFF):
         self.cam.array_counter.put(0)
 
 
-pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
+# pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
 
 
 
@@ -537,13 +524,38 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.cam.array_counter.put(0)
 
 
+
 pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
 pil100k_hdf5_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_hdf5_stream")
 
+pil100k_hdf5 = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_hdf5")  # , detector_id="SAXS")
+pil100k = PilatusTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
+pil100k.set_primary_roi(1)
 
+pil100k_hdf5.stats1.kind = 'hinted'
+pil100k_hdf5.stats1.total.kind = 'hinted'
+pil100k_hdf5.stats2.kind = 'hinted'
+pil100k_hdf5.stats2.total.kind = 'hinted'
+pil100k_hdf5.stats3.kind = 'hinted'
+pil100k_hdf5.stats3.total.kind = 'hinted'
+pil100k_hdf5.stats4.kind = 'hinted'
+pil100k_hdf5.stats4.total.kind = 'hinted'
+pil100k_hdf5.cam.ensure_nonblocking()
 
+pil100k.stats1.kind = 'hinted'
+pil100k.stats1.total.kind = 'hinted'
+pil100k.stats2.kind = 'hinted'
+pil100k.stats2.total.kind = 'hinted'
+pil100k.stats3.kind = 'hinted'
+pil100k.stats3.total.kind = 'hinted'
+pil100k.stats4.kind = 'hinted'
+pil100k.stats4.total.kind = 'hinted'
+pil100k.cam.ensure_nonblocking()
 
-
+# pil100k_stream = None
+# pil100k_hdf5_stream = None
+# pil100k_hdf5 = None
+# pil100k = None
 
 
 
@@ -566,15 +578,7 @@ pil100k_hdf5_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_
 #
 # fd = FakeDetector(name='fd')
 
-pil100k.stats1.kind = 'hinted'
-pil100k.stats1.total.kind = 'hinted'
-pil100k.stats2.kind = 'hinted'
-pil100k.stats2.total.kind = 'hinted'
-pil100k.stats3.kind = 'hinted'
-pil100k.stats3.total.kind = 'hinted'
-pil100k.stats4.kind = 'hinted'
-pil100k.stats4.total.kind = 'hinted'
-pil100k.cam.ensure_nonblocking()
+
 
 
 def pil_count(acq_time:int = 1, num_frames:int =1, open_shutter:bool=True):

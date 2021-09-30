@@ -41,7 +41,7 @@ bl_prepare_energy_ranges = [
             'HHRM': 0,
             'CM1':0,
             'Filterbox': 1,
-            'ES BPM exposure': 0.1
+            'ES BPM exposure': 0.05
         },
         {
             'energy_start': 6000,
@@ -60,7 +60,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 5,
             'N2_flow': 5,
             'IC_voltage': 1700,
-            'HHRM': 8, # IS THIS SUPPOSED TO BE 80?
+            'HHRM': 0, # IS THIS SUPPOSED TO BE 80?
             'CM1':0,
             'Filterbox': -139,
             'ES BPM exposure': 0.2
@@ -74,7 +74,7 @@ bl_prepare_energy_ranges = [
             'HHRM': 80,
             'CM1': 40,
             'Filterbox': -139,
-            'ES BPM exposure': 0.5
+            'ES BPM exposure': 0.2
         },
         {
             'energy_start': 17000,
@@ -113,6 +113,9 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
     cm_setter = cm1.x
     hhrm_setter = hhrm.hor_translation
     settling_time = 120
+
+    if type(energy) == str:
+        energy = int(energy)
 
     energy_range = [e_range for e_range in energy_ranges if
                   e_range['energy_end'] > energy >= e_range['energy_start']][0]
