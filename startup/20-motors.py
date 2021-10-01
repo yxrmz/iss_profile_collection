@@ -50,7 +50,7 @@ class HHM(Device):
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(StuckingEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
-    energy = Cpt(StuckingEpicsMotor, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
+    energy = Cpt(StuckingEpicsMotorThatFlies, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
 
@@ -113,6 +113,8 @@ class HHM(Device):
         self._starting = None
         self.y_precise.append_homing_pv(self.home_y)
         self.y_precise.set_low_lim(low_lim=8.5)
+
+        self.energy.append_flying_status_pv(self.trajectory_running)
 
     def set(self, command):
         if command == 'prepare':
@@ -179,10 +181,17 @@ class HHM(Device):
         print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
         return status
 
+    def abort_trajectory(self):
+
+        if self.trajectory_running.get():
+            print('Stopping trajectory ... ', end='')
+            self.stop_trajectory.put('1')
+            print('done')
 
     # def stop(self, *args, **kwargs):
     #     print('Stopping trajectory')
-    #     self.stop_trajectory.put('1')
+    #     if self.trajectory_running.get():
+    #         self.stop_trajectory.put('1')
     #     super().stop(*args, **kwargs)
     #     print('Done stopping trajectory')
 

@@ -26,9 +26,39 @@ class StuckingEpicsMotor(EpicsMotor):
 
     def move(self, position, wait=True, **kwargs):
         cid = self.motor_is_moving.subscribe(self._stuck_check)
-        status = super().move(position, wait=True, **kwargs)
+        status = super().move(position, wait=wait, **kwargs)
         self.motor_is_moving.unsubscribe(cid)
         return status
+
+
+class StuckingEpicsMotorThatFlies(StuckingEpicsMotor):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.flying = None
+
+    def append_flying_status_pv(self, pv):
+        self.flying = pv
+
+    def _stuck_check(self, value, old_value, **kwargs):
+        if value == 1:  # here value == self.motor_is_moving
+            cur_sp = self.user_setpoint.get()
+            old_pos = self.user_readback.get()
+            if self.flying is not None:
+                is_flying = bool(self.flying.get())
+            else:
+                is_flying = False
+
+            while self.motor_is_moving.get() == 1:
+                ttime.sleep(self._stuck_check_delay)
+                new_pos = self.user_readback.get()
+                if new_pos == old_pos and (not is_flying):
+                    print(f'[Debug message]: {ttime.ctime()}: {self.name} motor got stuck ... unstucking it')
+                    self.stop()
+                    self.move(cur_sp, wait=True, **kwargs)
+                else:
+                    old_pos = new_pos
+
 
 
 

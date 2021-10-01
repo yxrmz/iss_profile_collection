@@ -138,11 +138,11 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         yield from bps.abs_set(self.sample_len, self.saved_status['sample_len'])
         yield from bps.abs_set(self.wf_len, self.saved_status['wf_len'])
 
-    def read(self, *args, **kwargs):
-        start_read = ttime.time()
-        output = super().read(*args, **kwargs)
-        print(f'{self.name} took {ttime.time() - start_read} to read')
-        return output
+    # def read(self, *args, **kwargs):
+    #     start_read = ttime.time()
+    #     output = super().read(*args, **kwargs)
+    #     print(f'{self.name} took {ttime.time() - start_read} to read')
+    #     return output
 
 # def trigger(self, *args, **kwargs):
 #     start_trigger = ttime.time()
@@ -208,11 +208,10 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         return status
 
     def unstage(self, *args, **kwargs):
-        self._datum_counter = None
-        # st = self.stream.set(0)
-
-
         super().unstage(*args, **kwargs)
+        self._datum_counter = None
+        # self.stream.set(0)
+
 
     # # Fly-able interface
 
