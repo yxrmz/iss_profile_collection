@@ -50,7 +50,7 @@ class FlyerXS(FlyerAPBwithTrigger):
         self.xs_det = xs_det
 
     def kickoff(self, traj_duration=None):
-        traj_duration = get_traj_duration()
+        traj_duration = trajectory_manager.current_trajectory_duration
         acq_rate = self.trigger.freq.get()
         self.xs_det.stage(acq_rate, traj_duration)
         st_super = super().kickoff(traj_duration=traj_duration)
@@ -94,7 +94,7 @@ class FlyerPilatus(FlyerAPBwithTrigger):
 
     def kickoff(self, traj_duration=None):
         print(f'     !!!!! {datetime.now()} PIL100K KICKOFF')
-        traj_duration = get_traj_duration()
+        traj_duration = trajectory_manager.current_trajectory_duration
         acq_rate = self.trigger.freq.get()
         self.pil_det.stage(acq_rate, traj_duration)
 

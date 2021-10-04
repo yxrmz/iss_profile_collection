@@ -14,6 +14,7 @@ class TrajectoryManager():
     def __init__(self, hhm, **kwargs):
         self.hhm = hhm
         self.traj_info = {}
+        self.trajectory_path = '/nsls2/xf08id/trajectory/'
 
     # Function used to count the number of lines in a file
     def file_len(self, fname):
@@ -43,7 +44,7 @@ class TrajectoryManager():
     # arg5 (optional) = ip                 -> IP of the controller that will receive the file. Default = '10.8.2.86'
     def load(self, orig_file_name, new_file_path, is_energy, offset, new_file_name='hhm.txt'):
         ip = self.hhm.ip
-        orig_file_path = self.hhm.traj_filepath
+        orig_file_path = self.trajectory_path
 
         print('[Load Trajectory] Starting...')
         traj_fn = orig_file_name
@@ -300,7 +301,7 @@ class TrajectoryManager():
 
     @property
     def current_lut(self):
-        return self.hhm.lut_number_rbv.get()
+        return int(self.hhm.lut_number_rbv.get())
 
     def read_trajectory_limits(self):
         # current_lut = self.current_lut
@@ -318,9 +319,28 @@ class TrajectoryManager():
                 'Could not find max or min information in the trajectory.'
                 ' Try sending it again to the controller.')
 
+    @property
+    def current_trajectory_duration(self):
+        info = trajectory_manager.read_info(silent=True)
+        lut = str(trajectory_manager.current_lut)
+        return int(info[lut]['size']) / self.hhm.servocycle
+
+    def validate_element(self, element, edge, db_proc):
+        # check if current trajectory is good for this calibration
+        r = db_proc.search({'Sample_name': element + ' foil'})
+        if len(r) == 0:
+            return False, f'Error: No matching foil has been found'
+
+        e_min, e_max = self.read_trajectory_limits()
+        edge_energy = xraydb.xray_edge(element, edge).energy
+        if not ((edge_energy > e_min) and (edge_energy < e_max)):
+            return False, f'Error: invalid trajectory for this calibration'
+
+        return True, ''
 
 
 
 trajectory_manager = TrajectoryManager(hhm)
 
 
+trajectory_manager.current_trajectory_duration

@@ -32,7 +32,7 @@ class FlyerAPB:
         streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
         if traj_duration is None:
-            traj_duration = get_traj_duration()
+            traj_duration = trajectory_manager.current_trajectory_duration
 
         self.det.stage(traj_duration)
         # Start apb after encoder pizza-boxes, which will trigger the motor.
@@ -96,13 +96,6 @@ class FlyerAPB:
 
 flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
-
-### aux function
-def get_traj_duration():
-    tr = trajectory_manager(hhm)
-    info = tr.read_info(silent=True)
-    lut = str(int(hhm.lut_number_rbv.get()))
-    return int(info[lut]['size']) / 16000
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
     interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"

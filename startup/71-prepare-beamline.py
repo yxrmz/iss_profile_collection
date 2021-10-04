@@ -240,30 +240,50 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
 
 
 
-# def calibrate_energy_plan(element, edge, dE=25, plotting=False):
-#     # # check if current trajectory is good for this calibration
-#     #
-#     # r = db_proc.search({'Sample_name': element + ' foil'})
-#     # if len(r) == 0:
-#     #     raise ValueError(f'Error: No matching foil has been found')
-#     #
-#     # e_min, e_max = read_trajectory_limits()
-#     # edge_energy = xraydb.xray_edge(element, edge).energy
-#     # if not ((edge_energy > e_min) and (edge_energy < e_max)):
-#     #     raise ValueError(f'Error: invalid trajectory for this calibration')
-#
-#     name = f'{element} {edge} foil scan'
-#     yield from fly_scan_with_apb(name, '')
-#
-#     # print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> UID OF THIS SCAN: {uid}')
-#
-#      # e_shift = get_energy_offset(-1, db, db_proc, dE=dE)
-#      #    print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> ENERGY SHIFT OF THIS SCAN: {e_shift}')
-#      #    # _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
-#      #    # _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
-#      #    # delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
-#      #    # new_offset = hhm.angle_offset.value - delta_offset
-#      #    # yield from bps.mv(hhm.angle_offset, new_offset)
+# element = self.comboBox_reference_foils.currentText()
+        # edge = self.edge_dict[element]
+        # st, message = validate_calibration(element, edge, self.db_proc,self.hhm)
+        # if st:
+        #     self.RE(self.aux_plan_funcs['set_reference_foil'](element))
+        #     self.RE(self.plan_funcs['Fly scan'](f'{element} {edge} foil scan', ''))
+        #     e_shift, en_ref, mu_ref, mu = process_calibration(element, edge, self.db,self.db_proc, self.hhm, self.trajectory_manager)
+        #     self._update_figure_with_calibration_data(en_ref, mu_ref, mu)
+        #     print(f'{ttime.ctime()} [Energy calibration] Energy shift is {e_shift} eV')
+        #
+        #     print(f'{ttime.ctime()} [Energy calibration] Validating the calibration')
+        #     self.RE(self.plan_funcs['Fly scan'](f'{element} {edge} foil scan', ''))
+        #     e_shift, en_ref, mu_ref, mu = process_calibration(self.db, self.db_proc, self.hhm)
+        #     if e_shift < 0.1:
+        #         print(f'{ttime.ctime()} [Energy calibration] Completed')
+        #
+        #     else:
+        #         print(f'{ttime.ctime()} [Energy calibration] Energy calibration error is {e_shift} > 0.1 eV. Check Manually.')
+        #     self._update_figure_with_calibration_data(en_ref, mu_ref, mu)
+        #
+        # else:
+        #     message_box('Error', message)
+
+
+
+
+def calibrate_energy_plan(element, edge, dE=25, plotting=False):
+    # # check if current trajectory is good for this calibration
+    is_trajectory_good, msg = trajectory_manager.validate_element(element, edge)
+    if not is_trajectory_good: return is_trajectory_good, msg
+
+    name = f'{element} {edge} foil scan'
+    yield from fly_scan_with_apb(name, '')
+    e_shift = get_energy_offset(-1, db, db_proc, dE=dE)
+
+    # print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> UID OF THIS SCAN: {uid}')
+
+     # e_shift = get_energy_offset(-1, db, db_proc, dE=dE)
+     #    print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> ENERGY SHIFT OF THIS SCAN: {e_shift}')
+     #    # _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
+     #    # _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
+     #    # delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
+     #    # new_offset = hhm.angle_offset.value - delta_offset
+     #    # yield from bps.mv(hhm.angle_offset, new_offset)
 
 
 def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdout = sys.stdout, force_prepare = False, enable_fb_in_the_end=True):

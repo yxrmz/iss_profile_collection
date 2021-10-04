@@ -44,7 +44,6 @@ class HHM(Device):
     _default_read_attrs = ('pitch', 'roll', 'theta', 'y', 'energy')
     "High Heat Load Monochromator"
     ip = '10.66.58.106'
-    traj_filepath = '/nsls2/xf08id/trajectory/'
 
     pitch = Cpt(EpicsMotor, 'Mono:HHM-Ax:P}Mtr', kind='hinted')
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
@@ -100,6 +99,7 @@ class HHM(Device):
     home_y = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
     y_precise = Cpt(InfirmStuckingEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
 
+    servocycle = 16000
 
     def __init__(self, *args, enc = None, **kwargs):
         super().__init__(*args, **kwargs)
