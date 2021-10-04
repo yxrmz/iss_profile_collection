@@ -45,8 +45,6 @@ class PilatusDetectorCam(PilatusDetector):
     cam = Cpt(PilatusDetectorCamV33, 'cam1:')
 
 
-class TIFFPluginWithFileStore(TIFFPlugin, FileStoreTIFFIterativeWrite):
-    ...
 
 class HDF5PluginWithFileStore(HDF5Plugin, FileStoreHDF5IterativeWrite):
     """Add this as a component to detectors that write HDF5s."""
@@ -56,11 +54,6 @@ class HDF5PluginWithFileStore(HDF5Plugin, FileStoreHDF5IterativeWrite):
         else:
             return 1
 
-class TIFFPluginEnsuredOff(TIFFPlugin):
-    """Add this as a component to detectors that do not write TIFFs."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.stage_sigs.update([('auto_save', 'No')])
 
 
 # Making ROIStatPlugin that is actually useful
@@ -197,17 +190,6 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
 
 
-class PilatusTIFF(PilatusBase):
-    tiff = Cpt(TIFFPluginWithFileStore,
-               suffix="TIFF1:",
-               # write_path_template="/GPFS/xf12id1/data/PLACEHOLDER",  # override this on instances using instance.tiff.write_file_path
-               # write_path_template="/home/det/PilatusData/",
-               root='/',
-               write_path_template='/nsls2/xf08id/data/pil100k/%Y/%m/%d',
-               # root='/nsls2/xf08id/data/',
-               )
-
-
 
 
 
@@ -224,157 +206,6 @@ class PilatusHDF5(PilatusBase):
         super().stage(*args, **kwargs)
 
 
-
-
-
-
-# pil100k.tiff.write_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
-# pil100k.tiff.read_path_template = '/nsls2/xf08id/data/pil100k/%Y/%m/%d'
-
-# pil100k.tiff.write_path_template = '/home/det/PilatusData/'
-# pil100k.tiff.read_path_template = '/home/xf08id/pilatusTest/'
-
-# pil100kroi1 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats1:Total_RBV', name='pil100kroi1')
-# pil100kroi2 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats2:Total_RBV', name='pil100kroi2')
-# pil100kroi3 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats3:Total_RBV', name='pil100kroi3')
-# pil100kroi4 = EpicsSignal('XF:08IDB-ES{Det:PIL1}:Stats4:Total_RBV', name='pil100kroi4')
-
-
-
-
-class PilatusStreamTIFF(PilatusTIFF):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self._asset_docs_cache = deque()
-        self._datum_counter = None
-        self._acquire = None
-        # self._datum_counter = None
-
-
-
-    # TODO: change blocking to NO upon staging of this class !!!
-    def stage(self, acq_rate, traj_time, *args, **kwargs):
-        print('>>>>>>>>>>>>>>> STAGING TIFF VERSION')
-        super().stage(*args, **kwargs)
-        # deal with expected number of points
-        self.set_expected_number_of_points(acq_rate, traj_time)
-
-        # deal with acquire time
-        # acquire_period = 1 / acq_rate
-        self.set_exposure_time(1 / acq_rate)
-        # acquire_time = acquire_period - self.readout
-        # self.cam.acquire_period.put(acquire_period)
-        # self.cam.acquire_time.put(acquire_time)
-
-        # saving files
-        self.tiff.file_write_mode.put(2)
-
-        # deal with the trigger
-        self.cam.trigger_mode.put(3)
-        self.cam.image_mode.put(1)
-
-        self._datum_counter = itertools.count()
-
-
-    def trigger(self):
-        def callback(value, old_value, **kwargs):
-            # print(f'{ttime.time()} {old_value} ---> {value}')
-            if self._acquire and int(round(old_value)) == 1 and int(round(value)) == 0:
-                self._acquire = False
-                return True
-            else:
-                self._acquire = True
-                return False
-
-        status = SubscriptionStatus(self.cam.acquire, callback)
-        self.tiff.capture.put(1)
-        self.cam.acquire.put(1)
-        return status
-
-
-    def unstage(self, *args, **kwargs):
-        # self._datum_counter = None
-        # st = self.stream.set(0)
-        super().unstage(*args, **kwargs)
-        self.cam.trigger_mode.put(0)
-        self.cam.image_mode.put(0)
-        self.tiff.file_write_mode.put(0)
-        self.tiff.capture.put(0)
-        self._datum_counter = None
-        self.set_num_images(1)
-        self.cam.array_counter.put(0)
-        self.set_exposure_time(1)
-
-
-    def complete(self, *args, **kwargs):
-        for resource in self.tiff._asset_docs_cache:
-            self._asset_docs_cache.append(('resource', resource[1]))
-
-        self._datum_ids = []
-
-        num_frames = self.tiff.num_captured.get()
-
-        # print(f'\n!!! num_frames: {num_frames}\n')
-
-        for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(self.tiff._resource_uid, next(self._datum_counter))
-            datum = {'resource': self.tiff._resource_uid,
-                     # 'datum_kwargs': {'frame': frame_num},
-                     'datum_kwargs': {'frame': frame_num},
-                     'datum_id': datum_id}
-            self._asset_docs_cache.append(('datum', datum))
-            self._datum_ids.append(datum_id)
-
-        return NullStatus()
-
-
-    def collect(self):
-        num_frames = len(self._datum_ids)
-
-        for frame_num in range(num_frames):
-            datum_id = self._datum_ids[frame_num]
-            data = {self.name: datum_id}
-
-            ts = ttime.time()
-
-            yield {'data': data,
-                   'timestamps': {key: ts for key in data},
-                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
-                   'filled': {key: False for key in data}}
-
-
-    def collect_asset_docs(self):
-        items = list(self._asset_docs_cache)
-        self._asset_docs_cache.clear()
-        for item in items:
-            yield item
-
-
-    def describe_collect(self):
-        return_dict = {self.name:
-                           {f'{self.name}': {'source': 'pil100k',
-                                             'dtype': 'array',
-                                             'shape': [self.cam.num_images.get(),
-                                                       #self.settings.array_counter.get()
-                                                       self.tiff.array_size.height.get(),
-                                                       self.tiff.array_size.width.get()],
-                                            'filename': f'{self.tiff.full_file_name.get()}',
-                                             'external': 'FILESTORE:'}}}
-        return return_dict
-
-
-
-
-
-    def set_expected_number_of_points(self, acq_rate, traj_time):
-        n = int(acq_rate * (traj_time + 1 ))
-        self.set_num_images(n)
-        self.cam.array_counter.put(0)
-
-
-# pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
 
 
 
@@ -524,23 +355,10 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.cam.array_counter.put(0)
 
 
+pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
+pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
 
-pil100k_stream = PilatusStreamTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
-pil100k_hdf5_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_hdf5_stream")
-
-pil100k_hdf5 = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_hdf5")  # , detector_id="SAXS")
-pil100k = PilatusTIFF("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
-pil100k.set_primary_roi(1)
-
-pil100k_hdf5.stats1.kind = 'hinted'
-pil100k_hdf5.stats1.total.kind = 'hinted'
-pil100k_hdf5.stats2.kind = 'hinted'
-pil100k_hdf5.stats2.total.kind = 'hinted'
-pil100k_hdf5.stats3.kind = 'hinted'
-pil100k_hdf5.stats3.total.kind = 'hinted'
-pil100k_hdf5.stats4.kind = 'hinted'
-pil100k_hdf5.stats4.total.kind = 'hinted'
-pil100k_hdf5.cam.ensure_nonblocking()
+# pil100k.set_primary_roi(1)
 
 pil100k.stats1.kind = 'hinted'
 pil100k.stats1.total.kind = 'hinted'
@@ -551,33 +369,6 @@ pil100k.stats3.total.kind = 'hinted'
 pil100k.stats4.kind = 'hinted'
 pil100k.stats4.total.kind = 'hinted'
 pil100k.cam.ensure_nonblocking()
-
-# pil100k_stream = None
-# pil100k_hdf5_stream = None
-# pil100k_hdf5 = None
-# pil100k = None
-
-
-
-
-# class FakeDetector(Device):
-#     acq_time = Cpt(Signal, value=10)
-#
-#     _default_configuration_attrs = ('acq_time',)
-#     _default_read_attrs = ()
-#
-#     def trigger(self):
-#         st = self.st = DeviceStatus(self)
-#
-#         from threading import Timer
-#
-#         self.t = Timer(self.acq_time.get(), st._finished)
-#         self.t.start
-#         return st
-#
-#
-# fd = FakeDetector(name='fd')
-
 
 
 
@@ -594,20 +385,6 @@ from databroker.assets.handlers import HandlerBase, PilatusCBFHandler, AreaDetec
 
 
 
-
-class ISSPilatusTIFFHandler(AreaDetectorTiffHandler):
-
-    def __init__(self, fpath, template, filename, frame_per_point=1):
-        super().__init__(fpath, template, filename,
-                         frame_per_point=1)
-
-
-    def __call__(self, *args, frame=None, **kwargs):
-        return super().__call__(*args, point_number=frame, **kwargs)
-
-
-# db.reg.register_handler('AD_TIFF',
-#                          ISSPilatusTIFFHandler, overwrite=True)
 
 
 PIL100k_HDF_DATA_KEY = 'entry/instrument/NDAttributes'
