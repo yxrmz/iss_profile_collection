@@ -2,6 +2,7 @@
 
 from ophyd.status import SubscriptionStatus
 from ophyd import utils as ophyd_utils
+from xas import xray
 
 print(__file__)
 
@@ -167,13 +168,25 @@ class HHM(Device):
     def set_new_angle_offset(self, value):
         try:
             self.angle_offset.put(float(value))
+            return True
         except Exception as exc:
             if type(exc) == ophyd_utils.errors.LimitError:
-                print('[Energy calibration] Limit error.'.format(exc))
+                print_to_gui('[Energy calibration] Limit error.'.format(exc))
             else:
-                print('[Energy calibration] Something went wrong, not the limit: {}'.format(exc))
-            return 0
-        return 1
+                print_to_gui('[Energy calibration] Something went wrong, not the limit: {}'.format(exc))
+            return False
+
+
+
+
+
+    def calibrate(self, energy_nominal, energy_actual):
+        offset_actual = xray.energy2encoder(energy_actual, hhm.pulses_per_deg) / hhm.pulses_per_deg
+        offset_nominal = xray.energy2encoder(energy_nominal, hhm.pulses_per_deg) / hhm.pulses_per_deg
+        angular_offset_shift = offset_actual - offset_nominal
+        new_angular_offset = self.angle_offset.value - angular_offset_shift
+        return self.set_new_angle_offset(new_angular_offset)
+
 
     def trigger(self, *args, **kwargs):
         start_trigger = ttime.time()

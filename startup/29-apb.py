@@ -124,7 +124,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
         status = SubscriptionStatus(self.acquiring, callback)
         self.acquire.set(1)
-        print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
+        #print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
         return status
 
     def save_current_status(self):

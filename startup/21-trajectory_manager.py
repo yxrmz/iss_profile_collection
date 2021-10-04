@@ -303,6 +303,9 @@ class TrajectoryManager():
     def current_lut(self):
         return int(self.hhm.lut_number_rbv.get())
 
+    def reinit(self):
+        self.init(self.current_lut)
+
     def read_trajectory_limits(self):
         # current_lut = self.current_lut
         # int(hhm.lut_number_rbv.get())
@@ -325,18 +328,20 @@ class TrajectoryManager():
         lut = str(trajectory_manager.current_lut)
         return int(info[lut]['size']) / self.hhm.servocycle
 
-    def validate_element(self, element, edge, db_proc):
+    def validate_element(self, element, edge):
         # check if current trajectory is good for this calibration
         r = db_proc.search({'Sample_name': element + ' foil'})
         if len(r) == 0:
-            return False, f'Error: No matching foil has been found'
+            print_to_gui(f'Error: No matching foil has been found')
+            return False
 
         e_min, e_max = self.read_trajectory_limits()
         edge_energy = xraydb.xray_edge(element, edge).energy
         if not ((edge_energy > e_min) and (edge_energy < e_max)):
-            return False, f'Error: invalid trajectory for this calibration'
+            print_to_gui(f'Error: invalid trajectory for this calibration')
+            return False
 
-        return True, ''
+        return True
 
 
 

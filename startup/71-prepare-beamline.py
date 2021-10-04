@@ -3,6 +3,7 @@ import time as ttime
 import sys
 import numpy as np
 from xas.xray import energy2angle
+from xas.energy_calibration import get_energy_offset
 # from xas.image_analysis import determine_beam_position_from_fb_image
 
 
@@ -229,61 +230,29 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
     if np.abs(hhm.y_precise.user_readback.get() - hhmy_position) > 0.05:
         print_to_gui(f'Error: vertical position of the second monochromator crystal is not set. Set manually to {hhmy_position}',stdout=stdout)
 
-# def update_hhm_fb_center(truncate_data=True):
-#     line = hhm.fb_line.get()
-#     center = hhm.fb_center.get()
-#     n_lines = hhm.fb_nlines.get()
-#     image = bpm_es.image.image
-#     new_center = determine_beam_position_from_fb_image(image, line=line, center_point=center, n_lines=n_lines, truncate_data=truncate_data)
-#     if new_center is not None:
-#         yield from bps.mv(hhm.fb_center, new_center)
 
-
-
-# element = self.comboBox_reference_foils.currentText()
-        # edge = self.edge_dict[element]
-        # st, message = validate_calibration(element, edge, self.db_proc,self.hhm)
-        # if st:
-        #     self.RE(self.aux_plan_funcs['set_reference_foil'](element))
-        #     self.RE(self.plan_funcs['Fly scan'](f'{element} {edge} foil scan', ''))
-        #     e_shift, en_ref, mu_ref, mu = process_calibration(element, edge, self.db,self.db_proc, self.hhm, self.trajectory_manager)
-        #     self._update_figure_with_calibration_data(en_ref, mu_ref, mu)
-        #     print(f'{ttime.ctime()} [Energy calibration] Energy shift is {e_shift} eV')
-        #
-        #     print(f'{ttime.ctime()} [Energy calibration] Validating the calibration')
-        #     self.RE(self.plan_funcs['Fly scan'](f'{element} {edge} foil scan', ''))
-        #     e_shift, en_ref, mu_ref, mu = process_calibration(self.db, self.db_proc, self.hhm)
-        #     if e_shift < 0.1:
-        #         print(f'{ttime.ctime()} [Energy calibration] Completed')
-        #
-        #     else:
-        #         print(f'{ttime.ctime()} [Energy calibration] Energy calibration error is {e_shift} > 0.1 eV. Check Manually.')
-        #     self._update_figure_with_calibration_data(en_ref, mu_ref, mu)
-        #
-        # else:
-        #     message_box('Error', message)
-
-
-
-
-def calibrate_energy_plan(element, edge, dE=25, plotting=False):
+def calibrate_energy_plan(element, edge, dE=25, plot_fun=None):
     # # check if current trajectory is good for this calibration
-    is_trajectory_good, msg = trajectory_manager.validate_element(element, edge)
-    if not is_trajectory_good: return is_trajectory_good, msg
-
+    yield from set_reference_foil(element)
+    yield from bps.sleep(1)
+    success = foil_camera.validate_barcode(element)
+    if not success: return
+    success = trajectory_manager.validate_element(element, edge)
+    if not success: return
     name = f'{element} {edge} foil scan'
     yield from fly_scan_with_apb(name, '')
-    e_shift = get_energy_offset(-1, db, db_proc, dE=dE)
-
-    # print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> UID OF THIS SCAN: {uid}')
-
-     # e_shift = get_energy_offset(-1, db, db_proc, dE=dE)
-     #    print(f'{ttime.ctime()} >>>>>>>>>>>>>>>>>> ENERGY SHIFT OF THIS SCAN: {e_shift}')
-     #    # _offset_act = xray.energy2encoder(e0_act, hhm.pulses_per_deg)
-     #    # _offset_nom = xray.energy2encoder(e0_nom, hhm.pulses_per_deg)
-     #    # delta_offset = (_offset_act - _offset_nom) / hhm.pulses_per_deg)
-     #    # new_offset = hhm.angle_offset.value - delta_offset
-     #    # yield from bps.mv(hhm.angle_offset, new_offset)
+    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_fun)
+    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual-energy_nominal:.2f} eV')
+    success = hhm.calibrate(energy_nominal, energy_actual)
+    if not success: return
+    trajectory_manager.reinit()
+    yield from fly_scan_with_apb(name, '')
+    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_fun)
+    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
+    if np.abs(energy_actual - energy_nominal) < 0.1:
+        print_to_gui(f'{ttime.ctime()} [Energy calibration] Completed')
+    else:
+        print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
 
 
 def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdout = sys.stdout, force_prepare = False, enable_fb_in_the_end=True):
@@ -295,10 +264,6 @@ def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdou
     else:
         print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
         yield from bps.mv(hhm.energy, energy)
-
-
-
-
 
 
 def tabulate_hhmy_position_plan(stdout=sys.stdout):

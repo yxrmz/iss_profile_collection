@@ -1,12 +1,7 @@
-import matplotlib.pyplot as plt
 from datetime import datetime
-from subprocess import call
 import time
-from scipy.optimize import curve_fit
 from bluesky.plan_stubs import mv, mvr
-import bluesky.preprocessors as bpp
 from random import random
-# from xas.trajectory import trajectory_manager
 import json
 from xas.ft_analysis import data_ft
 
@@ -66,7 +61,6 @@ def set_attenuator(thickness:int  = 0):
 
 
 
-
 def random_step(x: float = 0,y: float = 0, **kwargs):
 
     '''
@@ -119,12 +113,6 @@ def get_offsets (time:int = 2, *args, **kwargs):
 
 
 
-
-
-
-
-
-
 def record_offsets_plan(suffix=''):
     fpath = '/nsls2/xf08id/log/offsets/' + str(datetime.now()).replace(':', '-')[:-7] + suffix + '.dat'
     uid = (yield from get_offsets())
@@ -151,86 +139,18 @@ def record_offsets_for_all_gains_plan():
         yield from record_offsets_plan(suffix=suffix)
 
 
-
-# def get_adc_offsets(times: int = 20, *args, **kwargs):
-#     """
-#        Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
-#
-#        Parameters
-#        ----------
-#        num : int
-#            Number of points to acquire and average for each ion chamber
-#
-#
-#        Returns
-#        -------
-#        uid : list(str)
-#            List containing the unique id of the scan
-#
-#
-#        See Also
-#        --------
-#        :func:`tscan`
-#        """
-#     sys.stdout = kwargs.pop('stdout', sys.stdout)
-#
-#     adcs = list(args)
-#     if not len(adcs):
-#         adcs = [pba2.adc7, pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
-#
-#     old_avers = []
-#     for adc in adcs:
-#         old_avers.append(adc.averaging_points.get())
-#         adc.averaging_points.put(10)
-#
-#     try:
-#         yield from bps.mv(shutter_ph_2b, 'Close')
-#     except FailedStatus:
-#         raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
-#
-#     uid = (yield from get_offsets_plan(adcs, num=int(times)))
-#
-#     try:
-#         yield from bps.mv(shutter_ph_2b, 'Open')
-#     except FailedStatus:
-#         print('Error: Photon shutter failed to open')
-#
-#
-#     print('Updating values...')
-#
-#     arrays = []
-#     offsets = []
-#     df = db[uid].table()
-#
-#     for index, adc in enumerate(adcs):
-#         key = '{}_volt'.format(adc.name)
-#         array = df[key]
-#         offset = np.mean(df[key][2:int(times)])
-#
-#         arrays.append(array)
-#         offsets.append(offset)
-#         adc.offset.put(offset)
-#         print('{}\n New offset for {}) is  {}'.format(array, adc.dev_name.value, offset))
-#         adc.averaging_points.put(old_avers[index])
-#     print('[Offsets recorded] Complete\n')
-#     remove_pb_files(uid)
-
-
 def get_adc_readouts(times: int = 20, *args, **kwargs):
     """
     Get Ion Chambers Offsets - Gets the offsets from the ion chambers and automatically subtracts from the acquired data in the next scans
-
     Parameters
     ----------
     num : int
         Number of points to acquire and average for each ion chamber
 
-
     Returns
     -------
     uid : list(str)
         List containing the unique id of the scan
-
 
     See Also
     --------
@@ -282,24 +202,13 @@ def adjust_ic_gains( **kwargs):
         channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
         offsets = [apb.ch1_offset, apb.ch2_offset,apb.ch3_offset,apb.ch4_offset,]
 
-
-    # current_lut = int(hhm.lut_number_rbv.get())
-    # traj_manager = trajectory_manager(hhm)
-    # info = traj_manager.read_info(silent=True)
-    # if 'max' not in info[str(current_lut)] or 'min' not in info[str(current_lut)]:
-    #     raise Exception(
-    #         'Could not find max or min information in the trajectory.'
-    #         ' Try sending it again to the controller.')
-    #
-    # e_min = int(info[str(current_lut)]['min'])
-    # e_max = int(info[str(current_lut)]['max'])
     e_min, e_max = trajectory_manager.read_trajectory_limits()
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
     yield from shutter.open_plan()
-    scan_positions = np.arange(e_max + 50, e_min - 50, -100).tolist()
+    scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
 
     # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
     flyers = []
@@ -330,11 +239,7 @@ def adjust_ic_gains( **kwargs):
                 print(f'Increasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain + 1, False)
 
-            #     #print(f'F2>>>>>>>>>>> {flyers}\n D2>>>>>>>>>>>>>>>>.{detectors}')
-            #     yield from bps.sleep(2)
-            # shutter.close()
-            # print('[Adjust Gain] Complete\n')
-            # remove_pb_files(uid)
+    yield from get_offsets()
 
 def vibration_diagnostics(time=1):
     cur_divide_value = apb_ave.divide.value

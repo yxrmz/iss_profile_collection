@@ -115,6 +115,20 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
         self.stage_sigs['cam.image_mode'] = image_mode
         super().stage(*args, **kwargs)
 
+    @property
+    def barcode1(self):
+        return str(self.bar1.get()[:-1], encoding='UTF-8')
+
+    @property
+    def barcode2(self):
+        return str(self.bar2.get()[:-1], encoding='UTF-8')
+
+    def validate_barcode(self, input):
+            if input in (self.barcode1, self.barcode2):
+                return True
+            print_to_gui(f'String {input} not found in {self.name} barcodes')
+            return False
+
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
@@ -130,6 +144,8 @@ camera_sp2 = BPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
 camera_sp5 = CAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
 camera_sp6 = CAMERA('XF:08IDB-BI{BPM:SP-6}', name='camera_sp6')
+
+foil_camera = camera_sp5
 
 #bpm_ms1 = CAMERA('XF:08IDB-BI{BPM:MS-1}', name='bpm_ms1')
 
