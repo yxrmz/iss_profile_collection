@@ -6,7 +6,7 @@ from scipy.optimize import curve_fit
 from bluesky.plan_stubs import mv, mvr
 import bluesky.preprocessors as bpp
 from random import random
-from xas.trajectory import trajectory_manager
+# from xas.trajectory import trajectory_manager
 import json
 from xas.ft_analysis import data_ft
 
@@ -293,7 +293,7 @@ def adjust_ic_gains( **kwargs):
     #
     # e_min = int(info[str(current_lut)]['min'])
     # e_max = int(info[str(current_lut)]['max'])
-    e_min, e_max = read_trajectory_limits()
+    e_min, e_max = trajectory_manager.read_trajectory_limits()
     try:
         yield from bps.mv(shutter_ph_2b, 'Open')
     except FailedStatus:

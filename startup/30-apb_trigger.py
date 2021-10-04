@@ -12,7 +12,7 @@ from ophyd import Device, Component as Cpt, EpicsSignal, EpicsSignalRO, Kind, se
 from ophyd.sim import NullStatus
 from ophyd.status import SubscriptionStatus
 
-from xas.trajectory import trajectory_manager
+# from xas.trajectory import trajectory_manager
 
 
 class AnalogPizzaBoxTrigger(Device):
@@ -136,8 +136,8 @@ class AnalogPizzaBoxTrigger(Device):
 
 
     def calc_num_points(self):
-        tr = trajectory_manager(hhm)
-        info = tr.read_info(silent=True)
+        # tr = trajectory_manager(hhm)
+        info = trajectory_manager.read_info(silent=True)
         lut = str(int(hhm.lut_number_rbv.get()))
         traj_duration = int(info[lut]['size']) / 16000
         acq_num_points = traj_duration * self.acq_rate.get() * 1000 * 1.3

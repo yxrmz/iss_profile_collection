@@ -1,9 +1,9 @@
-from xas.trajectory import trajectory, trajectory_manager
+# from xas.trajectory import trajectory, trajectory_manager
 from bluesky.plan_stubs import mv
 
 
 def batch_parse_and_run(hhm,sample_stage,batch,plans_dict ):
-    tm = trajectory_manager(hhm)
+    # tm = trajectory_manager(hhm)
     for ii in range(batch.rowCount()):
         experiment = batch.item(ii)
         print(experiment.item_type)
@@ -26,7 +26,7 @@ def batch_parse_and_run(hhm,sample_stage,batch,plans_dict ):
                               'comment': '',
                               'delay': 0,
                               'n_cycles': repeat}
-                    tm.init(traj_index+1)
+                    trajectory_manager.init(traj_index+1)
                     yield from plan(**kwargs)
             elif child.item_type == 'service':
                     print(child.service_plan)
