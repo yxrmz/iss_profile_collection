@@ -348,4 +348,4 @@ class TrajectoryManager():
 trajectory_manager = TrajectoryManager(hhm)
 
 
-trajectory_manager.current_trajectory_duration
+# trajectory_manager.current_trajectory_duration
