@@ -11,6 +11,7 @@ from ophyd import Component as Cpt, Device, EpicsSignal, Kind
 from ophyd.sim import NullStatus
 from ophyd.status import SubscriptionStatus
 from bluesky.utils import new_uid
+from ophyd import set_and_wait
 
 
 class AnalogPizzaBox(Device):
@@ -168,9 +169,9 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self.num_points = None
 
     # Step-scan interface
-    def stage(self, traj_duration, *args, **kwargs):
+    def stage(self):
         file_uid = new_uid()
-        self.calc_num_points(traj_duration)
+        # self.calc_num_points(traj_duration)
         self.stream_samples.put(self.num_points)
         #self.filename_target = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         # Note: temporary static file name in GPFS, due to the limitation of 40 symbols in the filename field.
@@ -189,9 +190,16 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
 
-        st = self.trig_source.set(1)
-        super().stage(*args, **kwargs)
-        return st
+        status = self.trig_source.set(1)
+        status.wait()
+        return super().stage()
+
+
+    def kickoff(self):
+        # set_and_wait(self.stream, 1)
+        return self.stream.set(1)
+
+
 
     def trigger(self):
         def callback(value, old_value, **kwargs):
@@ -208,20 +216,18 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         return status
 
     def unstage(self, *args, **kwargs):
-        super().unstage(*args, **kwargs)
         self._datum_counter = None
+        return super().unstage(*args, **kwargs)
         # self.stream.set(0)
 
 
     # # Fly-able interface
 
     # Not sure if we need it here or in FlyerAPB (see 63-...)
-    # def kickoff(self):
-    #     status = self.stage()
-    #     status &= self.trigger()
-    #     return status
+
 
     def complete(self, *args, **kwargs):
+        set_and_wait(self.stream, 0)
         def callback_saving(value, old_value, **kwargs):
             # print(f'     !!!!! {datetime.now()} callback_saving {value} --> {old_value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
@@ -238,6 +244,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                  'datum_kwargs': {},
                  'datum_id': datum_id}
         self._asset_docs_cache.append(('datum', datum))
+        print(f'{ttime.ctime}>>>> APB COMPLETE  complete')
         self._datum_ids.append(datum_id)
         return filebin_st & filetxt_st
 
@@ -260,7 +267,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         #     ret = shutil.move(f'{self.filename}.{ext}', f'{self.filename_target}.{ext}')
         #     print(f'File moved: {ret}')
 
-        print(f'APB collect is complete {ttime.ctime(ttime.time())}')
+        print(f'APB collect is starting {ttime.ctime(ttime.time())}')
 
         # Copied from 10-detectors.py (class EncoderFS)
         now = ttime.time()
@@ -290,10 +297,14 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         for item in items:
             yield item
 
-    def calc_num_points(self, traj_duration):
+    def set_num_points(self, traj_duration):
         # traj_duration = get_traj_duration()
         acq_num_points = traj_duration * self.acq_rate.get() * 1000 * 1.3
         self.num_points = int(round(acq_num_points, ndigits=-3))
+
+
+    # def set_stream_points(self):
+    #     trajectory_manager.current_trajectory_duration
 
 
 apb_stream = AnalogPizzaBoxStream(prefix="XF:08IDB-CT{PBA:1}:", name="apb_stream")

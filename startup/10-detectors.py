@@ -243,9 +243,9 @@ class EncoderFS(Encoder):
         self._datum_counter = None
         self._datum_ids = None
 
-    def stage(self, *args, **kwargs):
+    def stage(self):
         "Set the filename and record it in a 'resource' document in the filestore database."
-        super().stage(*args, **kwargs)
+        staged_list = super().stage()
 
         print('Staging of {} starting'.format(self.name))
 
@@ -278,6 +278,7 @@ class EncoderFS(Encoder):
         self._datum_counter = itertools.count()
 
         print('Staging of {} complete'.format(self.name))
+        return staged_list
 
     def unstage(self):
         set_and_wait(self.ignore_sel, 1)
@@ -289,12 +290,13 @@ class EncoderFS(Encoder):
         self._ready_to_collect = True
         "Start writing data into the file."
 
-        set_and_wait(self.ignore_sel, 0)
+        # set_and_wait(self.ignore_sel, 0)
+        st = self.ignore_sel.set(0)
 
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
         print(f'Kickoff {self.name} is complete')
-        return NullStatus()
+        return st
 
     def complete(self):
         print(f'Storing {self.name} in {self._full_path}')

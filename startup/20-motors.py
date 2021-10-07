@@ -1,6 +1,6 @@
 
 
-from ophyd.status import SubscriptionStatus
+from ophyd.status import SubscriptionStatus, DeviceStatus
 from ophyd import utils as ophyd_utils
 from xas import xray
 
@@ -117,49 +117,105 @@ class HHM(Device):
 
         self.energy.append_flying_status_pv(self.trajectory_running)
 
-    def set(self, command):
-        if command == 'prepare':
+        self.flying_status = None
 
-            # This function will receive Events from the IOC and check whether
-            # we are seeing the trajectory_ready go low after having been high.
-            def callback(value, old_value, **kwargs):
-                if int(round(old_value)) == 1 and int(round(value)) == 0:
-                    if self._preparing or self._preparing is None:
-                        self._preparing = False
-                        return True
-                    else:
-                        self._preparing = True
+
+    # def stage(self):
+    #     print(f'{ttime.ctime()} >>>>> HHM STAGED')
+    #     return super().stage()
+
+    def _ensure_mono_faces_down(self):
+        curr_energy = hhm.energy.position
+        hhm.energy.move(curr_energy + 200)
+        hhm.energy.move(curr_energy)
+
+    def prepare(self):
+        def callback(value, old_value, **kwargs):
+            if int(round(old_value)) == 1 and int(round(value)) == 0:
+                if self._preparing or self._preparing is None:
+                    self._preparing = False
+                    return True
+                else:
+                    self._preparing = True
+            return False
+
+        status = SubscriptionStatus(self.trajectory_ready, callback)
+
+        self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
+        status.wait()
+
+        self._ensure_mono_faces_down()
+        self.flying_status = None
+
+
+    def kickoff(self):
+        def callback(value, old_value, **kwargs):
+
+            if int(round(old_value)) == 1 and int(round(value)) == 0:
+                if self._starting or self._starting is None:
+                    self._starting = False
+                    return True
+                else:
+                    self._starting = True
                 return False
 
-            # Creating this status object subscribes `callback` Events from the
-            # IOC. Starting at this line, we are now listening for the IOC to
-            # tell us it is done. When it does, this status object will
-            # complete (status.done = True).
-            status = SubscriptionStatus(self.trajectory_ready, callback)
+        self.flying_status = SubscriptionStatus(self.trajectory_running, callback)
+        self.start_trajectory.set('1')
+        return self.flying_status
 
-            # Finally, now that we are litsening to the IOC, prepare the
-            # trajectory.
-            self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
+        # def callback(value, old_value, **kwargs):
+        #     if int(round(old_value)) == 1 and int(round(value)) == 0:
+        #         return True
+        #     return False
+        #
+        # self.flying_status = SubscriptionStatus(self.trajectory_running, callback)
+        # self.start_trajectory.set('1')
+        # return self.flying_status
 
-            # Return the status object immediately, without waiting. The caller
-            # will be able to watch for it to become done.
-            return status
 
-        if command == 'start':
-
-            def callback(value, old_value, **kwargs):
-                if int(round(old_value)) == 1 and int(round(value)) == 0:
-                    if self._starting or self._starting is None:
-                        self._starting = False
-                        return True
-                    else:
-                        self._starting = True
-                return False
-
-            status = SubscriptionStatus(self.trajectory_running, callback)
-            self.start_trajectory.set('1')
-
-            return status
+    # def set(self, command):
+    #     if command == 'prepare':
+    #
+    #         # This function will receive Events from the IOC and check whether
+    #         # we are seeing the trajectory_ready go low after having been high.
+    #         def callback(value, old_value, **kwargs):
+    #             if int(round(old_value)) == 1 and int(round(value)) == 0:
+    #                 if self._preparing or self._preparing is None:
+    #                     self._preparing = False
+    #                     return True
+    #                 else:
+    #                     self._preparing = True
+    #             return False
+    #
+    #         # Creating this status object subscribes `callback` Events from the
+    #         # IOC. Starting at this line, we are now listening for the IOC to
+    #         # tell us it is done. When it does, this status object will
+    #         # complete (status.done = True).
+    #         status = SubscriptionStatus(self.trajectory_ready, callback)
+    #
+    #         # Finally, now that we are litsening to the IOC, prepare the
+    #         # trajectory.
+    #         self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
+    #
+    #         # Return the status object immediately, without waiting. The caller
+    #         # will be able to watch for it to become done.
+    #         return status
+    #
+    #     if command == 'start':
+    #
+    #         def callback(value, old_value, **kwargs):
+    #             if int(round(old_value)) == 1 and int(round(value)) == 0:
+    #                 if self._starting or self._starting is None:
+    #                     self._starting = False
+    #                     return True
+    #                 else:
+    #                     self._starting = True
+    #             return False
+    #
+    #         status = SubscriptionStatus(self.trajectory_running, callback)
+    #         self.start_trajectory.set('1')
+    #
+    #         return status
 
     def home_y_pos(self):
         self.home_y.put('1')
@@ -199,6 +255,7 @@ class HHM(Device):
         if self.trajectory_running.get():
             print('Stopping trajectory ... ', end='')
             self.stop_trajectory.put('1')
+            self.flying_status.set_finished()
             print('done')
 
     # def stop(self, *args, **kwargs):

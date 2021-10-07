@@ -1,100 +1,183 @@
 from xas.file_io import validate_file_exists
 import time as ttime
 from datetime import datetime
-from ophyd.status import SubscriptionStatus
+from ophyd.status import SubscriptionStatus, DeviceStatus
+from ophyd.sim import NullStatus
 
 
-class FlyerAPB:
-    def __init__(self, det, pbs, motor):
-        self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
-        self.parent = None
-        self.det = det
-        self.pbs = pbs  # a list of passed pizza-boxes
-        self.motor = motor
-        self._motor_status = None
+# class FlyerAPB:
+#     def __init__(self, det, pbs, motor):
+#         self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
+#         self.parent = None
+#         self.det = det
+#         self.pbs = pbs  # a list of passed pizza-boxes
+#         self.motor = motor
+#         self._motor_status = None
+#
+#     def kickoff(self, traj_duration=None, *args, **kwargs):
+#         # set_and_wait(self.det.trig_source, 1)
+#         # TODO: handle it on the plan level
+#         # set_and_wait(self.motor, 'prepare')
+#
+#         def callback(value, old_value, **kwargs):
+#
+#             if int(round(old_value)) == 0 and int(round(value)) == 1:
+#                 # Now start mono move
+#                 self._motor_status = self.motor.set('start')
+#                 return True
+#             else:
+#                 return False
+#
+#         # print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
+#
+#         streaming_st = SubscriptionStatus(self.det.streaming, callback)
+#
+#         if traj_duration is None:
+#             traj_duration = trajectory_manager.current_trajectory_duration
+#
+#         self.det.stage(traj_duration)
+#         # Start apb after encoder pizza-boxes, which will trigger the motor.
+#         self.det.stream.set(1)
+#
+#         for pb in self.pbs:
+#             pb.stage()
+#             pb.kickoff()
+#
+#         return streaming_st
+#
+#     def complete(self):
+#         def callback_motor():
+#             # When motor arrives to the position, it should stop streaming on
+#             # the detector. That will run 'callback_det' defined below, which
+#             # will perform the 'complete' step for all involved detectors.
+#             self.det.stream.put(0)
+#         self._motor_status.add_callback(callback_motor)
+#
+#         def callback_det(value, old_value, **kwargs):
+#             if int(round(old_value)) == 1 and int(round(value)) == 0:
+#                 self.det.complete()
+#                 for pb in self.pbs:
+#                     pb.complete()
+#                 return True
+#             else:
+#                 return False
+#         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
+#
+#         return self._motor_status & streaming_st
+#
+#     def describe_collect(self):
+#         return_dict = self.det.describe_collect()
+#         # Also do it for all pizza-boxes
+#         for pb in self.pbs:
+#             return_dict[pb.name] = pb.describe_collect()[pb.name]
+#
+#         return return_dict
+#
+#     def collect(self):
+#         def collect_and_unstage_all():
+#             for pb in self.pbs:
+#                 yield from pb.collect()
+#             yield from self.det.collect()
+#
+#             # The .unstage() method resets self._datum_counter, which is needed
+#             # by .collect(), so calling .unstage() afteer .collect().
+#             self.det.unstage()
+#             for pb in self.pbs:
+#                 pb.unstage()
+#
+#         return (yield from collect_and_unstage_all())
+#
+#     def collect_asset_docs(self):
+#         yield from self.det.collect_asset_docs()
+#         for pb in self.pbs:
+#             yield from pb.collect_asset_docs()
+#
+#     # def stop(self,*args, **kwargs):
+#     #     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.. AT STOP ')
+#
+# flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
-    def kickoff(self, traj_duration=None, *args, **kwargs):
+
+
+
+class FlyerAPB(Device):
+    def __init__(self, dets, hhm, *args, **kwargs):
+        super().__init__(parent=None, **kwargs)
+        # self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
+        self.dets = dets
+        self.hhm = hhm
+
+    def stage(self):
+        self.hhm.prepare()
+        self.dummy_status = DeviceStatus(self)
+        self.complete_status = NullStatus()
+
+        staged_list = super().stage()
+        scan_duration = trajectory_manager.current_trajectory_duration
+        for det in self.dets:
+            if hasattr(det, 'set_num_points'):
+                det.set_num_points(scan_duration)
+            staged_list += det.stage()
+
+        return staged_list
+
+    def unstage(self):
+        unstaged_list = super().unstage()
+        for det in self.dets:
+            unstaged_list += det.unstage()
+        return unstaged_list
+
+    def kickoff(self):
         # set_and_wait(self.det.trig_source, 1)
         # TODO: handle it on the plan level
         # set_and_wait(self.motor, 'prepare')
 
-        def callback(value, old_value, **kwargs):
+        # collective status of kicking off all detectors
+        det_status = NullStatus()
+        print(det_status)
+        for det in self.dets:
+            _st = det.kickoff()
+            print(_st)
+            det_status = det_status and _st
+            print(det_status)
 
-            if int(round(old_value)) == 0 and int(round(value)) == 1:
-                # Now start mono move
-                self._motor_status = self.motor.set('start')
-                return True
-            else:
-                return False
+        def callback_fly():
+            self.hhm_flying_status = self.hhm.kickoff()
 
-        # print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
 
-        streaming_st = SubscriptionStatus(self.det.streaming, callback)
 
-        if traj_duration is None:
-            traj_duration = trajectory_manager.current_trajectory_duration
+        det_status.add_callback(callback_fly)
+        return det_status
 
-        self.det.stage(traj_duration)
-        # Start apb after encoder pizza-boxes, which will trigger the motor.
-        self.det.stream.set(1)
+    def _add_complete_callbacks(self):
+        self.complete_status = NullStatus()
+        def det_callback():
+            for det in self.dets:
+                self.complete_status = self.complete_status and det.complete()
 
-        for pb in self.pbs:
-            pb.stage()
-            pb.kickoff()
-
-        return streaming_st
+        self.hhm_flying_status.add_callback(det_callback)
 
     def complete(self):
-        def callback_motor():
-            # When motor arrives to the position, it should stop streaming on
-            # the detector. That will run 'callback_det' defined below, which
-            # will perform the 'complete' step for all involved detectors.
-            self.det.stream.put(0)
-        self._motor_status.add_callback(callback_motor)
-
-        def callback_det(value, old_value, **kwargs):
-            if int(round(old_value)) == 1 and int(round(value)) == 0:
-                self.det.complete()
-                for pb in self.pbs:
-                    pb.complete()
-                return True
-            else:
-                return False
-        streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
-
-        return self._motor_status & streaming_st
+        return self.hhm_flying_status
 
     def describe_collect(self):
-        return_dict = self.det.describe_collect()
-        # Also do it for all pizza-boxes
-        for pb in self.pbs:
-            return_dict[pb.name] = pb.describe_collect()[pb.name]
-
+        return_dict = {}
+        for det in self.dets:
+            return_dict = {**return_dict, **det.describe_collect()}
         return return_dict
 
     def collect(self):
-        def collect_and_unstage_all():
-            for pb in self.pbs:
-                yield from pb.collect()
-            yield from self.det.collect()
-
-            # The .unstage() method resets self._datum_counter, which is needed
-            # by .collect(), so calling .unstage() afteer .collect().
-            self.det.unstage()
-            for pb in self.pbs:
-                pb.unstage()
-
-        return (yield from collect_and_unstage_all())
+        def collect_all():
+            for det in self.dets:
+                yield from det.collect()
+        return (yield from collect_all())
 
     def collect_asset_docs(self):
-        yield from self.det.collect_asset_docs()
-        for pb in self.pbs:
-            yield from pb.collect_asset_docs()
+        for det in self.dets:
+            yield from det.collect_asset_docs()
 
-    # def stop(self,*args, **kwargs):
-    #     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.. AT STOP ')
 
-flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
+flyer_apb = FlyerAPB([apb_stream, pb9.enc1], hhm, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
@@ -186,4 +269,8 @@ def execute_trajectory_apb(name, **metadata):
                          'execute_trajectory_apb',
                          'fly_energy_scan_apb',
                          **metadata)
-    yield from bp.fly([flyer_apb], md=md)
+
+    @bpp.stage_decorator([flyer_apb])
+    def _fly(md):
+        yield from bp.fly([flyer_apb], md=md)
+    yield from _fly(md)
