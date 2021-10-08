@@ -98,6 +98,12 @@ from ophyd.sim import NullStatus
 # flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
 
+def combine_status_list(status_list):
+    st_all = status_list[0]
+    for st in status_list[1:]:
+        st_all = st_all and st
+    return st_all
+
 
 
 class FlyerAPB(Device):
@@ -109,8 +115,7 @@ class FlyerAPB(Device):
 
     def stage(self):
         self.hhm.prepare()
-        self.dummy_status = DeviceStatus(self)
-        self.complete_status = NullStatus()
+        self.complete_status = DeviceStatus(self)
 
         staged_list = super().stage()
         scan_duration = trajectory_manager.current_trajectory_duration
@@ -133,32 +138,33 @@ class FlyerAPB(Device):
         # set_and_wait(self.motor, 'prepare')
 
         # collective status of kicking off all detectors
-        det_status = NullStatus()
-        print(det_status)
-        for det in self.dets:
-            _st = det.kickoff()
-            print(_st)
-            det_status = det_status and _st
-            print(det_status)
+
+        det_status = combine_status_list([det.kickoff() for det in self.dets])
+
+        # det_status = NullStatus()
+        # for det in self.dets:
+        #     _st = det.kickoff()
+        #     det_status = det_status and _st
 
         def callback_fly():
             self.hhm_flying_status = self.hhm.kickoff()
-
-
+            print('>>>>> kicked off')
 
         det_status.add_callback(callback_fly)
         return det_status
 
-    def _add_complete_callbacks(self):
-        self.complete_status = NullStatus()
-        def det_callback():
-            for det in self.dets:
-                self.complete_status = self.complete_status and det.complete()
-
-        self.hhm_flying_status.add_callback(det_callback)
 
     def complete(self):
-        return self.hhm_flying_status
+        def complete_callback():
+            print('>>>> complete start')
+            status = combine_status_list([det.comlete() for det in self.dets])
+            status.wait()
+            self.complete_status.set_finished()
+            print('>>>>> complete end')
+
+        self.hhm_flying_status.add_callback(complete_callback)
+        return self.complete_status
+
 
     def describe_collect(self):
         return_dict = {}
@@ -168,8 +174,10 @@ class FlyerAPB(Device):
 
     def collect(self):
         def collect_all():
+            print('>>>>> collect start')
             for det in self.dets:
                 yield from det.collect()
+            print('>>>>> collect end')
         return (yield from collect_all())
 
     def collect_asset_docs(self):
