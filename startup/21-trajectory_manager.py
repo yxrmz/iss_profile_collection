@@ -330,10 +330,12 @@ class TrajectoryManager():
 
     def validate_element(self, element, edge):
         # check if current trajectory is good for this calibration
-        r = db_proc.search({'Sample_name': element + ' foil'})
-        if len(r) == 0:
-            print_to_gui(f'Error: No matching foil has been found')
-            return False
+        # r = db_proc.search({'Sample_name': element + ' foil'})
+        # if len(r) == 0:
+        #     print_to_gui(f'Error: No matching foil has been found')
+        #     return False
+        success = validate_element_edge_in_db_proc(element)
+        if not success: return False
 
         e_min, e_max = self.read_trajectory_limits()
         edge_energy = xraydb.xray_edge(element, edge).energy
@@ -343,7 +345,12 @@ class TrajectoryManager():
 
         return True
 
-
+def validate_element_edge_in_db_proc(element):
+    r = db_proc.search({'Sample_name': element + ' foil'})
+    if len(r) == 0:
+        print_to_gui(f'Error: No matching foil has been found')
+        return False
+    return True
 
 trajectory_manager = TrajectoryManager(hhm)
 

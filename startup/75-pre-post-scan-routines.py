@@ -208,14 +208,16 @@ def adjust_ic_gains( **kwargs):
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
     yield from shutter.open_plan()
-    scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
+    scan_positions = np.arange(e_max + 50, e_min - 50, -100).tolist()
 
     # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
     flyers = []
     # for detector in detectors:
     #     if hasattr(detector, 'kickoff'):
     #         flyers.append(detector)
-    for jj in range(2):
+    threshold = 3.1
+    for jj in range(3):
+    # for jj in range(2):
         plan = bp.list_scan(detectors, hhm.energy, scan_positions)
         yield from plan
         table = db[-1].table()
@@ -226,19 +228,21 @@ def adjust_ic_gains( **kwargs):
             else:
                 trace_extreme = table[channel.name].max()
 
-            trace_extreme = (trace_extreme - offset.get())/1000
+            # trace_extreme = (trace_extreme - offset.get())/1000
+            trace_extreme = trace_extreme  / 1000
 
             print(f'Extreme value {trace_extreme} for detector {channel.name}')
-            if abs(trace_extreme) > 3.4:
+            if abs(trace_extreme) > threshold:
                 print(f'Decreasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain-1, False)
 
-            elif abs(trace_extreme) <= 3.4 and abs(trace_extreme) > 0.34:
+            elif abs(trace_extreme) <= threshold and abs(trace_extreme) > threshold/10:
                 print(f'Correct gain for detector {channel.name}')
-            elif abs(trace_extreme) <= 0.34:
+            elif abs(trace_extreme) <= threshold/10:
                 print(f'Increasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain + 1, False)
 
+    yield from shutter.close_plan()
     yield from get_offsets()
 
 def vibration_diagnostics(time=1):

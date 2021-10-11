@@ -237,6 +237,7 @@ def calibrate_energy_plan(element, edge, dE=25, plot_fun=None):
     yield from bps.sleep(1)
     success = foil_camera.validate_barcode(element)
     if not success: return
+    yield from adjust_ic_gains()
     success = trajectory_manager.validate_element(element, edge)
     if not success: return
     name = f'{element} {edge} foil scan'
