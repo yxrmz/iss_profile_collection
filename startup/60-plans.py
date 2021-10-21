@@ -131,8 +131,9 @@ def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
     
     if hasattr(detectors[0], 'kickoff'):
         plan = bpp.fly_during_wrapper(plan, detectors)
-
+    yield from shutter.open_plan()
     yield from plan
+    yield from shutter.close_plan()
 
 
 def sampleXY_plan(detectors, motor, start, stop, num):

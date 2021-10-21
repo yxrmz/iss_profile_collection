@@ -94,12 +94,12 @@ def step_scan_w_xs(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
 
 
 def step_scan_emission_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0, use_sample_registry: bool = False,
-                                 energy_bkg_lo: float = motor_emission.limits[0][0]-10,
-                                 energy_min: float = motor_emission.limits[0][0],
-                                 energy_max: float = motor_emission.limits[0][1],
-                                 energy_bkg_hi: float = motor_emission.limits[0][1]+10,
-                                 energy_step_coarse: float = 1.0,
-                                 energy_step: float = 0.5,
+                                 energy_bkg_lo: float = 17460,
+                                 energy_min: float = 17475,
+                                 energy_max: float = 17480,
+                                 energy_bkg_hi: float = 17495,
+                                 energy_step_coarse: float = 2.5,
+                                 energy_step: float = 0.25,
                                  exposure_time: float = 1.0,
                                  **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
