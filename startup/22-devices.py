@@ -1,7 +1,7 @@
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus)
-from nslsii.devices import TwoButtonShutter
+
 import bluesky.plans as bp
 from ophyd.status import SubscriptionStatus
 print(__file__)
