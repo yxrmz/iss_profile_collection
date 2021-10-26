@@ -299,7 +299,8 @@ class EncoderFS(Encoder):
         return st
 
     def complete(self):
-        print(f'Storing {self.name} in {self._full_path}')
+        print(f'{ttime.ctime()} >>> starting {self.name} complete')
+        # print(f'Storing {self.name} in {self._full_path}')
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
 
@@ -332,7 +333,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('datum', datum))
 
         self._datum_ids.append(datum_id)
-
+        print(f'{ttime.ctime()} >>> {self.name} complete done')
         return NullStatus()
 
     def collect(self):

@@ -115,6 +115,7 @@ class FlyerAPB(Device):
 
     def stage(self):
         self.hhm.prepare()
+        self.kickoff_status = DeviceStatus(self)
         self.complete_status = DeviceStatus(self)
 
         staged_list = super().stage()
@@ -133,34 +134,26 @@ class FlyerAPB(Device):
         return unstaged_list
 
     def kickoff(self):
-        # set_and_wait(self.det.trig_source, 1)
-        # TODO: handle it on the plan level
-        # set_and_wait(self.motor, 'prepare')
-
-        # collective status of kicking off all detectors
-
+        print(f'{ttime.ctime()} >>> starting kickoff sequence')
         det_status = combine_status_list([det.kickoff() for det in self.dets])
-
-        # det_status = NullStatus()
-        # for det in self.dets:
-        #     _st = det.kickoff()
-        #     det_status = det_status and _st
 
         def callback_fly():
             self.hhm_flying_status = self.hhm.kickoff()
-            print('>>>>> kicked off')
+            self.kickoff_status.set_finished()
+            print(f'{ttime.ctime()} >>> kickoff done ')
 
         det_status.add_callback(callback_fly)
-        return det_status
+        return self.kickoff_status
 
 
     def complete(self):
+        # print(f'{ttime.ctime()} >>> starting complete sequence')
         def complete_callback():
-            print('>>>> complete start')
-            status = combine_status_list([det.comlete() for det in self.dets])
+            # print(f'{ttime.ctime()} >>> starting complete callback')
+            status = combine_status_list([det.complete() for det in self.dets])
             status.wait()
             self.complete_status.set_finished()
-            print('>>>>> complete end')
+            # print(f'{ttime.ctime()} >>> complete callback done')
 
         self.hhm_flying_status.add_callback(complete_callback)
         return self.complete_status

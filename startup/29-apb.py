@@ -227,6 +227,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
 
     def complete(self, *args, **kwargs):
+        print(f'{ttime.ctime()} >>> starting {self.name} complete')
         set_and_wait(self.stream, 0)
         def callback_saving(value, old_value, **kwargs):
             # print(f'     !!!!! {datetime.now()} callback_saving {value} --> {old_value}')
@@ -244,7 +245,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                  'datum_kwargs': {},
                  'datum_id': datum_id}
         self._asset_docs_cache.append(('datum', datum))
-        print(f'{ttime.ctime}>>>> APB COMPLETE  complete')
+        print(f'{ttime.ctime()} >>> {self.name} complete done')
         self._datum_ids.append(datum_id)
         return filebin_st & filetxt_st
 
