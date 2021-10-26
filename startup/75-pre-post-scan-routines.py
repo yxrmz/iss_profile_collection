@@ -47,7 +47,7 @@ def set_reference_foil(element:str = 'Mn'):
         #yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
         #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
 
-def set_attenuator(thickness:int  = 0):
+def set_attenuator(thickness:int  = 0, **kwargs):
     # Adding reference foil element list
     with open('/nsls2/xf08id/settings/json/attenuator.json') as fp:
         attenuators_list = json.load(fp)
