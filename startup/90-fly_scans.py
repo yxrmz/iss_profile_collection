@@ -40,12 +40,12 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
 
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
-        yield from prep_traj_plan()
-        print(f'Trajectory preparation complete at {print_now()}')
-        yield from shutter.open_plan()
+        # yield from prep_traj_plan()
+        # print(f'Trajectory preparation complete at {print_now()}')
+        # yield from shutter.open_plan()
         uid = (yield from execute_trajectory_apb(name_n, comment=comment))
         uids.append(uid)
-        yield from shutter.close_plan()
+        # yield from shutter.close_plan()
         print(f'Trajectory is complete {print_now()}')
         yield from bps.sleep(float(delay))
     return uids

@@ -104,27 +104,24 @@ def combine_status_list(status_list):
         st_all = st_all and st
     return st_all
 
+import threading
 
-
-class FlyerAPB(Device):
-    def __init__(self, dets, hhm, *args, **kwargs):
+class FlyerHHM(Device):
+    def __init__(self, dets, hhm, shutter, *args, **kwargs):
         super().__init__(parent=None, **kwargs)
-        # self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
         self.dets = dets
         self.hhm = hhm
+        self.shutter = shutter
+        self.complete_status = None
 
     def stage(self):
         self.hhm.prepare()
-        self.kickoff_status = DeviceStatus(self)
-        self.complete_status = DeviceStatus(self)
-
         staged_list = super().stage()
         scan_duration = trajectory_manager.current_trajectory_duration
         for det in self.dets:
             if hasattr(det, 'set_num_points'):
                 det.set_num_points(scan_duration)
             staged_list += det.stage()
-
         return staged_list
 
     def unstage(self):
@@ -134,51 +131,90 @@ class FlyerAPB(Device):
         return unstaged_list
 
     def kickoff(self):
-        print(f'{ttime.ctime()} >>> starting kickoff sequence')
-        det_status = combine_status_list([det.kickoff() for det in self.dets])
-
-        def callback_fly():
-            self.hhm_flying_status = self.hhm.kickoff()
-            self.kickoff_status.set_finished()
-            print(f'{ttime.ctime()} >>> kickoff done ')
-
-        det_status.add_callback(callback_fly)
+        # print(f'{ttime.ctime()} >>> KICKOFF: begin')
+        self.kickoff_status = DeviceStatus(self)
+        self.complete_status = DeviceStatus(self)
+        thread = threading.Thread(target=self.action_sequence, daemon=True)
+        thread.start()
         return self.kickoff_status
 
+    def action_sequence(self):
+        print(f'{ttime.ctime()} >>> detector kickoff: begin')
+        self.shutter.open(time_opening=True)
+        det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
+        det_kickoff_status.wait()
+        print(f'{ttime.ctime()} >>> detector kickoff: done')
+        # self.shutter.open() # this could be a better place to have shutter open
+        print(f'{ttime.ctime()} >>> mono fly: begin')
+        self.hhm_flying_status = self.hhm.kickoff()
+        self.kickoff_status.set_finished()
+
+        self.hhm_flying_status.wait()
+        print(f'{ttime.ctime()} >>> mono fly: done')
+        self.shutter.close()
+        print(f'{ttime.ctime()} >>> detector complete: begin')
+        det_complete_status = combine_status_list([det.complete() for det in self.dets])
+        det_complete_status.wait()
+        print(f'{ttime.ctime()} >>> detector complete: done')
+        self.complete_status.set_finished()
 
     def complete(self):
-        # print(f'{ttime.ctime()} >>> starting complete sequence')
-        def complete_callback():
-            # print(f'{ttime.ctime()} >>> starting complete callback')
-            status = combine_status_list([det.complete() for det in self.dets])
-            status.wait()
-            self.complete_status.set_finished()
-            # print(f'{ttime.ctime()} >>> complete callback done')
-
-        self.hhm_flying_status.add_callback(complete_callback)
+        # print(f'{ttime.ctime()} >>> COMPLETE: begin')
+        if self.complete_status is None:
+            raise RuntimeError("No collection in progress")
         return self.complete_status
 
+    # def describe_collect(self):
+    #     return_dict = self.det.describe_collect()
+    #     # Also do it for all pizza-boxes
+    #     for pb in self.pbs:
+    #         return_dict[pb.name] = pb.describe_collect()[pb.name]
+    #
+    #     return return_dict
 
     def describe_collect(self):
+        # print(f'{ttime.ctime()} >>> DESCRIBE_COLLECT: begin')
         return_dict = {}
         for det in self.dets:
             return_dict = {**return_dict, **det.describe_collect()}
         return return_dict
 
     def collect(self):
-        def collect_all():
-            print('>>>>> collect start')
-            for det in self.dets:
-                yield from det.collect()
-            print('>>>>> collect end')
-        return (yield from collect_all())
+        # print(f'{ttime.ctime()} >>> COLLECT: begin')
+        for det in self.dets:
+            yield from det.collect()
+        # def collect_all():
+        #     for det in self.dets:
+        #         yield from det.collect()
+        # return (yield from collect_all())
 
     def collect_asset_docs(self):
+        # print(f'{ttime.ctime()} >>> COLLECT_ASSET_DOCS: begin')
         for det in self.dets:
             yield from det.collect_asset_docs()
 
 
-flyer_apb = FlyerAPB([apb_stream, pb9.enc1], hhm, name='flyer_apb')
+
+#
+#     def collect(self):
+#         def collect_and_unstage_all():
+#             for pb in self.pbs:
+#                 yield from pb.collect()
+#             yield from self.det.collect()
+#
+#             # The .unstage() method resets self._datum_counter, which is needed
+#             # by .collect(), so calling .unstage() afteer .collect().
+#             self.det.unstage()
+#             for pb in self.pbs:
+#                 pb.unstage()
+#
+#         return (yield from collect_and_unstage_all())
+#
+#     def collect_asset_docs(self):
+#         yield from self.det.collect_asset_docs()
+#         for pb in self.pbs:
+#             yield from pb.collect_asset_docs()
+flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):

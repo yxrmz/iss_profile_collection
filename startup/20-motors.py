@@ -143,10 +143,8 @@ class HHM(Device):
 
         self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
         status.wait()
-
         self._ensure_mono_faces_down()
         self.flying_status = None
-
 
     def kickoff(self):
         def callback(value, old_value, **kwargs):
@@ -163,59 +161,13 @@ class HHM(Device):
         self.start_trajectory.set('1')
         return self.flying_status
 
-        # def callback(value, old_value, **kwargs):
-        #     if int(round(old_value)) == 1 and int(round(value)) == 0:
-        #         return True
-        #     return False
-        #
-        # self.flying_status = SubscriptionStatus(self.trajectory_running, callback)
-        # self.start_trajectory.set('1')
-        # return self.flying_status
+    def abort_trajectory(self):
+        if self.trajectory_running.get():
+            print('Stopping trajectory ... ', end='')
+            self.stop_trajectory.put('1')
+            self.flying_status.set_finished()
+            print('done')
 
-
-    # def set(self, command):
-    #     if command == 'prepare':
-    #
-    #         # This function will receive Events from the IOC and check whether
-    #         # we are seeing the trajectory_ready go low after having been high.
-    #         def callback(value, old_value, **kwargs):
-    #             if int(round(old_value)) == 1 and int(round(value)) == 0:
-    #                 if self._preparing or self._preparing is None:
-    #                     self._preparing = False
-    #                     return True
-    #                 else:
-    #                     self._preparing = True
-    #             return False
-    #
-    #         # Creating this status object subscribes `callback` Events from the
-    #         # IOC. Starting at this line, we are now listening for the IOC to
-    #         # tell us it is done. When it does, this status object will
-    #         # complete (status.done = True).
-    #         status = SubscriptionStatus(self.trajectory_ready, callback)
-    #
-    #         # Finally, now that we are litsening to the IOC, prepare the
-    #         # trajectory.
-    #         self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
-    #
-    #         # Return the status object immediately, without waiting. The caller
-    #         # will be able to watch for it to become done.
-    #         return status
-    #
-    #     if command == 'start':
-    #
-    #         def callback(value, old_value, **kwargs):
-    #             if int(round(old_value)) == 1 and int(round(value)) == 0:
-    #                 if self._starting or self._starting is None:
-    #                     self._starting = False
-    #                     return True
-    #                 else:
-    #                     self._starting = True
-    #             return False
-    #
-    #         status = SubscriptionStatus(self.trajectory_running, callback)
-    #         self.start_trajectory.set('1')
-    #
-    #         return status
 
     def home_y_pos(self):
         self.home_y.put('1')
@@ -232,10 +184,6 @@ class HHM(Device):
                 print_to_gui('[Energy calibration] Something went wrong, not the limit: {}'.format(exc))
             return False
 
-
-
-
-
     def calibrate(self, energy_nominal, energy_actual):
         offset_actual = xray.energy2encoder(energy_actual, hhm.pulses_per_deg) / hhm.pulses_per_deg
         offset_nominal = xray.energy2encoder(energy_nominal, hhm.pulses_per_deg) / hhm.pulses_per_deg
@@ -244,19 +192,7 @@ class HHM(Device):
         return self.set_new_angle_offset(new_angular_offset)
 
 
-    def trigger(self, *args, **kwargs):
-        start_trigger = ttime.time()
-        status = super().trigger(*args, **kwargs)
-        print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
-        return status
 
-    def abort_trajectory(self):
-
-        if self.trajectory_running.get():
-            print('Stopping trajectory ... ', end='')
-            self.stop_trajectory.put('1')
-            self.flying_status.set_finished()
-            print('done')
 
     # def stop(self, *args, **kwargs):
     #     print('Stopping trajectory')

@@ -5,7 +5,7 @@ from ophyd.status import SubscriptionStatus
 
 
 
-class FlyerAPBwithTrigger(FlyerAPB):
+class FlyerHHMwithTrigger(FlyerHHM):
 
     def __init__(self, det, pbs, motor, trigger): #, xs_det):
         super().__init__( det, pbs, motor)
@@ -39,11 +39,11 @@ class FlyerAPBwithTrigger(FlyerAPB):
         yield from self.trigger.collect()
 
 
-flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
+# flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
 
 
 
-class FlyerXS(FlyerAPBwithTrigger):
+class FlyerXS(FlyerHHMwithTrigger):
 
     def __init__(self, det, pbs, motor, trigger, xs_det):
         super().__init__( det, pbs, motor, trigger)
@@ -83,10 +83,10 @@ class FlyerXS(FlyerAPBwithTrigger):
         yield from self.xs_det.collect()
 
 
-flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
+# flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
 
 
-class FlyerPilatus(FlyerAPBwithTrigger):
+class FlyerPilatus(FlyerHHMwithTrigger):
 
     def __init__(self, det, pbs, motor, trigger, pil_det):
         super().__init__( det, pbs, motor, trigger)
@@ -138,7 +138,7 @@ class FlyerPilatus(FlyerAPBwithTrigger):
 
 
 # flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
-flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
+# flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
 
 ### general flyer in development
 

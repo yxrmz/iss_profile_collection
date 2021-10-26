@@ -205,6 +205,7 @@ class Encoder(Device):
     data_array = Cpt(EpicsSignal, '}Data_Bin_')
     # The '$' in the PV allows us to write 40 chars instead of 20.
     filepath = Cpt(EpicsSignal, '}ID:File.VAL', string=True)
+    # filepath = Cpt(EpicsSignal, '}ID:File')
     dev_name = Cpt(EpicsSignal, '}DevName')
 
     filter_dy = Cpt(EpicsSignal, '}Fltr:dY-SP')
@@ -247,7 +248,7 @@ class EncoderFS(Encoder):
         "Set the filename and record it in a 'resource' document in the filestore database."
         staged_list = super().stage()
 
-        print('Staging of {} starting'.format(self.name))
+        # print('Staging of {} starting'.format(self.name))
 
         filename = 'en_' + str(uuid.uuid4())[:8]
 
@@ -277,7 +278,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
 
-        print('Staging of {} complete'.format(self.name))
+        # print('Staging of {} complete'.format(self.name))
         return staged_list
 
     def unstage(self):
@@ -286,39 +287,17 @@ class EncoderFS(Encoder):
         return super().unstage()
 
     def kickoff(self):
-        print(f'Kickoff {self.name} is starting')
-        self._ready_to_collect = True
-        "Start writing data into the file."
+        return self.ignore_sel.set(0)
 
-        # set_and_wait(self.ignore_sel, 0)
-        st = self.ignore_sel.set(0)
-
-        # Return a 'status object' that immediately reports we are 'done' ---
-        # ready to collect at any time.
-        print(f'Kickoff {self.name} is complete')
-        return st
 
     def complete(self):
-        print(f'{ttime.ctime()} >>> starting {self.name} complete')
-        # print(f'Storing {self.name} in {self._full_path}')
-        if not self._ready_to_collect:
-            raise RuntimeError("must called kickoff() method before calling complete()")
-
-        # print(f'     !!!!! {datetime.now()} complete in {self.name} before stop writing')
-
-        # Stop adding new data to the file.
+        # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         set_and_wait(self.ignore_sel, 1)
-
-        # print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
-
-        #while not os.path.isfile(self._full_path):
-        #    ttime.sleep(.1)
-
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
         workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        # print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs
@@ -333,7 +312,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('datum', datum))
 
         self._datum_ids.append(datum_id)
-        print(f'{ttime.ctime()} >>> {self.name} complete done')
+        # print(f'{ttime.ctime()} >>> {self.name} complete: done')
         return NullStatus()
 
     def collect(self):
@@ -343,31 +322,31 @@ class EncoderFS(Encoder):
         Return a dictionary with references to these documents.
         """
         # print(f'     !!!!! {datetime.now()} collect in {self.name}')
-        print('Collect of {} starting'.format(self.name))
-        self._ready_to_collect = False
+        # print('Collect of {} starting'.format(self.name))
+        print(f'{ttime.ctime()} >>> {self.name} collect starting')
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
-        #ttime.sleep(1)  # wait for file to be written by pizza box
 
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}
             yield {'data': data,
-                   'timestamps': {key: now for key in data}, 'time': now,
+                   'timestamps': {key: now for key in data},
+                   'time': now,
                    'filled': {key: False for key in data}}
-        print('Collect of {} complete'.format(self.name))
+        print(f'{ttime.ctime()} >>> {self.name} collect complete')
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
-        now = ttime.time()
-        return {self.name: {self.name:
-                     {'filename': self._full_path,
-                      'devname': self.dev_name.get(),
-                      'source': 'pizzabox-enc-file',
-                      'external': 'FILESTORE:',
-                      'shape': [-1, -1],
-                      'dtype': 'array'}}}
+        return_dict = {self.name:
+                           {self.name: {'source': 'pizzabox-enc-file',
+                                        'dtype': 'array',
+                                        'shape': [-1, -1],
+                                        'filename': self._full_path,
+                                        # 'devname': self.dev_name.get(),
+                                        'external': 'FILESTORE:'}}}
+        return return_dict
 
     def collect_asset_docs(self):
         # print(f'\ncollecting asset docs for {self.name}\n')

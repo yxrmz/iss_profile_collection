@@ -227,12 +227,10 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
 
     def complete(self, *args, **kwargs):
-        print(f'{ttime.ctime()} >>> starting {self.name} complete')
+        # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         set_and_wait(self.stream, 0)
         def callback_saving(value, old_value, **kwargs):
-            # print(f'     !!!!! {datetime.now()} callback_saving {value} --> {old_value}')
             if int(round(old_value)) == 1 and int(round(value)) == 0:
-                # print(f'     !!!!! {datetime.now()} callback_saving')
                 return True
             else:
                 return False
@@ -245,52 +243,30 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                  'datum_kwargs': {},
                  'datum_id': datum_id}
         self._asset_docs_cache.append(('datum', datum))
-        print(f'{ttime.ctime()} >>> {self.name} complete done')
+        # print(f'{ttime.ctime()} >>> {self.name} complete: done')
         self._datum_ids.append(datum_id)
         return filebin_st & filetxt_st
 
-    def collect(self):
-        # self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        # server = self._IP
-        # try:
-        #     self.ssh.connect(server, username='root')
-        # except paramiko.ssh_exception.SSHException:
-        #     raise RuntimeError('SSH connection could not be established. Create SSH keys')
-        # with self.ssh.open_sftp() as sftp:
-        #     print(f'Storing a binary file from {server} to {self.filename_bin}')
-        #     sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
-        #              self.filename_bin)
-        #     print(f'Storing a text   file from {server} to {self.filename_txt}')
-        #     sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
-        #              self.filename_txt)
-        # import shutil
-        # for ext in ['bin', 'txt']:
-        #     ret = shutil.move(f'{self.filename}.{ext}', f'{self.filename_target}.{ext}')
-        #     print(f'File moved: {ret}')
-
-        print(f'APB collect is starting {ttime.ctime(ttime.time())}')
-
-        # Copied from 10-detectors.py (class EncoderFS)
+    def collect(self): # Copied from 10-detectors.py (class EncoderFS)
+        print(f'{ttime.ctime()} >>> {self.name} collect starting')
         now = ttime.time()
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}
             yield {'data': data,
-                   'timestamps': {key: now for key in data}, 'time': now,
+                   'timestamps': {key: now for key in data},
+                   'time': now,
                    'filled': {key: False for key in data}}
-            # print(f'yield data {ttime.ctime(ttime.time())}')
-
-        # self.unstage()
+        print(f'{ttime.ctime()} >>> {self.name} collect complete')
 
     def describe_collect(self):
         return_dict = {self.name:
-                        {f'{self.name}': {'source': 'APB',
-                                              'dtype': 'array',
-                                              'shape': [-1, -1],
-                                              'filename_bin': f'{self.filename}.bin',
-                                              'filename_txt': f'{self.filename}.txt',
-                                              'external': 'FILESTORE:'}}}
+                            {self.name: {'source': 'APB',
+                                         'dtype': 'array',
+                                         'shape': [-1, -1],
+                                         'filename_bin': f'{self.filename}.bin',
+                                         'filename_txt': f'{self.filename}.txt',
+                                         'external': 'FILESTORE:'}}}
         return return_dict
-
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)

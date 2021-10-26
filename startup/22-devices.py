@@ -131,24 +131,36 @@ class Shutter(Device):
 
 class ShutterMotor:
 
-    def __init__(self, name):
+    def __init__(self, name, shutter_type, motor):
         self.name = name
-        if usermotor3.connected:
-            self.output = usermotor3.pos
-            self.open_value = 0.01
+        self.shutter_type = shutter_type
+        self.motor = motor
+        self.function_call = None
+        self._start_time = None
+        self._open_time = None
+
+        if motor.connected:
+            self.output = motor.pos
+            self.open_pos = 0.01
             self.open_range = 1
-            self.closed_value = 1.1
-
-            self.value = self.output.read()[self.output.name]['value']
-
-            if self.value-self.open_value > self.open_range:
-                self.state = 'closed'
-            else:
-                self.state = 'open'
-            self.function_call = None
-            self.output.subscribe(self.update_state)
+            self.closed_pos = 1.1
+            # self.update_state(self.current_pos)
+            self.output.subscribe(self.update_state) # , event_type='done_moving'
         else:
             self.state = 'unknown'
+
+    @property
+    def current_pos(self):
+        return self.output.position
+
+    def update_state(self, pvname=None, value=None, char_value=None, **kwargs):
+        if self.current_pos-self.open_pos > self.open_range:
+            self.state = 'closed'
+        else:
+            self.state = 'open'
+
+        if self.function_call is not None:
+            self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
 
     def subscribe(self, function):
         self.function_call = function
@@ -156,38 +168,36 @@ class ShutterMotor:
     def unsubscribe(self):
         self.function_call = None
 
-    def update_state(self, pvname=None, value=None, char_value=None, **kwargs):
-        if self.value-self.open_value > self.open_range:
-            self.state = 'closed'
-        else:
-            self.state = 'open'
-        if self.function_call is not None:
-            self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
+    def open(self, printing=True, time_opening=False):
+        if printing: print(f'{ttime.ctime()} >>> {self.name} opening')
+        if time_opening: self._start_time = ttime.time()
+        self.output.move(self.open_pos, wait=True)
 
-    def open(self):
-        RE(self.open_plan())
+    def close(self, printing=True):
+        if printing: print(f'{ttime.ctime()} >>> {self.name} closing', end='')
+        self.output.move(self.closed_pos, wait=True)
+        if self._start_time is not None:
+            self._open_time = ttime.time() - self._start_time
+            self._start_time = None
+            print(f'. Total exposure time: {self._open_time:0.2f} s', end='')
+        print()
 
-    def close(self):
-        RE(self.close_plan())
 
     def open_plan(self, printing=True):
         if printing: print('Opening {}'.format(self.name))
-        # yield from bps.abs_set(self.output, self.open_value, wait=True)
-        yield from bps.mv(self.output, self.open_value, wait=True)
-        self.state = 'open'
+        yield from bps.mv(self.output, self.open_pos, wait=True)
 
     def close_plan(self, printing=True):
         if printing: print('Closing {}'.format(self.name))
-        # yield from bps.abs_set(self.output, self.closed_value, wait=True)
-        yield from bps.mv(self.output, self.closed_value, wait=True)
-        self.state = 'closed'
-
-    def _close_direct(self):
-        self.output.user_setpoint.put(self.closed_value)
+        yield from bps.mv(self.output, self.closed_pos, wait=True)
 
 
-shutter = ShutterMotor(name='User Shutter')
-shutter.shutter_type = 'SP'
+
+
+shutter = ShutterMotor(name='User Shutter',
+                       shutter_type='SP',
+                       motor=usermotor3)
+
 
 
 class TwoButtonShutterISS(TwoButtonShutter):
