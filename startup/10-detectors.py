@@ -123,10 +123,13 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
     def barcode2(self):
         return str(self.bar2.get()[:-1], encoding='UTF-8')
 
-    def validate_barcode(self, input):
+    def validate_barcode(self, input, error_message_func):
             if input in (self.barcode1, self.barcode2):
                 return True
-            print_to_gui(f'String {input} not found in {self.name} barcodes')
+            msg = f'String {input} not found in {self.name} barcodes'
+            if error_message_func is not None:
+                error_message_func(msg)
+            print_to_gui(msg)
             return False
 
 

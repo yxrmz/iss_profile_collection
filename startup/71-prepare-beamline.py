@@ -231,30 +231,6 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
         print_to_gui(f'Error: vertical position of the second monochromator crystal is not set. Set manually to {hhmy_position}',stdout=stdout)
 
 
-def calibrate_energy_plan(element, edge, dE=25, plot_fun=None):
-    # # check if current trajectory is good for this calibration
-    yield from set_reference_foil(element)
-    yield from bps.sleep(1)
-    success = foil_camera.validate_barcode(element)
-    if not success: return
-    yield from adjust_ic_gains()
-    success = trajectory_manager.validate_element(element, edge)
-    if not success: return
-    name = f'{element} {edge} foil scan'
-    yield from fly_scan_with_apb(name, '')
-    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_fun)
-    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual-energy_nominal:.2f} eV')
-    success = hhm.calibrate(energy_nominal, energy_actual)
-    if not success: return
-    trajectory_manager.reinit()
-    yield from fly_scan_with_apb(name, '')
-    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_fun)
-    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
-    if np.abs(energy_actual - energy_nominal) < 0.1:
-        print_to_gui(f'{ttime.ctime()} [Energy calibration] Completed')
-    else:
-        print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
-
 
 def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdout = sys.stdout, force_prepare = False, enable_fb_in_the_end=True):
     old_energy = hhm.energy.read()['hhm_energy']['value']

@@ -328,32 +328,19 @@ class TrajectoryManager():
         lut = str(trajectory_manager.current_lut)
         return int(info[lut]['size']) / self.hhm.servocycle
 
-    def validate_element(self, element, edge):
-        # check if current trajectory is good for this calibration
-        # r = db_proc.search({'Sample_name': element + ' foil'})
-        # if len(r) == 0:
-        #     print_to_gui(f'Error: No matching foil has been found')
-        #     return False
-        success = validate_element_edge_in_db_proc(element, edge)
-        if not success: return False
-
+    def validate_element(self, element, edge, error_message_func=None):
         e_min, e_max = self.read_trajectory_limits()
         edge_energy = xraydb.xray_edge(element, edge).energy
         if not ((edge_energy > e_min) and (edge_energy < e_max)):
-            print_to_gui(f'Error: invalid trajectory for this calibration')
+            msg = f'Error: invalid trajectory for this calibration'
+            if error_message_func is not None:
+                error_message_func(msg)
+            print_to_gui(msg)
             return False
 
         return True
 
-from xas.energy_calibration import get_foil_spectrum
-def validate_element_edge_in_db_proc(element, edge):
-    try:
-        get_foil_spectrum(element, edge, db_proc)
-    except:
-        return False
-    return True
+
 
 trajectory_manager = TrajectoryManager(hhm)
-
-
 # trajectory_manager.current_trajectory_duration

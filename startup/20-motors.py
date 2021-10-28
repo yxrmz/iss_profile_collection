@@ -167,27 +167,33 @@ class HHM(Device):
         self.home_y.put('1')
 
 
-    def set_new_angle_offset(self, value):
+    def set_new_angle_offset(self, value, error_message_func=None):
         try:
             self.angle_offset.put(float(value))
             return True
         except Exception as exc:
             if type(exc) == ophyd_utils.errors.LimitError:
-                print_to_gui('[Energy calibration] Limit error.'.format(exc))
+                msg = 'HHM limit error'
+                print_to_gui(f'[Energy calibration] {msg}.'.format(exc))
+                if error_message_func is not None:
+                    error_message_func(msg)
             else:
-                print_to_gui('[Energy calibration] Something went wrong, not the limit: {}'.format(exc))
+                msg = f'HHM error. Something went wrong, not the limit: {exc}'
+                print_to_gui(f'[Energy calibration] {msg}')
+                if error_message_func is not None:
+                    error_message_func(msg)
             return False
 
 
 
 
 
-    def calibrate(self, energy_nominal, energy_actual):
+    def calibrate(self, energy_nominal, energy_actual, error_message_func=None):
         offset_actual = xray.energy2encoder(energy_actual, hhm.pulses_per_deg) / hhm.pulses_per_deg
         offset_nominal = xray.energy2encoder(energy_nominal, hhm.pulses_per_deg) / hhm.pulses_per_deg
         angular_offset_shift = offset_actual - offset_nominal
         new_angular_offset = self.angle_offset.value - angular_offset_shift
-        return self.set_new_angle_offset(new_angular_offset)
+        return self.set_new_angle_offset(new_angular_offset, error_message_func=error_message_func)
 
 
     def trigger(self, *args, **kwargs):
