@@ -334,7 +334,7 @@ class TrajectoryManager():
         # if len(r) == 0:
         #     print_to_gui(f'Error: No matching foil has been found')
         #     return False
-        success = validate_element_edge_in_db_proc(element)
+        success = validate_element_edge_in_db_proc(element, edge)
         if not success: return False
 
         e_min, e_max = self.read_trajectory_limits()
@@ -345,10 +345,11 @@ class TrajectoryManager():
 
         return True
 
-def validate_element_edge_in_db_proc(element):
-    r = db_proc.search({'Sample_name': element + ' foil'})
-    if len(r) == 0:
-        print_to_gui(f'Error: No matching foil has been found')
+from xas.energy_calibration import get_foil_spectrum
+def validate_element_edge_in_db_proc(element, edge):
+    try:
+        get_foil_spectrum(element, edge, db_proc)
+    except:
         return False
     return True
 
