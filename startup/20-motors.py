@@ -184,10 +184,6 @@ class HHM(Device):
                     error_message_func(msg)
             return False
 
-
-
-
-
     def calibrate(self, energy_nominal, energy_actual, error_message_func=None):
         offset_actual = xray.energy2encoder(energy_actual, hhm.pulses_per_deg) / hhm.pulses_per_deg
         offset_nominal = xray.energy2encoder(energy_nominal, hhm.pulses_per_deg) / hhm.pulses_per_deg
