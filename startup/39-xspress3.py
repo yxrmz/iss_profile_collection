@@ -216,10 +216,13 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
             warnings.warn(f'The length of "di_timestamps" ({len_di_timestamps}) '
                           f'does not match the length of "self._datum_ids" ({len_datum_ids})')
 
-        num_frames = min(len_di_timestamps, len_datum_ids)
+        # num_frames = min(len_di_timestamps, len_datum_ids)
         num_frames = len_datum_ids
         for frame_num in range(num_frames):
+
             datum_id = self._datum_ids[frame_num]
+            print(f'{ttime.time()} >>> xs3 collect ', frame_num, datum_id)
+
             # ts = di_timestamps[frame_num]
             ts = di_timestamps
 
@@ -314,6 +317,37 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
     yield from bp.count([xs], acq_time)
 
 
+def calibrate_xs_plan():
+    # detectors = [xs]
+    energies = np.arange(10000, 26000, 1000)
+    for energy in energies:
+        if energy < 12000:
+            yield from set_attenuator('200')
+        else:
+            yield from set_attenuator('1000')
+        yield from bps.mv(hhm.energy, energy)
+        yield from bps.sleep(1)
+        yield from bp.list_scan([xs], hhm.energy, [int(energy)])
+
+        # yield from bps.mv(hhm.energy, energy)
+        # yield from bps.sleep(1)
+        # yield from bp.count([xs])
+
+def calibrate_xs_plan_vs_int():
+    # detectors = [xs]
+    energy = 24350
+    yield from bps.mv(hhm.energy, energy)
+    atts = ['200', '400', '600', '1000', '2000', '4000']
+    for att in atts:
+        yield from set_attenuator(att)
+        yield from bps.sleep(1)
+        yield from bp.list_scan([xs, apb_ave], hhm.energy, [int(energy)])
+
+
+
+
+
+
 
 
 class ISSXspress3DetectorStream(ISSXspress3Detector):
@@ -371,12 +405,6 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         super().unstage(*args, **kwargs)
         self.settings.trigger_mode.put(1)
         self.total_points.put(1)
-
-
-
-
-
-
 
 
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream')
