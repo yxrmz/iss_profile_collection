@@ -27,5 +27,9 @@ class Accelerator(Device):
             string = 'Unscheduled ops'
         return string
 
+    @property
+    def status_str(self):
+        return self.return_status_string()
+
 nsls_ii=Accelerator('SR', name='nsls_ii')
 

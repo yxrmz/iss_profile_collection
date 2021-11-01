@@ -107,14 +107,9 @@ def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
     except:
         full_element_name = curr_traj.elem.get()
 
-    # try:
-    #     nsls_ii_current = nsls_ii.beam_current.get()
-    # except:
-    #     nsls_ii_current = 0
-    # try:
-    #     nsls_ii_status = nsls_ii.return_status_string()
-    # except:
-    #     nsls_ii_status = 'Shutdown'
+    nsls_ii_current = nsls_ii.beam_current.get()
+    nsls_ii_status = nsls_ii.return_status_string()
+
     if mono_scan_type == 'fly_scan':
         mono_direction = 'backward in energy'
     else:
@@ -142,10 +137,10 @@ def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
           'edge': curr_traj.edge.get(),
           'e0': curr_traj.e0.get(),
           'pulses_per_degree': hhm.pulses_per_deg,
-          'nslsii_current' : 0,#          'nslsii_current' : nsls_ii_current,
-          'nslsii_status' : 'Shutdown', #'nslsii_status' : nsls_ii_status,
+          'nslsii_current' : nsls_ii_current,
+          'nslsii_status' : nsls_ii_status,
           'nslsii_energy' : nsls_ii.energy_str,
-          'harmonic_rejection' : '', #hhrm.current_sripe(),
+          'harmonic_rejection' : hhrm.current_sripe,
           'i0_par' : f'{i0.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'it_par' : f'{it.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'ir_par' : f'{ir.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',

@@ -272,7 +272,7 @@ class HHRM(Device):
     table_pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
     y = Cpt(StuckingEpicsMotor, 'Mir:HRM:TY}Mtr')
 
-
+    @property
     def current_sripe(self):
         pos = self.hor_translation.user_readback.get()
         if pos < 40:
