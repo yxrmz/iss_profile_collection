@@ -273,12 +273,16 @@ class HHRM(Device):
     y = Cpt(StuckingEpicsMotor, 'Mir:HRM:TY}Mtr')
 
     @property
-    def current_sripe(self):
+    def current_stripe(self):
         pos = self.hor_translation.user_readback.get()
-        if pos < 40:
+        if np.isclose(pos, 0, atol=1):
+            stripe = 'Si'
+        elif np.isclose(pos, 40, atol=1):
             stripe = 'Pt'
-        else:
+        elif np.isclose(pos, -40, atol=1):
             stripe = 'Rh'
+        else:
+            stripe = 'undefined'
         return stripe
 
 

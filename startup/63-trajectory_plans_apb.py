@@ -140,7 +140,7 @@ def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
           'nslsii_current' : nsls_ii_current,
           'nslsii_status' : nsls_ii_status,
           'nslsii_energy' : nsls_ii.energy_str,
-          'harmonic_rejection' : hhrm.current_sripe,
+          'harmonic_rejection' : hhrm.current_stripe,
           'i0_par' : f'{i0.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'it_par' : f'{it.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'ir_par' : f'{ir.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
