@@ -83,7 +83,7 @@ if not os.environ.get('AZURE_TESTING'):
         detector_dict=detector_dictionary,
         motor_dict=motor_dictionary,
         camera_dict=camera_dictionary,
-        sample_stage=giantxy,
+        sample_stage=sample_stage,
         tune_elements=tune_elements,
         ic_amplifiers=ic_amplifiers,
         window_title="XLive @ISS/08-ID NSLS-II",
