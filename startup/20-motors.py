@@ -293,7 +293,7 @@ class SampleXY(Device):
     x = Cpt(EpicsMotor, '-Ax:X}Mtr')
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
 
-samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
+# samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
 giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
 
 auxxy = SampleXY('XF:08IDB-OP{Stage:Aux1', name='auxxy')
@@ -394,6 +394,17 @@ class GonioMeter(Device):
 
 gonio_meter = GonioMeter('XF:08IDB-OP{Gon:Th', name='gonio_meter')
 
+
+class SampleStage(Device):
+    x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Sample-Ax:X}Mtr')
+    y = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Sample-Ax:Y}Mtr')
+    z = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
+    th = Cpt(EpicsMotor, 'XF:08IDB-OP{Gon:Th:1}Mtr')
+
+
+sample_stage = SampleStage(name='sample_stage')
+# samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
+# giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
 
 
 
