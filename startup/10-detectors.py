@@ -42,6 +42,7 @@ class BPM(SingleTrigger, ProsilicaDetector):
 
     retract = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
     retracted = Cpt(EpicsSignal, 'Sw:OutLim-Sts')
+    ioc_reboot_pv = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,6 +66,19 @@ class BPM(SingleTrigger, ProsilicaDetector):
             status = SubscriptionStatus(self.retracted, callback)
             self.retract.set('Retract')
             return status
+
+    @property
+    def acquiring(self):
+        return bool(self.acquire.get())
+
+    def append_ioc_reboot_pv(self, ioc_reboot_pv):
+        self.ioc_reboot_pv = ioc_reboot_pv
+
+    def reboot_ioc(self):
+        self.ioc_reboot_pv.put(1)
+        ttime.sleep(5)
+        self.acquire.put(1)
+
 
 class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
@@ -138,6 +152,8 @@ bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
+bpm_es_ioc_reset = EpicsSignal('XF:08IDB-CT{IOC:BPM:ES}:SysReset', name='bpm_es_ioc_reset')
+bpm_es.append_ioc_reboot_pv(bpm_es_ioc_reset)
 
 camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 # camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
