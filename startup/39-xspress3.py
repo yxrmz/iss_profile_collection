@@ -381,6 +381,9 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         return return_dict
 
     def collect(self):
+        print(f'{ttime.ctime()} Xspress3 collect is starting...')
+
+
         num_frames = len(self._datum_ids)
 
         for frame_num in range(num_frames):
@@ -393,6 +396,8 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                    'timestamps': {key: ts for key in data},
                    'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
                    'filled': {key: False for key in data}}
+
+        print(f'{ttime.ctime()} Xspress3 collect is complete')
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
@@ -428,7 +433,7 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
         # finding number of channels
         if self._num_channels is not None:
             return
-        print('determening number of channels')
+        print(f'{ttime.ctime()} Determining number of channels...')
         shape = self.dataset.shape
         if len(shape) != 3:
             raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
@@ -436,19 +441,21 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
 
         if self._roi_data is not None:
             return
-        print('reading ROI data')
+        print(f'{ttime.ctime()} reading ROI data...')
         self.chanrois = [f'CHAN{c}ROI{r}' for c, r in product([1, 2, 3, 4], [1, 2, 3, 4])]
         _data_columns = [self._file['/entry/instrument/detector/NDAttributes'][chanroi][()] for chanroi in
                          self.chanrois]
         data_columns = np.vstack(_data_columns).T
         self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
 
-    def __call__(self, *args, frame=None, **kwargs):
-            self._get_dataset()
-            return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(self._num_channels)}
-            return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
-            return {**return_dict, **return_dict_rois}
 
+    def __call__(self, *args, frame=None, **kwargs):
+        # print(f'{ttime.ctime()} XS dataset retrieving starting...')
+        self._get_dataset()
+        return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(self._num_channels)}
+        return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+        return {**return_dict, **return_dict_rois}
+        # print(f'{ttime.ctime()} XS dataset retrieving complete')
 
 
 # heavy-weight file handler

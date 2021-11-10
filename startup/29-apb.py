@@ -260,7 +260,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         #     ret = shutil.move(f'{self.filename}.{ext}', f'{self.filename_target}.{ext}')
         #     print(f'File moved: {ret}')
 
-        print(f'APB collect is complete {ttime.ctime(ttime.time())}')
+        print(f'{ttime.ctime()} APB collect is starting...')
 
         # Copied from 10-detectors.py (class EncoderFS)
         now = ttime.time()
@@ -272,6 +272,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
             # print(f'yield data {ttime.ctime(ttime.time())}')
 
         # self.unstage()
+        print(f'{ttime.ctime()} APB collect is complete')
 
     def describe_collect(self):
         return_dict = {self.name:

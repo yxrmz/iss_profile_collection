@@ -104,6 +104,7 @@ class AnalogPizzaBoxTrigger(Device):
 
 
     def collect(self):
+        print(f'{ttime.ctime()} APB trigger collect is starting...')
         # print(f'APB collect is complete {ttime.ctime(ttime.time())}')
 
         # Copied from 10-detectors.py (class EncoderFS)
@@ -113,7 +114,7 @@ class AnalogPizzaBoxTrigger(Device):
             yield {'data': data,
                    'timestamps': {key: now for key in data}, 'time': now,
                    'filled': {key: False for key in data}}
-            # print(f'yield data {ttime.ctime(ttime.time())}')
+        print(f'{ttime.ctime()} APB trigger collect is complete')
 
         # self.unstage()
 

@@ -266,7 +266,7 @@ class EncoderFS(Encoder):
         "Set the filename and record it in a 'resource' document in the filestore database."
         super().stage(*args, **kwargs)
 
-        print('Staging of {} starting'.format(self.name))
+        print(f'{ttime.ctime()} Staging of {self.name} is starting...')
 
         filename = 'en_' + str(uuid.uuid4())[:8]
 
@@ -296,7 +296,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
 
-        print('Staging of {} complete'.format(self.name))
+        print(f'{ttime.ctime()} Staging of {self.name} is complete...')
 
     def unstage(self):
         set_and_wait(self.ignore_sel, 1)
@@ -304,7 +304,7 @@ class EncoderFS(Encoder):
         return super().unstage()
 
     def kickoff(self):
-        print(f'Kickoff {self.name} is starting')
+        print(f'{ttime.ctime()} Kickoff of {self.name} is starting...')
         self._ready_to_collect = True
         "Start writing data into the file."
 
@@ -312,11 +312,11 @@ class EncoderFS(Encoder):
 
         # Return a 'status object' that immediately reports we are 'done' ---
         # ready to collect at any time.
-        print(f'Kickoff {self.name} is complete')
+        print(f'{ttime.ctime()} Kickoff of {self.name} is complete')
         return NullStatus()
 
     def complete(self):
-        print(f'Storing {self.name} in {self._full_path}')
+        print(f'{ttime.ctime()} Storing {self.name} in {self._full_path}')
         if not self._ready_to_collect:
             raise RuntimeError("must called kickoff() method before calling complete()")
 
@@ -334,7 +334,7 @@ class EncoderFS(Encoder):
         # Let's move the file to the correct place
         workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        print(f'{ttime.ctime()} Moving file from {workstation_full_path} to {self._full_path}')
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs
@@ -359,7 +359,7 @@ class EncoderFS(Encoder):
         Return a dictionary with references to these documents.
         """
         # print(f'     !!!!! {datetime.now()} collect in {self.name}')
-        print('Collect of {} starting'.format(self.name))
+        print(f'{ttime.ctime()} Collect of {self.name} is starting')
         self._ready_to_collect = False
 
         # Create an Event document and a datum record in filestore for each line
@@ -372,7 +372,7 @@ class EncoderFS(Encoder):
             yield {'data': data,
                    'timestamps': {key: now for key in data}, 'time': now,
                    'filled': {key: False for key in data}}
-        print('Collect of {} complete'.format(self.name))
+        print(f'{ttime.ctime()} Collect of {self.name} complete')
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)
@@ -515,7 +515,7 @@ class DIFS(DigitalInput):
         # Let's move the file to the correct place
         workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path), end=' ... ')
+        print(f'Moving file from {workstation_full_path} to {elf._full_path}')
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
         print('done')
         # HACK: Make datum documents here so that they are available for collect_asset_docs
@@ -750,7 +750,7 @@ class AdcFS(Adc):
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
 
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        print(f'Moving file from {workstation_full_path} to {self._full_path}')
         stat = shutil.copy(workstation_full_path, self._full_path)
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs
