@@ -405,14 +405,17 @@ class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Ha
 
         _data_columns = [self._file[self._key + f'/_{chanroi}Total'][()] for chanroi in self.hdfrois]
         data_columns = np.vstack(_data_columns).T
-
+        # images = self._file['entry/data/data'][()]
+        # n_images = images.shape[0]
+        # self._image_data = pd.DataFrame({'image' : [images[i, :, :].squeeze() for i in range(n_images)]})
         self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
         self._dataset = data_columns
 
     def __call__(self, *args, frame=None,  **kwargs):
         self._get_dataset()
-        return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
-        return return_dict_rois
+        return_dict = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+        # return_dict['image'] = self._image_data['image'][frame]
+        return return_dict
         # return self._roi_data
 
 db.reg.register_handler('PIL100k_HDF5',
