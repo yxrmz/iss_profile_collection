@@ -248,9 +248,9 @@ def adjust_ic_gains( **kwargs):
                 yield from channel.amp.set_gain_plan(current_gain + 1, False)
                 all_gains_are_good = False
 
-            if all_gains_are_good:
-                print(f'Gains are correct. Taking offsets..')
-                break
+        if all_gains_are_good:
+            print(f'Gains are correct. Taking offsets..')
+            break
 
     yield from shutter.close_plan()
     yield from get_offsets()
