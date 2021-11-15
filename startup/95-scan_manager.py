@@ -19,14 +19,19 @@ class ScanManager():
         with open(self.json_file_path, 'r') as f:
             self.scan_dict = json.loads(f.read())
 
-        self.json_file_path_local = None
-        self.scan_list_local = None
-
+        self.load_local_manager()
+        self.trajectory_path = trajectory_manager.trajectory_path
         self.trajectory_creator = TrajectoryCreator()
+
 
     def init_local_manager(self):
         self.json_file_path_local = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/scan_manager.json"
         self.scan_list_local = []
+
+    def load_local_manager(self):
+        self.json_file_path_local = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/scan_manager.json"
+        with open(self.json_file_path_local, 'r') as f:
+            self.scan_list_local = json.loads(f.read())
 
     def dump_local_scan_list(self):
         with open(self.json_file_path_local, 'w') as f:
@@ -36,8 +41,6 @@ class ScanManager():
         uid = self.check_if_brand_new(scan)
         scan_def = name + ' ' + scan['scan_type'] + ' at ' + scan['scan_parameters']['element'] + \
                    ' ' + scan['scan_parameters']['edge'] + ' edge'
-        if self.scan_list_local is None:
-            self.init_local_manager()
         scan_local = {'uid' : uid, 'scan_def' : scan_def, 'aux_parameters' : aux_parameters}
         self.scan_list_local.append(scan_local)
         self.dump_local_scan_list()
@@ -91,7 +94,7 @@ class ScanManager():
 
     def create_trajectory_file(self, scan, uid):
         filename = f'{uid}.txt'
-        filepath = trajectory_manager.trajectory_path + filename
+        filepath = self.trajectory_path + filename
         if scan['scan_type'] == 'fly scan':
             self.trajectory_creator.define_complete(scan['scan_parameters'])
             self.trajectory_creator.save(filepath)
@@ -107,6 +110,35 @@ class ScanManager():
             np.savetxt(filepath, data, header=header)
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
+
+
+    def generate_plan_list(self, scan_idx, name, comment, n_cycles, delay):
+        scan_local = self.scan_list_local[scan_idx]
+        scan_uid = scan_local['uid']
+        scan = self.scan_dict[scan_uid]
+        detectors = get_detector_device_list(scan_local['aux_parameters']['detectors'])
+        scan_type = scan['scan_type']
+        scan_parameters = scan['scan_parameters']
+
+        if scan_type == 'step scan':
+
+            filename = scan_parameters['filename']
+            step_data = np.genfromtxt(self.trajectory_path + filename)
+            energy_grid = step_data[:, 0]
+            time_grid = step_data[:, 1]
+            element = scan_parameters['element']
+            e0 = scan_parameters['e0']
+            edge = scan_parameters['edge']
+
+            plan_list = step_scan_list(name, comment, n_cycles=n_cycles, delay=delay, detectors=detectors,
+                             energy_grid=energy_grid, time_grid=time_grid, element=element, e0=e0, edge=edge)
+            return plan_list
+
+
+
+
+
+
 
 
 

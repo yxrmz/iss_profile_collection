@@ -60,6 +60,13 @@ detector_dictionary =   {
                                                     ]}
                 }
 
+def get_detector_device_list(key_list):
+    dets = []
+    for key in key_list:
+        device = detector_dictionary[key]['device']
+        dets.append(device)
+    return dets
+
 
 # detector_dictionary = \
 #             {

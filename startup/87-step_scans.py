@@ -1,30 +1,23 @@
 import copy
 
 
-def step_scan(name: str, comment: str, n_cycles: int = 1, delay: float = 0, energy_down: bool = True, use_sample_registry: bool = False, autofoil=True, **kwargs):
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
-    energy_grid = kwargs.pop('energy_grid', [])
-    time_grid = kwargs.pop('time_grid', [])
-    element = kwargs.pop('element', [])
-    e0 = kwargs.pop('e0', [])
-    edge = kwargs.pop('edge', [])
+def step_scan_list(name: str, comment: str, n_cycles: int = 1, delay: float = 0, detectors=[],
+              energy_grid=None, time_grid=None, element=None, e0=None, edge=None):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
+    detectors = [apb_ave] + detectors
 
-    if energy_down:
-        energy_grid = energy_grid[::-1]
-        time_grid = time_grid[::-1]
-
+    plans = []
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
-        yield from shutter.open_plan()
-        yield from step_scan_plan(name_n, comment, energy_grid, time_grid, [apb_ave], element=element, e0=e0, edge=edge)
-        yield from shutter.close_plan()
-        yield from bps.sleep(float(delay))
-        if use_sample_registry:
-            if sample_registry.position_list is not None:
-                sample_registry.set_current_point_exposed()
-                yield from sample_registry.goto_next_point_plan()
-                sample_registry.dump_data()
+        plan1 = step_scan_plan(name_n, comment, energy_grid, time_grid, detectors, element=element, e0=e0, edge=edge)
+        plan2 =  bps.sleep(float(delay))
+        plans.append(plan1)
+        plans.append(plan2)
+    return plans
 
+
+def step_scan():
+    pass
 
 def step_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0, energy_down: bool = True, use_sample_registry: bool = False, reference=True, **kwargs):
     sys.stdout = kwargs.pop('stdout', sys.stdout)
