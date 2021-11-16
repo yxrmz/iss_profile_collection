@@ -56,15 +56,15 @@ class AnalogPizzaBoxTrigger(Device):
         set_and_wait(self.stream, 1)
         return staged_list
 
-    def unstage(self, *args, **kwargs):
+    def unstage(self):
         self._datum_counter = None
         set_and_wait(self.stream, 0)
-        return super().unstage(*args, **kwargs)
+        return super().unstage()
 
     def kickoff(self):
         return self.acquire.set(2)
 
-    def complete(self, *args, **kwargs):
+    def complete(self):
         set_and_wait(self.acquire, 0)
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
