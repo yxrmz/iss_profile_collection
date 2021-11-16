@@ -282,7 +282,7 @@ class EncoderFS(Encoder):
         return staged_list
 
     def unstage(self):
-        set_and_wait(self.ignore_sel, 1)
+        # set_and_wait(self.ignore_sel, 1)
         self._datum_counter = None
         return super().unstage()
 
@@ -291,7 +291,7 @@ class EncoderFS(Encoder):
 
 
     def complete(self):
-        # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
+        print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         set_and_wait(self.ignore_sel, 1)
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
@@ -312,7 +312,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('datum', datum))
 
         self._datum_ids.append(datum_id)
-        # print(f'{ttime.ctime()} >>> {self.name} complete: done')
+        print(f'{ttime.ctime()} >>> {self.name} complete: done')
         return NullStatus()
 
     def collect(self):

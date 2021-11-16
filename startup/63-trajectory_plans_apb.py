@@ -139,23 +139,23 @@ class FlyerHHM(Device):
         return self.kickoff_status
 
     def action_sequence(self):
-        print(f'{ttime.ctime()} >>> detector kickoff: begin')
+        print(f'{ttime.ctime()} Detector kickoff starting...')
         self.shutter.open(time_opening=True)
         det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
         det_kickoff_status.wait()
-        print(f'{ttime.ctime()} >>> detector kickoff: done')
+        print(f'{ttime.ctime()} Detector kickoff finished')
         # self.shutter.open() # this could be a better place to have shutter open
-        print(f'{ttime.ctime()} >>> mono fly: begin')
+        print(f'{ttime.ctime()} Mono flight starting...')
         self.hhm_flying_status = self.hhm.kickoff()
         self.kickoff_status.set_finished()
 
         self.hhm_flying_status.wait()
-        print(f'{ttime.ctime()} >>> mono fly: done')
+        print(f'{ttime.ctime()} Mono flight finished')
         self.shutter.close()
-        print(f'{ttime.ctime()} >>> detector complete: begin')
+        print(f'{ttime.ctime()} Detector complete starting...')
         det_complete_status = combine_status_list([det.complete() for det in self.dets])
         det_complete_status.wait()
-        print(f'{ttime.ctime()} >>> detector complete: done')
+        print(f'{ttime.ctime()} Detector complete finished')
         self.complete_status.set_finished()
 
     def complete(self):
@@ -214,7 +214,7 @@ class FlyerHHM(Device):
 #         yield from self.det.collect_asset_docs()
 #         for pb in self.pbs:
 #             yield from pb.collect_asset_docs()
-flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
+flyer_apb = FlyerHHM([apb_stream, pb9.enc1, apb_trigger], hhm, shutter, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
