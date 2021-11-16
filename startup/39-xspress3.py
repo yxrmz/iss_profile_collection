@@ -134,13 +134,17 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
     # Step-scan interface methods.
     def stage(self):
-        if self.spectra_per_point.get() != 1:
-            raise NotImplementedError(
-                "multi spectra per point not supported yet")
-
-        ret = super().stage()
+        # if self.spectra_per_point.get() != 1:
+        #     raise NotImplementedError(
+        #         "multi spectra per point not supported yet")
+        self.spectra_per_point.put(1)
         self._datum_counter = itertools.count()
-        return ret
+        return super().stage()
+
+    def unstage(self):
+        # self.settings.trigxger_mode.put(1)  # 'Software'
+        self._datum_counter = None
+        return super().unstage()
 
     def trigger(self):
 
@@ -157,84 +161,6 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
 
         self._abs_trigger_count += 1
         return self._status
-
-    def unstage(self):
-        self.settings.trigger_mode.put(1)  # 'Software'
-        super().unstage()
-        self._datum_counter = None
-
-    def stop(self):
-        ret = super().stop()
-        self.hdf5.stop()
-        return ret
-
-    # Fly-able interface methods.
-    # def kickoff(self):
-    #     # TODO: implement the kickoff method for the flying mode once the hardware is ready.
-    #     raise NotImplementedError()
-
-    def complete(self, *args, **kwargs):
-        for resource in self.hdf5._asset_docs_cache:
-            self._asset_docs_cache.append(('resource', resource[1]))
-
-        self._datum_ids = []
-
-        num_frames = self.hdf5.num_captured.get()
-
-        # print(f'\n!!! num_frames: {num_frames}\n')
-
-        for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(self.hdf5._resource_uid, next(self._datum_counter))
-            datum = {'resource': self.hdf5._resource_uid,
-                     'datum_kwargs': {'frame': frame_num},
-                     'datum_id': datum_id}
-            self._asset_docs_cache.append(('datum', datum))
-            self._datum_ids.append(datum_id)
-
-        return NullStatus()
-
-    def collect(self):
-        # TODO: try to separate it from the xspress3 class
-        collected_frames = self.settings.array_counter.get()
-
-        # This is a hack around the issue with .NORD (number of elements to #
-        # read) that does not match .NELM (number of elements to that the array
-        # will hold)
-        dpb_sec_nelm_count = int(dpb_sec_nelm.get())
-        dpb_nsec_nelm_count = int(dpb_nsec_nelm.get())
-        dpb_sec_values = np.array(dpb_sec.get(count=dpb_sec_nelm_count),
-                                  dtype='float128')[:collected_frames * 2: 2]
-        dpb_nsec_values = np.array(dpb_nsec.get(count=dpb_nsec_nelm_count),
-                                   dtype='float128')[:collected_frames * 2: 2]
-
-        di_timestamps = dpb_sec_values + dpb_nsec_values * 1e-9
-
-        len_di_timestamps = len(di_timestamps)
-        len_datum_ids = len(self._datum_ids)
-
-        if len_di_timestamps != len_datum_ids:
-            warnings.warn(f'The length of "di_timestamps" ({len_di_timestamps}) '
-                          f'does not match the length of "self._datum_ids" ({len_datum_ids})')
-
-        num_frames = min(len_di_timestamps, len_datum_ids)
-        num_frames = len_datum_ids
-        for frame_num in range(num_frames):
-            datum_id = self._datum_ids[frame_num]
-            # ts = di_timestamps[frame_num]
-            ts = di_timestamps
-
-            data = {self.name: datum_id}
-            # TODO: fix the lost precision as pymongo complained about np.float128.
-            ts = float(ts)
-
-            # print(f'data: {data}\nlen_di_timestamps: {len_di_timestamps}\nlen_datum_ids: {len_di_timestamps}')
-
-            yield {'data': data,
-                   'timestamps': {key: ts for key in data},
-                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
-                   'filled': {key: False for key in data}}
-
-    # The collect_asset_docs(...) method was removed as it exists on the hdf5 component and should be used there.
 
     def set_channels_for_hdf5(self, channels=(1, 2, 3, 4)):
         """
@@ -318,35 +244,57 @@ def xs_count(acq_time:float = 1, num_frames:int =1):
 
 class ISSXspress3DetectorStream(ISSXspress3Detector):
 
-    def stage(self, acq_rate, traj_time, *args, **kwargs):
-        self.hdf5.file_write_mode.put(2) # put it to Stream |||| IS ALREADY STREAMING
+    def __init__(self, *args, ext_trigger_device=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ext_trigger_device = ext_trigger_device
+
+    def stage(self):
+        self.total_points.put(self.num_points)
+        self.hdf5.file_write_mode.put(2)  # put it to Stream |||| IS ALREADY STREAMING
         self.external_trig.put(True)
-        self.set_expected_number_of_points(acq_rate, traj_time)
-        self.spectra_per_point.put(1)
         self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
+        staged_list = super().stage()
+        staged_list += self.ext_trigger_device.stage()
+        return staged_list
 
-        super().stage(*args, **kwargs)
-        # note, hdf5 is already capturing at this point
-        self.settings.acquire.put(1) # start recording data
+    def unstage(self):
+        self.hdf5.file_write_mode.put(0)  # put it to Stream |||| IS ALREADY STREAMING
+        self.external_trig.put(False)
+        self.settings.trigger_mode.put(1)
+        self.total_points.put(1)
+        unstaged_list = super().unstage()
+        unstaged_list += self.ext_trigger_device.unstage()
+        return unstaged_list
 
-    def set_expected_number_of_points(self, acq_rate, traj_time):
-        self._num_points = int(acq_rate * (traj_time + 1) )
-        self.total_points.put(self._num_points)
+    def set_num_points(self, traj_duration):
+        acq_rate = self.ext_trigger_device.freq.get()
+        self.num_points = int(acq_rate * (traj_duration + 1))
 
+    def kickoff(self):
+        set_and_wait(self.settings.acquire, 1)
+        return self.ext_trigger_device.kickoff()
 
-    def describe_collect(self):
-        return_dict = {self.name:
-                           {f'{self.name}': {'source': 'XS',
-                                             'dtype': 'array',
-                                             'shape': [self.settings.num_images.get(),
-                                                       #self.settings.array_counter.get()
-                                                       self.hdf5.array_size.height.get(),
-                                                       self.hdf5.array_size.width.get()],
-                                            'filename': f'{self.hdf5.full_file_name.get()}',
-                                             'external': 'FILESTORE:'}}}
-        return return_dict
+    def complete(self):
+        print(f'{ttime.ctime()} Xspress3 complete is starting...')
+        set_and_wait(self.settings.acquire, 0)
+        self.ext_trigger_device.complete()
+        for resource in self.hdf5._asset_docs_cache:
+            self._asset_docs_cache.append(('resource', resource[1]))
+        self._datum_ids = []
+        num_frames = self.hdf5.num_captured.get()
+        _resource_uid = self.hdf5._resource_uid
+        for frame_num in range(num_frames):
+            datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
+            datum = {'resource': _resource_uid,
+                     'datum_kwargs': {'frame': frame_num},
+                     'datum_id': datum_id}
+            self._asset_docs_cache.append(('datum', datum))
+            self._datum_ids.append(datum_id)
+        print(f'{ttime.ctime()} Xspress3 complete is done.')
+        return NullStatus()
 
     def collect(self):
+        print(f'{ttime.ctime()} Xspress3 collect is starting...')
         num_frames = len(self._datum_ids)
 
         for frame_num in range(num_frames):
@@ -359,27 +307,35 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                    'timestamps': {key: ts for key in data},
                    'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
                    'filled': {key: False for key in data}}
+        print(f'{ttime.ctime()} Xspress3 collect is complete')
+        yield from self.ext_trigger_device.collect()
+
+    # The collect_asset_docs(...) method was removed as it exists on the hdf5 component and should be used there.
+
+    def describe_collect(self):
+        return_dict_xs = {self.name:
+                           {f'{self.name}': {'source': 'XS',
+                                             'dtype': 'array',
+                                             'shape': [self.settings.num_images.get(),
+                                                       #self.settings.array_counter.get()
+                                                       self.hdf5.array_size.height.get(),
+                                                       self.hdf5.array_size.width.get()],
+                                            'filename': f'{self.hdf5.full_file_name.get()}',
+                                             'external': 'FILESTORE:'}}}
+        return_dict_trig = self.ext_trigger_device.describe_collect()
+        return {**return_dict_xs, **return_dict_trig}
+
+
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
         self._asset_docs_cache.clear()
         for item in items:
             yield item
+        yield from self.ext_trigger_device.collect_asset_docs()
 
 
-    def unstage(self, *args, **kwargs):
-        super().unstage(*args, **kwargs)
-        self.settings.trigger_mode.put(1)
-        self.total_points.put(1)
-
-
-
-
-
-
-
-
-xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream')
+xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger)
 initialize_Xspress3(xs_stream, hdf5_warmup=True)
 
 from itertools import product
