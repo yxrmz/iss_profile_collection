@@ -227,3 +227,6 @@ USER_FILEPATH = 'users'
 
 def print_to_gui(string, stdout=sys.stdout):
     print(string, file=stdout, flush=True)
+
+import faulthandler
+faulthandler.enable()
