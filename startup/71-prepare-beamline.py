@@ -1,5 +1,4 @@
 
-import time as ttime
 import sys
 import numpy as np
 from xas.xray import energy2angle

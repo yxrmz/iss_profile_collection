@@ -15,7 +15,7 @@ from ophyd.areadetector.base import DDC_SignalWithRBV, DDC_EpicsSignalRO
 import itertools
 from collections import deque, OrderedDict
 
-print(__file__)
+
 class PilatusDetectorCamV33(PilatusDetectorCam):
     '''This is used to update the Pilatus to AD33.'''
 

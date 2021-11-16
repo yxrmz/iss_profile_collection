@@ -199,6 +199,8 @@ def prep_traj_plan(delay = 0.05):
         yield from bps.mv(hhm.energy, curr_energy)
         yield from bps.sleep(0.5)
 
+    print(f'{ttime.ctime()} Trajectory preparation complete')
+
 
 
 

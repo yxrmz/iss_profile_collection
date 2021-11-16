@@ -17,7 +17,6 @@ from ophyd.sim import NullStatus
 from nslsii.ad33 import StatsPluginV33
 
 from databroker.assets.handlers_base import HandlerBase
-print(__file__)
 
 
 class BPM(SingleTrigger, ProsilicaDetector):

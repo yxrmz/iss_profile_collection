@@ -4,7 +4,6 @@ from ophyd.status import SubscriptionStatus
 from ophyd import utils as ophyd_utils
 from xas import xray
 
-print(__file__)
 
 class Mirror(Device):
     pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')

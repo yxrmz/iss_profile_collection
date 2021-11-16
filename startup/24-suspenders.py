@@ -1,4 +1,4 @@
-print(__file__)
+
 from ophyd import EpicsSignalRO
 from bluesky.suspenders import (SuspendBoolHigh,
                                 SuspendBoolLow,

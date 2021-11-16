@@ -8,6 +8,11 @@ from xas.trajectory import TrajectoryCreator
 from xas.xray import generate_energy_grid_from_dict
 import os
 
+import logging
+import logging.handlers
+
+
+
 
 
 
@@ -111,39 +116,100 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
+    def generate_repeated_plan_list(self, plan_name, **kwargs):
+        detectors = get_detector_device_list(kwargs['detectors'])
+        detectors = [apb_ave] + detectors
 
-    def generate_plan_list(self, scan_idx, name, comment, n_cycles, delay):
+        name = kwargs.pop('name')
+        n_cycles = kwargs.pop('n_cycles')
+        delay = kwargs.pop('delay')
+        plans = []
+        for indx in range(int(n_cycles)):
+            name_n = '{} {:04d}'.format(name, indx + 1)
+            plan_parameters = {'name': name_n, 'detectors': detectors, **kwargs}
+            plans.append({'plan': plan_name, 'plan_parameters': plan_parameters})
+            plans.append({'plan': 'sleep', 'plan_parameters': {'time': delay}})
+        return plans
+
+
+    def generate_plan_list(self, scan_idx, general_parameters):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
-        detectors = get_detector_device_list(scan_local['aux_parameters']['detectors'])
+        # detectors = get_detector_device_list(scan_local['aux_parameters']['detectors'])
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
 
         if scan_type == 'step scan':
+            plan_name = 'step_scan_plan'
+            # filename = scan_parameters['filename']
+            # step_data = np.genfromtxt(self.trajectory_path + filename)
+            # energy_grid = step_data[:, 0]
+            # time_grid = step_data[:, 1]
+            # element = scan_parameters['element']
+            # e0 = scan_parameters['e0']
+            # edge = scan_parameters['edge']
+        elif scan_type == 'fly scan':
+            plan_name = 'step_scan_plan'
 
-            filename = scan_parameters['filename']
-            step_data = np.genfromtxt(self.trajectory_path + filename)
-            energy_grid = step_data[:, 0]
-            time_grid = step_data[:, 1]
-            element = scan_parameters['element']
-            e0 = scan_parameters['e0']
-            edge = scan_parameters['edge']
-
-            plan_list = step_scan_list(name, comment, n_cycles=n_cycles, delay=delay, detectors=detectors,
-                             energy_grid=energy_grid, time_grid=time_grid, element=element, e0=e0, edge=edge)
-            return plan_list
-
-
-
-
-
-
+        plan_list = self.generate_repeated_plan_list(plan_name, **scan_parameters, **general_parameters)
+        return plan_list
 
 
 
 
 scan_manager = ScanManager()
+
+
+
+
+
+class ScanProcessor():
+
+    def __init__(self):
+        # QThread.__init__(self)
+        self.logger = self.get_logger()
+        self.RE = RE
+        self.plan_list = []
+
+    def get_logger(self):
+        # Setup beamline specifics:
+        beamline_gpfs_path = '/nsls2/xf08id'
+
+        logger = logging.getLogger('xas_logger')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+        # only add handlers if not added before
+        if not len(logger.handlers):
+            logger.setLevel(logging.DEBUG)
+            # Write DEBUG and INFO messages to /var/log/data_processing_worker/debug.log.
+            debug_file = logging.handlers.RotatingFileHandler(
+                beamline_gpfs_path + '/log/data_collection_debug.log',
+                maxBytes=10000000, backupCount=9)
+            debug_file.setLevel(logging.DEBUG)
+            debug_file.setFormatter(formatter)
+            logger.addHandler(debug_file)
+
+        return logger
+
+    def add_plans(self, plans):
+        if type(plans) != list:
+            plans = [plans]
+        self.plan_list.extend(plans)
+
+    def run(self):
+        while len(self.plan_list)>0:
+            plan_dict = self.plan_list[0]
+            plan = basic_plan_dict[plan_dict['plan']](**plan_dict['plan_parameters'])
+            print(f'{ttime.ctime()}   started doing plan {plan}')
+            self.RE(plan)
+            print(f'{ttime.ctime()}   done doing plan {plan}')
+            self.plan_list.pop(0)
+            # self.RE(plan)
+
+scan_processor = ScanProcessor()
+
+
 
 
 

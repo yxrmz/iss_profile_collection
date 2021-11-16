@@ -50,7 +50,7 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
 
 
 
-def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='', e0=0, edge=''):
+def step_scan_plan(name, comment, energy_grid, time_grid, detectors, element='', e0=0, edge=''):
     print(f'Edge in plan {edge}')
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
     fn = validate_file_exists(fn)
@@ -77,13 +77,13 @@ def step_scan_plan(name, comment, energy_steps, time_steps, detectors, element='
 
     for det in detectors:
         if det.name == 'xs':
-            yield from bps.mv(det.total_points, len(energy_steps))
+            yield from bps.mv(det.total_points, len(energy_grid))
     yield from shutter.open_plan()
     yield from bp.list_scan( #this is the scan
         detectors,
         hhm.energy,
-        list(energy_steps),
-        per_step=adaq_pb_step_per_step_factory(energy_steps,time_steps), #and this function is colled at every step
+        list(energy_grid),
+        per_step=adaq_pb_step_per_step_factory(energy_grid, time_grid), #and this function is colled at every step
         md=md
     )
     yield from shutter.close_plan()

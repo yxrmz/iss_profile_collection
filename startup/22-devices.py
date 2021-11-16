@@ -4,7 +4,7 @@ from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
 
 import bluesky.plans as bp
 from ophyd.status import SubscriptionStatus
-print(__file__)
+
 import time
 import datetime
 

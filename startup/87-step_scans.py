@@ -1,6 +1,8 @@
 import copy
 
 
+
+
 def step_scan_list(name: str, comment: str, n_cycles: int = 1, delay: float = 0, detectors=[],
               energy_grid=None, time_grid=None, element=None, e0=None, edge=None):
     # sys.stdout = kwargs.pop('stdout', sys.stdout)
@@ -9,10 +11,17 @@ def step_scan_list(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
     plans = []
     for indx in range(int(n_cycles)):
         name_n = '{} {:04d}'.format(name, indx + 1)
-        plan1 = step_scan_plan(name_n, comment, energy_grid, time_grid, detectors, element=element, e0=e0, edge=edge)
-        plan2 =  bps.sleep(float(delay))
-        plans.append(plan1)
-        plans.append(plan2)
+        plan_name = 'step_scan_plan'
+        plan_parameters = {'name' : name_n,
+                           'comment' : comment,
+                           'energy_grid' : energy_grid,
+                           'time_grid' : time_grid,
+                           'detectors' : detectors,
+                           'element': element,
+                           'e0' : e0,
+                           'edge' : edge}
+        plans.append({'plan' : plan_name, 'plan_parameters' : plan_parameters})
+        plans.append({'plan' : 'sleep', 'plan_parameters' : {'time' : delay}})
     return plans
 
 

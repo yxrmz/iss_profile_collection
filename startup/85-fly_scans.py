@@ -7,9 +7,17 @@ from bluesky.utils import FailedStatus
 
 
 
-
-
-
+def fly_scan_list(name: str, comment: str, n_cycles: int = 1, delay: float = 0, detectors=[]):
+    detectors = [apb_ave] + detectors
+    plans = []
+    for indx in range(int(n_cycles)):
+        name_n = '{} {:04d}'.format(name, indx + 1)
+        plans.append(prep_traj_plan())
+        plans.append(shutter.open_plan())
+        plans.append(execute_trajectory_apb(name_n, comment=comment))
+        plans.append(shutter.close_plan())
+        plans.append(bps.sleep(float(delay)))
+    return plans
 
 def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float = 0, autofoil :bool= False, **kwargs):
     '''

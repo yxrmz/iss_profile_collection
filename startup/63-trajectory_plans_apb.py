@@ -186,4 +186,6 @@ def execute_trajectory_apb(name, **metadata):
                          'execute_trajectory_apb',
                          'fly_energy_scan_apb',
                          **metadata)
+    print(f'{ttime.ctime()} Trajectory execution is starting...')
     yield from bp.fly([flyer_apb], md=md)
+    print(f'{ttime.ctime()} Trajectory execution is complete')
