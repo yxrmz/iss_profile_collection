@@ -224,13 +224,17 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         self.ext_trigger_device = ext_trigger_device
         self._datum_counter = None
 
+    def prepare_to_fly(self, traj_duration):
+        acq_rate = self.ext_trigger_device.freq.get()
+        self.num_points = int(acq_rate * (traj_duration + 1))
+
     def stage(self):
+        staged_list = super().stage()
         self._datum_counter = itertools.count()
         self.total_points.put(self.num_points)
         self.hdf5.file_write_mode.put(2)  # put it to Stream |||| IS ALREADY STREAMING
         self.external_trig.put(True)
         self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
-        staged_list = super().stage()
         staged_list += self.ext_trigger_device.stage()
         return staged_list
 
@@ -244,9 +248,6 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         unstaged_list += self.ext_trigger_device.unstage()
         return unstaged_list
 
-    def prepare_to_fly(self, traj_duration):
-        acq_rate = self.ext_trigger_device.freq.get()
-        self.num_points = int(acq_rate * (traj_duration + 1))
 
     def kickoff(self):
         set_and_wait(self.settings.acquire, 1)
@@ -255,7 +256,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
     def complete(self):
         print(f'{ttime.ctime()} Xspress3 complete is starting...')
         set_and_wait(self.settings.acquire, 0)
-        self.ext_trigger_device.complete()
+        ext_trigger_status = self.ext_trigger_device.complete()
         for resource in self.hdf5._asset_docs_cache:
             self._asset_docs_cache.append(('resource', resource[1]))
         self._datum_ids = []
@@ -269,7 +270,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
             self._asset_docs_cache.append(('datum', datum))
             self._datum_ids.append(datum_id)
         print(f'{ttime.ctime()} Xspress3 complete is done.')
-        return NullStatus()
+        return NullStatus() and ext_trigger_status
 
     def collect(self):
         print(f'{ttime.ctime()} Xspress3 collect is starting...')
@@ -287,8 +288,6 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                    'filled': {key: False for key in data}}
         print(f'{ttime.ctime()} Xspress3 collect is complete')
         yield from self.ext_trigger_device.collect()
-
-    # The collect_asset_docs(...) method was removed as it exists on the hdf5 component and should be used there.
 
     def describe_collect(self):
         return_dict_xs = {self.name:

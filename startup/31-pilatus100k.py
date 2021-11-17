@@ -1,6 +1,6 @@
 from ophyd import (Component as Cpt, Device,
                    EpicsSignal, ROIPlugin, OverlayPlugin,
-                   Signal, HDF5Plugin)
+                   Signal, HDF5Plugin, set_and_wait)
 from ophyd.areadetector.plugins import ROIStatPlugin_V34, ROIStatNPlugin_V22
 
 from ophyd.areadetector.filestore_mixins import FileStoreTIFFIterativeWrite, FileStoreHDF5IterativeWrite
@@ -213,6 +213,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 
     # TODO: change blocking to NO upon staging of this class !!!
     def stage(self):
+        staged_list = super().stage()
         self._datum_counter = itertools.count()
         # self.is_flying = True
         self.hdf5._asset_docs_cache[0][1]['spec'] = 'PIL100k_HDF5'  # This is to make the files to go to correct handler
@@ -222,8 +223,6 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.cam.array_counter.put(0)
         self.cam.trigger_mode.put(3)
         self.cam.image_mode.put(1)
-
-        staged_list = super().stage()
         staged_list += self.ext_trigger_device.stage()
         return staged_list
 
@@ -241,49 +240,59 @@ class PilatusStreamHDF5(PilatusHDF5):
 
 
 
+    # def trigger(self):
+    #     def callback(value, old_value):
+    #         return (int(round(old_value)) == 0) and (int(round(value)) == 1)
+    #
+    #     status = SubscriptionStatus(self.cam.acquire, callback)
+    #     # self.tiff.capture.put(1)
+    #     # self.hdf5.capture.put(1)
+    #     self.cam.acquire.put(1)
+    #     return status
 
 
-
-    def unstage(self,):
+    def unstage(self):
         self._datum_counter = None
+        unstaged_list = super().unstage()
+
         # st = self.stream.set(0)
-        super().unstage(*args, **kwargs)
-        self.is_flying = False
+        # self.is_flying = False
         self.cam.trigger_mode.put(0)
         self.cam.image_mode.put(0)
-        # self.tiff.file_write_mode.put(0)
-        # self.tiff.capture.put(0)
-        self.hdf5.capture.put(0)
-        self._datum_counter = None
+        # self.hdf5.capture.put(0)
         self.set_num_images(1)
-        self.cam.array_counter.put(0)
         self.set_exposure_time(1)
+        # self.cam.array_counter.put(0)
+        unstaged_list += self.ext_trigger_device.unstage()
+        return unstaged_list
 
+    def kickoff(self):
+        set_and_wait(self.cam.acquire, 1)
+        return self.ext_trigger_device.kickoff()
 
-
-    def complete(self, *args, **kwargs):
+    def complete(self):
+        print(f'{ttime.ctime()} Pilatus100k complete is starting...')
+        set_and_wait(self.cam.acquire, 0)
+        ext_trigger_status = self.ext_trigger_device.complete()
         for resource in self.hdf5._asset_docs_cache:
             self._asset_docs_cache.append(('resource', resource[1]))
-
         self._datum_ids = []
-
         num_frames = self.hdf5.num_captured.get()
-
-        # print(f'\n!!! num_frames: {num_frames}\n')
-
+        _resource_uid = self.hdf5._resource_uid
         for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(self.hdf5._resource_uid, next(self._datum_counter))
-            datum = {'resource': self.hdf5._resource_uid,
+            datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
+            datum = {'resource': _resource_uid,
                      'datum_kwargs': {'frame': frame_num},
                      # 'datum_kwargs': {},
                      'datum_id': datum_id}
             self._asset_docs_cache.append(('datum', datum))
             self._datum_ids.append(datum_id)
-
-        return NullStatus()
+        print(f'{ttime.ctime()} Pilatus100k complete is done.')
+        return NullStatus() and ext_trigger_status
 
 
     def collect(self):
+        print(f'{ttime.ctime()} Pilatus100k collect is starting...')
         num_frames = len(self._datum_ids)
 
         for frame_num in range(num_frames):
@@ -296,17 +305,11 @@ class PilatusStreamHDF5(PilatusHDF5):
                    'timestamps': {key: ts for key in data},
                    'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
                    'filled': {key: False for key in data}}
-
-
-    def collect_asset_docs(self):
-        items = list(self._asset_docs_cache)
-        self._asset_docs_cache.clear()
-        for item in items:
-            yield item
-
+        print(f'{ttime.ctime()} Pilatus100k collect is complete')
+        yield from self.ext_trigger_device.collect()
 
     def describe_collect(self):
-        return_dict = {self.name:
+        return_dict_pil100k = {self.name:
                            {f'{self.name}': {'source': 'PIL100k_HDF5',
                                              'dtype': 'array',
                                              'shape': [self.cam.num_images.get(),
@@ -315,8 +318,16 @@ class PilatusStreamHDF5(PilatusHDF5):
                                                        self.hdf5.array_size.width.get()],
                                             'filename': f'{self.hdf5.full_file_name.get()}',
                                              'external': 'FILESTORE:'}}}
-        return return_dict
 
+        return_dict_trig = self.ext_trigger_device.describe_collect()
+        return {**return_dict_pil100k, **return_dict_trig}
+
+    def collect_asset_docs(self):
+        items = list(self._asset_docs_cache)
+        self._asset_docs_cache.clear()
+        for item in items:
+            yield item
+        yield from self.ext_trigger_device.collect_asset_docs()
 
 
 
@@ -326,7 +337,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 
 
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
-pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
+pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream", ext_trigger_device=apb_trigger_pil100k)
 
 # pil100k.set_primary_roi(1)
 
