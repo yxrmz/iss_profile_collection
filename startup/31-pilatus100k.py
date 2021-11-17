@@ -148,7 +148,8 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     def set_primary_roi(self, num):
         st = f'stats{num}'
-        self.read_attrs = [st, 'tiff']
+        # self.read_attrs = [st, 'tiff']
+        self.read_attrs = [st, 'hdf5']
         getattr(self, st).kind = 'hinted'
 
     def set_exposure_time(self, exp_t):
@@ -358,7 +359,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
 pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream")
 
-# pil100k.set_primary_roi(1)
+pil100k.set_primary_roi(1)
 
 pil100k.stats1.kind = 'hinted'
 pil100k.stats1.total.kind = 'hinted'
