@@ -22,7 +22,7 @@ class AnalogPizzaBoxTrigger(Device):
 
     acquire = Cpt(EpicsSignal, 'Mode-SP')
     acquiring = Cpt(EpicsSignal, 'Status-I')
-    filename = Cpt(EpicsSignal,'Filename-SP')
+    filename = Cpt(EpicsSignal,'Filename-SP', string=True)
     filebin_status = Cpt(EpicsSignalRO,'File:Status-I')
     stream = Cpt(EpicsSignal,'Stream:Mode-SP')
 
@@ -35,6 +35,16 @@ class AnalogPizzaBoxTrigger(Device):
         self._resource_uid = None
         self._datum_counter = None
 
+    def prepare_to_fly(self, traj_duration):
+        self.num_points = int(self.freq.get() * (traj_duration + 1))
+
+    # def poke_streaming_destination(self):
+    #     self.max_counts.put(1)
+    #     set_and_wait(self.stream, 1)
+    #     set_and_wait(self.acquire, 2)
+    #     ttime.sleep(0.5)
+    #     set_and_wait(self.acquire, 0)
+    #     set_and_wait(self.stream, 0)
 
     # Step-scan interface
     def stage(self):
@@ -42,17 +52,18 @@ class AnalogPizzaBoxTrigger(Device):
 
         file_uid = new_uid()
         self.fn = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}.bin'
-        self.filename.put(f'{self.fn}')
+        set_and_wait(self.filename, self.fn)
+        # self.poke_streaming_destination()
         self._resource_uid = new_uid()
         resource = {'spec': 'APB_TRIGGER', #self.name.upper(),
                     'root': ROOT_PATH,  # from 00-startup.py (added by mrakitin for future generations :D)
-                    'resource_path': f'{self.fn}',
+                    'resource_path': self.fn,
                     'resource_kwargs': {},
                     'path_semantics': os.name,
                     'uid': self._resource_uid}
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
-
+        set_and_wait(self.max_counts, self.num_points)
         set_and_wait(self.stream, 1)
         return staged_list
 
@@ -92,7 +103,7 @@ class AnalogPizzaBoxTrigger(Device):
 
     def describe_collect(self):
         return_dict = {self.name:
-                           {f'{self.name}': {'source': 'APB_TRIGGER', #self.name.upper(),
+                           {f'{self.name}': {'source': self.name.upper(),
                                              'dtype': 'array',
                                              'shape': [-1, -1],
                                              'filename': f'{self.fn}',
@@ -115,8 +126,8 @@ class AnalogPizzaBoxTrigger(Device):
     #     acq_num_points = traj_duration * self.acq_rate.get() * 1000 * 1.3
     #     self.num_points = int(round(acq_num_points, ndigits=-3))
 
-
 apb_trigger = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:1:", name="apb_trigger")
+apb_trigger_xs = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:1:", name="apb_trigger_xs")
 apb_trigger_pil100k = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:2:", name="apb_trigger_pil100k")
 
 

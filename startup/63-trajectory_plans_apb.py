@@ -109,10 +109,16 @@ import threading
 class FlyerHHM(Device):
     def __init__(self, dets, hhm, shutter, *args, **kwargs):
         super().__init__(parent=None, **kwargs)
+
+        apb_stream_idx = dets.index(apb_stream)
+        self.apb_stream = dets[apb_stream_idx]
+
         self.dets = dets
         self.hhm = hhm
         self.shutter = shutter
         self.complete_status = None
+
+
 
     def stage(self):
         self.hhm.prepare()
@@ -140,8 +146,14 @@ class FlyerHHM(Device):
 
     def action_sequence(self):
         print(f'{ttime.ctime()} Detector kickoff starting...')
+
+        apb_status = self.apb_stream.kickoff()
+        apb_status.wait()
+        ttime.sleep(1)
+
         self.shutter.open(time_opening=True)
-        det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
+        det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets if (det is not self.apb_stream)])
+        # det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
         det_kickoff_status.wait()
         print(f'{ttime.ctime()} Detector kickoff finished')
         # self.shutter.open() # this could be a better place to have shutter open
@@ -214,7 +226,8 @@ class FlyerHHM(Device):
 #         yield from self.det.collect_asset_docs()
 #         for pb in self.pbs:
 #             yield from pb.collect_asset_docs()
-flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream, pil100k_stream], hhm, shutter, name='flyer_apb')
+# flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
+flyer_apb = FlyerHHM([apb_stream, pb9.enc1, pil100k_stream], hhm, shutter, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):

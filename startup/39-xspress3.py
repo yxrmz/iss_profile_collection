@@ -227,6 +227,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
     def prepare_to_fly(self, traj_duration):
         acq_rate = self.ext_trigger_device.freq.get()
         self.num_points = int(acq_rate * (traj_duration + 1))
+        self.ext_trigger_device.prepare_to_fly(traj_duration)
 
     def stage(self):
         staged_list = super().stage()
@@ -239,12 +240,12 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         return staged_list
 
     def unstage(self):
+        unstaged_list = super().unstage()
         self._datum_counter = None
         self.hdf5.file_write_mode.put(0)  # put it to Stream |||| IS ALREADY STREAMING
         self.external_trig.put(False)
         self.settings.trigger_mode.put(1)
         self.total_points.put(1)
-        unstaged_list = super().unstage()
         unstaged_list += self.ext_trigger_device.unstage()
         return unstaged_list
 
@@ -313,7 +314,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
 
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
-xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger)
+xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger_xs)
 
 
 
