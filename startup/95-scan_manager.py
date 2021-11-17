@@ -121,10 +121,10 @@ class ScanManager():
         detectors = [apb_ave] + detectors
 
         name = kwargs.pop('name')
-        n_cycles = kwargs.pop('n_cycles')
+        repeat = kwargs.pop('repeat')
         delay = kwargs.pop('delay')
         plans = []
-        for indx in range(int(n_cycles)):
+        for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
             plan_parameters = {'name': name_n, 'detectors': detectors, **kwargs}
             plans.append({'plan': plan_name, 'plan_parameters': plan_parameters})
@@ -136,26 +136,20 @@ class ScanManager():
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
-        # detectors = get_detector_device_list(scan_local['aux_parameters']['detectors'])
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
+        scan_parameters['detectors'] = scan_local['aux_parameters']['detectors']
 
         if scan_type == 'step scan':
-            plan_name = 'step_scan_plan'
-            # filename = scan_parameters['filename']
-            # step_data = np.genfromtxt(self.trajectory_path + filename)
-            # energy_grid = step_data[:, 0]
-            # time_grid = step_data[:, 1]
-            # element = scan_parameters['element']
-            # e0 = scan_parameters['e0']
-            # edge = scan_parameters['edge']
-        elif scan_type == 'fly scan':
-            plan_name = 'step_scan_plan'
+            filename = scan_parameters['filename']
+            step_profile = np.genfromtxt(self.trajectory_path + filename)
+            scan_parameters['energy_grid'] = step_profile[:, 0]
+            scan_parameters['time_grid'] = step_profile[:, 1]
 
-        plan_list = self.generate_repeated_plan_list(plan_name, **scan_parameters, **general_parameters)
+
+
+        plan_list = self.generate_repeated_plan_list(scan_type, **scan_parameters, **general_parameters)
         return plan_list
-
-
 
 
 scan_manager = ScanManager()
@@ -189,7 +183,6 @@ class ScanProcessor():
             debug_file.setLevel(logging.DEBUG)
             debug_file.setFormatter(formatter)
             logger.addHandler(debug_file)
-
         return logger
 
     def add_plans(self, plans):
