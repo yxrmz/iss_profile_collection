@@ -119,8 +119,6 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.hint_channels()
-
-
         # self._is_flying = False
 
     def hint_channels(self):
@@ -132,11 +130,6 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         self.stats3.total.kind = 'hinted'
         self.stats4.kind = 'hinted'
         self.stats4.total.kind = 'hinted'
-
-    def set_primary_roi(self, num):
-        st = f'stats{num}'
-        self.read_attrs = [st, 'tiff']
-        getattr(self, st).kind = 'hinted'
 
     def set_exposure_time(self, exp_t):
         self.cam.acquire_time.put(exp_t - self.readout)
@@ -188,6 +181,16 @@ class PilatusHDF5(PilatusBase):
                root='/',
                write_path_template='/nsls2/xf08id/data/pil100k/%Y/%m/%d')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_primary_roi(1)
+
+    def set_primary_roi(self, num):
+        st = f'stats{num}'
+        # self.read_attrs = [st, 'tiff']
+        self.read_attrs = [st, 'hdf5']
+        getattr(self, st).kind = 'hinted'
+
 
 class PilatusStreamHDF5(PilatusHDF5):
 
@@ -196,66 +199,53 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.ext_trigger_device = ext_trigger_device
         self._asset_docs_cache = deque()
         self._datum_counter = None
+
         # self._asset_docs_cache = deque()
         # self._datum_counter = None
         # self._acquire = None
         # self._datum_counter = None
 
+    def prepare_to_fly(self, traj_duration):
+        self.acq_rate = self.ext_trigger_device.freq.get()
+        self.num_points = int(self.acq_rate * (traj_duration + 1))
 
-    # def prepare_to_fly(self, traj_duration):
 
 
     # TODO: change blocking to NO upon staging of this class !!!
-    def stage(self, acq_rate, traj_time, *args, **kwargs):
-        print('>>>>>>>>>>>>>>> STAGING HDF5 VERSION')
-        # deal with expected number of points
-        # print('>>>>>>>>>>>>>>>> 1', self.hdf5.full_file_name.get())
-        super().stage(*args, **kwargs)
-        # print('>>>>>>>>>>>>>>>> 2', self.hdf5.full_file_name.get())
-        self.is_flying = True
+    def stage(self):
+        self._datum_counter = itertools.count()
+        # self.is_flying = True
         self.hdf5._asset_docs_cache[0][1]['spec'] = 'PIL100k_HDF5'  # This is to make the files to go to correct handler
         self.hdf5._asset_docs_cache[0][1]['resource_kwargs'] = {}  # This is to make the files to go to correct handler
-        self.set_expected_number_of_points(acq_rate, traj_time)
-        # print('>>>>>>>>>>>>>>>> 3', self.hdf5.full_file_name.get())
-        # deal with acquire time
-        # acquire_period = 1 / acq_rate
-        self.set_exposure_time(1 / acq_rate)
-        # acquire_time = acquire_period - self.readout
-        # self.cam.acquire_period.put(acquire_period)
-        # self.cam.acquire_time.put(acquire_time)
+        self.set_num_images(self.num_points)
+        self.set_exposure_time(1 / self.acq_rate)
+        self.cam.array_counter.put(0)
+        self.cam.trigger_mode.put(3)
+        self.cam.image_mode.put(1)
+
+        staged_list = super().stage()
+        staged_list += self.ext_trigger_device.stage()
+        return staged_list
+
+
 
         # saving files
         # self.tiff.file_write_mode.put(2)
         # self.hdf5.file_write_mode.put(2)
 
         # deal with the trigger
-        self.cam.trigger_mode.put(3)
-        self.cam.image_mode.put(1)
 
-        self._datum_counter = itertools.count()
+
+
         # print('>>>>>>>>>>>>>>>> 4', self.hdf5.full_file_name.get())
 
 
 
-    def trigger(self):
-        def callback(value, old_value, **kwargs):
-            # print(f'{ttime.time()} {old_value} ---> {value}')
-            if self._acquire and int(round(old_value)) == 1 and int(round(value)) == 0:
-                self._acquire = False
-                return True
-            else:
-                self._acquire = True
-                return False
-
-        status = SubscriptionStatus(self.cam.acquire, callback)
-        # self.tiff.capture.put(1)
-        # self.hdf5.capture.put(1)
-        self.cam.acquire.put(1)
-        return status
 
 
-    def unstage(self, *args, **kwargs):
-        # self._datum_counter = None
+
+    def unstage(self,):
+        self._datum_counter = None
         # st = self.stream.set(0)
         super().unstage(*args, **kwargs)
         self.is_flying = False
@@ -331,10 +321,8 @@ class PilatusStreamHDF5(PilatusHDF5):
 
 
 
-    def set_expected_number_of_points(self, acq_rate, traj_time):
-        n = int(acq_rate * (traj_time + 1 ))
-        self.set_num_images(n)
-        self.cam.array_counter.put(0)
+    # def set_expected_number_of_points(self, acq_rate, traj_time):
+
 
 
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")

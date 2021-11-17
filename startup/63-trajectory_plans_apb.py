@@ -119,7 +119,7 @@ class FlyerHHM(Device):
         staged_list = super().stage()
         scan_duration = trajectory_manager.current_trajectory_duration
         for det in self.dets:
-            if hasattr(det, 'set_num_points'):
+            if hasattr(det, 'prepare_to_fly'):
                 det.prepare_to_fly(scan_duration)
             staged_list += det.stage()
         return staged_list

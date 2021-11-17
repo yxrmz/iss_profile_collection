@@ -128,22 +128,22 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
                          read_attrs=read_attrs, **kwargs)
         self.set_channels_for_hdf5()
         # self.create_dir.put(-3)
+        self.spectra_per_point.put(1)
+        self.channel1.rois.roi01.configuration_attrs.append('bin_low')
 
         self._asset_docs_cache = deque()
-        self._datum_counter = None
-        self.channel1.rois.roi01.configuration_attrs.append('bin_low')
+        # self._datum_counter = None
         self.warmup()
 
     # Step-scan interface methods.
-    def stage(self):
-        staged_list = super().stage()
-        self._datum_counter = itertools.count()
-        self.spectra_per_point.put(1)
-        return staged_list
+    # def stage(self):
+    #     staged_list = super().stage()
+    #
+    #     return staged_list
 
-    def unstage(self):
-        self._datum_counter = None
-        return super().unstage()
+    # def unstage(self):
+    #
+    #     return super().unstage()
 
     def trigger(self):
 
@@ -222,8 +222,10 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
     def __init__(self, *args, ext_trigger_device=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.ext_trigger_device = ext_trigger_device
+        self._datum_counter = None
 
     def stage(self):
+        self._datum_counter = itertools.count()
         self.total_points.put(self.num_points)
         self.hdf5.file_write_mode.put(2)  # put it to Stream |||| IS ALREADY STREAMING
         self.external_trig.put(True)
@@ -233,6 +235,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         return staged_list
 
     def unstage(self):
+        self._datum_counter = None
         self.hdf5.file_write_mode.put(0)  # put it to Stream |||| IS ALREADY STREAMING
         self.external_trig.put(False)
         self.settings.trigger_mode.put(1)
