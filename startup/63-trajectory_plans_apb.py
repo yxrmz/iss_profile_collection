@@ -227,7 +227,7 @@ class FlyerHHM(Device):
 #         for pb in self.pbs:
 #             yield from pb.collect_asset_docs()
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
-flyer_apb = FlyerHHM([apb_stream, pb9.enc1, pil100k_stream], hhm, shutter, name='flyer_apb')
+flyer_apb = FlyerHHM([apb_stream, pb9.enc1, pil100k_stream, xs_stream], hhm, shutter, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
