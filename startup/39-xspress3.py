@@ -29,6 +29,9 @@ import numpy as np
 import itertools
 import time as ttime
 from collections import deque, OrderedDict
+from itertools import product
+import pandas as pd
+from databroker.assets.handlers import HandlerBase, Xspress3HDF5Handler
 import warnings
 
 
@@ -114,7 +117,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
                )
 
 
-    def __init__(self, prefix, ext_trigger_device=None, *, configuration_attrs=None, read_attrs=None, **kwargs):
+    def __init__(self, prefix, *, configuration_attrs=None, read_attrs=None, **kwargs):
         if configuration_attrs is None:
             configuration_attrs = ['external_trig', 'total_points',
                                    'spectra_per_point', 'settings',
@@ -129,23 +132,18 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self._asset_docs_cache = deque()
         self._datum_counter = None
         self.channel1.rois.roi01.configuration_attrs.append('bin_low')
-        self.mode = 'step'
-        self.ext_trigger_device = ext_trigger_device
+        self.warmup()
 
     # Step-scan interface methods.
     def stage(self):
         staged_list = super().stage()
         self._datum_counter = itertools.count()
         self.spectra_per_point.put(1)
-        if self.mode == 'fly': staged_list += self.fly_stage()
         return staged_list
 
     def unstage(self):
         self._datum_counter = None
-        unstaged_list = super().unstage()
-        if self.mode == 'fly': unstaged_list += self.fly_unstage()
-        self.mode = 'step'
-        return unstaged_list
+        return super().unstage()
 
     def trigger(self):
 
@@ -177,170 +175,46 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self.hdf5.num_extra_dims.put(0)
         self.settings.num_channels.put(len(channels))
 
-    def complete(self):
-        print(f'{ttime.ctime()} Xspress3 complete is starting...')
-        if self.mode == 'fly': self.fly_complete()
-        for resource in self.hdf5._asset_docs_cache:
-            self._asset_docs_cache.append(('resource', resource[1]))
-        self._datum_ids = []
-        num_frames = self.hdf5.num_captured.get()
-        _resource_uid = self.hdf5._resource_uid
-        for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
-            datum = {'resource': _resource_uid,
-                     'datum_kwargs': {'frame': frame_num},
-                     'datum_id': datum_id}
-            self._asset_docs_cache.append(('datum', datum))
-            self._datum_ids.append(datum_id)
-        print(f'{ttime.ctime()} Xspress3 complete is done.')
-        return NullStatus()
+    def warmup(self, hdf5_warmup=False):
+        self.channel1.vis_enabled.put(1)
+        self.channel2.vis_enabled.put(1)
+        self.channel3.vis_enabled.put(1)
+        self.channel4.vis_enabled.put(1)
+        self.total_points.put(1)
+        if hdf5_warmup:
+            self.hdf5.warmup()
 
-    def collect(self):
-        print(f'{ttime.ctime()} Xspress3 collect is starting...')
-        num_frames = len(self._datum_ids)
-        for frame_num in range(num_frames):
-            datum_id = self._datum_ids[frame_num]
-            data = {self.name: datum_id}
-            ts = ttime.time()
-            yield {'data': data,
-                   'timestamps': {key: ts for key in data},
-                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
-                   'filled': {key: False for key in data}}
-        print(f'{ttime.ctime()} Xspress3 collect is complete')
-        yield from self.ext_trigger_device.collect()
+        # Hints:
+        for n in range(1, 5):
+            getattr(self, f'channel{n}').rois.roi01.value.kind = 'hinted'
 
-    # def describe_collect(self):
-    #     if self.mode == 'fly':
-    #         return self.fly_describe_collect()
-    #     else:
-    #         return super().describe_collect()
-    #
-    # def collect_asset_docs(self):
-    #     print(f'{ttime.ctime()} Xspress3 collect_asset_docs is starting')
-    #     if self.mode == 'fly':
-    #         yield from self.collect_asset_docs_fly()
-    #     else:
-    #         yield from super().collect_asset_docs()
-    #     print(f'{ttime.ctime()} Xspress3 collect_asset_docs is done')
-    #
-    # # flyable interface
-    # def set_num_points(self, traj_duration):
-    #     self.mode = 'fly'
-    #     acq_rate = self.ext_trigger_device.freq.get()
-    #     self.num_points = int(acq_rate * (traj_duration + 1))
-    #
-    # def fly_stage(self):
-    #     self.total_points.put(self.num_points)
-    #     self.hdf5.file_write_mode.put(2)  # put it to Stream |||| IS ALREADY STREAMING
-    #     self.external_trig.put(True)
-    #     self.settings.trigger_mode.put(3)  # put the trigger mode to TTL in
-    #     return self.ext_trigger_device.stage()
-    #
-    # def fly_unstage(self):
-    #     self.settings.trigger_mode.put(1)
-    #     self.external_trig.put(False)
-    #     self.hdf5.file_write_mode.put(0)  # put it to Stream |||| IS ALREADY STREAMING
-    #     self.total_points.put(1)
-    #     return self.ext_trigger_device.unstage()
-    #
-    # def kickoff(self):
-    #     set_and_wait(self.settings.acquire, 1)
-    #     return self.ext_trigger_device.kickoff()
-    #
-    # def fly_complete(self):
-    #     set_and_wait(self.settings.acquire, 0)
-    #     self.ext_trigger_device.complete()
-    #
-    # # The collect_asset_docs(...) method was removed as it exists on the hdf5 component and should be used there.
-    # def fly_describe_collect(self):
-    #     return_dict_xs = {self.name:
-    #                           {f'{self.name}': {'source': 'XS',
-    #                                             'dtype': 'array',
-    #                                             'shape': [self.settings.num_images.get(),
-    #                                                       # self.settings.array_counter.get()
-    #                                                       self.hdf5.array_size.height.get(),
-    #                                                       self.hdf5.array_size.width.get()],
-    #                                             'filename': f'{self.hdf5.full_file_name.get()}',
-    #                                             'external': 'FILESTORE:'}}}
-    #     return_dict_trig = self.ext_trigger_device.describe_collect()
-    #     return {**return_dict_xs, **return_dict_trig}
-    #
-    #
-    #
-    # def collect_asset_docs_fly(self):
-    #
-    #     items = list(self._asset_docs_cache)
-    #     self._asset_docs_cache.clear()
-    #     for item in items:
-    #         yield item
-    #     yield from self.ext_trigger_device.collect_asset_docs()
+        self.settings.configuration_attrs = ['acquire_period',
+                                           'acquire_time',
+                                           'gain',
+                                           'image_mode',
+                                           'manufacturer',
+                                           'model',
+                                           'num_exposures',
+                                           'num_images',
+                                           'temperature',
+                                           'temperature_actual',
+                                           'trigger_mode',
+                                           'config_path',
+                                           'config_save_path',
+                                           'invert_f0',
+                                           'invert_veto',
+                                           'xsp_name',
+                                           'num_channels',
+                                           'num_frames_config',
+                                           'run_flags',
+                                           'trigger_signal']
 
-
-
-    # Currently only using four channels. Uncomment these to enable more
-    # channels:
-    # channel5 = C(Xspress3Channel, 'C5_', channel_num=5)
-    # channel6 = C(Xspress3Channel, 'C6_', channel_num=6)
-    # channel7 = C(Xspress3Channel, 'C7_', channel_num=7)
-    # channel8 = C(Xspress3Channel, 'C8_', channel_num=8)
-
-xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', ext_trigger_device=apb_trigger, name='xs')
-
-
-def initialize_Xspress3(xs, hdf5_warmup=True):
-    # TODO: do not put on startup or do it conditionally, if on beamline.
-    xs.channel2.vis_enabled.put(1)
-    xs.channel3.vis_enabled.put(1)
-    xs.channel4.vis_enabled.put(1)
-    xs.total_points.put(1)
-
-    # This is necessary for when the ioc restarts
-    # we have to trigger one image for the hdf5 plugin to work correctly
-    # else, we get file writing errors
-    if hdf5_warmup:
-        xs.hdf5.warmup()
-
-    # Hints:
-    for n in [1, 2]:
-        getattr(xs, f'channel{n}').rois.roi01.value.kind = 'hinted'
-
-    xs.settings.configuration_attrs = ['acquire_period',
-                                       'acquire_time',
-                                       'gain',
-                                       'image_mode',
-                                       'manufacturer',
-                                       'model',
-                                       'num_exposures',
-                                       'num_images',
-                                       'temperature',
-                                       'temperature_actual',
-                                       'trigger_mode',
-                                       'config_path',
-                                       'config_save_path',
-                                       'invert_f0',
-                                       'invert_veto',
-                                       'xsp_name',
-                                       'num_channels',
-                                       'num_frames_config',
-                                       'run_flags',
-                                       'trigger_signal']
-
-    for n, d in xs.channels.items():
-        roi_names = ['roi{:02}'.format(j) for j in [1, 2, 3, 4]]
-        d.rois.read_attrs = roi_names
-        d.rois.configuration_attrs = roi_names
-        for roi_n in roi_names:
-            getattr(d.rois, roi_n).value_sum.kind = 'omitted'
-
-initialize_Xspress3(xs)
-
-
-def xs_count(acq_time:float = 1, num_frames:int =1):
-
-    yield from bps.mv(xs.settings.erase, 0)
-    yield from bp.count([xs], acq_time)
-
-
+        for key, channel in self.channels.items():
+            roi_names = ['roi{:02}'.format(j) for j in [1, 2, 3, 4]]
+            channel.rois.read_attrs = roi_names
+            channel.rois.configuration_attrs = roi_names
+            for roi_n in roi_names:
+                getattr(channel.rois, roi_n).value_sum.kind = 'omitted'
 
 
 class ISSXspress3DetectorStream(ISSXspress3Detector):
@@ -436,12 +310,10 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         yield from self.ext_trigger_device.collect_asset_docs()
 
 
+xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger)
-initialize_Xspress3(xs_stream, hdf5_warmup=True)
 
-from itertools import product
-import pandas as pd
-from databroker.assets.handlers import HandlerBase, Xspress3HDF5Handler
+
 
 class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
 
@@ -486,44 +358,7 @@ db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
 
 
 
+def xs_count(acq_time:float = 1, num_frames:int =1):
 
-class ISSXspress3HDF5Handler_light(Xspress3HDF5Handler):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._roi_data = None
-        self._num_channels = None
-
-    def _get_dataset(self): # readpout of the following stuff should be done only once, this is why I redefined _get_dataset method - Denis Leshchev Feb 9, 2021
-        # dealing with parent
-        # super()._get_dataset()
-
-        # finding number of channels
-        # if self._num_channels is not None:
-        #     return
-        # print('determening number of channels')
-        # shape = self.dataset.shape
-        # if len(shape) != 3:
-        #     raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
-        # self._num_channels = shape[1]
-
-        if self._roi_data is not None:
-            return
-        print('reading ROI data')
-        self.chanrois = [f'CHAN{c}ROI{r}' for c, r in product([1, 2, 3, 4], [1, 2, 3, 4])]
-        _data_columns = [self._file['/entry/instrument/detector/NDAttributes'][chanroi][()] for chanroi in
-                         self.chanrois]
-        data_columns = np.vstack(_data_columns).T
-        self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
-
-    def __call__(self, *args, frame=None, **kwargs):
-            self._get_dataset()
-            # return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(self._num_channels)}
-            return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
-            # return {**return_dict, **return_dict_rois}
-            return return_dict_rois
-
-
-# db.reg.register_handler(ISSXspress3HDF5Handler_light.HANDLER_NAME,
-#                         ISSXspress3HDF5Handler_light, overwrite=True)
-
+    yield from bps.mv(xs.settings.erase, 0)
+    yield from bp.count([xs], acq_time)
