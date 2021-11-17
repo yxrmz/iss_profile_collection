@@ -274,7 +274,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         for item in items:
             yield item
 
-    def set_num_points(self, traj_duration):
+    def prepare_to_fly(self, traj_duration):
         # traj_duration = get_traj_duration()
         acq_num_points = traj_duration * self.acq_rate.get() * 1000 * 1.3
         self.num_points = int(round(acq_num_points, ndigits=-3))

@@ -44,40 +44,25 @@ class PilatusDetectorCamV33(PilatusDetectorCam):
 class PilatusDetectorCam(PilatusDetector):
     cam = Cpt(PilatusDetectorCamV33, 'cam1:')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cam.ensure_nonblocking()
+
 
 
 class HDF5PluginWithFileStore(HDF5Plugin, FileStoreHDF5IterativeWrite):
     """Add this as a component to detectors that write HDF5s."""
     def get_frames_per_point(self):
-        if not self.parent.is_flying:
-            return self.parent.cam.num_images.get()
-        else:
-            return 1
+        return 1
+        # if not self.parent.is_flying:
+        #     return self.parent.cam.num_images.get()
+        # else:
+        #     return 1
 
 
 
 # Making ROIStatPlugin that is actually useful
-class ROIStatPlugin(ROIStatPlugin_V34):
-    # roi1_minx = Cpt(SignalWithRBV, '1:MinX', kind='normal')
-    # roi2_minx = Cpt(SignalWithRBV, '2:MinX', kind='normal')
-    # roi3_minx = Cpt(SignalWithRBV, '3:MinX', kind='normal')
-    # roi4_minx = Cpt(SignalWithRBV, '4:MinX', kind='normal')
-    #
-    # roi1_miny = Cpt(SignalWithRBV, '1:MinY', kind='normal')
-    # roi2_miny = Cpt(SignalWithRBV, '2:MinY', kind='normal')
-    # roi3_miny = Cpt(SignalWithRBV, '3:MinY', kind='normal')
-    # roi4_miny = Cpt(SignalWithRBV, '4:MinY', kind='normal')
-    #
-    # roi1_sizex = Cpt(SignalWithRBV, '1:SizeX', kind='normal')
-    # roi2_sizex = Cpt(SignalWithRBV, '2:SizeX', kind='normal')
-    # roi3_sizex = Cpt(SignalWithRBV, '3:SizeX', kind='normal')
-    # roi4_sizex = Cpt(SignalWithRBV, '4:SizeX', kind='normal')
-    #
-    # roi1_sizey = Cpt(SignalWithRBV, '1:SizeY', kind='normal')
-    # roi2_sizey = Cpt(SignalWithRBV, '2:SizeY', kind='normal')
-    # roi3_sizey = Cpt(SignalWithRBV, '3:SizeY', kind='normal')
-    # roi4_sizey = Cpt(SignalWithRBV, '4:SizeY', kind='normal')
-
+class ISSROIStatPlugin(ROIStatPlugin_V34):
     for i in range(1,5):
         _attr = f'roi{i}'
         _attr_min_x = f'min_x'
@@ -98,17 +83,6 @@ class ROIStatPlugin(ROIStatPlugin_V34):
             doc='ROI position and size in XY',
             kind='normal',
         )
-
-        # this does not work
-        # bla = DDC_SignalWithRBV(
-        #     (_attr_min_x, _pv_min_x),
-        #     (_attr_min_y, _pv_min_y),
-        #     (_attr_size_x, _pv_size_x),
-        #     (_attr_size_y, _pv_size_y),
-        #     doc='ROI position and size in XY',
-        #     kind='normal',
-        # )
-        # vars()[_attr] = bla
 
         _attr = f'stats{i}'
         _attr_total = f'total'
@@ -135,16 +109,29 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
     stats3 = Cpt(StatsPluginV33, 'Stats3:', read_attrs=['total'])
     stats4 = Cpt(StatsPluginV33, 'Stats4:', read_attrs=['total'])
 
-    roistat = Cpt(ROIStatPlugin, 'ROIStat1:')
+    roistat = Cpt(ISSROIStatPlugin, 'ROIStat1:')
     # roistat = Cpt(ROIStatPlugin_V34, 'ROIStat1:')
 
     over1 = Cpt(OverlayPlugin, 'Over1:')
 
-    readout = 0.0025 # seconds
+    readout = 0.0025 # seconds; actually it is 0.0023, but we are conservative
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._is_flying = False
+        self.hint_channels()
+
+
+        # self._is_flying = False
+
+    def hint_channels(self):
+        self.stats1.kind = 'hinted'
+        self.stats1.total.kind = 'hinted'
+        self.stats2.kind = 'hinted'
+        self.stats2.total.kind = 'hinted'
+        self.stats3.kind = 'hinted'
+        self.stats3.total.kind = 'hinted'
+        self.stats4.kind = 'hinted'
+        self.stats4.total.kind = 'hinted'
 
     def set_primary_roi(self, num):
         st = f'stats{num}'
@@ -157,13 +144,10 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     def set_num_images(self, num):
         self.cam.num_images.put(num)
-        if hasattr(self, 'tiff'):
-            self.tiff.num_capture.put(num)
-        if hasattr(self, 'hdf5'):
-            self.hdf5.num_capture.put(num)
+        self.hdf5.num_capture.put(num)
 
-    def det_next_file(self, n):
-        self.cam.file_number.put(n)
+    # def det_next_file(self, n):
+    #     self.cam.file_number.put(n)
 
     def enforce_roi_match_between_plugins(self):
         for i in range(1,5):
@@ -178,14 +162,18 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
             _attr2.size_x.set(_xs)
             _attr2.size_y.set(_ys)
 
+    def stage(self):
+        self.enforce_roi_match_between_plugins()
+        return super().stage()
 
-    @property
-    def is_flying(self):
-        return self._is_flying
 
-    @is_flying.setter
-    def is_flying(self, is_flying):
-        self._is_flying = is_flying
+    # @property
+    # def is_flying(self):
+    #     return self._is_flying
+    #
+    # @is_flying.setter
+    # def is_flying(self, is_flying):
+    #     self._is_flying = is_flying
 
 
 
@@ -198,29 +186,23 @@ class PilatusHDF5(PilatusBase):
     hdf5 = Cpt(HDF5PluginWithFileStore,
                suffix='HDF1:',
                root='/',
-               write_path_template='/nsls2/xf08id/data/pil100k/%Y/%m/%d',
-               )
-
-    def stage(self, *args, **kwargs):
-        self.enforce_roi_match_between_plugins()
-        super().stage(*args, **kwargs)
-
-
-
-
-
+               write_path_template='/nsls2/xf08id/data/pil100k/%Y/%m/%d')
 
 
 class PilatusStreamHDF5(PilatusHDF5):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, ext_trigger_device=None, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.ext_trigger_device = ext_trigger_device
         self._asset_docs_cache = deque()
         self._datum_counter = None
-        self._acquire = None
+        # self._asset_docs_cache = deque()
+        # self._datum_counter = None
+        # self._acquire = None
         # self._datum_counter = None
 
+
+    # def prepare_to_fly(self, traj_duration):
 
 
     # TODO: change blocking to NO upon staging of this class !!!
@@ -360,15 +342,8 @@ pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_strea
 
 # pil100k.set_primary_roi(1)
 
-pil100k.stats1.kind = 'hinted'
-pil100k.stats1.total.kind = 'hinted'
-pil100k.stats2.kind = 'hinted'
-pil100k.stats2.total.kind = 'hinted'
-pil100k.stats3.kind = 'hinted'
-pil100k.stats3.total.kind = 'hinted'
-pil100k.stats4.kind = 'hinted'
-pil100k.stats4.total.kind = 'hinted'
-pil100k.cam.ensure_nonblocking()
+
+# pil100k.cam.ensure_nonblocking()
 
 
 

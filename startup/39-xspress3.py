@@ -241,7 +241,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         unstaged_list += self.ext_trigger_device.unstage()
         return unstaged_list
 
-    def set_num_points(self, traj_duration):
+    def prepare_to_fly(self, traj_duration):
         acq_rate = self.ext_trigger_device.freq.get()
         self.num_points = int(acq_rate * (traj_duration + 1))
 
