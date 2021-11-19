@@ -117,39 +117,45 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
-    def generate_repeated_plan_list(self, plan_name, **kwargs):
-        detectors = get_detector_device_list(kwargs['detectors'])
-        detectors = [apb_ave] + detectors
-
-        name = kwargs.pop('name')
-        repeat = kwargs.pop('repeat')
-        delay = kwargs.pop('delay')
-        plans = []
+    def generate_repeated_plan_list(self, plan_name, name, comment, repeat, delay, scan_parameters, aux_parameters):
+        # detectors = get_detector_device_list(kwargs['detectors'])
+        # detectors = [apb_ave] + detectors
+        plan_dicts = []
         for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
-            plan_parameters = {'name': name_n, 'detectors': detectors, **kwargs}
-            plans.append({'plan': plan_name, 'plan_parameters': plan_parameters})
-            plans.append({'plan': 'sleep', 'plan_parameters': {'time': delay}})
-        return plans
+            sample_parameters = {'name' : name_n,
+                                 'comment' : comment}
+            plan_parameters = {'sample_parameters': sample_parameters,
+                               'scan_parameters': scan_parameters,
+                               'aux_parameters' : aux_parameters}
+            plan_dict = {'plan_name' : plan_name,
+                    'plan_parameters' : plan_parameters}
+            plan_dicts.append(plan_dict)
+            if delay > 0:
+                plan_dicts.append({'plan_name': 'sleep', 'plan_parameters': {'time': delay}})
+        return plan_dicts
 
 
-    def generate_plan_list(self, scan_idx, general_parameters):
+    def generate_plan_list(self, name, comment, repeat, delay, scan_idx):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
-        scan_parameters['detectors'] = scan_local['aux_parameters']['detectors']
+        aux_parameters = scan_local['aux_parameters']
 
         if scan_type == 'step scan':
-            filename = scan_parameters['filename']
-            step_profile = np.genfromtxt(self.trajectory_path + filename)
-            scan_parameters['energy_grid'] = step_profile[:, 0]
-            scan_parameters['time_grid'] = step_profile[:, 1]
+            plan_name = 'step_scan_plan'
+        elif scan_type == 'fly scan':
+            plan_name = 'fly_scan_plan'
+            # filename = scan_parameters['filename']
+            # step_profile = np.genfromtxt(self.trajectory_path + filename)
+            # scan_parameters['energy_grid'] = step_profile[:, 0]
+            # scan_parameters['time_grid'] = step_profile[:, 1]
 
 
 
-        plan_list = self.generate_repeated_plan_list(scan_type, **scan_parameters, **general_parameters)
+        plan_list = self.generate_repeated_plan_list(plan_name, name, comment, repeat, delay, scan_parameters, aux_parameters)
         return plan_list
 
 
@@ -194,7 +200,7 @@ class ScanProcessor():
     def run(self):
         while len(self.plan_list)>0:
             plan_dict = self.plan_list[0]
-            plan = basic_plan_dict[plan_dict['plan']](**plan_dict['plan_parameters'])
+            plan = basic_plan_dict[plan_dict['plan_name']](**plan_dict['plan_parameters'])
             print(f'{ttime.ctime()}   started doing plan {plan}')
             self.RE(plan)
             print(f'{ttime.ctime()}   done doing plan {plan}')

@@ -1,6 +1,7 @@
 
 
-basic_plan_dict = {'step_scan': step_scan_plan,
+basic_plan_dict = {'step_scan_plan' : step_scan_plan,
+                   'fly_scan_plan' :fly_scan_plan,
                    'sleep' : bps.sleep}
 
 # plan_funcs = {
