@@ -25,6 +25,10 @@ class Accelerator(Device):
             string = 'Shutdown'
         elif value == 6:
             string = 'Unscheduled ops'
+        elif value == 8:
+            string = 'Decay mode'
+        else:
+            string = 'Unknown'
         return string
 
     @property
