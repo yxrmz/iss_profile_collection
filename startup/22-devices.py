@@ -1,6 +1,6 @@
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
-                   DeviceStatus)
+                   DeviceStatus, Signal)
 from nslsii.devices import TwoButtonShutter
 import bluesky.plans as bp
 from ophyd.status import SubscriptionStatus
@@ -129,15 +129,15 @@ class Shutter(Device):
 #shutter.shutter_type = 'SP'
 
 
-class ShutterMotor:
-
-    def __init__(self, name, shutter_type, motor):
-        self.name = name
+class ShutterMotor(Device):
+    exposure_time = Cpt(Signal)
+    def __init__(self, shutter_type, motor, *args, **kwargs):
+        # self.name = name
         self.shutter_type = shutter_type
         self.motor = motor
         self.function_call = None
         self._start_time = None
-        self._open_time = None
+
 
         if motor.connected:
             self.output = motor.pos
@@ -177,7 +177,7 @@ class ShutterMotor:
         if printing: print(f'{ttime.ctime()} >>> {self.name} closing', end='')
         self.output.move(self.closed_pos, wait=True)
         if self._start_time is not None:
-            self._open_time = ttime.time() - self._start_time
+            self.exposure_time.put(ttime.time() - self._start_time)
             self._start_time = None
             print(f'. Total exposure time: {self._open_time:0.2f} s', end='')
         print()

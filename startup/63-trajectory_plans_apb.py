@@ -107,20 +107,27 @@ def combine_status_list(status_list):
 import threading
 
 class FlyerHHM(Device):
-    def __init__(self, dets, hhm, shutter, *args, **kwargs):
+    def __init__(self, default_dets, hhm, shutter, *args, **kwargs):
         super().__init__(parent=None, **kwargs)
 
         # apb_stream_idx = dets.index(apb_stream)
         # self.apb_stream = dets[apb_stream_idx]
 
-        self.dets = dets
+        self.default_dets = default_dets
+        self.aux_dets = []
+        self.dets = []
         self.hhm = hhm
         self.shutter = shutter
         self.complete_status = None
 
+    def set_aux_dets(self, aux_dets):
+        self.aux_dets = aux_dets
 
+    def flush_aux_dets(self):
+        self.aux_dets = []
 
     def stage(self):
+        self.dets = self.default_dets + self.aux_dets
         self.hhm.prepare()
         staged_list = super().stage()
         scan_duration = trajectory_manager.current_trajectory_duration
@@ -131,9 +138,11 @@ class FlyerHHM(Device):
         return staged_list
 
     def unstage(self):
+        self.dets = []
         unstaged_list = super().unstage()
         for det in self.dets:
             unstaged_list += det.unstage()
+        self.flush_detectors()
         return unstaged_list
 
     def kickoff(self):
@@ -176,58 +185,23 @@ class FlyerHHM(Device):
             raise RuntimeError("No collection in progress")
         return self.complete_status
 
-    # def describe_collect(self):
-    #     return_dict = self.det.describe_collect()
-    #     # Also do it for all pizza-boxes
-    #     for pb in self.pbs:
-    #         return_dict[pb.name] = pb.describe_collect()[pb.name]
-    #
-    #     return return_dict
-
     def describe_collect(self):
-        # print(f'{ttime.ctime()} >>> DESCRIBE_COLLECT: begin')
         return_dict = {}
         for det in self.dets:
             return_dict = {**return_dict, **det.describe_collect()}
         return return_dict
 
     def collect(self):
-        # print(f'{ttime.ctime()} >>> COLLECT: begin')
         for det in self.dets:
             yield from det.collect()
-        # def collect_all():
-        #     for det in self.dets:
-        #         yield from det.collect()
-        # return (yield from collect_all())
 
     def collect_asset_docs(self):
-        # print(f'{ttime.ctime()} >>> COLLECT_ASSET_DOCS: begin')
         for det in self.dets:
             yield from det.collect_asset_docs()
 
 
-
-#
-#     def collect(self):
-#         def collect_and_unstage_all():
-#             for pb in self.pbs:
-#                 yield from pb.collect()
-#             yield from self.det.collect()
-#
-#             # The .unstage() method resets self._datum_counter, which is needed
-#             # by .collect(), so calling .unstage() afteer .collect().
-#             self.det.unstage()
-#             for pb in self.pbs:
-#                 pb.unstage()
-#
-#         return (yield from collect_and_unstage_all())
-#
-#     def collect_asset_docs(self):
-#         yield from self.det.collect_asset_docs()
-#         for pb in self.pbs:
-#             yield from pb.collect_asset_docs()
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
-flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
+flyer_apb = FlyerHHM(hhm, shutter, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
