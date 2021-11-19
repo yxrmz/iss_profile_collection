@@ -19,15 +19,16 @@ import logging.handlers
 
 
 class ScanManager():
-    def __init__(self, scan_manager_json = '/nsls2/xf08id/settings/json/scan_manager.json'):
-        self.json_file_path = scan_manager_json
-        with open(self.json_file_path, 'r') as f:
-            self.scan_dict = json.loads(f.read())
-
+    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_manager.json'):
+        self.init_global_manager(json_file_path)
         self.load_local_manager()
         self.trajectory_path = trajectory_manager.trajectory_path
         self.trajectory_creator = TrajectoryCreator()
 
+    def init_global_manager(self, json_file_path):
+        self.json_file_path = json_file_path
+        with open(self.json_file_path, 'r') as f:
+            self.scan_dict = json.loads(f.read())
 
     def init_local_manager(self):
         self.json_file_path_local = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/scan_manager.json"
