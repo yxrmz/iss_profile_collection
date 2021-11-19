@@ -201,7 +201,8 @@ class FlyerHHM(Device):
 
 
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
-flyer_apb = FlyerHHM(hhm, shutter, name='flyer_apb')
+flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
+flyer_hhm = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 
 
 def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
@@ -293,6 +294,22 @@ def execute_trajectory_apb(name, **metadata):
                          'execute_trajectory_apb',
                          'fly_energy_scan_apb',
                          **metadata)
+
+    @bpp.stage_decorator([flyer_apb])
+    def _fly(md):
+        yield from bp.fly([flyer_apb], md=md)
+    yield from _fly(md)
+
+
+def fly_scan_plan(name, scan_parameters, **metadata):
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_apb',
+                         'fly_energy_scan_apb',
+                         **metadata)
+
+    aux_detectors = scan_parameters['detectors']
+    flyer_hhm.set_aux_dets(aux_detectors)
 
     @bpp.stage_decorator([flyer_apb])
     def _fly(md):
