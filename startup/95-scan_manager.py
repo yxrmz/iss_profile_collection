@@ -117,26 +117,7 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
-    def generate_repeated_plan_list(self, plan_name, name, comment, repeat, delay, scan_parameters, aux_parameters):
-        # detectors = get_detector_device_list(kwargs['detectors'])
-        # detectors = [apb_ave] + detectors
-        plan_dicts = []
-        for indx in range(int(repeat)):
-            name_n = '{} {:04d}'.format(name, indx + 1)
-            sample_parameters = {'name' : name_n,
-                                 'comment' : comment}
-            plan_parameters = {'sample_parameters': sample_parameters,
-                               'scan_parameters': scan_parameters,
-                               'aux_parameters' : aux_parameters}
-            plan_dict = {'plan_name' : plan_name,
-                    'plan_parameters' : plan_parameters}
-            plan_dicts.append(plan_dict)
-            if delay > 0:
-                plan_dicts.append({'plan_name': 'sleep', 'plan_parameters': {'time': delay}})
-        return plan_dicts
-
-
-    def generate_plan_list(self, name, comment, repeat, delay, scan_idx):
+    def scan_to_plan(self, scan_idx):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
@@ -146,8 +127,43 @@ class ScanManager():
 
         if scan_type == 'step scan':
             plan_name = 'step_scan_plan'
+            plan_kwargs = {'filename' : scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0'],
+                           'scan_uid' : scan_uid}
         elif scan_type == 'fly scan':
             plan_name = 'fly_scan_plan'
+            plan_kwargs = {'filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0'],
+                           'scan_uid' : scan_uid}
+        else:
+            plan_name = ''
+            plan_kwargs = {}
+
+        plan_kwargs['detectors'] = aux_parameters['detectors']
+
+        plan_dict = {'plan_name' : plan_name,
+                     'plan_kwargs' : plan_kwargs}
+        return plan_dict
+
+    def multiplex_plan(self, name, comment, repeat, delay, plan_dict):
+        plan_dicts = []
+        for indx in range(int(repeat)):
+            name_n = '{} {:04d}'.format(name, indx + 1)
+            sample_kwargs = {'name': name_n,
+                             'comment': comment}
+            _plan_dict = {**plan_dict, **{'sample_kwargs' : sample_kwargs}}
+            plan_dicts.append(_plan_dict)
+            if delay > 0:
+                plan_dicts.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})
+        return plan_dicts
+
+
+    def generate_plan_list(self, name, comment, repeat, delay, scan_idx):
+
             # filename = scan_parameters['filename']
             # step_profile = np.genfromtxt(self.trajectory_path + filename)
             # scan_parameters['energy_grid'] = step_profile[:, 0]

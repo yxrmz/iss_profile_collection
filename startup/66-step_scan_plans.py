@@ -48,20 +48,26 @@ def adaq_pb_step_per_step_factory(energy_steps, time_steps):
 
 #OK so it seems that is the function that's we need
 
+# def step_scan_plan(sample_kwargs, plan_kwargs):
 
 
-def step_scan_plan(name, comment, energy_grid, time_grid, detectors, element='', e0=0, edge=''):
-    print(f'Edge in plan {edge}')
+def read_step_scan_filename(filename):
+    data = np.genfromtxt(filename)
+    energy, dwell_time = data[:, 0], data[: 1]
+    return energy, dwell_time
+
+
+def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element='', e0=0, edge=''):
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
     fn = validate_file_exists(fn)
-
-
     try:
         full_element_name = getattr(elements, element).name.capitalize()
     except:
         full_element_name = element
 
-    md = {'plan_args': {},
+    energy, dwell_time = read_step_scan_filename(filename)
+
+    md = {'plan_args': {'filename':filename, 'detectors':detectors},
           'experiment': 'step_scan',
           'name': name,
           'comment': comment,
@@ -71,6 +77,8 @@ def step_scan_plan(name, comment, energy_grid, time_grid, detectors, element='',
           'angle_offset': str(hhm.angle_offset.get()),
           'edge': edge,
           'e0': e0,
+          'direction' : direction,
+          'plot_hint': '$5/$1'
           }
     #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
     yield from bps.abs_set(apb_ave.divide, 373, wait=True)
@@ -87,3 +95,42 @@ def step_scan_plan(name, comment, energy_grid, time_grid, detectors, element='',
         md=md
     )
     yield from shutter.close_plan()
+
+
+# def step_scan_plan(name, comment, energy_grid, time_grid, detectors, element='', e0=0, edge=''):
+#     print(f'Edge in plan {edge}')
+#     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
+#     fn = validate_file_exists(fn)
+#
+#
+#     try:
+#         full_element_name = getattr(elements, element).name.capitalize()
+#     except:
+#         full_element_name = element
+#
+#     md = {'plan_args': {},
+#           'experiment': 'step_scan',
+#           'name': name,
+#           'comment': comment,
+#           'interp_filename': fn,
+#           'element': element,
+#           'element_full': full_element_name,
+#           'angle_offset': str(hhm.angle_offset.get()),
+#           'edge': edge,
+#           'e0': e0,
+#           }
+#     #yield from bp.list_scan(detectors=[adaq_pb_step], motor=hhm.energy, steps=energy_grid)
+#     yield from bps.abs_set(apb_ave.divide, 373, wait=True)
+#
+#     for det in detectors:
+#         if det.name == 'xs':
+#             yield from bps.mv(det.total_points, len(energy_grid))
+#     yield from shutter.open_plan()
+#     yield from bp.list_scan( #this is the scan
+#         detectors,
+#         hhm.energy,
+#         list(energy_grid),
+#         per_step=adaq_pb_step_per_step_factory(energy_grid, time_grid), #and this function is colled at every step
+#         md=md
+#     )
+#     yield from shutter.close_plan()
