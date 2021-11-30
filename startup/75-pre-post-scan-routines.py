@@ -1,5 +1,7 @@
 from datetime import datetime
 import time
+
+import numpy as np
 from bluesky.plan_stubs import mv, mvr
 from random import random
 import json
@@ -327,6 +329,62 @@ def calibrate_energy_plan(element, edge, dE=25, plot_func=None, error_message_fu
         print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
 
 
+
+# plans for adjusting the roll
+def scan_beam_position_vs_energy(camera=camera_sp2):
+    camera.stats4.centroid_threshold.put(10)
+    centers = []
+    energies = np.linspace(6000, 14000, 11)
+    for energy in energies:
+        print (f'Energy is {energy}')
+        hhm.energy.move(energy)
+        ttime.sleep(3)
+        camera.adjust_camera_exposure_time(target_max_counts=150, atol=10)
+        # adjust_camera_exposure_time(camera)
+        _centers = []
+        for i in range(10):
+            ttime.sleep(0.05)
+            center = camera.stats4.centroid.x.get()
+            _centers.append(center)
+        centers.append(np.mean(_centers))
+        print(f'Center is {np.mean(_centers)}')
+
+    return energies, np.array(centers)
+
+
+
+# def adjust_camera_exposure_time(camera, roi_index=1,
+#                                 target_max_counts=150, atol=10,
+#                                 max_exp_time_thresh=1,
+#                                 min_exp_time_thresh=0.00002):
+#     stats = getattr(camera, f'stats{roi_index}')
+#     while True:
+#         current_maximum = stats.max_value.get()
+#         current_exp_time = camera.exp_time.get()
+#         delta = np.abs(current_maximum - target_max_counts)
+#         ratio = target_max_counts / current_maximum
+#         new_exp_time = np.clip(current_exp_time * ratio, min_exp_time_thresh, max_exp_time_thresh)
+#
+#         if new_exp_time != current_exp_time:
+#             if delta > atol:
+#                 set_and_wait(camera.exp_time, new_exp_time)
+#                 ttime.sleep(np.max((0.5, new_exp_time)))
+#                 continue
+#         break
+
+
+# def adjust_camera_exposure_time(camera):
+#     while True:
+#         current_maximum = camera.stats1.max_value.get()
+#         current_exp_time = camera.exp_time.get()
+#         if current_maximum < 100:
+#             camera.exp_time.put(current_exp_time * 2)
+#             ttime.sleep(0.5)
+#         elif current_maximum > 230:
+#             camera.exp_time.put(current_exp_time / 2)
+#             ttime.sleep(0.5)
+#         else:
+#             break
 
 # data = RE(vibration_diagnostics())
 

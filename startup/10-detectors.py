@@ -42,12 +42,14 @@ class BPM(SingleTrigger, ProsilicaDetector):
 
     retract = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
     retracted = Cpt(EpicsSignal, 'Sw:OutLim-Sts')
-    ioc_reboot_pv = None
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs['cam.image_mode'] = 'Single'
         self.polarity = 'pos'
+        self.image_height = self.image.height.get()
+        self.frame_rate = self.cam.ps_frame_rate
         # self._inserting = None
         # self._retracting = None
 
@@ -67,17 +69,51 @@ class BPM(SingleTrigger, ProsilicaDetector):
             self.retract.set('Retract')
             return status
 
-    @property
-    def acquiring(self):
-        return bool(self.acquire.get())
+    def adjust_camera_exposure_time(self, roi_index=1,
+                                    target_max_counts=150, atol=10,
+                                    max_exp_time_thresh=1,
+                                    min_exp_time_thresh=0.00002):
+        stats = getattr(self, f'stats{roi_index}')
+        while True:
+            current_maximum = stats.max_value.get()
+            current_exp_time = self.exp_time.get()
+            delta = np.abs(current_maximum - target_max_counts)
+            ratio = target_max_counts / current_maximum
+            new_exp_time = np.clip(current_exp_time * ratio, min_exp_time_thresh, max_exp_time_thresh)
+
+            if new_exp_time != current_exp_time:
+                if delta > atol:
+                    set_and_wait(self.exp_time, new_exp_time)
+                    ttime.sleep(np.max((0.5, new_exp_time)))
+                    continue
+            break
+
+class FeedbackBPM(BPM):
+    ioc_reboot_pv = None
 
     def append_ioc_reboot_pv(self, ioc_reboot_pv):
         self.ioc_reboot_pv = ioc_reboot_pv
 
     def reboot_ioc(self):
-        self.ioc_reboot_pv.put(1)
-        ttime.sleep(5)
-        self.acquire.put(1)
+        if self.ioc_reboot_pv is not None:
+            self.ioc_reboot_pv.put(1)
+            ttime.sleep(5)
+            self.acquire.put(1)
+        else:
+            print('ioc_reboot_pv is not appended. IOC reboot impossible.')
+
+    @property
+    def acquiring(self):
+        return bool(self.acquire.get())
+
+    @property
+    def image_centroid_y(self):
+        y = self.stats1.centroid.y.get()
+        return self.image_height - y
+
+    @property
+    def image_centroid_x(self):
+        return self.stats1.centroid.x.get()
 
 
 class CAMERA(SingleTrigger, ProsilicaDetector):
@@ -151,7 +187,8 @@ bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
-bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
+
+bpm_es = FeedbackBPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 bpm_es_ioc_reset = EpicsSignal('XF:08IDB-CT{IOC:BPM:ES}:SysReset', name='bpm_es_ioc_reset')
 bpm_es.append_ioc_reboot_pv(bpm_es_ioc_reset)
 
