@@ -117,13 +117,29 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
-    def scan_to_plan(self, scan_idx):
+    # def multiplex_plan(self, name, comment, repeat, delay, plan_dict):
+    #     plan_dicts = []
+    #     for indx in range(int(repeat)):
+    #         name_n = '{} {:04d}'.format(name, indx + 1)
+    #         sample_kwargs = {'name': name_n,
+    #                          'comment': comment}
+    #         _plan_dict = {**plan_dict, **{'sample_kwargs' : sample_kwargs}}
+    #         plan_dicts.append(_plan_dict)
+    #         if delay > 0:
+    #             plan_dicts.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})
+    #     return plan_dicts
+
+    def one_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
         aux_parameters = scan_local['aux_parameters']
+        common_kwargs = {'name': name,
+                         'comment': comment,
+                         'scan_uid': scan_uid,
+                         'detectors': aux_parameters['detectors']}
 
         if scan_type == 'step scan':
             plan_name = 'step_scan_plan'
@@ -131,49 +147,40 @@ class ScanManager():
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
-                           'scan_uid' : scan_uid}
+                           }
+            output = {'plan_name': plan_name,
+                      'plan_kwargs': {**plan_kwargs, **common_kwargs}}
         elif scan_type == 'fly scan':
             plan_name = 'fly_scan_plan'
             plan_kwargs = {'filename': scan_parameters['filename'],
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
-                           'scan_uid' : scan_uid}
+                           }
+            output = {'plan_name': plan_name,
+                      'plan_kwargs': {**plan_kwargs, **common_kwargs}}
+            # if 'RIXS':
+            #     output = ['list_of_plans_for_rixs']
         else:
             plan_name = ''
             plan_kwargs = {}
+            output = {'plan_name': plan_name,
+                      'plan_kwargs': plan_kwargs}
 
-        plan_kwargs['detectors'] = aux_parameters['detectors']
+        if type(output) == dict:
+            output = [output]
 
-        plan_dict = {'plan_name' : plan_name,
-                     'plan_kwargs' : plan_kwargs}
-        return plan_dict
+        return output
 
-    def multiplex_plan(self, name, comment, repeat, delay, plan_dict):
-        plan_dicts = []
+    def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None):
+        plans = []
         for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
-            sample_kwargs = {'name': name_n,
-                             'comment': comment}
-            _plan_dict = {**plan_dict, **{'sample_kwargs' : sample_kwargs}}
-            plan_dicts.append(_plan_dict)
+            plan_list_for_scan = self.one_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates)
+            plans.extend(plan_list_for_scan)
             if delay > 0:
-                plan_dicts.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})
-        return plan_dicts
-
-
-    def generate_plan_list(self, name, comment, repeat, delay, scan_idx):
-
-            # filename = scan_parameters['filename']
-            # step_profile = np.genfromtxt(self.trajectory_path + filename)
-            # scan_parameters['energy_grid'] = step_profile[:, 0]
-            # scan_parameters['time_grid'] = step_profile[:, 1]
-
-
-
-        plan_list = self.generate_repeated_plan_list(plan_name, name, comment, repeat, delay, scan_parameters, aux_parameters)
-        return plan_list
-
+                plans.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})
+        return plans
 
 scan_manager = ScanManager()
 
@@ -184,9 +191,9 @@ scan_manager = ScanManager()
 class ScanProcessor():
 
     def __init__(self):
-        # QThread.__init__(self)
         self.logger = self.get_logger()
         self.RE = RE
+        self.scan_manager = scan_manager
         self.plan_list = []
 
     def get_logger(self):

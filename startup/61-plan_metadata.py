@@ -44,28 +44,4 @@ def get_general_md():
             md[f'ch{indx+1}_amp_gain']=0
     return md
 
-def get_md_for_scan(plan_name, plan_kwargs, **metadata):
-    # interp_fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
-    # interp_fn = validate_file_exists(interp_fn)
-    # print(f'Storing data at {interp_fn}')
 
-
-
-    md_beamline = get_md_for_beamline()
-
-    md_scan = {
-
-
-
-
-
-
-    for indx in range(8):
-        md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
-        amp = getattr(apb, f'amp_ch{indx+1}')
-        if amp:
-            md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
-        else:
-            md[f'ch{indx+1}_amp_gain']=0
-    md.update(**metadata)
-    return md
