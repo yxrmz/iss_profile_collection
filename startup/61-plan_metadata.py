@@ -21,7 +21,7 @@ def get_general_md():
           'harmonic_rejection' : hhrm.current_sripe(),
           'sample_stage': 'ISS.giant_xy stage',
           'sample_x_position': giantxy.x.user_readback.get(),
-          'sample_y_position': giantxy.y.user_readback.get()
+          'sample_y_position': giantxy.y.user_readback.get(),
           'i0_par' : f'{i0.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'it_par' : f'{it.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'ir_par' : f'{ir.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
@@ -41,7 +41,7 @@ def get_general_md():
         if amp:
             md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
         else:
-            md[f'ch{indx+1}_amp_gain']=0
+            md[f'ch{indx+1}_amp_gain'] = 0
     return md
 
 

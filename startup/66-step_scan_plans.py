@@ -48,14 +48,8 @@ def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element
     except:
         full_element_name = element
 
-    energy_grid, time_grid = read_step_scan_filename(filename)
-
-    default_detectors = [apb_ave, hhm.enc.pos_I]
-    aux_detectors = get_detector_device_list(detectors)
-    all_detectors = default_detectors + aux_detectors
-
     md_general = get_general_md()
-    md_scan = {'plan_args': {'filename':filename, 'detectors':detectors},
+    md_scan = {'plan_args': {'filename': filename, 'detectors': detectors},
                'experiment': 'step_scan',
                'name': name,
                'comment': comment,
@@ -66,6 +60,12 @@ def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element
                'e0': e0,
                'plot_hint': '$5/$1'}
     md = {**md_general, **md_scan}
+
+    energy_grid, time_grid = read_step_scan_filename(filename)
+
+    default_detectors = [apb_ave, hhm.enc.pos_I]
+    aux_detectors = get_detector_device_list(detectors)
+    all_detectors = default_detectors + aux_detectors
 
     yield from bps.abs_set(apb_ave.divide, 373, wait=True)
     for det in detectors:

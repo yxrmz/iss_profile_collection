@@ -201,34 +201,37 @@ class FlyerHHM(Device):
 
 
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
-flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
+# flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 flyer_hhm = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 
 
-def execute_trajectory_apb(name, **metadata):
-    md = get_md_for_scan(name,
-                         'fly_scan',
-                         'execute_trajectory_apb',
-                         'fly_energy_scan_apb',
-                         **metadata)
+def fly_scan_plan(name=None, comment=None, filename=None, detectors=[], element='', e0=0, edge=''):
+    fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
+    fn = validate_file_exists(fn)
 
-    @bpp.stage_decorator([flyer_apb])
-    def _fly(md):
-        yield from bp.fly([flyer_apb], md=md)
-    yield from _fly(md)
+    try:
+        full_element_name = getattr(elements, element).name.capitalize()
+    except:
+        full_element_name = element
 
+    md_general = get_general_md()
+    md_scan = {'plan_args': {'filename': filename, 'detectors': detectors},
+               'experiment': 'fly_scan',
+               'name': name,
+               'comment': comment,
+               'interp_filename': fn,
+               'element': element,
+               'element_full': full_element_name,
+               'edge': edge,
+               'e0': e0,
+               'plot_hint': '$5/$1'}
+    md = {**md_general, **md_scan}
 
-def fly_scan_plan(name, scan_parameters, **metadata):
-    md = get_md_for_scan(name,
-                         'fly_scan',
-                         'execute_trajectory_apb',
-                         'fly_energy_scan_apb',
-                         **metadata)
-
-    aux_detectors = scan_parameters['detectors']
+    trajectory_stack.init_trajectory(filename)
+    aux_detectors = get_detector_device_list(detectors)
     flyer_hhm.set_aux_dets(aux_detectors)
 
-    @bpp.stage_decorator([flyer_apb])
+    @bpp.stage_decorator([flyer_hhm])
     def _fly(md):
-        yield from bp.fly([flyer_apb], md=md)
+        yield from bp.fly([flyer_hhm], md=md)
     yield from _fly(md)
