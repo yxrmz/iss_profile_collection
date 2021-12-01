@@ -38,8 +38,7 @@ def read_step_scan_filename(filename):
     energy, dwell_time = data[:, 0], data[: 1]
     return energy, dwell_time
 
-
-def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element='', e0=0, edge=''):
+def get_step_scan_md(name, comment,trajectory_filename, detectors, element, e0, edge, metadata):
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
     fn = validate_file_exists(fn)
 
@@ -49,7 +48,7 @@ def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element
         full_element_name = element
 
     md_general = get_general_md()
-    md_scan = {'plan_args': {'filename': filename, 'detectors': detectors},
+    md_scan = {'plan_args': {'filename': trajectory_filename, 'detectors': detectors},
                'experiment': 'step_scan',
                'name': name,
                'comment': comment,
@@ -59,10 +58,12 @@ def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element
                'edge': edge,
                'e0': e0,
                'plot_hint': '$5/$1'}
-    md = {**md_general, **md_scan}
+    return {**md_general, **md_scan, **metadata}
 
-    energy_grid, time_grid = read_step_scan_filename(filename)
+def step_scan_plan(name=None, comment=None, trajectory_filename=None, offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
 
+    energy_grid, time_grid = read_step_scan_filename(trajectory_filename)
+    if offset is not None: hhm.set_new_angle_offset(offset)
     default_detectors = [apb_ave, hhm.enc.pos_I]
     aux_detectors = get_detector_device_list(detectors)
     all_detectors = default_detectors + aux_detectors
@@ -71,6 +72,8 @@ def step_scan_plan(name=None, comment=None, filename=None, detectors=[], element
     for det in detectors:
         if det.name == 'xs':
             yield from bps.mv(det.total_points, len(energy_grid))
+
+    md = get_step_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata)
 
     yield from shutter.open_plan()
     yield from bp.list_scan(all_detectors,

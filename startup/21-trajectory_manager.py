@@ -85,7 +85,7 @@ class TrajectoryManager():
         ftp.login()
         s = pxssh.pxssh()
         ssh_login = s.login(ip, 'root', 'deltatau')
-
+        timestamp = None
         if ssh_login:
             # Check if the directory exists in /usrflash/lut/. If it does not, create it.
             if str(new_file_path) != '':
@@ -142,13 +142,17 @@ class TrajectoryManager():
                     f = open(orig_file_path + str(orig_file_name), 'rb')
                 result = ftp.storbinary('STOR ' + '/usrflash/lut/' + str(new_file_path) + '/' + new_file_name, f)
                 if (result == '226 File receive OK.'):
+                    timestamp = ttime.time()
                     print('[Load Trajectory] File sent OK')
                     s.sendline('chown ftp:root /var/ftp/usrflash/lut/{}/{}'.format(new_file_path, new_file_name))
                     s.sendline('chmod a+wrx /var/ftp/usrflash/lut/{}/{}'.format(new_file_path, new_file_name))
-                    s.sendline('echo "{}\n{}\n{}\n{}" > /var/ftp/usrflash/lut/{}/hhm-size.txt'.format(file_size, name,
-                                                                                                      min_energy,
-                                                                                                      max_energy,
-                                                                                                      new_file_path))
+                    s.sendline('echo "{}\n{}\n{}\n{}\n{}\n{}" > /var/ftp/usrflash/lut/{}/hhm-size.txt'.format(file_size,
+                                                                                                          name,
+                                                                                                          min_energy,
+                                                                                                          max_energy,
+                                                                                                          timestamp,
+                                                                                                          offset,
+                                                                                                          new_file_path))
                     ttime.sleep(0.01)
                     ftp.close()
                     print('[Load Trajectory] Permissions OK')
@@ -160,6 +164,7 @@ class TrajectoryManager():
             print('[Load Trajectory] Completed!')
         else:
             print('[Load Trajectory] Fail! Not able to ssh into the controller...')
+        return file_size, name, min_energy, max_energy, timestamp
 
     ########## init ##########
     # Transfer the trajectory from the flash to the ram memory in the controller
@@ -220,6 +225,13 @@ class TrajectoryManager():
                 name = info[1]
                 min_en = int(info[2])
                 max_en = int(info[3])
+            elif (len(info) == 6):
+                size = int(info[0])
+                name = info[1]
+                min_en = int(info[2])
+                max_en = int(info[3])
+                timestamp = float(info[4])
+                offset = float(info[5])
             else:
                 print(
                     '[Init Trajectory] Could not find the size and name info in the controller. Please, try sending the trajectory file again using trajectory_load(...)')
@@ -286,6 +298,17 @@ class TrajectoryManager():
                                               'max': str(max_en)}
                     if not silent:
                         print('{}: {:<24} (Size: {}, min: {}, max: {})'.format(i, name, size, min_en, max_en))
+                elif (len(info) == 5):
+                    size = int(info[0])
+                    name = info[1]
+                    min_en = int(info[2])
+                    max_en = int(info[3])
+                    timestamp = float(info[4])
+                    offset = float(info[4])
+                    self.traj_info[str(i)] = {'name': str(name), 'size': str(size), 'min': str(min_en),
+                                              'max': str(max_en), 'timestamp' : timestamp, 'offset' : offset}
+                    if not silent:
+                        print('{}: {:<24} (Size: {}, min: {}, max: {}, timestamp: {}, offset: {})'.format(i, name, size, min_en, max_en, ttime.ctime(timestamp), offset))
                 else:
                     self.traj_info[str(i)] = {'name': 'undefined', 'size': 'undefined'}
                     if not silent:
@@ -345,14 +368,47 @@ class TrajectoryManager():
 
         return True
 
-def validate_element_edge_in_db_proc(element):
-    r = db_proc.search({'Sample_name': element + ' foil'})
-    if len(r) == 0:
-        print_to_gui(f'Error: No matching foil has been found')
-        return False
-    return True
-
 trajectory_manager = TrajectoryManager(hhm)
 
+class TrajectoryStack:
+    def __init__(self):
+        self.hhm = hhm
+        self.trajectory_manager = trajectory_manager
+        self.slots = self.read_traj_info()
 
-# trajectory_manager.current_trajectory_duration
+    def read_traj_info(self):
+        df = pd.DataFrame(self.trajectory_manager.read_info(silent=True)).T
+        df = df[:-1] # remove slot 9
+        if 'timestamp' not in df.columns:
+            df['timestamp'] = list(range(1, 9))
+        if 'offset' not in df.columns:
+            df['offset'] = [self.hhm.angle_offset.get()] * 8
+        df['timestamp'] = df['timestamp'].fillna(0)
+        df['offset'] = df['offset'].fillna(self.hhm.angle_offset.get())
+        return df
+
+    def set_trajectory(self, filename, offset=None):
+
+        if offset is None:
+            offset = self.hhm.angle_offset.get()
+
+        is_loaded = self.slots.name == filename
+        if any(is_loaded):
+            lut_number_str = self.slots.name[is_loaded].index[0]
+            lut_number = int(lut_number_str)
+            if lut_number == self.trajectory_manager.current_lut:
+                if offset != self.slots.loc[str(lut_number)].offset:
+                    self.load_and_init_traj(filename, lut_number, offset)
+            else:
+                self.trajectory_manager.init(lut_number)
+        else:
+            oldest_lut_number = self.slots.index[self.slots.timestamp.argmin()] # this is string and that is OK
+            self.load_and_init_traj(filename, oldest_lut_number, offset)
+
+    def load_and_init_traj(self, filename, lut_number_str, offset):
+        file_size, name, min_energy, max_energy, timestamp = self.trajectory_manager.load(filename, lut_number_str, True, offset=offset)
+        self.trajectory_manager.init(int(lut_number_str))
+        self.slots.loc[lut_number_str] = [name, file_size, min_energy, max_energy, timestamp]
+
+
+trajectory_stack = TrajectoryStack()

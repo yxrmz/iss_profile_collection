@@ -117,19 +117,7 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
-    # def multiplex_plan(self, name, comment, repeat, delay, plan_dict):
-    #     plan_dicts = []
-    #     for indx in range(int(repeat)):
-    #         name_n = '{} {:04d}'.format(name, indx + 1)
-    #         sample_kwargs = {'name': name_n,
-    #                          'comment': comment}
-    #         _plan_dict = {**plan_dict, **{'sample_kwargs' : sample_kwargs}}
-    #         plan_dicts.append(_plan_dict)
-    #         if delay > 0:
-    #             plan_dicts.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})
-    #     return plan_dicts
-
-    def one_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None):
+    def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata={}):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
@@ -139,11 +127,13 @@ class ScanManager():
         common_kwargs = {'name': name,
                          'comment': comment,
                          'scan_uid': scan_uid,
-                         'detectors': aux_parameters['detectors']}
+                         'detectors': aux_parameters['detectors'],
+                         'offset': aux_parameters['offset'],
+                         'metadata' : metadata}
 
         if scan_type == 'step scan':
             plan_name = 'step_scan_plan'
-            plan_kwargs = {'filename' : scan_parameters['filename'],
+            plan_kwargs = {'trajectory_filename' : scan_parameters['filename'],
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
@@ -152,7 +142,7 @@ class ScanManager():
                       'plan_kwargs': {**plan_kwargs, **common_kwargs}}
         elif scan_type == 'fly scan':
             plan_name = 'fly_scan_plan'
-            plan_kwargs = {'filename': scan_parameters['filename'],
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
@@ -167,7 +157,7 @@ class ScanManager():
             output = {'plan_name': plan_name,
                       'plan_kwargs': plan_kwargs}
 
-        if type(output) == dict:
+        if type(output) != list:
             output = [output]
 
         return output
@@ -176,7 +166,7 @@ class ScanManager():
         plans = []
         for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
-            plan_list_for_scan = self.one_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates)
+            plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates)
             plans.extend(plan_list_for_scan)
             if delay > 0:
                 plans.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})

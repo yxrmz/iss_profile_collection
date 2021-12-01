@@ -204,8 +204,7 @@ class FlyerHHM(Device):
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 flyer_hhm = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 
-
-def fly_scan_plan(name=None, comment=None, filename=None, detectors=[], element='', e0=0, edge=''):
+def get_fly_scan_md(name, comment,trajectory_filename, detectors, element, e0, edge, metadata):
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"
     fn = validate_file_exists(fn)
 
@@ -215,7 +214,7 @@ def fly_scan_plan(name=None, comment=None, filename=None, detectors=[], element=
         full_element_name = element
 
     md_general = get_general_md()
-    md_scan = {'plan_args': {'filename': filename, 'detectors': detectors},
+    md_scan = {'plan_args': {'trajectory_filename': trajectory_filename, 'detectors': detectors},
                'experiment': 'fly_scan',
                'name': name,
                'comment': comment,
@@ -225,11 +224,17 @@ def fly_scan_plan(name=None, comment=None, filename=None, detectors=[], element=
                'edge': edge,
                'e0': e0,
                'plot_hint': '$5/$1'}
-    md = {**md_general, **md_scan}
+    return {**md_general, **md_scan, **metadata}
 
-    trajectory_stack.init_trajectory(filename)
+
+def fly_scan_plan(name=None, comment=None, trajectory_filename=None, offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
+
+    if offset is not None: hhm.set_new_angle_offset(offset)
+    trajectory_stack.set_trajectory(filename, offset=offset)
     aux_detectors = get_detector_device_list(detectors)
     flyer_hhm.set_aux_dets(aux_detectors)
+
+    md = get_fly_scan_md(name, comment,trajectory_filename, detectors, element, e0, edge, metadata)
 
     @bpp.stage_decorator([flyer_hhm])
     def _fly(md):
