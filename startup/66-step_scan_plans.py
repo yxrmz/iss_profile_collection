@@ -60,10 +60,10 @@ def get_step_scan_md(name, comment,trajectory_filename, detectors, element, e0, 
                'plot_hint': '$5/$1'}
     return {**md_general, **md_scan, **metadata}
 
-def step_scan_plan(name=None, comment=None, trajectory_filename=None, offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
+def step_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
 
     energy_grid, time_grid = read_step_scan_filename(trajectory_filename)
-    if offset is not None: hhm.set_new_angle_offset(offset)
+    if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     default_detectors = [apb_ave, hhm.enc.pos_I]
     aux_detectors = get_detector_device_list(detectors)
     all_detectors = default_detectors + aux_detectors

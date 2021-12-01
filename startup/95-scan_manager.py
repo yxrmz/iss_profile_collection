@@ -43,7 +43,7 @@ class ScanManager():
         with open(self.json_file_path_local, 'w') as f:
             json.dump(self.scan_list_local, f )
 
-    def add_scan(self, scan, aux_parameters, name, model= None):
+    def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)
         scan_def = name + ' ' + scan['scan_type'] + ' at ' + scan['scan_parameters']['element'] + \
                    ' ' + scan['scan_parameters']['edge'] + ' edge'
@@ -128,7 +128,7 @@ class ScanManager():
                          'comment': comment,
                          'scan_uid': scan_uid,
                          'detectors': aux_parameters['detectors'],
-                         'offset': aux_parameters['offset'],
+                         'mono_angle_offset': aux_parameters['offset'],
                          'metadata' : metadata}
 
         if scan_type == 'step scan':

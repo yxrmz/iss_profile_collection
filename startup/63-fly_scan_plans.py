@@ -98,11 +98,7 @@ from ophyd.sim import NullStatus
 # flyer_apb = FlyerAPB(det=apb_stream, pbs=[pb9.enc1], motor=hhm)
 
 
-def combine_status_list(status_list):
-    st_all = status_list[0]
-    for st in status_list[1:]:
-        st_all = st_all and st
-    return st_all
+
 
 import threading
 
@@ -227,9 +223,9 @@ def get_fly_scan_md(name, comment,trajectory_filename, detectors, element, e0, e
     return {**md_general, **md_scan, **metadata}
 
 
-def fly_scan_plan(name=None, comment=None, trajectory_filename=None, offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
+def fly_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
 
-    if offset is not None: hhm.set_new_angle_offset(offset)
+    if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     trajectory_stack.set_trajectory(filename, offset=offset)
     aux_detectors = get_detector_device_list(detectors)
     flyer_hhm.set_aux_dets(aux_detectors)

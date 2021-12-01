@@ -60,9 +60,6 @@ class StuckingEpicsMotorThatFlies(StuckingEpicsMotor):
                     old_pos = new_pos
 
 
-
-
-
 class InfirmStuckingEpicsMotor(StuckingEpicsMotor):
 
     def __init__(self, *args, **kwargs):
@@ -93,3 +90,9 @@ class InfirmStuckingEpicsMotor(StuckingEpicsMotor):
             ttime.sleep(self.dwell_time)
         return status
 
+
+def combine_status_list(status_list):
+    st_all = status_list[0]
+    for st in status_list[1:]:
+        st_all = st_all and st
+    return st_all
