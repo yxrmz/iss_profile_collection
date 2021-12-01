@@ -119,10 +119,12 @@ class FlyerHHM(Device):
     def set_aux_dets(self, aux_dets):
         self.aux_dets = aux_dets
 
-    def flush_aux_dets(self):
+    def flush_dets(self):
         self.aux_dets = []
+        self.dets = []
 
     def stage(self):
+        print(f'{ttime.ctime()} Staging start')
         self.dets = self.default_dets + self.aux_dets
         self.hhm.prepare()
         staged_list = super().stage()
@@ -131,14 +133,16 @@ class FlyerHHM(Device):
             if hasattr(det, 'prepare_to_fly'):
                 det.prepare_to_fly(scan_duration)
             staged_list += det.stage()
+        print(f'{ttime.ctime()} Staging done')
         return staged_list
 
     def unstage(self):
-        self.dets = []
+        print(f'{ttime.ctime()} Unstaging start')
         unstaged_list = super().unstage()
         for det in self.dets:
             unstaged_list += det.unstage()
-        self.flush_detectors()
+        self.flush_dets()
+        print(f'{ttime.ctime()} Unstaging done')
         return unstaged_list
 
     def kickoff(self):
@@ -188,8 +192,10 @@ class FlyerHHM(Device):
         return return_dict
 
     def collect(self):
+        print(f'{ttime.ctime()} Collect starting')
         for det in self.dets:
             yield from det.collect()
+        print(f'{ttime.ctime()} Collect finished')
 
     def collect_asset_docs(self):
         for det in self.dets:
@@ -226,13 +232,15 @@ def get_fly_scan_md(name, comment,trajectory_filename, detectors, element, e0, e
 def fly_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
 
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
-    trajectory_stack.set_trajectory(filename, offset=offset)
-    aux_detectors = get_detector_device_list(detectors)
+    trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
+    aux_detectors = get_detector_device_list(detectors, flying=True)
     flyer_hhm.set_aux_dets(aux_detectors)
 
     md = get_fly_scan_md(name, comment,trajectory_filename, detectors, element, e0, edge, metadata)
 
     @bpp.stage_decorator([flyer_hhm])
     def _fly(md):
+        # yield from bps.stage(flyer_hhm)
         yield from bp.fly([flyer_hhm], md=md)
+        # yield from bps.unstage(flyer_hhm)
     yield from _fly(md)

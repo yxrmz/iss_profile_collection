@@ -70,6 +70,7 @@ if not os.environ.get('AZURE_TESTING'):
                                service_plan_funcs=service_plan_funcs,
                                aux_plan_funcs=aux_plan_funcs,
                                scan_manager=scan_manager,
+                               scan_processor=scan_processor,
                                RE=RE,
                                db=db,
                                db_proc=db_proc,

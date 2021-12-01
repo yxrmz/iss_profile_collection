@@ -36,8 +36,11 @@ class ScanManager():
 
     def load_local_manager(self):
         self.json_file_path_local = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/scan_manager.json"
-        with open(self.json_file_path_local, 'r') as f:
-            self.scan_list_local = json.loads(f.read())
+        try:
+            with open(self.json_file_path_local, 'r') as f:
+                self.scan_list_local = json.loads(f.read())
+        except FileNotFoundError:
+            self.init_local_manager()
 
     def dump_local_scan_list(self):
         with open(self.json_file_path_local, 'w') as f:
@@ -126,7 +129,6 @@ class ScanManager():
         aux_parameters = scan_local['aux_parameters']
         common_kwargs = {'name': name,
                          'comment': comment,
-                         'scan_uid': scan_uid,
                          'detectors': aux_parameters['detectors'],
                          'mono_angle_offset': aux_parameters['offset'],
                          'metadata' : metadata}
@@ -211,9 +213,9 @@ class ScanProcessor():
         self.plan_list.extend(plans)
 
     def run(self):
-        while len(self.plan_list)>0:
+        while len(self.plan_list) > 0:
             plan_dict = self.plan_list[0]
-            plan = basic_plan_dict[plan_dict['plan_name']](**plan_dict['plan_parameters'])
+            plan = basic_plan_dict[plan_dict['plan_name']](**plan_dict['plan_kwargs'])
             print(f'{ttime.ctime()}   started doing plan {plan}')
             self.RE(plan)
             print(f'{ttime.ctime()}   done doing plan {plan}')

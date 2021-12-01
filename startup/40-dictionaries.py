@@ -36,11 +36,12 @@ detector_dictionary =   {
                     'Camera SP2': {'device': camera_sp2, 'channels': ['camera_sp2_stats1_total', 'camera_sp2_stats2_total']},
                     'Camera SP5': {'device': camera_sp5, 'channels': ['camera_sp5_stats1_total', 'camera_sp5_stats2_total']},
                     'Camera SP6': {'device': camera_sp6, 'channels': ['camera_sp5_stats1_total', 'camera_sp5_stats2_total']},
-                    'Pilatus 100k': {'device': pil100k, 'channels': ['pil100k_stats1_total','pil100k_stats2_total',
+                    'Pilatus 100k': {'device': pil100k, 'flying_device' : pil100k_stream,
+                                     'channels': ['pil100k_stats1_total','pil100k_stats2_total',
                                                                     'pil100k_stats3_total','pil100k_stats4_total',
                                                                      'pil100k_stats1_max_value']},
-                    'Xspress3': {'device' : xs, 'channels' : [
-                                                    'xs_channel1_rois_roi01_value',
+                    'Xspress3': {'device' : xs, 'flying_device' : xs_stream,
+                                 'channels' : [     'xs_channel1_rois_roi01_value',
                                                     'xs_channel1_rois_roi02_value',
                                                     'xs_channel1_rois_roi03_value',
                                                     'xs_channel1_rois_roi04_value',
@@ -60,10 +61,13 @@ detector_dictionary =   {
                                                     ]}
                 }
 
-def get_detector_device_list(key_list):
+def get_detector_device_list(key_list, flying=True):
     dets = []
     for key in key_list:
-        device = detector_dictionary[key]['device']
+        if flying:
+            device = detector_dictionary[key]['flying_device']
+        else:
+            device = detector_dictionary[key]['device']
         dets.append(device)
     return dets
 

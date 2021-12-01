@@ -132,6 +132,7 @@ class Shutter(Device):
 class ShutterMotor(Device):
     exposure_time = Cpt(Signal)
     def __init__(self, shutter_type, motor, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # self.name = name
         self.shutter_type = shutter_type
         self.motor = motor
@@ -179,7 +180,7 @@ class ShutterMotor(Device):
         if self._start_time is not None:
             self.exposure_time.put(ttime.time() - self._start_time)
             self._start_time = None
-            print(f'. Total exposure time: {self._open_time:0.2f} s', end='')
+            print(f'. Total exposure time: {self.exposure_time.get():0.2f} s', end='')
         print()
 
 
@@ -194,7 +195,8 @@ class ShutterMotor(Device):
 
 
 
-shutter = ShutterMotor(name='User Shutter',
+shutter = ShutterMotor(prefix='',
+                       name='User Shutter',
                        shutter_type='SP',
                        motor=usermotor3)
 

@@ -164,7 +164,7 @@ class TrajectoryManager():
             print('[Load Trajectory] Completed!')
         else:
             print('[Load Trajectory] Fail! Not able to ssh into the controller...')
-        return file_size, name, min_energy, max_energy, timestamp
+        return file_size, name, min_energy, max_energy, timestamp, offset
 
     ########## init ##########
     # Transfer the trajectory from the flash to the ram memory in the controller
@@ -298,13 +298,13 @@ class TrajectoryManager():
                                               'max': str(max_en)}
                     if not silent:
                         print('{}: {:<24} (Size: {}, min: {}, max: {})'.format(i, name, size, min_en, max_en))
-                elif (len(info) == 5):
+                elif (len(info) == 6):
                     size = int(info[0])
                     name = info[1]
                     min_en = int(info[2])
                     max_en = int(info[3])
                     timestamp = float(info[4])
-                    offset = float(info[4])
+                    offset = float(info[5])
                     self.traj_info[str(i)] = {'name': str(name), 'size': str(size), 'min': str(min_en),
                                               'max': str(max_en), 'timestamp' : timestamp, 'offset' : offset}
                     if not silent:
@@ -406,9 +406,9 @@ class TrajectoryStack:
             self.load_and_init_traj(filename, oldest_lut_number, offset)
 
     def load_and_init_traj(self, filename, lut_number_str, offset):
-        file_size, name, min_energy, max_energy, timestamp = self.trajectory_manager.load(filename, lut_number_str, True, offset=offset)
+        file_size, name, min_energy, max_energy, timestamp, offset = self.trajectory_manager.load(filename, lut_number_str, True, offset=offset)
         self.trajectory_manager.init(int(lut_number_str))
-        self.slots.loc[lut_number_str] = [name, file_size, min_energy, max_energy, timestamp]
+        self.slots.loc[lut_number_str] = [name, file_size, min_energy, max_energy, timestamp, offset]
 
 
 trajectory_stack = TrajectoryStack()
