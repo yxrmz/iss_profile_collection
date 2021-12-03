@@ -240,7 +240,5 @@ def fly_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_
 
     @bpp.stage_decorator([flyer_hhm])
     def _fly(md):
-        # yield from bps.stage(flyer_hhm)
         yield from bp.fly([flyer_hhm], md=md)
-        # yield from bps.unstage(flyer_hhm)
     yield from _fly(md)
