@@ -103,7 +103,7 @@ bl_prepare_energy_ranges = [
         },
     ]
 
-def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_ranges, move_cm_mirror = True, stdout = sys.stdout):
+def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_ranges, move_cm_mirror = False, stdout = sys.stdout):
 
     BPM_exposure_setter = bpm_es.exp_time
     He_flow_setter = gas_he.flow
