@@ -273,16 +273,18 @@ class HHRM(Device):
 
     @property
     def current_stripe(self):
-        pos = self.hor_translation.user_readback.get()
-        if np.isclose(pos, 0, atol=1):
-            stripe = 'Si'
-        elif np.isclose(pos, 40, atol=1):
-            stripe = 'Pt'
-        elif np.isclose(pos, -40, atol=1):
-            stripe = 'Rh'
-        else:
-            stripe = 'undefined'
-        return stripe
+        # pos = self.hor_translation.user_readback.get()
+        # if np.isclose(pos, 0, atol=1):
+        #     stripe = 'Si'
+        # elif np.isclose(pos, 40, atol=1):
+        #     stripe = 'Pt'
+        # elif np.isclose(pos, -40, atol=1):
+        #     stripe = 'Rh'
+        # else:
+        #     stripe = 'undefined'
+        # return stripe
+        print('WARNING HHRM STRIPE IS NOT DEFINED')
+        return 'undefined'
 
 
 hhrm = HHRM('XF:08IDB-OP{', name='hhrm')
