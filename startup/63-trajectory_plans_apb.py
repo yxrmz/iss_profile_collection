@@ -107,8 +107,10 @@ def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
     except:
         full_element_name = curr_traj.elem.get()
 
-    nsls_ii_current = nsls_ii.beam_current.get()
-    nsls_ii_status = nsls_ii.return_status_string()
+    # nsls_ii_current = nsls_ii.beam_current.get()
+    # nsls_ii_status = nsls_ii.return_status_string()
+    nsls_ii_current = 0
+    nsls_ii_status = 'shutdown'
 
     if mono_scan_type == 'fly_scan':
         mono_direction = 'backward in energy'
@@ -121,9 +123,16 @@ def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
     gas_he_perc = np.round(gas_he_flow/gas_tot_flow * 100)
     gas_n2_perc = np.round(gas_n2_flow/gas_tot_flow * 100)
 
-    i0_volt = np.round(wps1.hv302.read_pv.get())
-    it_volt = np.round(wps1.hv303.read_pv.get())
-    ir_volt = np.round(wps1.hv305.read_pv.get())
+    # i0_volt = np.round(wps1.hv302.read_pv.get())
+    # it_volt = np.round(wps1.hv303.read_pv.get())
+    # ir_volt = np.round(wps1.hv305.read_pv.get())
+
+    i0_volt = 0
+    it_volt = 0
+    ir_volt = 0
+
+    # hhrm_current_stripe = hhrm.current_stripe
+    hhrm_current_stripe = ''
 
     md = {'plan_args': {},
           'plan_name': plan_name,
@@ -140,7 +149,7 @@ def get_md_for_scan(name, mono_scan_type, plan_name, experiment, **metadata):
           'nslsii_current' : nsls_ii_current,
           'nslsii_status' : nsls_ii_status,
           'nslsii_energy' : nsls_ii.energy_str,
-          'harmonic_rejection' : hhrm.current_stripe,
+          'harmonic_rejection' : hhrm_current_stripe,
           'i0_par' : f'{i0.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'it_par' : f'{it.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',
           'ir_par' : f'{ir.ic_length}cm, He: {gas_he_perc}%, N2: {gas_n2_perc}%',

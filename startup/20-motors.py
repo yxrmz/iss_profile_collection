@@ -236,9 +236,12 @@ hhm_z_home = Cpt(EpicsSignal,'XF:08IDA-OP{MC:06}Home-HHMY')
 
 # Try to read it first time to avoid the generic 'object' to be returned
 # as an old value from hhm.trajectory_running._readback.
-hhm.wait_for_connection()
-_ = hhm.trajectory_ready.read()
-_ = hhm.trajectory_running.read()
+try:
+    hhm.wait_for_connection()
+    _ = hhm.trajectory_ready.read()
+    _ = hhm.trajectory_running.read()
+except:
+    pass
 
 
 # hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
