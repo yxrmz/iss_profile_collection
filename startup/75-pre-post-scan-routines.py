@@ -1,5 +1,7 @@
 from datetime import datetime
 import time
+
+import numpy as np
 from bluesky.plan_stubs import mv, mvr
 from random import random
 import json
@@ -47,7 +49,7 @@ def set_reference_foil(element:str = 'Mn'):
         #yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
         #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
 
-def set_attenuator(thickness:int  = 0):
+def set_attenuator(thickness:int  = 0, **kwargs):
     # Adding reference foil element list
     with open('/nsls2/xf08id/settings/json/attenuator.json') as fp:
         attenuators_list = json.load(fp)
@@ -208,20 +210,25 @@ def adjust_ic_gains( **kwargs):
     except FailedStatus:
         print('ERROR: Photon shutter failed to open')
     yield from shutter.open_plan()
-    scan_positions = np.arange(e_max + 50, e_min - 50, -100).tolist()
+    scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
 
     # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
     flyers = []
     # for detector in detectors:
     #     if hasattr(detector, 'kickoff'):
     #         flyers.append(detector)
-    threshold = 3.1
+    threshold_hi = 3.250
+    threshold_lo = 0.250
+
     for jj in range(3):
     # for jj in range(2):
         plan = bp.list_scan(detectors, hhm.energy, scan_positions)
         yield from plan
         table = db[-1].table()
-        for channel, offset in zip(channels, offsets):
+
+        all_gains_are_good = True
+        # for channel, offset in zip(channels, offsets):
+        for channel in channels:
             current_gain = channel.amp.get_gain()[0]
             if channel.polarity == 'neg':
                 trace_extreme = table[channel.name].min()
@@ -232,15 +239,20 @@ def adjust_ic_gains( **kwargs):
             trace_extreme = trace_extreme  / 1000
 
             print(f'Extreme value {trace_extreme} for detector {channel.name}')
-            if abs(trace_extreme) > threshold:
+            if abs(trace_extreme) > threshold_hi:
                 print(f'Decreasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain-1, False)
-
-            elif abs(trace_extreme) <= threshold and abs(trace_extreme) > threshold/10:
+                all_gains_are_good = False
+            elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
                 print(f'Correct gain for detector {channel.name}')
-            elif abs(trace_extreme) <= threshold/10:
+            elif abs(trace_extreme) <= threshold_lo:
                 print(f'Increasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain + 1, False)
+                all_gains_are_good = False
+
+        if all_gains_are_good:
+            print(f'Gains are correct. Taking offsets..')
+            break
 
     yield from shutter.close_plan()
     yield from get_offsets()
@@ -275,6 +287,104 @@ def vibration_diagnostics(time=1):
 
 
 
+from xas.energy_calibration import get_foil_spectrum
+def validate_element_edge_in_db_proc(element, edge, error_message_func=None):
+    try:
+        get_foil_spectrum(element, edge, db_proc)
+        return True
+    except: # Denis, Oct 28, 2021: GUI breaks when error_message_func (the one opening the message box) is ran from exception, but this strange architecture works
+        pass
+    msg = f'Error: {element} {edge}-edge spectrum has not been added to the database yet'
+    if error_message_func is not None:
+        error_message_func(msg)
+    print_to_gui(msg)
+    return False
+
+
+
+def calibrate_energy_plan(element, edge, dE=25, plot_func=None, error_message_func=None):
+    # # check if current trajectory is good for this calibration
+    success = validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
+    if not success: return
+    success = trajectory_manager.validate_element(element, edge, error_message_func=error_message_func)
+    if not success: return
+    yield from set_reference_foil(element)
+    yield from bps.sleep(1)
+    success = foil_camera.validate_barcode(element, error_message_func=error_message_func)
+    if not success: return
+    yield from adjust_ic_gains()
+    name = f'{element} {edge} foil energy calibration'
+    yield from fly_scan_with_apb(name, '')
+    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
+    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual-energy_nominal:.2f} eV')
+    success = hhm.calibrate(energy_nominal, energy_actual, error_message_func=error_message_func)
+    if not success: return
+    trajectory_manager.reinit()
+    yield from fly_scan_with_apb(name, '')
+    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
+    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
+    if np.abs(energy_actual - energy_nominal) < 0.1:
+        print_to_gui(f'{ttime.ctime()} [Energy calibration] Completed')
+    else:
+        print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
+
+
+
+# plans for adjusting the roll
+def scan_beam_position_vs_energy(camera=camera_sp2):
+    camera.stats4.centroid_threshold.put(10)
+    centers = []
+    energies = np.linspace(6000, 14000, 11)
+    for energy in energies:
+        print (f'Energy is {energy}')
+        hhm.energy.move(energy)
+        ttime.sleep(3)
+        camera.adjust_camera_exposure_time(target_max_counts=150, atol=10)
+        # adjust_camera_exposure_time(camera)
+        _centers = []
+        for i in range(10):
+            ttime.sleep(0.05)
+            center = camera.stats4.centroid.x.get()
+            _centers.append(center)
+        centers.append(np.mean(_centers))
+        print(f'Center is {np.mean(_centers)}')
+
+    return energies, np.array(centers)
+
+
+
+# def adjust_camera_exposure_time(camera, roi_index=1,
+#                                 target_max_counts=150, atol=10,
+#                                 max_exp_time_thresh=1,
+#                                 min_exp_time_thresh=0.00002):
+#     stats = getattr(camera, f'stats{roi_index}')
+#     while True:
+#         current_maximum = stats.max_value.get()
+#         current_exp_time = camera.exp_time.get()
+#         delta = np.abs(current_maximum - target_max_counts)
+#         ratio = target_max_counts / current_maximum
+#         new_exp_time = np.clip(current_exp_time * ratio, min_exp_time_thresh, max_exp_time_thresh)
+#
+#         if new_exp_time != current_exp_time:
+#             if delta > atol:
+#                 set_and_wait(camera.exp_time, new_exp_time)
+#                 ttime.sleep(np.max((0.5, new_exp_time)))
+#                 continue
+#         break
+
+
+# def adjust_camera_exposure_time(camera):
+#     while True:
+#         current_maximum = camera.stats1.max_value.get()
+#         current_exp_time = camera.exp_time.get()
+#         if current_maximum < 100:
+#             camera.exp_time.put(current_exp_time * 2)
+#             ttime.sleep(0.5)
+#         elif current_maximum > 230:
+#             camera.exp_time.put(current_exp_time / 2)
+#             ttime.sleep(0.5)
+#         else:
+#             break
 
 # data = RE(vibration_diagnostics())
 

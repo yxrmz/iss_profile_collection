@@ -17,6 +17,7 @@ from ophyd.sim import NullStatus
 from nslsii.ad33 import StatsPluginV33
 
 from databroker.assets.handlers_base import HandlerBase
+print(__file__)
 
 
 class BPM(SingleTrigger, ProsilicaDetector):
@@ -42,10 +43,13 @@ class BPM(SingleTrigger, ProsilicaDetector):
     retract = Cpt(EpicsSignal, 'Cmd:Out-Cmd')
     retracted = Cpt(EpicsSignal, 'Sw:OutLim-Sts')
 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs['cam.image_mode'] = 'Single'
         self.polarity = 'pos'
+        self.image_height = self.image.height.get()
+        self.frame_rate = self.cam.ps_frame_rate
         # self._inserting = None
         # self._retracting = None
 
@@ -64,6 +68,53 @@ class BPM(SingleTrigger, ProsilicaDetector):
             status = SubscriptionStatus(self.retracted, callback)
             self.retract.set('Retract')
             return status
+
+    def adjust_camera_exposure_time(self, roi_index=1,
+                                    target_max_counts=150, atol=10,
+                                    max_exp_time_thresh=1,
+                                    min_exp_time_thresh=0.00002):
+        stats = getattr(self, f'stats{roi_index}')
+        while True:
+            current_maximum = stats.max_value.get()
+            current_exp_time = self.exp_time.get()
+            delta = np.abs(current_maximum - target_max_counts)
+            ratio = target_max_counts / current_maximum
+            new_exp_time = np.clip(current_exp_time * ratio, min_exp_time_thresh, max_exp_time_thresh)
+
+            if new_exp_time != current_exp_time:
+                if delta > atol:
+                    set_and_wait(self.exp_time, new_exp_time)
+                    ttime.sleep(np.max((0.5, new_exp_time)))
+                    continue
+            break
+
+class FeedbackBPM(BPM):
+    ioc_reboot_pv = None
+
+    def append_ioc_reboot_pv(self, ioc_reboot_pv):
+        self.ioc_reboot_pv = ioc_reboot_pv
+
+    def reboot_ioc(self):
+        if self.ioc_reboot_pv is not None:
+            self.ioc_reboot_pv.put(1)
+            ttime.sleep(10)
+            self.acquire.put(1)
+        else:
+            print('ioc_reboot_pv is not appended. IOC reboot impossible.')
+
+    @property
+    def acquiring(self):
+        return bool(self.acquire.get())
+
+    @property
+    def image_centroid_y(self):
+        y = self.stats1.centroid.y.get()
+        return self.image_height - y
+
+    @property
+    def image_centroid_x(self):
+        return self.stats1.centroid.x.get()
+
 
 class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
@@ -122,10 +173,13 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
     def barcode2(self):
         return str(self.bar2.get()[:-1], encoding='UTF-8')
 
-    def validate_barcode(self, input):
+    def validate_barcode(self, input, error_message_func):
             if input in (self.barcode1, self.barcode2):
                 return True
-            print_to_gui(f'String {input} not found in {self.name} barcodes')
+            msg = f'String {input} not found in {self.name} barcodes'
+            if error_message_func is not None:
+                error_message_func(msg)
+            print_to_gui(msg)
             return False
 
 
@@ -133,7 +187,10 @@ bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
 bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
 bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
 bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
-bpm_es = BPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
+
+bpm_es = FeedbackBPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
+bpm_es_ioc_reset = EpicsSignal('XF:08IDB-CT{IOC:BPM:ES}:SysReset', name='bpm_es_ioc_reset')
+bpm_es.append_ioc_reboot_pv(bpm_es_ioc_reset)
 
 camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 # camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
@@ -292,11 +349,18 @@ class EncoderFS(Encoder):
     def complete(self):
         print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         set_and_wait(self.ignore_sel, 1)
+
+        # print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
+
+        #while not os.path.isfile(self._full_path):
+        #    ttime.sleep(.1)
+
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
         workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
         # print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        print(f'{ttime.ctime()} Moving file from {workstation_full_path} to {self._full_path}')
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs
@@ -327,6 +391,7 @@ class EncoderFS(Encoder):
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
         now = ttime.time()
+        #ttime.sleep(1)  # wait for file to be written by pizza box
 
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}
@@ -712,7 +777,7 @@ class AdcFS(Adc):
         # FIXME: beam line disaster fix.
         # Let's move the file to the correct place
 
-        print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
+        print(f'Moving file from {workstation_full_path} to {self._full_path}')
         stat = shutil.copy(workstation_full_path, self._full_path)
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs

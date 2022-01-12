@@ -34,9 +34,9 @@ class FlyerHHMwithTrigger(FlyerHHM):
         yield from self.trigger.collect_asset_docs()
 
     def collect(self):
-        self.trigger.unstage()
         yield from super().collect()
         yield from self.trigger.collect()
+        self.trigger.unstage()
 
 
 # flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
@@ -69,18 +69,24 @@ class FlyerXS(FlyerHHMwithTrigger):
         return st_super & saving_st
 
     def describe_collect(self):
+        print(f'{ttime.ctime()} Plan describe_collect is starting...')
         dict_super = super().describe_collect()
         dict_xs = self.xs_det.describe_collect()
+        print(f'{ttime.ctime()} Plan describe_collect is complete')
         return {**dict_super, **dict_xs}
 
     def collect_asset_docs(self):
+        print(f'{ttime.ctime()} Plan collect_asset_docs is starting...')
         yield from super().collect_asset_docs()
         yield from self.xs_det.collect_asset_docs()
+        print(f'{ttime.ctime()} Plan collect_asset_docs is complete')
 
     def collect(self):
-        self.xs_det.unstage()
+        print(f'{ttime.ctime()} Plan collect is starting...')
         yield from super().collect()
         yield from self.xs_det.collect()
+        self.xs_det.unstage()
+        print(f'{ttime.ctime()} Plan collect is complete')
 
 
 # flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
@@ -281,6 +287,44 @@ def execute_trajectory_apb_trigger(name, **metadata):
     yield from bp.fly([flyer_apb_trigger], md=md)
 
 
+import bluesky.plan_stubs as bps
+def fly_local(flyers, *, md=None):
+    """
+    Perform a fly scan with one or more 'flyers'.
+    Parameters
+    ----------
+    flyers : collection
+        objects that support the flyer interface
+    md : dict, optional
+        metadata
+    Yields
+    ------
+    msg : Msg
+        'kickoff', 'wait', 'complete, 'wait', 'collect' messages
+    See Also
+    --------
+    :func:`bluesky.preprocessors.fly_during_wrapper`
+    :func:`bluesky.preprocessors.fly_during_decorator`
+    """
+    uid = yield from bps.open_run(md)
+
+
+    for flyer in flyers:
+        print(f'({ttime.ctime()}) {flyer.name} kickoff start')
+        yield from bps.kickoff(flyer, wait=True)
+        print(f'({ttime.ctime()}) {flyer.name} kickoff end')
+    for flyer in flyers:
+        print(f'({ttime.ctime()}) {flyer.name} complete start')
+        yield from bps.complete(flyer, wait=True)
+        print(f'({ttime.ctime()}) {flyer.name} complete end')
+    for flyer in flyers:
+        print(f'({ttime.ctime()}) {flyer.name} collect start')
+        yield from bps.collect(flyer)
+        print(f'({ttime.ctime()}) {flyer.name} collect end')
+    print(f'({ttime.ctime()}) close_run start')
+    yield from bps.close_run()
+    print(f'({ttime.ctime()}) close_run end')
+    return uid
 
 
 
@@ -291,7 +335,7 @@ def execute_trajectory_xs(name, **metadata):
                          'fly_energy_scan_xs3',
                          **metadata)
     md['aux_detector'] = 'XSpress3'
-    yield from bp.fly([flyer_xs], md=md)
+    yield from fly_local([flyer_xs], md=md)
 
 
 

@@ -95,7 +95,7 @@ class HHM(Device):
     fb_hostname = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Hostname')
     fb_heartbeat = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Heartbeat')
     fb_status_err = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Err')
-    fb_status_msg = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-StsMsg')
+    fb_status_msg = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-StsMsg', string=True)
 
     angle_offset = Cpt(EpicsSignal, 'Mono:HHM-Ax:E}Offset', limits=True)
     home_y = Cpt(EpicsSignal, 'MC:06}Home-HHMY')
@@ -174,23 +174,29 @@ class HHM(Device):
         self.home_y.put('1')
 
 
-    def set_new_angle_offset(self, value):
+    def set_new_angle_offset(self, value, error_message_func=None):
         try:
             self.angle_offset.put(float(value))
             return True
         except Exception as exc:
             if type(exc) == ophyd_utils.errors.LimitError:
-                print_to_gui('[Energy calibration] Limit error.'.format(exc))
+                msg = 'HHM limit error'
+                print_to_gui(f'[Energy calibration] {msg}.'.format(exc))
+                if error_message_func is not None:
+                    error_message_func(msg)
             else:
-                print_to_gui('[Energy calibration] Something went wrong, not the limit: {}'.format(exc))
+                msg = f'HHM error. Something went wrong, not the limit: {exc}'
+                print_to_gui(f'[Energy calibration] {msg}')
+                if error_message_func is not None:
+                    error_message_func(msg)
             return False
 
-    def calibrate(self, energy_nominal, energy_actual):
+    def calibrate(self, energy_nominal, energy_actual, error_message_func=None):
         offset_actual = xray.energy2encoder(energy_actual, hhm.pulses_per_deg) / hhm.pulses_per_deg
         offset_nominal = xray.energy2encoder(energy_nominal, hhm.pulses_per_deg) / hhm.pulses_per_deg
         angular_offset_shift = offset_actual - offset_nominal
         new_angular_offset = self.angle_offset.value - angular_offset_shift
-        return self.set_new_angle_offset(new_angular_offset)
+        return self.set_new_angle_offset(new_angular_offset, error_message_func=error_message_func)
 
 
 
@@ -226,9 +232,12 @@ hhm_z_home = Cpt(EpicsSignal,'XF:08IDA-OP{MC:06}Home-HHMY')
 
 # Try to read it first time to avoid the generic 'object' to be returned
 # as an old value from hhm.trajectory_running._readback.
-hhm.wait_for_connection()
-_ = hhm.trajectory_ready.read()
-_ = hhm.trajectory_running.read()
+try:
+    hhm.wait_for_connection()
+    _ = hhm.trajectory_ready.read()
+    _ = hhm.trajectory_running.read()
+except:
+    pass
 
 
 # hhm.hints = {'fields': ['hhm_energy', 'hhm_pitch', 'hhm_roll', 'hhm_theta', 'hhm_y']}
@@ -262,13 +271,17 @@ class HHRM(Device):
     table_pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
     y = Cpt(StuckingEpicsMotor, 'Mir:HRM:TY}Mtr')
 
-
-    def current_sripe(self):
+    @property
+    def current_stripe(self):
         pos = self.hor_translation.user_readback.get()
-        if pos < 40:
+        if np.isclose(pos, 0, atol=1):
+            stripe = 'Si'
+        elif np.isclose(pos, 40, atol=1):
             stripe = 'Pt'
-        else:
+        elif np.isclose(pos, -40, atol=1):
             stripe = 'Rh'
+        else:
+            stripe = 'undefined'
         return stripe
 
 
@@ -279,7 +292,7 @@ class SampleXY(Device):
     x = Cpt(EpicsMotor, '-Ax:X}Mtr')
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
 
-samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
+# samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
 giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
 
 auxxy = SampleXY('XF:08IDB-OP{Stage:Aux1', name='auxxy')
@@ -380,6 +393,17 @@ class GonioMeter(Device):
 
 gonio_meter = GonioMeter('XF:08IDB-OP{Gon:Th', name='gonio_meter')
 
+
+class SampleStage(Device):
+    x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Sample-Ax:X}Mtr')
+    y = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Sample-Ax:Y}Mtr')
+    z = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
+    th = Cpt(EpicsMotor, 'XF:08IDB-OP{Gon:Th:1}Mtr')
+
+
+sample_stage = SampleStage(name='sample_stage')
+# samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
+# giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
 
 
 

@@ -227,7 +227,7 @@ class TwoButtonShutterISS(TwoButtonShutter):
             return st
 
         self._set_st = st
-        print(self.name, val, id(st))
+        # print(self.name, val, id(st))
         # enums = self.status.enum_strs
 
         def shutter_cb(value, timestamp, **kwargs):
@@ -264,12 +264,10 @@ class TwoButtonShutterISS(TwoButtonShutter):
                     time.sleep(self.RETRY_PERIOD)
                     cmd_sig.set(1)
 
-                    ts = datetime.datetime.fromtimestamp(timestamp) \
-                        .strftime(_time_fmtstr)
+                    # ts = datetime.datetime.fromtimestamp(timestamp) \
+                    #     .strftime(_time_fmtstr)
                     if count > 2:
-                        msg = '** ({}) Had to reactuate shutter while {}ing'
-                        print(msg.format(ts, val if val != 'Close'
-                                         else val[:-1]))
+                        print(f'** ({ttime.ctime()}) Had to reactuate {self.name} while {val[:4]}ing. Attempt {count}.')
                 else:
                     cmd_sig.clear_sub(cmd_retry_cb)
 

@@ -149,10 +149,16 @@ class SamplePointRegistry:
 
     def _move_to_point_plan(self, point):
         print(f'moving stage to x={point["x"]}, y={point["y"]}, z={point["z"]}')
+        # yield from bps.mv(self.sample_x, point['x'],
+        #                   self.sample_y, point['y'],
+        #                   self.sample_z, point['z'],
+        #                   )
         yield from bps.mv(self.sample_x, point['x'],
                           self.sample_y, point['y'],
-                          self.sample_z, point['z'],
                           )
+        self.sample_z.user_setpoint.put(point['z'])
+        yield from bps.sleep(0.3)
+
 
     def goto_start_plan(self):
         self.current_index = 0

@@ -340,7 +340,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
 pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream", ext_trigger_device=apb_trigger_pil100k)
 
-# pil100k.set_primary_roi(1)
+pil100k.set_primary_roi(1)
 
 
 # pil100k.cam.ensure_nonblocking()
@@ -386,8 +386,9 @@ class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Ha
 
     def __call__(self, *args, frame=None,  **kwargs):
         self._get_dataset()
-        return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
-        return return_dict_rois
+        return_dict = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+        # return_dict['image'] = self._image_data[frame, :, :].squeeze()
+        return return_dict
         # return self._roi_data
 
 db.reg.register_handler('PIL100k_HDF5',

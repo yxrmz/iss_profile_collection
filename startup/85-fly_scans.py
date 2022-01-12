@@ -47,14 +47,21 @@ def fly_scan_with_apb(name: str, comment: str, n_cycles: int = 1, delay: float =
     #         pass
 
     for indx in range(int(n_cycles)):
+        # success = check_gate_valves_in_plan()
+        # if not success: return
         name_n = '{} {:04d}'.format(name, indx + 1)
         # yield from prep_traj_plan()
         # print(f'Trajectory preparation complete at {print_now()}')
         # yield from shutter.open_plan()
+        yield from prep_traj_plan()
+        print(f'{ttime.ctime()} Trajectory preparation complete')
+        yield from shutter.open_plan()
         uid = (yield from execute_trajectory_apb(name_n, comment=comment))
         uids.append(uid)
         # yield from shutter.close_plan()
         print(f'Trajectory is complete {print_now()}')
+        yield from shutter.close_plan()
+        print(f'{ttime.ctime()} Trajectory is complete ')
         yield from bps.sleep(float(delay))
     return uids
 
@@ -107,14 +114,16 @@ def fly_scan_with_apb_trigger(name: str, comment: str, n_cycles: int = 1, delay:
             pass
 
     for indx in range(int(n_cycles)):
+        # success = check_gate_valves_in_plan()
+        # if not success: return
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from prep_traj_plan()
-        print(f'Trajectory preparation complete at {print_now()}')
+        print(f'{ttime.ctime()} Trajectory preparation complete')
         yield from shutter.open_plan()
         uid = (yield from execute_trajectory_apb_trigger(name_n, comment=comment))
         uids.append(uid)
         yield from shutter.close_plan()
-        print(f'Trajectory is complete {print_now()}')
+        print(f'{ttime.ctime()} Trajectory is complete')
         yield from bps.sleep(float(delay))
     return uids
 
@@ -149,6 +158,8 @@ def fly_scan_with_xs3(name: str, comment: str, n_cycles: int = 1, delay: float =
     #         pass
 
     for indx in range(int(n_cycles)):
+        # success = check_gate_valves_in_plan()
+        # if not success: return
         name_n = '{} {:04d}'.format(name, indx + 1)
         yield from prep_traj_plan()
         print(f'Trajectory preparation complete at {print_now()}')
@@ -191,6 +202,8 @@ def fly_scan_with_pil100k(name: str, comment: str, n_cycles: int = 1, delay: flo
             pass
 
     for indx in range(int(n_cycles)):
+        # success = check_gate_valves_in_plan()
+        # if not success: return
         if use_sample_registry:
             if sample_registry.position_list is not None:
                 yield from sample_registry.goto_unexposed_point_plan()
@@ -233,6 +246,8 @@ def fly_scan_rixs_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: f
 
     for indx in range(int(n_cycles)):
         for emission_energy in emission_energies:
+            # success = check_gate_valves_in_plan()
+            # if not success: return
             print(f'Emission moving to {emission_energy} ')
             yield from bps.mv(motor_emission, emission_energy)
             name_n = '{} {:04d}'.format(f'{name} {np.round(emission_energy,3)} ', indx + 1)
