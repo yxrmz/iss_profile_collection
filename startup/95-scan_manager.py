@@ -5,7 +5,7 @@ import uuid
 import numpy as np
 from PyQt5 import QtGui
 from xas.trajectory import TrajectoryCreator
-from xas.xray import generate_energy_grid_from_dict
+from xas.xray import generate_energy_grid_from_dict, generate_emission_energy_grid
 import os
 
 import logging
@@ -48,12 +48,24 @@ class ScanManager():
 
     def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)
-        scan_def = name + ' ' + scan['scan_type'] + ' at ' + scan['scan_parameters']['element'] + \
-                   ' ' + scan['scan_parameters']['edge'] + ' edge'
+        scan_def = self.create_human_scan_def(scan, name)
+
         scan_local = {'uid' : uid, 'scan_def' : scan_def, 'aux_parameters' : aux_parameters}
         self.scan_list_local.append(scan_local)
         self.dump_local_scan_list()
         return uid
+
+    def create_human_scan_def(self, scan, name):
+        if scan['scan_type'] == 'constant energy':
+            scan_str = name + ' mono at ' + str(scan['scan_parameters']['energy'])
+            if 'dwell_time' in scan['scan_parameters'].keys():
+                scan_str += f" x{scan['scan_parameters']['n_exposures']} {scan['scan_parameters']['dwell_time']} s"
+        else:
+            scan_str = name + f" {scan['scan_type']}"
+            scan_str += f" at {scan['scan_parameters']['element']} - {scan['scan_parameters']['edge']} edge"
+
+        return scan_str
+
 
     def delete_local_scan(self, idx):
         self.scan_list_local.pop(idx)
@@ -98,6 +110,19 @@ class ScanManager():
             time = self.trajectory_creator.time
         elif scan['scan_type'] == 'step scan':
             energy, _, time = generate_energy_grid_from_dict(scan['scan_parameters'])
+        elif scan['scan_type'] == 'constant energy':
+            energy_value = scan['scan_parameters']['energy']
+            energy = np.ones(101) * energy_value
+            time = np.linspace(0, 1, energy.size)
+        plot_func(time, energy)
+
+    def create_lightweight_spectrometer_trajectory(self, scan, plot_func):
+        if scan['scan_type'] == 'step scan':
+            energy, _, time = generate_emission_energy_grid_from_dict(scan['scan_parameters'])
+        elif scan['scan_type'] == 'constant energy':
+            energy_value = scan['scan_parameters']['energy']
+            energy = np.ones(101) * energy_value
+            time = np.linspace(0, 1, energy.size)
         plot_func(time, energy)
 
 
@@ -117,6 +142,8 @@ class ScanManager():
             else: direction = 'forward'
             header = f'element: {element}, edge: {edge}, E0: {e0}, direction: {direction}'
             np.savetxt(filepath, data, header=header)
+        elif scan['scan_type'] == 'constant energy':
+            filename = ''
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
@@ -133,6 +160,38 @@ class ScanManager():
                          'mono_angle_offset': aux_parameters['offset'],
                          'metadata' : metadata}
 
+        output = []
+
+        # fixing the hhm energy if needed
+        hhm_fixed = scan_type == 'constant energy'
+        if hhm_fixed:
+            output = []
+            plan_name = 'set_hhm_energy'
+            plan_kwargs = {'energy': scan_parameters['energy']}
+            output.append({'plan_name': plan_name,
+                           'plan_kwargs': plan_kwargs})
+
+        # fixing the spectrometer energy if needed
+        use_spectrometer = 'spectrometer' in aux_parameters.keys()
+        spectrometer_fixed = True # if it is not used, we still think of it as fixed
+        if use_spectrometer:
+            spectrometer_scan_type = aux_parameters['spectrometer']['scan_type']
+            spectrometer_scan_parameters = aux_parameters['spectrometer']['scan_parameters']
+            spectrometer_fixed = spectrometer_scan_type == 'constant energy'
+            if spectrometer_fixed:
+                plan_name = 'set_spectrometer_energy'
+                plan_kwargs = {'energy': spectrometer_scan_parameters['energy']}
+                output.append({'plan_name': plan_name,
+                               'plan_kwargs': plan_kwargs})
+
+        # deal with sample_positioning if needed
+        if sample_coordinates is not None:
+            plan_name = 'move_sample_stage'
+            plan_kwargs = {'sample_coordinates': sample_coordinates}
+            output.append({'plan_name': plan_name,
+                           'plan_kwargs': plan_kwargs})
+
+        # dealing with hhm scanning
         if scan_type == 'step scan':
             plan_name = 'step_scan_plan'
             plan_kwargs = {'trajectory_filename' : scan_parameters['filename'],
@@ -140,8 +199,7 @@ class ScanManager():
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
                            }
-            output = {'plan_name': plan_name,
-                      'plan_kwargs': {**plan_kwargs, **common_kwargs}}
+
         elif scan_type == 'fly scan':
             plan_name = 'fly_scan_plan'
             plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
@@ -149,19 +207,38 @@ class ScanManager():
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
                            }
-            output = {'plan_name': plan_name,
-                      'plan_kwargs': {**plan_kwargs, **common_kwargs}}
-            # if 'RIXS':
-            #     output = ['list_of_plans_for_rixs']
+
+        elif scan_type == 'constant energy':
+
+            if spectrometer_fixed:
+                plan_name = 'expose_n_times'
+                plan_kwargs = {'n_exposures' : scan_parameters['n_exposures'], 'dwell_time' : scan_parameters['dwell_time']}
+            else:
+                plan_name = 'johann_emission_scan'
+                time_grid, energy_grid = generate_emission_energy_grid(scan_parameters['e0'],
+                                                                       scan_parameters['preline_start'],
+                                                                       scan_parameters['mainline_start'],
+                                                                       scan_parameters['mainline_end'],
+                                                                       scan_parameters['postline_end'],
+                                                                       scan_parameters['preline_stepsize'],
+                                                                       scan_parameters['mainline_stepsize'],
+                                                                       scan_parameters['postline_stepsize'],
+                                                                       scan_parameters['preline_dwelltime'],
+                                                                       scan_parameters['mainline_dwelltime'],
+                                                                       scan_parameters['postline_dwelltime'])
+                plan_kwargs = {#'trajectory_filename': scan_parameters['filename'],
+                               #'element': scan_parameters['element'],
+                               #'line': scan_parameters['edge'],
+                               #'e0': scan_parameters['e0'],
+                               'energy_grid' : energy_grid,
+                               'time_grid' : time_grid}
+
+
+
         else:
-            plan_name = ''
-            plan_kwargs = {}
-            output = {'plan_name': plan_name,
-                      'plan_kwargs': plan_kwargs}
+            raise NotImplementedError(f'Scan type "{scan_type}" is not implemented!')
 
-        if type(output) != list:
-            output = [output]
-
+        output.append({'plan_name' : plan_name, 'plan_kwargs' : {**plan_kwargs, **common_kwargs}})
         return output
 
     def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None):
