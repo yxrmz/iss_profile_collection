@@ -5,7 +5,7 @@ import uuid
 import numpy as np
 from PyQt5 import QtGui
 from xas.trajectory import TrajectoryCreator
-from xas.xray import generate_energy_grid_from_dict, generate_emission_energy_grid
+from xas.xray import generate_energy_grid_from_dict, generate_emission_energy_grid_from_dict
 import os
 
 import logging
@@ -49,34 +49,11 @@ class ScanManager():
     def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)
         scan_def = self.create_human_scan_def(scan, name)
-        aux_parameters = self.add_spectrometer_grids_if_needed(aux_parameters)
 
         scan_local = {'uid' : uid, 'scan_def' : scan_def, 'aux_parameters' : aux_parameters}
         self.scan_list_local.append(scan_local)
         self.dump_local_scan_list()
         return uid
-
-    def add_spectrometer_grids_if_needed(self, aux_parameters):
-        if 'spectrometer' in aux_parameters.keys():
-            is_johann = aux_parameters['spectrometer']['kind']
-            is_emission_scanned = aux_parameters['spectrometer']['scan_type'] != 'step scan'
-            if (is_johann) and (is_emission_scanned):
-                d = aux_parameters['spectrometer']['scan_parameters']
-                time_grid, energy_grid = generate_emission_energy_grid(d['e0'],
-                                                                       d['preline_start'],
-                                                                       d['mainline_start'],
-                                                                       d['mainline_end'],
-                                                                       d['postline_end'],
-                                                                       d['preline_stepsize'],
-                                                                       d['mainline_stepsize'],
-                                                                       d['postline_stepsize'],
-                                                                       d['preline_dwelltime'],
-                                                                       d['mainline_dwelltime'],
-                                                                       d['postline_dwelltime'],
-                                                                       d['revert'])
-                aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid
-                aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid
-        return aux_parameters
 
     def create_human_scan_def(self, scan, name):
         if scan['scan_type'] == 'constant energy':
@@ -121,10 +98,49 @@ class ScanManager():
             json.dump(self.scan_dict, f )
         return new_uid
 
-
     def make_scan_uid(self):
         return str(uuid.uuid4())[:13]
 
+    def create_scan_preview(self, scan, aux_parameters, plot_func):
+        aux_parameters['scan_key'] = self.determine_scan_key(scan, aux_parameters)
+        self.create_lightweight_trajectory(scan, plot_func)
+        self.add_spectrometer_grids_if_needed(aux_parameters)
+
+    def determine_scan_key(self, scan, aux_parameters):
+        mono_is_moving = (scan['scan_type'] == 'constant energy')
+        spectrometer_is_used = ('spectrometer' in aux_parameters.keys())
+
+        if spectrometer_is_used:
+            spectrometer_is_moving = (aux_parameters['spectrometer']['scan_type'] == 'constant energy')
+            spectrometer_is_vonhamos = (aux_parameters['spectrometer']['kind'] == 'von_hamos')
+        else: # redundant but why not
+            spectrometer_is_moving = False
+            spectrometer_is_vonhamos = False
+
+        if mono_is_moving:
+            if (not spectrometer_is_used):
+                scan_kind = 'xas'
+            else:
+                if spectrometer_is_moving:
+                    scan_kind = 'johann_rixs'
+                else:
+                    if not spectrometer_is_vonhamos:
+                        scan_kind = 'von_hamos_rixs'
+                    else:
+                        scan_kind = 'johann_herfd'
+        else:
+            if (not spectrometer_is_used):
+                scan_kind = 'constant_e'
+            else:
+                if spectrometer_is_moving:
+                    scan_kind = 'johann_xes'
+                else:
+                    if not spectrometer_is_vonhamos:
+                        scan_kind = 'von_hamos_xes'
+                    else:
+                        scan_kind = 'constant_e_johann'
+
+        return scan_kind
 
     def create_lightweight_trajectory(self, scan, plot_func):
         if scan['scan_type'] == 'fly scan':
@@ -139,15 +155,15 @@ class ScanManager():
             time = np.linspace(0, 1, energy.size)
         plot_func(time, energy)
 
-    def create_lightweight_spectrometer_trajectory(self, scan, plot_func):
-        if scan['scan_type'] == 'step scan':
-            energy, _, time = generate_emission_energy_grid_from_dict(scan['scan_parameters'])
-        elif scan['scan_type'] == 'constant energy':
-            energy_value = scan['scan_parameters']['energy']
-            energy = np.ones(101) * energy_value
-            time = np.linspace(0, 1, energy.size)
-        plot_func(time, energy)
-
+    def add_spectrometer_grids_if_needed(self, aux_parameters):
+        scan_key = aux_parameters['scan_key']
+        if scan_key == 'johann_xes':
+            energy_grid, time_grid = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
+            aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid
+            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid
+        elif scan_key == 'johann_rixs':
+            energy_grid, _ = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
+            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid
 
     def create_trajectory_file(self, scan, uid):
         filename = f'{uid}.txt'
@@ -227,15 +243,6 @@ class ScanManager():
         output = []
 
         # take note of the spectrometer if needed
-        use_spectrometer = 'spectrometer' in aux_parameters.keys()
-        spectrometer_fixed = True # if it is not used, we still think of it as fixed
-        if use_spectrometer:
-            spectrometer_kind = aux_parameters['spectrometer']['kind']
-            spectrometer_scan_type = aux_parameters['spectrometer']['scan_type']
-            spectrometer_scan_parameters = aux_parameters['spectrometer']['scan_parameters']
-            spectrometer_fixed = spectrometer_scan_type == 'constant energy'
-            if spectrometer_fixed and (spectrometer_kind == 'johann'):
-                spectrometer_energy = spectrometer_scan_parameters['energy']
 
         # deal with sample_positioning if needed
         if sample_coordinates is not None:
