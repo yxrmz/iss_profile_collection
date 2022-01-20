@@ -107,11 +107,11 @@ class ScanManager():
         self.add_spectrometer_grids_if_needed(aux_parameters)
 
     def determine_scan_key(self, scan, aux_parameters):
-        mono_is_moving = (scan['scan_type'] == 'constant energy')
+        mono_is_moving = (scan['scan_type'] != 'constant energy')
         spectrometer_is_used = ('spectrometer' in aux_parameters.keys())
 
         if spectrometer_is_used:
-            spectrometer_is_moving = (aux_parameters['spectrometer']['scan_type'] == 'constant energy')
+            spectrometer_is_moving = (aux_parameters['spectrometer']['scan_type'] != 'constant energy')
             spectrometer_is_vonhamos = (aux_parameters['spectrometer']['kind'] == 'von_hamos')
         else: # redundant but why not
             spectrometer_is_moving = False
@@ -119,28 +119,28 @@ class ScanManager():
 
         if mono_is_moving:
             if (not spectrometer_is_used):
-                scan_kind = 'xas'
+                scan_key = 'xas'
             else:
                 if spectrometer_is_moving:
-                    scan_kind = 'johann_rixs'
+                    scan_key = 'johann_rixs'
                 else:
-                    if not spectrometer_is_vonhamos:
-                        scan_kind = 'von_hamos_rixs'
+                    if spectrometer_is_vonhamos:
+                        scan_key = 'von_hamos_rixs'
                     else:
-                        scan_kind = 'johann_herfd'
+                        scan_key = 'johann_herfd'
         else:
             if (not spectrometer_is_used):
-                scan_kind = 'constant_e'
+                scan_key = 'constant_e'
             else:
                 if spectrometer_is_moving:
-                    scan_kind = 'johann_xes'
+                    scan_key = 'johann_xes'
                 else:
-                    if not spectrometer_is_vonhamos:
-                        scan_kind = 'von_hamos_xes'
+                    if spectrometer_is_vonhamos:
+                        scan_key = 'von_hamos_xes'
                     else:
-                        scan_kind = 'constant_e_johann'
+                        scan_key = 'constant_e_johann'
 
-        return scan_kind
+        return scan_key
 
     def create_lightweight_trajectory(self, scan, plot_func):
         if scan['scan_type'] == 'fly scan':
@@ -159,11 +159,11 @@ class ScanManager():
         scan_key = aux_parameters['scan_key']
         if scan_key == 'johann_xes':
             energy_grid, time_grid = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
-            aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid
-            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid
+            aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid.tolist()
+            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
         elif scan_key == 'johann_rixs':
             energy_grid, _ = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
-            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid
+            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
 
     def create_trajectory_file(self, scan, uid):
         filename = f'{uid}.txt'
@@ -190,142 +190,116 @@ class ScanManager():
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         scan = self.scan_dict[scan_uid]
+        return self.parse_scan_to_plan_from_parameters(name,
+                                                       comment,
+                                                       scan,
+                                                       scan_local['aux_parameters'],
+                                                       sample_coordinates=sample_coordinates,
+                                                       metadata=metadata)
+
+
+    def parse_scan_to_plan_from_parameters(self, name, comment, scan, aux_parameters, sample_coordinates=None, metadata={}, rixs_log_name=None):
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
-        aux_parameters = scan_local['aux_parameters']
 
-
-        scan_is_2d = self._scan_is_2d(scan_type, aux_parameters)
-        if not scan_is_2d:
-            output = self._parse_1d_scan(name, comment, scan_type, scan_parameters, aux_parameters, metadata, sample_coordinates=sample_coordinates)
-        else: # the scan is RIXS
-            # perhaps update the name? make RIXS registry? how about CIE scans for normalization?
-            output = []
-            spectrometer_parameters = aux_parameters['spectrometer']
-            emission_energy_grid = spectrometer_parameters['energy_grid']
-
-            if sample_coordinates is None:
-                sample_coordinates = [None] * emission_energy_grid
-            else:
-                assert len(sample_coordinates) == len(emission_energy_grid), 'number of positions on the sample must match the number of energy points on emission grid'
-
-            for emission_energy, this_sample_coordinates in zip(emission_energy_grid, sample_coordinates):
-                _local_spectrometer_parameters = {'scan_type' : 'constant energy',
-                                                  'scan_parameters' : {'energy' : emission_energy}}
-                _local_aux_parameters = copy.deepcopy(aux_parameters)
-                _local_aux_parameters['spectrometer'] = _local_spectrometer_parameters
-
-                _local_output = self._parse_1d_scan(name, comment, scan_type, scan_parameters, _local_aux_parameters, metadata, sample_coordinates=this_sample_coordinates)
-                output.extend(_local_output)
-
-        return output
-
-
-
-    def _scan_is_2d(self, scan_type, aux_parameters):
-        return False
-        # if scan_type == 'constant energy':
-        #     return True
-        # else:
-        #     if 'spectrometer' in aux_parameters.keys():
-
-
-
-    def _parse_1d_scan(self, name, comment, scan_type, scan_parameters, aux_parameters, metadata, sample_coordinates=None):
-
-
+        scan_key = aux_parameters['scan_key']
         common_kwargs = {'name': name,
                          'comment': comment,
                          'detectors': aux_parameters['detectors'],
                          'mono_angle_offset': aux_parameters['offset'],
-                         'metadata' : metadata}
+                         'metadata': metadata}
 
         output = []
 
-        # take note of the spectrometer if needed
-
-        # deal with sample_positioning if needed
-        if sample_coordinates is not None:
+        if type(sample_coordinates) == dict:
             plan_name = 'move_sample_stage'
             plan_kwargs = {'sample_coordinates': sample_coordinates}
             output.append({'plan_name': plan_name,
                            'plan_kwargs': plan_kwargs})
 
-        # dealing with hhm scanning
-        if scan_type == 'step scan':
-            if not use_spectrometer:
+        if scan_key == 'xas':
+            if scan_type == 'step scan':
                 plan_name = 'step_scan_plan'
-                plan_kwargs = {'trajectory_filename' : scan_parameters['filename'],
-                               'element': scan_parameters['element'],
-                               'edge': scan_parameters['edge'],
-                               'e0': scan_parameters['e0'],
-                               }
-            else:
-                if spectrometer_kind == 'johann':
-                    plan_name = 'step_scan_johann_cee_plan'
-                    plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                                   'element': scan_parameters['element'],
-                                   'edge': scan_parameters['edge'],
-                                   'e0': scan_parameters['e0'],
-                                   'spectrometer_energy': spectrometer_energy,
-                                   }
-                elif spectrometer_kind == 'von_hamos':
-                    plan_name = 'step_scan_vh_plan'
-                    plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                                   'element': scan_parameters['element'],
-                                   'edge': scan_parameters['edge'],
-                                   'e0': scan_parameters['e0'],
-                                   }
-
-        elif scan_type == 'fly scan':
-            if not use_spectrometer:
+            elif scan_type == 'fly scan':
                 plan_name = 'fly_scan_plan'
-                plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                               'element': scan_parameters['element'],
-                               'edge': scan_parameters['edge'],
-                               'e0': scan_parameters['e0'],
-                               }
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0']}
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+
+        elif scan_key == 'von_hamos_xes':
+            pass
+
+        elif scan_key == 'von_hamos_rixs':
+            pass
+
+        elif scan_key == 'constant_e':
+            plan_name = 'collect_n_exposures'
+            plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
+                           'dwell_time': scan_parameters['dwell_time'],
+                           'energy': scan_parameters['energy']}
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+
+        elif scan_key == 'constant_e_johann':
+            plan_name = 'collect_n_exposures_johann'
+            spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+            plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
+                           'dwell_time': scan_parameters['dwell_time'],
+                           'energy': scan_parameters['energy'],
+                           'spectrometer_energy': spectrometer_energy}
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+
+        elif scan_key == 'johann_herfd':
+            if scan_type == 'step scan':
+                plan_name = 'step_scan_johann_herfd_plan'
+            elif scan_type == 'fly scan':
+                plan_name = 'fly_scan_johann_herfd_plan'
+            spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0'],
+                           'spectrometer_energy': spectrometer_energy}
+            if rixs_log_name is not None:
+                plan_kwargs['rixs_log_name'] = rixs_log_name
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+
+        elif scan_key == 'johann_xes':
+            plan_name = 'step_scan_johann_xes_plan'
+            spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
+            spectrometer_time_grid = aux_parameters['spectrometer']['scan_parameters']['time_grid']
+            plan_kwargs = {'mono_energy': scan_parameters['energy'],
+                           'emission_energy_grid': spectrometer_energy_grid,
+                           'emission_time_grid': spectrometer_time_grid}
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+
+        elif scan_key == 'johann_rixs':
+            spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
+            if type(sample_coordinates) == list:
+                assert len(sample_coordinates) == len(spectrometer_energy_grid), 'number of positions on the sample must match the number of energy points on emission grid'
             else:
-                if spectrometer_kind == 'johann':
-                    plan_name = 'fly_scan_johann_cee_plan'
-                    plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                                   'element': scan_parameters['element'],
-                                   'edge': scan_parameters['edge'],
-                                   'e0': scan_parameters['e0'],
-                                   'spectrometer_energy': spectrometer_energy,
-                                   }
-                elif spectrometer_kind == 'von_hamos':
-                    plan_name = 'fly_scan_vh_plan'
-                    plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                                   'element': scan_parameters['element'],
-                                   'edge': scan_parameters['edge'],
-                                   'e0': scan_parameters['e0'],
-                                   }
+                sample_coordinates = [sample_coordinates] * len(spectrometer_energy_grid)
 
-        elif scan_type == 'constant energy':
-            # the following could be written more succinctly, but I chose to be more verbose - Denis Jan 19 2022
-            if not use_spectrometer:
-                plan_name = 'collect_n_exposures'
-                plan_kwargs = {'n_exposures' : scan_parameters['n_exposures'],
-                               'dwell_time' : scan_parameters['dwell_time'],
-                               'energy' : scan_parameters['energy']}
-            else:
-                if spectrometer_fixed:
-                    plan_name = 'collect_n_exposures'
-                    plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
-                                   'dwell_time': scan_parameters['dwell_time'],
-                                   'energy': scan_parameters['energy'],
-                                   'spectrometer_energy': spectrometer_energy}
-                else:
-                    plan_name = 'step_scan_johann_cie_plan'
-                    plan_kwargs = {'hhm_energy' : scan_parameters['energy'],
-                                   'energy_grid' : spectrometer_scan_parameters['energy_grid'],
-                                   'time_grid' : spectrometer_scan_parameters['time_grid']}
+            for emission_energy, _local_sample_coordinates in zip(spectrometer_energy_grid, sample_coordinates):
 
-        else:
-            raise NotImplementedError(f'Scan type "{scan_type}" is not implemented!')
+                _local_name = f'{name} E={str(emission_energy)}'
+                _local_comment = f'{comment} E={str(emission_energy)}'
+                _local_spectrometer_parameters = {'kind' : 'johann',
+                                                  'scan_type': 'constant energy',
+                                                  'scan_parameters': {'energy': emission_energy}}
+                _local_aux_parameters = copy.deepcopy(aux_parameters)
+                _local_aux_parameters['spectrometer'] = _local_spectrometer_parameters
+                _local_aux_parameters['scan_key'] = 'johann_herfd'
+                _local_output = self.parse_scan_to_plan_from_parameters(_local_name,
+                                                                        _local_comment,
+                                                                        scan,
+                                                                        _local_aux_parameters,
+                                                                        sample_coordinates=_local_sample_coordinates,
+                                                                        metadata=metadata,
+                                                                        rixs_log_name=name)
+                output.extend(_local_output)
 
-        output.append({'plan_name' : plan_name, 'plan_kwargs' : {**plan_kwargs, **common_kwargs}})
         return output
 
     def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None):
