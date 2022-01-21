@@ -121,7 +121,7 @@ class ScanManager():
             if (not spectrometer_is_used):
                 scan_key = 'xas'
             else:
-                if spectrometer_is_moving:
+                if spectrometer_is_moving: # only johann can move together with mono
                     scan_key = 'johann_rixs'
                 else:
                     if spectrometer_is_vonhamos:
