@@ -1,8 +1,19 @@
 
 
 basic_plan_dict = {'step_scan_plan' : step_scan_plan,
-                   'fly_scan_plan' :fly_scan_plan,
-                   'sleep' : bps.sleep}
+                   'fly_scan_plan' : fly_scan_plan,
+                   'sleep_plan' : bps.sleep}
+
+def generate_plan_description(plan_name, plan_kwargs):
+    output = plan_name + ': '
+
+    for key, value in plan_kwargs.items():
+        output += f'{key} = {str(value)}, '
+    return output
+
+
+
+
 
 # plan_funcs = {
 #

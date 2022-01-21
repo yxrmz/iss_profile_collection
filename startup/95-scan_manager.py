@@ -189,6 +189,7 @@ class ScanManager():
     def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata={}):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
+        metadata['monochromator_scan_uid'] = scan_uid
         scan = self.scan_dict[scan_uid]
         return self.parse_scan_to_plan_from_parameters(name,
                                                        comment,
@@ -215,7 +216,8 @@ class ScanManager():
             plan_name = 'move_sample_stage'
             plan_kwargs = {'sample_coordinates': sample_coordinates}
             output.append({'plan_name': plan_name,
-                           'plan_kwargs': plan_kwargs})
+                           'plan_kwargs': plan_kwargs,
+                           'plan_description' : generate_plan_description(plan_name, plan_kwargs)})
 
         if scan_key == 'xas':
             if scan_type == 'step scan':
@@ -226,14 +228,16 @@ class ScanManager():
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0']}
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'von_hamos_xes':
             plan_name = 'collect_von_hamos_xes_plan'
             plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
                            'dwell_time': scan_parameters['dwell_time'],
                            'energy': scan_parameters['energy']}
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'von_hamos_rixs':
             if scan_type == 'step scan':
@@ -244,14 +248,16 @@ class ScanManager():
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0']}
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'constant_e':
             plan_name = 'collect_n_exposures_plan'
             plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
                            'dwell_time': scan_parameters['dwell_time'],
                            'energy': scan_parameters['energy']}
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'constant_e_johann':
             plan_name = 'collect_n_exposures_johann_plan'
@@ -260,7 +266,8 @@ class ScanManager():
                            'dwell_time': scan_parameters['dwell_time'],
                            'energy': scan_parameters['energy'],
                            'spectrometer_energy': spectrometer_energy}
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'johann_herfd':
             if scan_type == 'step scan':
@@ -275,7 +282,8 @@ class ScanManager():
                            'spectrometer_energy': spectrometer_energy}
             if rixs_log_name is not None:
                 plan_kwargs['rixs_log_name'] = rixs_log_name
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'johann_xes':
             plan_name = 'step_scan_johann_xes_plan'
@@ -290,7 +298,8 @@ class ScanManager():
                            'element': element,
                            'line': line,
                            'e0': e0}
-            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs},
+                           'plan_description' : generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs})})
 
         elif scan_key == 'johann_rixs':
             spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
@@ -343,6 +352,15 @@ class ScanProcessor():
         self.RE = RE
         self.scan_manager = scan_manager
         self.plan_list = []
+        self.status = 'stopped'
+        self.plan_list_update_signal = None
+        self.status_update_signal = None
+
+    def append_gui_plan_list_update_signal(self, signal):
+        self.plan_list_update_signal = signal
+
+    def append_gui_status_update_signal(self, signal):
+        self.status_update_signal = signal
 
     def get_logger(self):
         # Setup beamline specifics:
@@ -366,17 +384,84 @@ class ScanProcessor():
     def add_plans(self, plans):
         if type(plans) != list:
             plans = [plans]
-        self.plan_list.extend(plans)
+
+        if len(self.plan_list) > 0:
+            _status = self.plan_list[-1]['status']
+        else:
+            _status = 'normal'
+
+        for plan in plans:
+            self.plan_list.append({'plan_info' : plan, 'status' : _status})
+
+        if self.plan_list_update_signal is not None:
+            self.plan_list_update_signal.emit()
+
+    def execute_top_plan_from_list(self):
+        plan_dict = self.plan_list[0]['plan_info']
+        plan = basic_plan_dict[plan_dict['plan_name']](**plan_dict['plan_kwargs'])
+        # plan = bps.sleep(2)
+        print(f'{ttime.ctime()}   started doing plan {plan}')
+        self.RE(plan)
+        # ttime.sleep(1)
+        print(f'{ttime.ctime()}   done doing plan {plan}')
+        self.plan_list.pop(0)
+        if self.plan_list_update_signal is not None:
+            self.plan_list_update_signal.emit()
 
     def run(self):
         while len(self.plan_list) > 0:
-            plan_dict = self.plan_list[0]
-            plan = basic_plan_dict[plan_dict['plan_name']](**plan_dict['plan_kwargs'])
-            print(f'{ttime.ctime()}   started doing plan {plan}')
-            self.RE(plan)
-            print(f'{ttime.ctime()}   done doing plan {plan}')
-            self.plan_list.pop(0)
-            # self.RE(plan)
+
+            if self.plan_list[0]['status'] == 'normal':
+                self.update_status('running')
+                self.execute_top_plan_from_list()
+
+            elif self.plan_list[0]['status'] == 'paused':
+                self.update_status('paused')
+                break
+
+        self.update_status('stopped')
+
+
+    def update_status(self, status):
+        self.status = status
+        if self.status_update_signal is not None:
+            self.status_update_signal.emit()
+
+    @property
+    def smallest_index(self):
+        if self.status == 'running':
+            return 1
+        else:
+            return 0
+
+    def pause_plan_list(self):
+        index = self.smallest_index
+        self.pause_after_index(index)
+
+    def pause_after_index(self, index):
+        for i in range(index, len(self.plan_list)):
+            self.plan_list[i]['status'] = 'paused'
+        if self.plan_list_update_signal is not None:
+            self.plan_list_update_signal.emit()
+
+    def resume_plan_list(self):
+        for i in range(len(self.plan_list)):
+            self.plan_list[i]['status'] = 'normal'
+        if self.plan_list_update_signal is not None:
+            self.plan_list_update_signal.emit()
+        self.run()
+
+    def clear_plan_list(self):
+        idx = self.smallest_index
+        for i in range(idx, len(self.plan_list)):
+            self.plan_list.pop(idx)
+
+        if self.plan_list_update_signal is not None:
+            self.plan_list_update_signal.emit()
+
+
+
+
 
 scan_processor = ScanProcessor()
 
