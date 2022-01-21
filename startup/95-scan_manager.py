@@ -229,20 +229,32 @@ class ScanManager():
             output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         elif scan_key == 'von_hamos_xes':
-            pass
+            plan_name = 'collect_von_hamos_xes_plan'
+            plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
+                           'dwell_time': scan_parameters['dwell_time'],
+                           'energy': scan_parameters['energy']}
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         elif scan_key == 'von_hamos_rixs':
-            pass
+            if scan_type == 'step scan':
+                plan_name = 'step_scan_von_hamos_plan'
+            elif scan_type == 'fly scan':
+                plan_name = 'fly_scan_von_hamos_plan'
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0']}
+            output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         elif scan_key == 'constant_e':
-            plan_name = 'collect_n_exposures'
+            plan_name = 'collect_n_exposures_plan'
             plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
                            'dwell_time': scan_parameters['dwell_time'],
                            'energy': scan_parameters['energy']}
             output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         elif scan_key == 'constant_e_johann':
-            plan_name = 'collect_n_exposures_johann'
+            plan_name = 'collect_n_exposures_johann_plan'
             spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
             plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
                            'dwell_time': scan_parameters['dwell_time'],
@@ -269,9 +281,15 @@ class ScanManager():
             plan_name = 'step_scan_johann_xes_plan'
             spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
             spectrometer_time_grid = aux_parameters['spectrometer']['scan_parameters']['time_grid']
+            element = aux_parameters['spectrometer']['scan_parameters']['element']
+            line = aux_parameters['spectrometer']['scan_parameters']['line']
+            e0 = aux_parameters['spectrometer']['scan_parameters']['e0']
             plan_kwargs = {'mono_energy': scan_parameters['energy'],
                            'emission_energy_grid': spectrometer_energy_grid,
-                           'emission_time_grid': spectrometer_time_grid}
+                           'emission_time_grid': spectrometer_time_grid,
+                           'element': element,
+                           'line': line,
+                           'e0': e0}
             output.append({'plan_name': plan_name, 'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         elif scan_key == 'johann_rixs':
