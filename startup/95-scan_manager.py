@@ -48,24 +48,11 @@ class ScanManager():
 
     def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)
-        scan_def = self.create_human_scan_def(scan, name)
-
+        scan_def = f"{name} ({aux_parameters['scan_description']})"
         scan_local = {'uid' : uid, 'scan_def' : scan_def, 'aux_parameters' : aux_parameters}
         self.scan_list_local.append(scan_local)
         self.dump_local_scan_list()
         return uid
-
-    def create_human_scan_def(self, scan, name):
-        if scan['scan_type'] == 'constant energy':
-            scan_str = name + ' mono at ' + str(scan['scan_parameters']['energy'])
-            if 'dwell_time' in scan['scan_parameters'].keys():
-                scan_str += f" x{scan['scan_parameters']['n_exposures']} {scan['scan_parameters']['dwell_time']} s"
-        else:
-            scan_str = name + f" {scan['scan_type']}"
-            scan_str += f" at {scan['scan_parameters']['element']} - {scan['scan_parameters']['edge']} edge"
-
-        return scan_str
-
 
     def delete_local_scan(self, idx):
         self.scan_list_local.pop(idx)
@@ -102,13 +89,15 @@ class ScanManager():
         return str(uuid.uuid4())[:13]
 
     def create_scan_preview(self, scan, aux_parameters, plot_func):
-        aux_parameters['scan_key'] = self.determine_scan_key(scan, aux_parameters)
+        self.determine_and_describe_type_of_scan(scan, aux_parameters)
         self.create_lightweight_trajectory(scan, plot_func)
         self.add_spectrometer_grids_if_needed(aux_parameters)
 
-    def determine_scan_key(self, scan, aux_parameters):
+    def determine_and_describe_type_of_scan(self, scan, aux_parameters):
         mono_is_moving = (scan['scan_type'] != 'constant energy')
         spectrometer_is_used = ('spectrometer' in aux_parameters.keys())
+
+        scan_parameters = scan['scan_parameters']
 
         if spectrometer_is_used:
             spectrometer_is_moving = (aux_parameters['spectrometer']['scan_type'] != 'constant energy')
@@ -120,27 +109,43 @@ class ScanManager():
         if mono_is_moving:
             if (not spectrometer_is_used):
                 scan_key = 'xas'
+                scan_description = f"mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge"
             else:
                 if spectrometer_is_moving: # only johann can move together with mono
                     scan_key = 'johann_rixs'
+                    element = aux_parameters['spectrometer']['scan_parameters']['element']
+                    line = aux_parameters['spectrometer']['scan_parameters']['line']
+                    scan_description = f"RIXS with mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge and Johann at {element}-{line} line"
+
                 else:
                     if spectrometer_is_vonhamos:
                         scan_key = 'von_hamos_rixs'
+                        scan_description = f"RIXS with mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge with Von Hamos"
                     else:
                         scan_key = 'johann_herfd'
+                        spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+                        scan_description = f"mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge with Johann at Eout={spectrometer_energy}"
         else:
             if (not spectrometer_is_used):
                 scan_key = 'constant_e'
+                scan_description = f"mono at Ein={scan_parameters['energy']} x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
             else:
                 if spectrometer_is_moving:
                     scan_key = 'johann_xes'
+                    element = aux_parameters['spectrometer']['scan_parameters']['element']
+                    line = aux_parameters['spectrometer']['scan_parameters']['line']
+                    scan_description = f"mono at Ein={scan_parameters['energy']} with Johann {aux_parameters['spectrometer']['scan_type']} at {element}-{line} line"
                 else:
                     if spectrometer_is_vonhamos:
                         scan_key = 'von_hamos_xes'
+                        scan_description = f"mono at Ein={scan_parameters['energy']} with Von Hamos x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
                     else:
                         scan_key = 'constant_e_johann'
+                        spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+                        scan_description = f"mono at Ein={scan_parameters['energy']} with Johann at Eout={spectrometer_energy} x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
 
-        return scan_key
+        aux_parameters['scan_key'] = scan_key
+        aux_parameters['scan_description'] = scan_description
 
     def create_lightweight_trajectory(self, scan, plot_func):
         if scan['scan_type'] == 'fly scan':
