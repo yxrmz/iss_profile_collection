@@ -202,7 +202,7 @@ def adjust_ic_gains( **kwargs):
         # detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
         detectors = [apb_ave]
         channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
-        offsets = [apb.ch1_offset, apb.ch2_offset,apb.ch3_offset,apb.ch4_offset,]
+        offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
 
     e_min, e_max = trajectory_manager.read_trajectory_limits()
     try:

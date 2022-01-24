@@ -204,7 +204,7 @@ class FlyerHHM(Device):
 
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
-flyer_hhm = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
+flyer_hhm = FlyerHHM([apb_stream, hhm_encoder], hhm, shutter, name='flyer_apb')
 
 def get_fly_scan_md(name, comment,trajectory_filename, detectors, element, e0, edge, metadata):
     fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.raw"

@@ -4,25 +4,7 @@ import collections
 
 from ophyd.sim import motor
 motor.move = motor.set
-try:
-    detector_device_dictionary = {
-        'apb_ave' : apb_ave,
-        'apb_stream': apb_stream,
-        'hhm_encoder' : pb9,
-        'pil100k_hdf5_stream' : pil100k_hdf5_stream,
-        'pil100k_hdf5': pil100k_hdf5,
-        'xs' : xs,
-        'xs_stream' : xs_stream
-    }
-except:
-    detector_device_dictionary = {}
 
-def unstage_all_detectors():
-    for k in detector_device_dictionary.keys():
-        try:
-            detector_device_dictionary[k].unstage()
-        except:
-            pass
 
 
 detector_dictionary =   {
@@ -70,24 +52,6 @@ def get_detector_device_list(key_list, flying=True):
             device = detector_dictionary[key]['device']
         dets.append(device)
     return dets
-
-
-# detector_dictionary = \
-#             {
-#             bpm_fm.name: {'obj': bpm_fm, 'elements': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
-#             bpm_cm.name: {'obj': bpm_cm, 'elements': ['bpm_cm_stats1_total','bpm_cm_stats2_total']},
-#             bpm_bt1.name: {'obj': bpm_bt1, 'elements': ['bpm_bt1_stats1_total','bpm_bt1_stats2_total']},
-#             bpm_bt2.name: {'obj': bpm_bt2, 'elements':['bpm_bt2_stats1_total','bpm_bt2_stats2_total']},
-#             bpm_es.name: {'obj': bpm_es, 'elements':['bpm_es_stats1_total','bpm_es_stats2_total']},
-#             pb9.enc1.name: {'obj': pb9.enc1, 'elements': ['pb9_enc1_pos_I']},
-#             it.name: {'obj': it, 'elements': ['pba1_adc1_volt']},
-#             iff.name: {'obj': iff, 'elements': ['pba1_adc6_volt']},
-#             i0.name: {'obj': i0, 'elements': ['pba1_adc7_volt'],'channels': ['']},
-#             ir.name: {'obj': ir, 'elements': ['pba2_adc6_volt']},
-#             pba2.adc7.name: {'obj': pba2.adc7, 'elements': ['pba2_adc7_volt']},
-#             xia1.name: {'obj': xia1, 'elements': xia_list},
-#             apb_ave.name: {'obj': 'i0n', 'elements': ['abv_ave_ch1_mean']},
-#             }
 
 
 
@@ -161,12 +125,4 @@ ic_amplifiers = {'i0_amp': i0_amp,
 
 camera_dictionary = {'camera_sample1': camera_sp1,
                      'camera_sample2': camera_sp2,
-                     'camera_sample4': camera_sp4,
-
-                     }
-
-# dictionaries for plans:
-plan_funcs = None
-service_plan_funcs = None
-aux_plan_funcs = None
-
+                     'camera_sample4': camera_sp4}

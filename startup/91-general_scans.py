@@ -24,17 +24,17 @@ def sleep(delay:int=1, **kwargs):
 
 
 
-def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
-                          ir_gain:int=5, hs:bool=False):
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
-    i0_gain = int(i0_gain)
-    it_gain = int(it_gain)
-    iff_gain = int(iff_gain)
-    ir_gain = int(ir_gain)
-    if type(hs) == str:
-        hs = hs == 'True'
-
-    RE(set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs))
+# def set_gains_and_offsets(i0_gain:int=5, it_gain:int=5, iff_gain:int=6,
+#                           ir_gain:int=5, hs:bool=False):
+#     sys.stdout = kwargs.pop('stdout', sys.stdout)
+#     i0_gain = int(i0_gain)
+#     it_gain = int(it_gain)
+#     iff_gain = int(iff_gain)
+#     ir_gain = int(ir_gain)
+#     if type(hs) == str:
+#         hs = hs == 'True'
+#
+#     RE(set_gains_and_offsets_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs))
 
 
 def set_gains(i0_gain:int=5, it_gain:int=5, iff_gain:int=5,

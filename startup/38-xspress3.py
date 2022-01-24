@@ -85,11 +85,11 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
 # NELM specifies the number of elements that the array will hold NORD is Number
 # of Elements Read (at QAS, as of March 25, 2020, .NELM was set to 50000 for
 # the PVs below, but .NORD was always returning 1024 elements)
-dpb_sec = pb4.di.sec_array
-dpb_sec_nelm = EpicsSignalRO(f'{dpb_sec.pvname}.NELM', name='dpb_sec_nelm')
-
-dpb_nsec = pb4.di.nsec_array
-dpb_nsec_nelm = EpicsSignalRO(f'{dpb_nsec.pvname}.NELM', name='dpb_nsec_nelm')
+# dpb_sec = pb4.di.sec_array
+# dpb_sec_nelm = EpicsSignalRO(f'{dpb_sec.pvname}.NELM', name='dpb_sec_nelm')
+#
+# dpb_nsec = pb4.di.nsec_array
+# dpb_nsec_nelm = EpicsSignalRO(f'{dpb_nsec.pvname}.NELM', name='dpb_nsec_nelm')
 
 
 class ISSXspress3Detector(XspressTrigger, Xspress3Detector):

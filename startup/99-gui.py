@@ -55,10 +55,10 @@ if not os.environ.get('AZURE_TESTING'):
 
 
     aux_plan_funcs = {
-        'get_adc_readouts': get_adc_readouts,
-        'prepare_traj_plan': prep_traj_plan,
+        # 'get_adc_readouts': get_adc_readouts,
+        # 'prepare_traj_plan': prep_traj_plan,
         'general_scan': general_scan,
-        'general_spiral_scan': general_spiral_scan,
+        # 'general_spiral_scan': general_spiral_scan,
         'set_reference_foil': set_reference_foil,
         'tuning_scan': tuning_scan,
         'bender_scan': bender_scan,
@@ -76,6 +76,7 @@ if not os.environ.get('AZURE_TESTING'):
                                db_proc=db_proc,
                                accelerator=nsls_ii,
                                hhm=hhm,
+                               hhm_encoder=hhm_encoder,
                                hhm_feedback=hhm_feedback,
                                trajectory_manager=trajectory_manager,
                                motor_emission=motor_emission,

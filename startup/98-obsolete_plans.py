@@ -1,22 +1,22 @@
 
 
 
-def show_timing_results_from_previous_scan(idx):
-    hdr = db[idx]
-    # hdr.stream_names
-    data_apb = list(hdr.data(field='apb_stream', stream_name='apb_stream'))
-    data_epb = list(hdr.data(field='pb9_enc1', stream_name='pb9_enc1'))
-    plt.figure(1)
-    plt.clf()
-    plt.subplot(221)
-    plt.plot(data_apb[0]['timestamp'])
-    plt.plot(data_epb[0]['ts_s'] + data_epb[0]['ts_ns'] * 1e-9)
-    # return data_apb, data_epb
-
-    t_epb = data_epb[0]['ts_s'] + data_epb[0]['ts_ns'] * 1e-9
-    plt.subplot(222)
-    plt.plot(t_epb - t_epb.min(), data_epb[0]['encoder'])
-    # return (t_epb - t_epb.min()), data_epb[0]['encoder']
+# def show_timing_results_from_previous_scan(idx):
+#     hdr = db[idx]
+#     # hdr.stream_names
+#     data_apb = list(hdr.data(field='apb_stream', stream_name='apb_stream'))
+#     data_epb = list(hdr.data(field='pb9_enc1', stream_name='pb9_enc1'))
+#     plt.figure(1)
+#     plt.clf()
+#     plt.subplot(221)
+#     plt.plot(data_apb[0]['timestamp'])
+#     plt.plot(data_epb[0]['ts_s'] + data_epb[0]['ts_ns'] * 1e-9)
+#     # return data_apb, data_epb
+#
+#     t_epb = data_epb[0]['ts_s'] + data_epb[0]['ts_ns'] * 1e-9
+#     plt.subplot(222)
+#     plt.plot(t_epb - t_epb.min(), data_epb[0]['encoder'])
+#     # return (t_epb - t_epb.min()), data_epb[0]['encoder']
 
 
 

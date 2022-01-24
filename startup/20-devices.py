@@ -56,13 +56,7 @@ class WPS(Device):
     hv306 = Cpt(DeviceWithNegativeReadBack, 'HV:u306}')
     hv307 = Cpt(DeviceWithNegativeReadBack, 'HV:u307}')
 
-
-
-
     '''
-
-
-
     lv0 = Cpt(EpicsSignal, '-LV:u0}V-Sense', write_pv='-LV:u0}V-Set')
     lv1 = Cpt(EpicsSignal, '-LV:u1}V-Sense', write_pv='-LV:u1}V-Set')
     lv2 = Cpt(EpicsSignal, '-LV:u2}V-Sense', write_pv='-LV:u2}V-Set')
@@ -72,61 +66,8 @@ class WPS(Device):
     lv6 = Cpt(EpicsSignal, '-LV:u6}V-Sense', write_pv='-LV:u6}V-Set')
     lv7 = Cpt(EpicsSignal, '-LV:u7}V-Sense', write_pv='-LV:u7}V-Set')
     '''
+
 wps1 = WPS('XF:08IDB-OP{WPS:01-', name='wps1')
-
-
-
-class Shutter(Device):
-
-    def __init__(self, name):
-        self.name = name
-        if pb4.connected:
-            self.output = pb4.do3.default_pol
-            if self.output.get() == 1:
-                self.state = 'closed'
-            elif self.output.get() == 0.0953125:
-                self.state = 'open'
-            self.function_call = None
-            self.output.subscribe(self.update_state)
-        else:
-            self.state = 'unknown'
-
-    def subscribe(self, function):
-        self.function_call = function
-
-    def unsubscribe(self):
-        self.function_call = None
-
-    def update_state(self, pvname=None, value=None, char_value=None, **kwargs):
-        if value == 1:
-            self.state = 'closed'
-        elif value == 0:
-            self.state = 'open'
-        if self.function_call is not None:
-            self.function_call(pvname=pvname, value=value, char_value=char_value, **kwargs)
-
-    def open(self):
-        print('Opening {}'.format(self.name))
-        self.output.put(0)
-        self.state = 'open'
-
-    def close(self):
-        print('Closing {}'.format(self.name))
-        self.output.put(1)
-        self.state = 'closed'
-
-    def open_plan(self):
-        print('Opening {}'.format(self.name))
-        yield from bps.abs_set(self.output, 0, wait=True)
-        self.state = 'open'
-
-    def close_plan(self):
-        print('Closing {}'.format(self.name))
-        yield from bps.abs_set(self.output, 1, wait=True)
-        self.state = 'closed'
-
-#shutter = Shutter(name = 'SP Shutter')
-#shutter.shutter_type = 'SP'
 
 
 class ShutterMotor(Device):
@@ -414,6 +355,12 @@ iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-If}GainBit:0-Sel', gain_1='Amp
 
 
 
+
+
+
+
+
+
 #
 # i0_amp = ICAmplifier('XF:08IDB-CT{', gain_0='ES-DO}2_8_0', gain_1='ES-DO}2_8_1',
 #                      gain_2='ES-DO}2_8_2', hspeed_bit='ES-DO}2_8_3', bw_10mhz_bit='ES-DO}2_8_4', bw_1mhz_bit='ES-DO}2_8_5',
@@ -435,7 +382,7 @@ iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-If}GainBit:0-Sel', gain_1='Amp
 
 
 #old pizzabox
-pba1.adc7.amp = i0_amp
-pba1.adc1.amp = it_amp
-pba1.adc6.amp = iff_amp
-pba2.adc6.amp = i0_amp
+# pba1.adc7.amp = i0_amp
+# pba1.adc1.amp = it_amp
+# pba1.adc6.amp = iff_amp
+# pba2.adc6.amp = i0_amp

@@ -22,33 +22,33 @@ def tabulate_hhmy_position_plan(stdout=sys.stdout):
 
 
 
-def gen_trajectory(element, edge):
-    trajectory_creator = TrajectoryCreator(servocycle=hhm.servocycle, pulses_per_deg=hhm.pulses_per_deg)
-    E0 = xraydb.xray_edge(element, edge).energy
-
-    trajectory_creator.define(edge_energy=E0,
-                              dsine_preedge_duration=4,
-                              dsine_edge_duration=6,
-                              dsine_postedge_duration=20,
-                              dsine_preedge_frac=0.5,
-                              dsine_postedge_frac=0.3,
-                              trajectory_type='Double Sine/Constant Edge',
-                              pad_time=0.5)
-    trajectory_creator.elem = f'{element}'
-    trajectory_creator.edge = f'{edge}'
-    trajectory_creator.e0 = E0
-    trajectory_creator.interpolate()
-    trajectory_creator.revert()
-    trajectory_creator.tile(reps=1,
-                            single_direction=True)
-    trajectory_creator.e2encoder(hhm.angle_offset.value)
-    filename = f'{element}-{edge}.txt'
-    filepath = trajectory_manager.trajectory_path + filename
-    np.savetxt(filepath,
-               trajectory_creator.energy_grid, fmt='%.6f',
-               header=f'element: {trajectory_creator.elem}, edge: {trajectory_creator.edge}, E0: {trajectory_creator.e0}')  # , scan_direction: {self.traj_creator.direction}')
-    trajectory_manager.load(filename, 1, is_energy=True, offset=hhm.angle_offset.value)
-    trajectory_manager.init(1)
+# def gen_trajectory(element, edge):
+#     trajectory_creator = TrajectoryCreator(servocycle=hhm.servocycle, pulses_per_deg=hhm.pulses_per_deg)
+#     E0 = xraydb.xray_edge(element, edge).energy
+#
+#     trajectory_creator.define(edge_energy=E0,
+#                               dsine_preedge_duration=4,
+#                               dsine_edge_duration=6,
+#                               dsine_postedge_duration=20,
+#                               dsine_preedge_frac=0.5,
+#                               dsine_postedge_frac=0.3,
+#                               trajectory_type='Double Sine/Constant Edge',
+#                               pad_time=0.5)
+#     trajectory_creator.elem = f'{element}'
+#     trajectory_creator.edge = f'{edge}'
+#     trajectory_creator.e0 = E0
+#     trajectory_creator.interpolate()
+#     trajectory_creator.revert()
+#     trajectory_creator.tile(reps=1,
+#                             single_direction=True)
+#     trajectory_creator.e2encoder(hhm.angle_offset.value)
+#     filename = f'{element}-{edge}.txt'
+#     filepath = trajectory_manager.trajectory_path + filename
+#     np.savetxt(filepath,
+#                trajectory_creator.energy_grid, fmt='%.6f',
+#                header=f'element: {trajectory_creator.elem}, edge: {trajectory_creator.edge}, E0: {trajectory_creator.e0}')  # , scan_direction: {self.traj_creator.direction}')
+#     trajectory_manager.load(filename, 1, is_energy=True, offset=hhm.angle_offset.value)
+#     trajectory_manager.init(1)
 
 
 

@@ -13,69 +13,69 @@ import time
 
 
 
-def energy_scan(start, stop, num, flyers=None, name='', **metadata):
-    """
-    Example
-    -------
-    >>> RE(energy_scan(11350, 11450, 2))
-    """
-    if flyers is None:
-        flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
-    def inner():
-        md = {'plan_args': {}, 'plan_name': 'step scan', 'name': name}
-        md.update(**metadata)
-        yield from bps.open_run(md=md)
-
-    # Start with a step scan.
-    plan = bp.scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'name': name})
-    # Wrap it in a fly scan with the Pizza Box.
-    plan = bpp.fly_during_wrapper(plan, flyers)
-    # Working around a bug in fly_during_wrapper, stage and unstage the pizza box manually.
-
-    for flyer in flyers:
-        yield from bps.stage(flyer)
-    yield from bps.stage(hhm)
-
-    plan = bpp.pchain(plan)
-
-    yield from plan
-
-
-def energy_multiple_scans(start, stop, repeats, name='', **metadata):
-    """
-    Example
-    -------
-    >>> RE(energy_scan(11350, 11450, 2))
-    """
-    flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
-    def inner():
-        md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'name': name}
-        md.update(**metadata)
-        yield from bps.open_run(md=md)
-
-        for i in range(0, repeats):
-            print('Run:', i+1)
-            hhm_en.energy.move(start)
-            ttime.sleep(2)
-            while (hhm_en.energy.moving == True):
-                ttime.sleep(.1)
-            hhm_en.energy.move(stop)
-            ttime.sleep(2)
-            while (hhm_en.energy.moving == True):
-                ttime.sleep(.1)
-
-        yield from bps.close_run()
-
-
-    for flyer in flyers:
-        yield from bps.stage(flyer)
-    yield from bps.stage(hhm)
-
-    yield from bpp.fly_during_wrapper(inner(), flyers)
-
-    yield from bps.unstage(hhm)
-    for flyer in flyers:
-        yield from bps.unstage(flyer)
+# def energy_scan(start, stop, num, flyers=None, name='', **metadata):
+#     """
+#     Example
+#     -------
+#     >>> RE(energy_scan(11350, 11450, 2))
+#     """
+#     if flyers is None:
+#         flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
+#     def inner():
+#         md = {'plan_args': {}, 'plan_name': 'step scan', 'name': name}
+#         md.update(**metadata)
+#         yield from bps.open_run(md=md)
+#
+#     # Start with a step scan.
+#     plan = bp.scan([hhm_en.energy], hhm_en.energy, start, stop, num, md={'name': name})
+#     # Wrap it in a fly scan with the Pizza Box.
+#     plan = bpp.fly_during_wrapper(plan, flyers)
+#     # Working around a bug in fly_during_wrapper, stage and unstage the pizza box manually.
+#
+#     for flyer in flyers:
+#         yield from bps.stage(flyer)
+#     yield from bps.stage(hhm)
+#
+#     plan = bpp.pchain(plan)
+#
+#     yield from plan
+#
+#
+# def energy_multiple_scans(start, stop, repeats, name='', **metadata):
+#     """
+#     Example
+#     -------
+#     >>> RE(energy_scan(11350, 11450, 2))
+#     """
+#     flyers = [pb9.enc1, pba2.adc6, pba1.adc7]
+#     def inner():
+#         md = {'plan_args': {}, 'plan_name': 'energy_multiple_scans', 'name': name}
+#         md.update(**metadata)
+#         yield from bps.open_run(md=md)
+#
+#         for i in range(0, repeats):
+#             print('Run:', i+1)
+#             hhm_en.energy.move(start)
+#             ttime.sleep(2)
+#             while (hhm_en.energy.moving == True):
+#                 ttime.sleep(.1)
+#             hhm_en.energy.move(stop)
+#             ttime.sleep(2)
+#             while (hhm_en.energy.moving == True):
+#                 ttime.sleep(.1)
+#
+#         yield from bps.close_run()
+#
+#
+#     for flyer in flyers:
+#         yield from bps.stage(flyer)
+#     yield from bps.stage(hhm)
+#
+#     yield from bpp.fly_during_wrapper(inner(), flyers)
+#
+#     yield from bps.unstage(hhm)
+#     for flyer in flyers:
+#         yield from bps.unstage(flyer)
 
 
 def get_offsets_plan(detectors = [apb_ave], time = 2):
@@ -107,22 +107,22 @@ def get_offsets_plan(detectors = [apb_ave], time = 2):
 
 
 
-def tune(detectors, motor, start, stop, num, name='', **metadata):
-    """
-    Example
-    -------
-    >>> RE(tune([pba1.adc7], hhm.pitch,-2, 2, 5, ''), LivePlot('pba1.adc7_volt', 'hhm_pitch'))
-    """
-
-    flyers = detectors 
-
-    plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'name': name})
-    
-    if hasattr(flyers[0], 'kickoff'):
-        plan = bpp.fly_during_wrapper(plan, flyers)
-        plan = bpp.pchain(plan)
-
-    yield from plan
+# def tune(detectors, motor, start, stop, num, name='', **metadata):
+#     """
+#     Example
+#     -------
+#     >>> RE(tune([pba1.adc7], hhm.pitch,-2, 2, 5, ''), LivePlot('pba1.adc7_volt', 'hhm_pitch'))
+#     """
+#
+#     flyers = detectors
+#
+#     plan = bp.relative_scan(flyers, motor, start, stop, num, md={'plan_name': 'tune ' + motor.name, 'name': name})
+#
+#     if hasattr(flyers[0], 'kickoff'):
+#         plan = bpp.fly_during_wrapper(plan, flyers)
+#         plan = bpp.pchain(plan)
+#
+#     yield from plan
 
 
 def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
@@ -156,50 +156,50 @@ def sampleXY_plan(detectors, motor, start, stop, num):
 
 
 
-def prep_traj_plan(delay = 0.05):
-    yield from bps.abs_set(hhm.prepare_trajectory, '1', wait=True)
-
-    # Poll the trajectory ready pv
-    while True:
-        ret = (yield from bps.read(hhm.trajectory_ready))
-        if ret is None:
-            break
-        is_running = ret['hhm_trajectory_ready']['value']
-
-        if is_running:
-            break
-        else:
-            yield from bps.sleep(.1)
-
-    while True:
-        ret = (yield from bps.read(hhm.trajectory_ready))
-        if ret is None:
-            break
-        is_running = ret['hhm_trajectory_ready']['value']
-
-        if is_running:
-            yield from bps.sleep(.05)
-        else:
-            break
-
-    yield from bps.sleep(delay)
-
-    curr_energy = (yield from bps.read(hhm.energy))
-
-    if curr_energy is None:
-        return
-        raise Exception('Could not read current energy')
-
-    curr_energy = curr_energy['hhm_energy']['value']
-    # print('Curr Energy: {}'.format(curr_energy))
-    if curr_energy >= 8000:
-        # print('>10000')
-        yield from bps.mv(hhm.energy, curr_energy + 200)
-        yield from bps.sleep(0.5)
-        yield from bps.mv(hhm.energy, curr_energy)
-        yield from bps.sleep(0.5)
-
-    print(f'{ttime.ctime()} Trajectory preparation complete')
+# def prep_traj_plan(delay = 0.05):
+#     yield from bps.abs_set(hhm.prepare_trajectory, '1', wait=True)
+#
+#     # Poll the trajectory ready pv
+#     while True:
+#         ret = (yield from bps.read(hhm.trajectory_ready))
+#         if ret is None:
+#             break
+#         is_running = ret['hhm_trajectory_ready']['value']
+#
+#         if is_running:
+#             break
+#         else:
+#             yield from bps.sleep(.1)
+#
+#     while True:
+#         ret = (yield from bps.read(hhm.trajectory_ready))
+#         if ret is None:
+#             break
+#         is_running = ret['hhm_trajectory_ready']['value']
+#
+#         if is_running:
+#             yield from bps.sleep(.05)
+#         else:
+#             break
+#
+#     yield from bps.sleep(delay)
+#
+#     curr_energy = (yield from bps.read(hhm.energy))
+#
+#     if curr_energy is None:
+#         return
+#         raise Exception('Could not read current energy')
+#
+#     curr_energy = curr_energy['hhm_energy']['value']
+#     # print('Curr Energy: {}'.format(curr_energy))
+#     if curr_energy >= 8000:
+#         # print('>10000')
+#         yield from bps.mv(hhm.energy, curr_energy + 200)
+#         yield from bps.sleep(0.5)
+#         yield from bps.mv(hhm.energy, curr_energy)
+#         yield from bps.sleep(0.5)
+#
+#     print(f'{ttime.ctime()} Trajectory preparation complete')
 
 
 

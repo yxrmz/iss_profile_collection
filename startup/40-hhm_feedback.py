@@ -1,9 +1,6 @@
 
-from xas.pid import PID
-from xas.image_analysis import determine_beam_position_from_fb_image
-#
+# hhm feedback
 
-#
 from piezo_feedback.piezo_fb import PiezoFeedback
 from PyQt5.QtCore import QThread
 
@@ -34,5 +31,3 @@ class PiezoFeedbackThread(QThread, _PiezoFeedback):
 
 hhm_feedback = PiezoFeedbackThread()
 hhm_feedback.start()
-
-

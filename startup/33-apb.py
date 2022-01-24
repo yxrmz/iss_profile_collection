@@ -247,7 +247,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self._datum_ids.append(datum_id)
         return filebin_st & filetxt_st
 
-    def collect(self): # Copied from 10-detectors.py (class EncoderFS)
+    def collect(self): # Copied from 30-detectors.py (class EncoderFS)
         print(f'{ttime.ctime()} >>> {self.name} collect starting')
         now = ttime.time()
         for datum_id in self._datum_ids:
@@ -298,20 +298,24 @@ apb.amp_ch6 = None
 apb.amp_ch7 = None
 apb.amp_ch8 = None
 
-
-apb_ave.ch1.amp = i0_amp
-apb_ave.ch2.amp = it_amp
-apb_ave.ch3.amp = ir_amp
-apb_ave.ch4.amp = iff_amp
 apb_ave.ch1.polarity = 'neg'
 apb_ave.ch2.polarity = 'neg'
 apb_ave.ch3.polarity = 'neg'
 apb_ave.ch4.polarity = 'neg'
 
-apb.amp_ch5 = None
-apb.amp_ch6 = None
-apb.amp_ch7 = None
-apb.amp_ch8 = None
+# apb_ave.ch1.amp = i0_amp
+# apb_ave.ch2.amp = it_amp
+# apb_ave.ch3.amp = ir_amp
+# apb_ave.ch4.amp = iff_amp
+# apb_ave.ch5.amp = None
+# apb_ave.ch6.amp = None
+# apb_ave.ch7.amp = None
+# apb_ave.ch8.amp = None
+
+# apb.amp_ch5 = None
+# apb.amp_ch6 = None
+# apb.amp_ch7 = None
+# apb.amp_ch8 = None
 
 
 
