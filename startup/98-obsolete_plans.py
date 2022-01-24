@@ -1,3 +1,699 @@
+'''from xas.image_analysis import analyze_spiral_scan
+
+
+def optimize_sample_plan(*args, **kwargs):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
+    sample_x_nominal = kwargs['sample_x']
+    sample_y_nominal = kwargs['sample_y']
+    edge_energy = kwargs['energy']
+    sample_name = kwargs['name']
+    # print('moving giantxy to the nominal position')
+    # yield from bps.mv(giantxy.x, sample_x_nominal) # move to nominal position
+    # yield from bps.mv(giantxy.y, sample_y_nominal) # move to nominal position
+    # print('adjusting gains')
+    # yield from adjust_ic_gains(**kwargs)
+    # yield from bps.sleep(0.2)
+    # print('measuring offsets')
+    # yield from get_offsets(*args, **kwargs)
+    # yield from bps.sleep(0.2)
+    # print('moving energy above the edge')
+    # yield from bps.mv(hhm.energy, edge_energy + 100)  # move energy above the edge
+    # # prelim spiral scan:
+    # spiral_plan = general_spiral_scan([apb_ave],
+    #                                   motor1=giantxy.x, motor2=giantxy.y,
+    #                                   motor1_range=15, motor2_range=15,
+    #                                   motor1_nsteps=15, motor2_nsteps=15,
+    #                                   time_step=0.1)
+    # print('performing spiral scan to find optimal position on the sample')
+    # uid = (yield from spiral_plan)
+    #
+    conc = kwargs['concentration']
+    # image_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{sample_name}_raster_scan.png"
+    # print('analyzing spiral scan data and saving the image for the reference')
+    # x, y = analyze_spiral_scan(db, uid, conc, None, image_path)
+    x, y = analyze_spiral_scan(db, 'bbd9f23f-011e-40eb-b798-eb2a2ad5cfa8', conc, None, None)
+    print(f'moving giantxy to the optimal postion ({x}, {y})')
+    yield from bps.mv(giantxy.x, x)
+    yield from bps.mv(giantxy.y, y)
+    print('adjusting gains (final)')
+    yield from adjust_ic_gains(**kwargs)
+    print('measuring offsets (final)')
+    yield from get_offsets(*args, **kwargs)
+
+
+
+'''
+
+
+'''from xas.file_io import validate_file_exists
+import time as ttime
+from datetime import datetime
+from ophyd.status import SubscriptionStatus
+
+
+
+class FlyerHHMwithTrigger(FlyerHHM):
+
+    def __init__(self, det, pbs, motor, trigger): #, xs_det):
+        super().__init__( det, pbs, motor)
+        self.trigger = trigger
+
+    def kickoff(self, traj_duration=None):
+        self.trigger.stage()
+        st_super = super().kickoff(traj_duration=traj_duration)
+        return st_super
+
+    def complete(self):
+        st_super = super().complete()
+        def callback_motor():
+            self.trigger.complete()
+
+        self._motor_status.add_callback(callback_motor)
+        return st_super & self._motor_status #& st_xs
+
+    def describe_collect(self):
+        dict_super = super().describe_collect()
+        dict_trig = self.trigger.describe_collect()
+        return {**dict_super, **dict_trig}#, **dict_xs}
+
+    def collect_asset_docs(self):
+        yield from super().collect_asset_docs()
+        yield from self.trigger.collect_asset_docs()
+
+    def collect(self):
+        yield from super().collect()
+        yield from self.trigger.collect()
+        self.trigger.unstage()
+
+
+# flyer_apb_trigger = FlyerAPBwithTrigger(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger)
+
+
+
+class FlyerXS(FlyerHHMwithTrigger):
+
+    def __init__(self, det, pbs, motor, trigger, xs_det):
+        super().__init__( det, pbs, motor, trigger)
+        self.xs_det = xs_det
+
+    def kickoff(self, traj_duration=None):
+        traj_duration = trajectory_manager.current_trajectory_duration
+        acq_rate = self.trigger.freq.get()
+        self.xs_det.stage(acq_rate, traj_duration)
+        st_super = super().kickoff(traj_duration=traj_duration)
+        return st_super
+
+    def complete(self):
+        st_super = super().complete()
+        def callback_xs(value, old_value, **kwargs):
+            if int(round(old_value)) == 1 and int(round(value)) == 0:
+                self.xs_det.complete()
+                return True
+            else:
+                return False
+
+        saving_st = SubscriptionStatus(self.xs_det.hdf5.capture, callback_xs)
+        return st_super & saving_st
+
+    def describe_collect(self):
+        print(f'{ttime.ctime()} Plan describe_collect is starting...')
+        dict_super = super().describe_collect()
+        dict_xs = self.xs_det.describe_collect()
+        print(f'{ttime.ctime()} Plan describe_collect is complete')
+        return {**dict_super, **dict_xs}
+
+    def collect_asset_docs(self):
+        print(f'{ttime.ctime()} Plan collect_asset_docs is starting...')
+        yield from super().collect_asset_docs()
+        yield from self.xs_det.collect_asset_docs()
+        print(f'{ttime.ctime()} Plan collect_asset_docs is complete')
+
+    def collect(self):
+        print(f'{ttime.ctime()} Plan collect is starting...')
+        yield from super().collect()
+        yield from self.xs_det.collect()
+        self.xs_det.unstage()
+        print(f'{ttime.ctime()} Plan collect is complete')
+
+
+# flyer_xs = FlyerXS(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger, xs_det=xs_stream)
+
+
+class FlyerPilatus(FlyerHHMwithTrigger):
+
+    def __init__(self, det, pbs, motor, trigger, pil_det):
+        super().__init__( det, pbs, motor, trigger)
+        self.pil_det = pil_det
+
+    def kickoff(self, traj_duration=None):
+        print(f'     !!!!! {datetime.now()} PIL100K KICKOFF')
+        traj_duration = trajectory_manager.current_trajectory_duration
+        acq_rate = self.trigger.freq.get()
+        self.pil_det.stage(acq_rate, traj_duration)
+
+        st_pil = self.pil_det.trigger()
+        st_super = super().kickoff(traj_duration=traj_duration)
+        ttime.sleep(0.1)
+        return st_super & st_pil
+
+    def complete(self):
+        print(f'     !!!!! {datetime.now()} PIL100K COMPLETE')
+        shutter._close_direct()
+        st_super = super().complete()
+        # def callback_pil(value, old_value, **kwargs):
+        #     print(f'     !!!!! {datetime.now()} callback_pil100k_capture {value} --> {old_value}')
+        #     if int(round(old_value)) == 1 and int(round(value)) == 0:
+        #         print(f'     !!!!! {datetime.now()} callback_pil100k_capture')
+        #         self.pil_det.complete()
+        #         return True
+        #     else:
+        #         return False
+        # saving_st = SubscriptionStatus(self.pil_det.tiff.capture, callback_pil)
+        self.pil_det.complete()
+        return st_super# & saving_st
+
+    def describe_collect(self):
+        print(f'     !!!!! {datetime.now()} PIL100K DESCRIBE COLLECT')
+        dict_super = super().describe_collect()
+        dict_pil = self.pil_det.describe_collect()
+        return {**dict_super, **dict_pil}
+
+    def collect_asset_docs(self):
+        print(f'     !!!!! {datetime.now()} PIL100K COLLECT ASSET DOCS')
+        yield from super().collect_asset_docs()
+        yield from self.pil_det.collect_asset_docs()
+
+    def collect(self):
+        print(f'     !!!!! {datetime.now()} PIL100K COLLECT')
+        self.pil_det.unstage()
+        yield from super().collect()
+        yield from self.pil_det.collect()
+
+
+# flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
+# flyer_pil = FlyerPilatus(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_stream)
+
+### general flyer in development
+
+class FlyerPilatus_:
+    def __init__(self, det, pil_det, pbs, motor, trigger, shutter):
+        self.name = f'{det.name}-{"-".join([pb.name for pb in pbs])}-flyer'
+        self.parent = None
+        self.det = det
+        self.pil_det = pil_det
+        self.pbs = pbs  # a list of passed pizza-boxes
+        self.motor = motor
+        self._motor_status = None
+        self.trigger = trigger
+        self.shutter = shutter
+
+    def kickoff(self, traj_duration=None, *args, **kwargs):
+        # set_and_wait(self.det.trig_source, 1)
+        # TODO: handle it on the plan level
+        # set_and_wait(self.motor, 'prepare')
+
+        def callback(value, old_value, **kwargs):
+
+            if int(round(old_value)) == 0 and int(round(value)) == 1:
+                # Now start mono move
+                self._motor_status = self.motor.set('start')
+                return True
+            else:
+                return False
+
+        # print(f'     !!!!! {datetime.now()} Flyer kickoff is complete at')
+
+        streaming_st = SubscriptionStatus(self.det.streaming, callback)
+
+        if traj_duration is None:
+            traj_duration = get_traj_duration()
+        acq_rate = self.trigger.freq.get()
+
+        self.det.stage(traj_duration)
+        self.pil_det.stage(acq_rate, traj_duration)
+        st_pil = self.pil_det.trigger()
+
+        # Start apb after encoder pizza-boxes, which will trigger the motor.
+        self.det.stream.set(1)
+
+        ttime.sleep(1)
+        self.trigger.stage()
+
+        for pb in self.pbs:
+            pb.stage()
+            pb.kickoff()
+
+        return streaming_st & st_pil
+
+    def complete(self):
+        def callback_motor():
+            # When motor arrives to the position, it should stop streaming on
+            # the detector. That will run 'callback_det' defined below, which
+            # will perform the 'complete' step for all involved detectors.
+            self.det.stream.put(0)
+        self._motor_status.add_callback(callback_motor)
+
+        def callback_det(value, old_value, **kwargs):
+            if int(round(old_value)) == 1 and int(round(value)) == 0:
+                if self.shutter.state == 'open':
+                    yield from self.shutter.close_plan()
+
+                self.det.complete()
+                for pb in self.pbs:
+                    pb.complete()
+                return True
+            else:
+                return False
+
+        def callback_trigger():
+            self.trigger.complete()
+
+        self._motor_status.add_callback(callback_trigger)
+
+        self.pil_det.complete()
+        streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
+
+        return self._motor_status & streaming_st
+
+    def describe_collect(self):
+        return_dict = self.det.describe_collect()
+        # Also do it for all pizza-boxes
+        for pb in self.pbs:
+            return_dict[pb.name] = pb.describe_collect()[pb.name]
+
+        dict_trig = self.trigger.describe_collect()
+        dict_pil = self.pil_det.describe_collect()
+
+        return {**return_dict, **dict_trig, **dict_pil}
+
+    def collect(self):
+        def collect_and_unstage_all():
+            for pb in self.pbs:
+                yield from pb.collect()
+            yield from self.det.collect()
+
+            yield from self.trigger.collect()
+            yield from self.pil_det.collect()
+
+            # The .unstage() method resets self._datum_counter, which is needed
+            # by .collect(), so calling .unstage() afteer .collect().
+            self.det.unstage()
+            for pb in self.pbs:
+                pb.unstage()
+            self.trigger.unstage()
+            self.pil_det.unstage()
+
+        return (yield from collect_and_unstage_all())
+
+    def collect_asset_docs(self):
+        yield from self.det.collect_asset_docs()
+        for pb in self.pbs:
+            yield from pb.collect_asset_docs()
+        yield from self.trigger.collect_asset_docs()
+        yield from self.pil_det.collect_asset_docs()
+
+
+    # def stop(self,*args, **kwargs):
+    #     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.. AT STOP ')
+
+# flyer_pil = FlyerPilatus_(det=apb_stream, pbs=[pb9.enc1], motor=hhm, trigger=apb_trigger_pil100k, pil_det=pil100k_hdf5_stream, shutter=shutter)
+
+
+
+###
+
+
+
+
+def execute_trajectory_apb_trigger(name, **metadata):
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_apb_trigger',
+                         'fly_energy_scan_apb_trigger',
+                         **metadata)
+    yield from bp.fly([flyer_apb_trigger], md=md)
+
+
+import bluesky.plan_stubs as bps
+def fly_local(flyers, *, md=None):
+    """
+    Perform a fly scan with one or more 'flyers'.
+    Parameters
+    ----------
+    flyers : collection
+        objects that support the flyer interface
+    md : dict, optional
+        metadata
+    Yields
+    ------
+    msg : Msg
+        'kickoff', 'wait', 'complete, 'wait', 'collect' messages
+    See Also
+    --------
+    :func:`bluesky.preprocessors.fly_during_wrapper`
+    :func:`bluesky.preprocessors.fly_during_decorator`
+    """
+    uid = yield from bps.open_run(md)
+
+
+    for flyer in flyers:
+        print(f'({ttime.ctime()}) {flyer.name} kickoff start')
+        yield from bps.kickoff(flyer, wait=True)
+        print(f'({ttime.ctime()}) {flyer.name} kickoff end')
+    for flyer in flyers:
+        print(f'({ttime.ctime()}) {flyer.name} complete start')
+        yield from bps.complete(flyer, wait=True)
+        print(f'({ttime.ctime()}) {flyer.name} complete end')
+    for flyer in flyers:
+        print(f'({ttime.ctime()}) {flyer.name} collect start')
+        yield from bps.collect(flyer)
+        print(f'({ttime.ctime()}) {flyer.name} collect end')
+    print(f'({ttime.ctime()}) close_run start')
+    yield from bps.close_run()
+    print(f'({ttime.ctime()}) close_run end')
+    return uid
+
+
+
+def execute_trajectory_xs(name, **metadata):
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_xs',
+                         'fly_energy_scan_xs3',
+                         **metadata)
+    md['aux_detector'] = 'XSpress3'
+    yield from fly_local([flyer_xs], md=md)
+
+
+
+def execute_trajectory_pil100k(name, **metadata):
+    md = get_md_for_scan(name,
+                         'fly_scan',
+                         'execute_trajectory_pil100k',
+                         'fly_energy_scan_pil100k',
+                         **metadata)
+    md['aux_detector'] = 'Pilatus100k'
+
+    roi_data = [[pil100k.roi1.min_xyz.min_x.get(), pil100k.roi1.min_xyz.min_y.get(),
+                 pil100k.roi1.size.x.get(),        pil100k.roi1.size.y.get()        ],
+                [pil100k.roi2.min_xyz.min_x.get(), pil100k.roi2.min_xyz.min_y.get(),
+                 pil100k.roi2.size.x.get(),        pil100k.roi2.size.y.get()        ],
+                [pil100k.roi3.min_xyz.min_x.get(), pil100k.roi3.min_xyz.min_y.get(),
+                 pil100k.roi3.size.x.get(),        pil100k.roi3.size.y.get()],
+                [pil100k.roi4.min_xyz.min_x.get(), pil100k.roi4.min_xyz.min_y.get(),
+                 pil100k.roi4.size.x.get(),        pil100k.roi4.size.y.get()]]
+    md['roi'] = roi_data
+    yield from bp.fly([flyer_pil], md=md)
+'''
+
+'''from bluesky.plan_patterns import spiral_square_pattern
+import time as ttime
+import numpy as np
+import bluesky.plans as bp
+from bluesky.plans import rel_spiral_square
+from ophyd.sim import NullStatus
+
+
+# def sample_spiral_scan():
+#     detectors = [apb_ave]
+#
+#     return general_spiral_scan(detectors, giantxy.x, giantxy.y, 15, 15, 15, 15, time_step=0.1)
+
+    # channels = [apb_ave.ch1, apb_ave.ch2, apb_ave.ch3, apb_ave.ch4]
+    # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset, ]
+
+    # plan = rel_spiral_square(detectors, giantxy.x, giantxy.y, 15, 15, 15, 15)
+
+    # time_step = 0.1
+    # samples = 250 * (np.ceil(time_step * 10443 / 250))  # hn I forget what that does... let's look into the new PB OPI
+    # yield from bps.abs_set(apb_ave.sample_len, time_step*1e3, wait=True)
+    # yield from bps.abs_set(apb_ave.wf_len, time_step*1e3, wait=True)
+    # yield from bps.abs_set(apb_ave.divide, 374, wait=True)
+
+    # if hasattr(detector, 'kickoff'):
+    # plan_with_flyers = bpp.fly_during_wrapper(plan, [detectors])
+    # uid = (yield from plan)
+    # table = db[uid].table()
+    # row_num = table[detector.volt.name].idxmin()
+    # x_pos = table['giantxy_x'][row_num]
+    # y_pos = table['giantxy_y'][row_num]
+
+def general_spiral_scan(detectors_list, *, motor1=giantxy.x, motor2=giantxy.y, motor1_range=15, motor2_range=15, motor1_nsteps=15, motor2_nsteps=15, time_step=0.1, **kwargs):
+
+    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    print(f'Dets {detectors_list}')
+    print(f'Motors {motor1}, {motor2}')
+
+
+    plan = rel_spiral_square(detectors_list, motor1, motor2,
+                                        motor1_range, motor2_range, motor1_nsteps, motor2_nsteps,
+                                        md={"plan_name": "spiral scan"})
+
+    if apb_ave in detectors_list:
+        print('Preparing pizzabox')
+        cur_divide_value = apb_ave.divide.value
+        cur_sample_len = apb_ave.sample_len.value
+        cur_wf_len = apb_ave.wf_len.value
+
+    print('[General Spiral Scan] Starting scan...')
+    yield from bps.abs_set(apb_ave.divide, 374, wait=True)
+    yield from bps.abs_set(apb_ave.sample_len, int(time_step * 1e3), wait=True)
+    yield from bps.abs_set(apb_ave.wf_len, int(time_step * 1e3), wait=True)
+
+    uid = (yield from plan)
+
+    if apb_ave in detectors_list:
+        print('Returning the pizzabox to its original state')
+        yield from bps.abs_set(apb_ave.divide, cur_divide_value, wait=True)
+        yield from bps.abs_set(apb_ave.sample_len, cur_sample_len, wait=True)
+        yield from bps.abs_set(apb_ave.wf_len, cur_wf_len, wait=True)
+    return uid
+
+
+
+
+
+
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def get_mus():
+    data = db[-1].table()
+    x = data['giantxy_x']
+    y = data['giantxy_y']
+
+    mut = np.log(data['apb_ave_ch1_mean']/data['apb_ave_ch2_mean'])
+    muf = data['apb_ave_ch4_mean']/data['apb_ave_ch1_mean']
+
+    return x,y, mut, muf
+
+def analyze_surface():
+    x, y, mut, muf = get_mus()
+    plot_xyz(x, y, mut)
+    plot_xyz(x, y, muf)
+
+
+def com(a_orig, w_orig, mask=None):
+    a = a_orig.copy()
+    w = w_orig.copy()
+    if mask is not None:
+        a = a[mask]
+        w = w[mask]
+    return np.sum(a * w)/np.sum(w)
+
+
+
+
+def plot_xyz(x, y, z, r1=5, r2=(13.4/2-1)):
+    fig = plt.figure()
+    # ax = fig.gca(projection='3d')
+    # ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True, cmap=plt.cm.Spectral)
+    ax = fig.gca()
+
+    x_im_center = x.iloc[0]
+    y_im_center = y.iloc[0]
+    # R = r1 #13.4/2-1
+    xy_mask = (np.sqrt(np.abs(x - x_im_center)**2 +
+                       np.abs(y - y_im_center)**2) < r1)
+
+    x_ho_com = com(x, z.max() - z, ~xy_mask)
+    y_ho_com = com(y, z.max() - z, ~xy_mask)
+
+    xy_mask_recen = (np.sqrt(np.abs(x - x_ho_com) ** 2 +
+                             np.abs(y - y_ho_com) ** 2) < r2)
+
+    # x_max = x[xy_mask_recen][np.argmax(z[xy_mask_recen])]
+    # y_max = y[xy_mask_recen][np.argmax(z[xy_mask_recen])]
+
+    x_max = com(x, (z - z.min())**2, xy_mask_recen)
+    y_max = com(y, (z - z.min())**2, xy_mask_recen)
+
+    ax.tricontourf(x, y, z, 50)
+    ax.plot(x_im_center, y_im_center, 'ro', ms=25)
+    ax.plot(x_ho_com, y_ho_com, 'bx', ms=25, markeredgewidth=5)
+    ax.plot(x_max, y_max, 'm+', ms=25, markeredgewidth=5)
+
+    # plt.plot(x[xy_mask], y[xy_mask], 'g.', alpha=0.5)
+    # plt.plot(x[~xy_mask], y[~xy_mask], 'r.', alpha=0.5)
+    # plt.show()
+
+
+# class SnakeFlyer():
+#     def __init__(self, det, pbs, motor_stage):
+#         self.name = 'snake_flyer'
+#         self.parent = None
+#         self.det = det
+#         self.pbs = pbs  # a list of passed pizza-boxes
+#         self.motor_stage = motor_stage
+#         self._motor_status = None
+#         self.traj = None
+#
+#     def _motor_snaker(self, motor_x=None, range_x=None, motor_y=None, range_y=None):
+#         """Snake tragectory for flyer.
+#
+#         :param motor_x: ophyd object for motor
+#         :param range_x: range in motor units
+#         :param motor_y: ophyd object for motor
+#         :param range_y: range in motor units
+#         :return: None
+#         """
+#
+#         # Read start positions.
+#         start_pos_x = motor_x.user_readback.get()
+#         start_pos_y = motor_y.user_readback.get()
+#
+#         step = 1
+#
+#         # We need the grid scan here to get the tragectory.
+#         plan = bp.rel_grid_scan([], motor_y, -range_y / 2, range_y / 2, (range_y / step + 1),
+#                                 motor_x, -range_x / 2, range_x / 2, 2,
+#                                 True  # snake=True
+#                                 )
+#
+#         # This is adapted from plot_raster_scan in bluesky.
+#         cur_x = cur_y = None
+#         self.traj = []
+#         for msg in plan:
+#             cmd = msg.command
+#             if cmd == 'set':
+#                 if msg.obj.name == motor_x.name:
+#                     cur_x = msg.args[0]
+#                 if msg.obj.name == motor_y.name:
+#                     cur_y = msg.args[0]
+#             elif cmd == 'save':
+#                 self.traj.append((cur_x, cur_y))
+#
+#         # Move motors along the trajectory.
+#         for (x, y) in self.traj:
+#             print(x, y)
+#             if abs(motor_x.user_readback.get() - x) > 5e-3:
+#                 print(f"Moving {motor_x.name}")
+#                 # .move blocks the operation, and waits until the motor arrives to the target position.
+#                 motor_x.move(x)
+#             if abs(motor_y.user_readback.get() - y) > 5e-3:
+#                 print(f"Moving {motor_y.name}")
+#                 # .move blocks the operation, and waits until the motor arrives to the target position.
+#                 motor_y.move(y)
+#
+#         # Move back to the original position both motors simultaneously.
+#         self._motor_status = motor_x.set(start_pos_x)
+#         self._motor_status &= motor_y.set(start_pos_y)
+#
+#     def kickoff(self, *args, **kwargs):
+#         for pb in self.pbs:
+#             pb.stage()
+#             pb.kickoff()
+#
+#         self.det.stage()
+#         # Start apb after encoder pizza-boxes, which will trigger the motor.
+#         self.det.stream.set(1)
+#
+#         self._motor_snaker(motor_x=self.motor_stage.x, range_x=10, motor_y=self.motor_stage.y, range_y=4)
+#
+#         print(f"Motor status in kickoff: {self._motor_status}")
+#
+#         return NullStatus()
+#
+#     def complete(self):
+#         print(f"Motor status in complete: {self._motor_status}")
+#
+#         def callback_det(value, old_value, **kwargs):
+#             if int(round(old_value)) == 1 and int(round(value)) == 0:
+#                 print(f'callback_det {ttime.ctime()}')
+#                 return True
+#             else:
+#                 return False
+#         streaming_st = SubscriptionStatus(self.det.streaming, callback_det)
+#
+#         def callback_motor():
+#             print(f'callback_motor {ttime.ctime()}')
+#
+#             for pb in self.pbs:
+#                 pb.complete()
+#
+#             # TODO: see if this set is still needed (also called in self.det.unstage())
+#             self.det.stream.put(0)
+#             self.det.complete()
+#
+#         self._motor_status.add_callback(callback_motor)
+#
+#         # Jdun!
+#         return streaming_st & self._motor_status
+#
+#     def describe_collect(self):
+#         return_dict = {self.det.name:
+#                         {f'{self.det.name}': {'source': 'APB',
+#                                               'dtype': 'array',
+#                                               'shape': [-1, -1],
+#                                               'filename_bin': self.det.filename_bin,
+#                                               'filename_txt': self.det.filename_txt,
+#                                               'external': 'FILESTORE:'}}}
+#         # Also do it for all pizza-boxes
+#         for pb in self.pbs:
+#             return_dict[pb.name] = pb.describe_collect()[pb.name]
+#
+#         # Add a stream for the motor positions.
+#         return_dict[self.motor_stage.name] = {f'{self.motor_stage.x.name}': {'source': 'SNAKE',
+#                                                                              'dtype': 'number',
+#                                                                              'shape': []},
+#                                               f'{self.motor_stage.y.name}': {'source': 'SNAKE',
+#                                                                              'dtype': 'number',
+#                                                                              'shape': []}
+#                                               }
+#         return return_dict
+#
+#     def collect_asset_docs(self):
+#         yield from self.det.collect_asset_docs()
+#         for pb in self.pbs:
+#             yield from pb.collect_asset_docs()
+#
+#     def collect(self):
+#         print(f"Motor status in collect: {self._motor_status}")
+#
+#         self.det.unstage()
+#         for pb in self.pbs:
+#             pb.unstage()
+#
+#         def collect_all():
+#             for pb in self.pbs:
+#                 yield from pb.collect()
+#             yield from self.det.collect()
+#
+#             # Collect docs for motor positions.
+#             now = ttime.time()
+#             for (x, y) in self.traj:
+#                 data = {f"{self.motor_stage.x.name}": x,
+#                         f"{self.motor_stage.y.name}": y}
+#
+#                 yield {'data': data,
+#                        'timestamps': {key: now for key in data}, 'time': now,
+#                        'filled': {key: False for key in data}}
+#
+#         return collect_all()
+#
+#
+#
+# snake_flyer = SnakeFlyer(det=apb_stream, pbs=[pb4.enc3, pb4.enc4], motor_stage=giantxy)'''
 
 
 

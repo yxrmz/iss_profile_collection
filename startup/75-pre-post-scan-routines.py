@@ -353,6 +353,22 @@ def scan_beam_position_vs_energy(camera=camera_sp2):
 
 
 
+def bender_scan():
+    bender_current_position = bender.pos.user_readback.get()
+    bender_positions = bender_current_position + np.arange(-15, 20, 5)
+    for bender_position in bender_positions:
+        yield from bps.mv(bender.pos, bender_position)
+        yield from bps.sleep(3)
+        loading = bender.load_cell.get()
+        fname = f'Bender scan - {loading} N - {bender_position} um'
+
+        yield from fly_scan_with_apb(fname,'')
+    yield from bps.mv(bender.pos, bender_current_position)
+
+
+
+
+
 # def adjust_camera_exposure_time(camera, roi_index=1,
 #                                 target_max_counts=150, atol=10,
 #                                 max_exp_time_thresh=1,

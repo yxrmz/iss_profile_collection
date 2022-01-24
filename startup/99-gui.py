@@ -43,7 +43,7 @@ if not os.environ.get('AZURE_TESTING'):
         'prepare_beamline_plan': prepare_beamline_plan,
         'tune_beamline_plan': tune_beamline_plan,
         'optimize_beamline_plan': optimize_beamline_plan,
-        'optimize_sample_plan': optimize_sample_plan,
+        # 'optimize_sample_plan': optimize_sample_plan,
         'calibrate_energy_plan': calibrate_energy_plan,
         'xs_count': xs_count,
         'pil_count': pil_count,
