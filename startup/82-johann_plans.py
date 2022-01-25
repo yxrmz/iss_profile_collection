@@ -20,6 +20,8 @@ def plot_radiation_damage_scan_data(db, uid):
     plt.plot(t['time'], t['pil100k_stats1_total']/np.abs(t['apb_ave_ch1_mean']))
 
 
+
+
 def prepare_johann_scan_plan(detectors, spectrometer_energy):
     ensure_pilatus_is_in_detector_list(detectors)
     yield from bp.mv(johann_spectrometer_motor.energy, spectrometer_energy)
@@ -48,18 +50,6 @@ def fly_scan_johann_herfd_plan(**kwargs):
     yield from prepare_johann_scan_plan(kwargs['detectors'], kwargs['spectrometer_energy'])
     metadata, kwargs = prepare_johann_metadata_and_kwargs(**kwargs)
     yield from fly_scan_plan(metadata=metadata, **kwargs)
-
-
-def step_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_offset=None, detectors=[], element='',
-                   e0=0, edge='', metadata={}):
-    energy_list, time_list = read_step_scan_filename(trajectory_filename)
-    if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
-    default_detectors = [apb_ave, hhm_encoder]
-    aux_detectors = get_detector_device_list(detectors)
-    all_detectors = default_detectors + aux_detectors
-    md = get_step_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata)
-
-    yield from general_energy_step_scan(all_detectors, hhm.energy, energy_list, time_list, md=md)
 
 
 
