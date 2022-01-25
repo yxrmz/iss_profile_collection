@@ -8,7 +8,6 @@ import signal
 from periodictable import elements
 
 from ophyd.device import Kind
-from xas.file_io import validate_file_exists
 import time
 
 
@@ -85,6 +84,71 @@ def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
             else:
                 yield from bps.mv(motor, motor_pos)
                 break
+
+
+def prepare_detectors_for_exposure_plan(detectors, n_exposures=1):
+    for det in detectors:
+        if det.name == 'apb_ave':
+            yield from bps.abs_set(apb_ave.divide, 373, wait=True)
+        if det.name == 'xs':
+            yield from bps.mv(det.total_points, n_exposures)
+
+
+def set_detector_exposure_time_plan(detectors, exposure_time):
+    for det in detectors:
+        if det.name == 'apb_ave':
+            samples = 250*(np.ceil(exposure_time*1005/250)) #hn I forget what that does... let's look into the new PB OPI
+            yield from bps.abs_set(det.sample_len, samples, wait=True)
+            yield from bps.abs_set(det.wf_len, samples, wait=True)
+        elif det.name == 'pil100k':
+            yield from bps.mv(det.cam.acquire_time, exposure_time)
+        elif det.name == 'xs':
+            yield from bps.mv(det.settings.acquire_time, exposure_time)
+
+
+def get_n_exposures_plan_md(name, comment, energy, detectors, n_exposures, dwell_time, metadata):
+        fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
+        fn = validate_file_exists(fn)
+
+        md_general = get_general_md()
+        md_scan = {'experiment': 'collect_n_exposures',
+                   'interp_filename': fn,
+                   'name': name,
+                   'comment': comment,
+                   'hhm_energy' : energy,
+                   'detectors': detectors,
+                   'n_exposures' : n_exposures,
+                   'dwell_time' : dwell_time,
+                   'plot_hint': '$5/$1'}
+
+        return {**md_general, **md_scan, **metadata}
+
+
+def general_n_exposures(detectors, n_exposures, dwell_time, md):
+    yield from prepare_detectors_for_exposure_plan(detectors, n_exposures=n_exposures)
+    yield from set_detector_exposure_time_plan(detectors, dwell_time)
+    yield from shutter.open_plan()
+    yield from bp.count(detectors, n_exposures, md=md)
+    yield from shutter.close_plan()
+
+
+def collect_n_exposures_plan(name : str = '', comment : str = '',
+                             n_exposures : int = 1, dwell_time : float = 1.0,
+                             mono_energy : float = 7112,
+                             detectors : list = [], mono_angle_offset=None, metadata={}):
+
+    if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
+    default_detectors = [apb_ave, hhm_encoder]
+    aux_detectors = get_detector_device_list(detectors)
+    all_detectors = default_detectors + aux_detectors
+
+    md = get_n_exposures_plan_md(name, comment, mono_energy, detectors, n_exposures, dwell_time, metadata)
+
+    yield from bp.mv(hhm.energy, mono_energy)
+    yield from general_n_exposures(all_detectors, n_exposures, dwell_time, md)
+
+
+
 
 
 

@@ -232,9 +232,9 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
     def stage(self):
         self._datum_counter = itertools.count()
         self.total_points.put(self.num_points)
-        self.hdf5.file_write_mode.put(2)  # put it to Stream |||| IS ALREADY STREAMING
+        self.hdf5.file_write_mode.put(2)
         self.external_trig.put(True)
-        self.settings.trigger_mode.put(3) # put the trigger mode to TTL in
+        self.settings.trigger_mode.put(3)
         staged_list = super().stage()
         staged_list += self.ext_trigger_device.stage()
         return staged_list
@@ -242,7 +242,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
     def unstage(self):
         unstaged_list = super().unstage()
         self._datum_counter = None
-        self.hdf5.file_write_mode.put(0)  # put it to Stream |||| IS ALREADY STREAMING
+        self.hdf5.file_write_mode.put(0)
         self.external_trig.put(False)
         self.settings.trigger_mode.put(1)
         self.total_points.put(1)

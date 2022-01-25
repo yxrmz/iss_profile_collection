@@ -1,3 +1,5 @@
+from xas.file_io import validate_file_exists
+
 
 def get_general_md():
     gas_n2_flow = gas_n2.flow.get()
@@ -47,5 +49,37 @@ def get_general_md():
         else:
             md[f'ch{indx+1}_amp_gain'] = 0
     return md
+
+
+
+def create_interp_file_name(name, fn_ext):
+    fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}{fn_ext}"
+    fn = validate_file_exists(fn)
+    return fn
+
+def get_scan_md(name, comment, detectors, fn_ext):
+    fn = create_interp_file_name(name, fn_ext)
+    md_general = get_general_md()
+    md_scan = {'interp_filename': fn,
+               'name': name,
+               'comment': comment,
+               'detectors': detectors,
+               'plot_hint': '$5/$1'}
+    return {**md_general, **md_scan}
+
+def get_hhm_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata, fn_ext='.raw'):
+    try:
+        full_element_name = getattr(elements, element).name.capitalize()
+    except:
+        full_element_name = element
+
+    md_general = get_scan_md(name, comment, detectors, fn_ext)
+
+    md_scan = {'trajectory_filename': trajectory_filename,
+               'element': element,
+               'element_full': full_element_name,
+               'edge': edge,
+               'e0': e0}
+    return {**md_scan, **md_general, **metadata}
 
 

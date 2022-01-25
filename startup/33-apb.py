@@ -113,9 +113,7 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         self._ready_to_collect = False
 
     def trigger(self):
-        start_trigger = ttime.time()
         def callback(value, old_value, **kwargs):
-            #print(f'{ttime.time()} {old_value} ---> {value}')
             if self._capturing and int(round(old_value)) == 1 and int(round(value)) == 0:
                 self._capturing = False
                 return True
@@ -125,7 +123,6 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
         status = SubscriptionStatus(self.acquiring, callback)
         self.acquire.set(1)
-        #print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
         return status
 
     def save_current_status(self):
@@ -168,7 +165,6 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self._datum_counter = None
         self.num_points = None
 
-    # Step-scan interface
     def stage(self):
         file_uid = new_uid()
         # self.calc_num_points(traj_duration)

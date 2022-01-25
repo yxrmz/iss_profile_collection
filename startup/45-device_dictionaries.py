@@ -54,6 +54,14 @@ def get_detector_device_list(key_list, flying=True):
     return dets
 
 
+class KeyDetectorNotIncluded(Exception):
+    pass
+
+def ensure_pilatus_is_in_detector_list(detectors):
+    if not ('Pilatus 100k' in detectors):
+        raise KeyDetectorNotIncluded(f'Error: Pilatus 100k not found in the detector list')
+
+
 
 motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
                     'slits_v_pos': {'name': slits.v_pos.name, 'description':'B1 Slit Vertical Position','object': slits.v_pos},

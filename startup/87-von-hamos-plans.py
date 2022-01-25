@@ -1,3 +1,28 @@
+
+def collect_von_hamos_xes_plan(**kwargs):
+    ensure_pilatus_is_in_detector_list(kwargs['detector'])
+    vh_metadata = {'spectrometer': 'von_hamos'}
+    metadata = kwargs.pop('metadata')
+    metadata = {**vh_metadata, **metadata}
+    yield from collect_n_exposures_plan(**kwargs, metadata=metadata)
+
+def step_scan_von_hamos_plan(**kwargs):
+    ensure_pilatus_is_in_detector_list(kwargs['detector'])
+    vh_metadata = {'spectrometer': 'von_hamos'}
+    metadata = kwargs.pop('metadata')
+    metadata = {**vh_metadata, **metadata}
+    yield from step_scan_plan(**kwargs, metadata=metadata)
+
+
+def fly_scan_von_hamos_plan(**kwargs):
+    ensure_pilatus_is_in_detector_list(kwargs['detector'])
+    vh_metadata = {'spectrometer': 'von_hamos'}
+    metadata = kwargs.pop('metadata')
+    metadata = {**vh_metadata, **metadata}
+    yield from fly_scan_plan(**kwargs, metadata=metadata)
+
+
+
 def calibration_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
                                energy_down: bool = True,
                                energy_min: float = 6460,
@@ -22,6 +47,11 @@ def calibration_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay
         yield from step_scan_plan(name_n, comment, energy_grid, time_grid, [apb_ave, pil100k, hhm.enc.pos_I])
         yield from shutter.close_plan()
         yield from bps.sleep(float(delay))
+
+
+
+
+
 
 
 def point_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
