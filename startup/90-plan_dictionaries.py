@@ -1,8 +1,42 @@
 
 
-basic_plan_dict = {'step_scan_plan' : step_scan_plan,
-                   'fly_scan_plan' : fly_scan_plan,
-                   'sleep_plan' : bps.sleep}
+data_collection_plan_funcs = {
+        'step_scan_plan' : step_scan_plan,
+        'fly_scan_plan' : fly_scan_plan,
+        'collect_n_exposures_plan' : collect_n_exposures_plan,
+        'collect_von_hamos_xes_plan' : collect_von_hamos_xes_plan,
+        'step_scan_von_hamos_plan' : step_scan_von_hamos_plan,
+        'fly_scan_von_hamos_plan' : fly_scan_von_hamos_plan,
+        'collect_n_exposures_johann_plan' : collect_n_exposures_johann_plan,
+        'step_scan_johann_xes_plan' : step_scan_johann_xes_plan,
+        'step_scan_johann_herfd_plan' : step_scan_johann_herfd_plan,
+        'fly_scan_johann_herfd_plan' : fly_scan_johann_herfd_plan
+    }
+
+service_plan_funcs = {
+        'sleep': sleep_plan,
+        'get_offsets': get_offsets_plan,
+        'set_gains': set_gains_plan,
+        'optimize_gains': optimize_gains_plan,
+        'set_reference_foil': set_reference_foil,
+        'set_attenuator': set_attenuator,
+        'prepare_beamline_plan': prepare_beamline_plan,
+        'tune_beamline_plan': tune_beamline_plan,
+        'optimize_beamline_plan': optimize_beamline_plan,
+        'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
+        'johann_calibration_scan_plan' : johann_calibration_scan_plan,
+        'random_xy_step': move_sample_by_random_xy_step,
+    }
+
+
+aux_plan_funcs = {
+        'general_scan': general_scan,
+        'tuning_scan': tuning_scan,
+        'bender_scan': bender_scan_plan,
+    }
+
+all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}
+
 
 def generate_plan_description(plan_name, plan_kwargs):
     output = plan_name# + ': '
@@ -10,56 +44,3 @@ def generate_plan_description(plan_name, plan_kwargs):
     # for key, value in plan_kwargs.items():
     #     output += f'{key} = {str(value)}, '
     return output
-
-
-
-
-
-# plan_funcs = {
-#
-#     'Fly scan': fly_scan_with_apb,
-#     'Fly scan w/SDD': fly_scan_with_xs3,
-#     'Fly scan w/Pilatus100k': fly_scan_with_pil100k,
-#     'fly scan Johann RIXS w/Pilatus': fly_scan_rixs_w_pilatus,
-#     'Step scan': step_scan_plan,
-#     'Step scan w/Pilatus': step_scan_w_pilatus,
-#     'Step scan w/Xspress 3': step_scan_w_xs,
-#     # 'Constant energy': constant_energy,
-#     # 'Spiral fly scan': fly_scan_over_spiral,
-#     'Step scan Johann Emission w/Pilatus': step_scan_emission_w_pilatus,
-#     'Step scan Johann RIXS w/Pilatus': step_scan_rixs_w_pilatus,
-#     'Calibration scan w PIL' : calibration_scan_w_pilatus,
-#     'Point scan w PIL' : point_scan_w_pilatus,
-#     'Von Hamos Calibration w/ Pilatus' : vonhamos_calibration_scan_plan}
-#
-# service_plan_funcs = {
-#     'get_offsets': get_offsets,
-#     'sleep': sleep,
-#     'random_step': random_step,
-#     'set_gains': set_gains,
-#     'adjust_ic_gains': adjust_ic_gains,
-#     'prepare_beamline_plan': prepare_beamline_plan,
-#     'tune_beamline_plan': tune_beamline_plan,
-#     'optimize_beamline_plan': optimize_beamline_plan,
-#     'optimize_sample_plan': optimize_sample_plan,
-#     'calibrate_energy_plan': calibrate_energy_plan,
-#     'xs_count': xs_count,
-#     'pil_count': pil_count,
-#     'johann_calibration_scan_plan' : johann_calibration_scan_plan,
-#     'n_pil100k_exposures_plan' : n_pil100k_exposures_plan,
-#     'set_reference_foil': set_reference_foil,
-#     'set_attenuator': set_attenuator
-# }
-#
-#
-# aux_plan_funcs = {
-#     'get_adc_readouts': get_adc_readouts,
-#     'prepare_traj_plan': prep_traj_plan,
-#     'general_scan': general_scan,
-#     'general_spiral_scan': general_spiral_scan,
-#     'set_reference_foil': set_reference_foil,
-#     'tuning_scan': tuning_scan,
-#     'bender_scan': bender_scan,
-#     'set_attenuator': set_attenuator,
-#     'n_pil100k_exposures_plan': n_pil100k_exposures_plan,
-# }

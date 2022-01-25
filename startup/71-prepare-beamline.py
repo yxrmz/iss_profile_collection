@@ -102,7 +102,8 @@ bl_prepare_energy_ranges = [
         },
     ]
 
-def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_ranges, move_cm_mirror = False, stdout = sys.stdout):
+def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys.stdout):
+    energy_ranges = bl_prepare_energy_ranges
 
     BPM_exposure_setter = bpm_es.exp_time
     He_flow_setter = gas_he.flow
@@ -229,17 +230,6 @@ def prepare_beamline_plan(energy: int = -1, energy_ranges=bl_prepare_energy_rang
     if np.abs(hhm.y_precise.user_readback.get() - hhmy_position) > 0.05:
         print_to_gui(f'Error: vertical position of the second monochromator crystal is not set. Set manually to {hhmy_position}',stdout=stdout)
 
-
-
-def optimize_beamline_plan(energy: int = -1,  tune_elements=tune_elements, stdout = sys.stdout, force_prepare = False, enable_fb_in_the_end=True):
-    old_energy = hhm.energy.read()['hhm_energy']['value']
-    if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
-        yield from shutter.close_plan()
-        yield from prepare_beamline_plan(energy, move_cm_mirror = True, stdout = sys.stdout)
-        yield from tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb_in_the_end=enable_fb_in_the_end)
-    else:
-        print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
-        yield from bps.mv(hhm.energy, energy)
 
 
 

@@ -343,7 +343,7 @@ class ScanManager():
             plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates)
             plans.extend(plan_list_for_scan)
             if delay > 0:
-                plans.append({'plan_name': 'sleep', 'plan_kwargs': {'time': delay}})
+                plans.append({'plan_name': 'sleep', 'plan_kwargs': {'delay': delay}})
         return plans
 
 scan_manager = ScanManager()
@@ -405,7 +405,7 @@ class ScanProcessor():
 
     def execute_top_plan_from_list(self):
         plan_dict = self.plan_list[0]['plan_info']
-        plan = basic_plan_dict[plan_dict['plan_name']](**plan_dict['plan_kwargs'])
+        plan = all_plan_funcs[plan_dict['plan_name']](**plan_dict['plan_kwargs'])
         # plan = bps.sleep(2)
         print(f'{ttime.ctime()}   started doing plan {plan}')
         self.RE(plan)

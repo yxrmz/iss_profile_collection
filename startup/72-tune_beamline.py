@@ -95,15 +95,21 @@ tune_elements_ext =  [{'motor': hhm.pitch.name,
                    'fb_enable': True},
                 ]
 
-def tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb_in_the_end=True, truncate_data=False):
+def tune_beamline_plan(extended_tuning : bool = False, enable_fb_in_the_end : bool = True):
 
+    if extended_tuning:
+        tune_elements_list = tune_elements_ext
+    else:
+        tune_elements_list = tune_elements
+
+    stdout = sys.stdout
     print_to_gui(f'[Beamline tuning] Starting...',stdout=stdout)
     yield from bps.mv(hhm.fb_status, 0)
     print('bla')
 
     # yield from bps.mv(bpm_fm, 'insert')
 
-    for element in tune_elements:
+    for element in tune_elements_list:
         detector = detector_dictionary[element['detector']]['device']
 
         if 'fb_enable' in element.keys():
@@ -137,6 +143,18 @@ def tune_beamline_plan(tune_elements=tune_elements, stdout=sys.stdout, enable_fb
         hhm.fb_status.put(1)
     print('[Beamline tuning] Beamline tuning complete')
 
+
+
+def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True):
+    stdout = sys.stdout
+    old_energy = hhm.energy.read()['hhm_energy']['value']
+    if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
+        yield from shutter.close_plan()
+        yield from prepare_beamline_plan(energy, move_cm_mirror = True)
+        yield from tune_beamline_plan(extended_tuning=extended_tuning, enable_fb_in_the_end=enable_fb_in_the_end)
+    else:
+        print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
+        yield from bps.mv(hhm.energy, energy)
 
 
 

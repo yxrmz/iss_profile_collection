@@ -144,7 +144,7 @@ def collect_n_exposures_plan(name : str = '', comment : str = '',
 
     md = get_n_exposures_plan_md(name, comment, mono_energy, detectors, n_exposures, dwell_time, metadata)
 
-    yield from bp.mv(hhm.energy, mono_energy)
+    yield from bps.mv(hhm.energy, mono_energy)
     yield from general_n_exposures(all_detectors, n_exposures, dwell_time, md)
 
 
