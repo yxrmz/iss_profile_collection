@@ -9,15 +9,9 @@ class PlanProcessor():
         self.RE = RE
         self.scan_manager = scan_manager
         self.plan_list = []
-        self.status = 'stopped'
+        self.status = 'idle'
         self.plan_list_update_signal = None
         self.status_update_signal = None
-
-    def append_gui_plan_list_update_signal(self, signal):
-        self.plan_list_update_signal = signal
-
-    def append_gui_status_update_signal(self, signal):
-        self.status_update_signal = signal
 
     def get_logger(self):
         # Setup beamline specifics:
@@ -38,55 +32,94 @@ class PlanProcessor():
             logger.addHandler(debug_file)
         return logger
 
-    def add_plans(self, plans):
+    @property
+    def RE_state(self):
+        return self.RE.state
+
+    @property
+    def RE_is_running(self):
+        return self.RE_state == 'running'
+
+    def append_gui_plan_list_update_signal(self, signal):
+        self.plan_list_update_signal = signal
+
+    def append_gui_status_update_signal(self, signal):
+        self.status_update_signal = signal
+
+    def plan_status_at_index(self, idx):
+        try:
+            return self.plan_list[idx]['plan_status']
+        except IndexError:
+            return 'normal'
+
+    @property
+    def top_plan_status(self):
+        return self.plan_status_at_index(0)
+
+    @property
+    def last_plan_status(self):
+        return self.plan_status_at_index(-1)
+
+    @property
+    def top_plan_executing(self):
+        if self.RE_is_running:
+            return True
+        return False
+
+    def add_plans(self, plans, add_at='tail'):
         if type(plans) != list:
             plans = [plans]
 
-        if len(self.plan_list) > 0:
-            _status = self.plan_list[-1]['status']
-        else:
-            _status = 'normal'
+        if add_at == 'tail':
+            _plan_status = self.last_plan_status
+            for plan in plans:
+                self.plan_list.append({'plan_info' : plan, 'plan_status' : _plan_status})
+        elif add_at == 'head':
+            _plan_status = self.top_plan_status
+            idx = self.smallest_index
+            for plan in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
+                self.plan_list.insert(idx, {'plan_info': plan, 'plan_status': _plan_status})
 
-        for plan in plans:
-            self.plan_list.append({'plan_info' : plan, 'status' : _status})
+        self._emit_plan_list_update_signal()
 
-        if self.plan_list_update_signal is not None:
-            self.plan_list_update_signal.emit()
+    def make_plan_generator_object(self, idx):
+        plan_info = self.plan_list[idx]['plan_info']
+        plan_name = plan_info['plan_name']
+        plan_func = all_plan_funcs[plan_name]
+        plan_kwargs = plan_info['plan_kwargs']
+        return plan_func(**plan_kwargs)
 
-    def execute_top_plan_from_list(self):
-        plan_dict = self.plan_list[0]['plan_info']
-        plan = all_plan_funcs[plan_dict['plan_name']](**plan_dict['plan_kwargs'])
-        # plan = bps.sleep(2)
+    def execute_top_plan(self):
+        plan = self.make_plan_generator_object(0)
         print(f'{ttime.ctime()}   started doing plan {plan}')
         self.RE(plan)
-        # ttime.sleep(1)
         print(f'{ttime.ctime()}   done doing plan {plan}')
+
         self.plan_list.pop(0)
-        if self.plan_list_update_signal is not None:
-            self.plan_list_update_signal.emit()
+        self._emit_plan_list_update_signal()
 
     def run(self):
+        self.unpause_plan_list()
+
         while len(self.plan_list) > 0:
 
-            if self.plan_list[0]['status'] == 'normal':
+            if self.top_plan_status == 'normal':
                 self.update_status('running')
-                self.execute_top_plan_from_list()
+                self.execute_top_plan()
 
-            elif self.plan_list[0]['status'] == 'paused':
-                self.update_status('paused')
+            elif self.top_plan_status == 'paused':
                 break
 
-        self.update_status('stopped')
-
+        self.update_status('idle')
+        self.unpause_plan_list()
 
     def update_status(self, status):
         self.status = status
-        if self.status_update_signal is not None:
-            self.status_update_signal.emit()
+        self._emit_status_update_signal()
 
     @property
     def smallest_index(self):
-        if self.status == 'running':
+        if (self.status == 'running') or self.RE_is_running:
             return 1
         else:
             return 0
@@ -96,25 +129,41 @@ class PlanProcessor():
         self.pause_after_index(index)
 
     def pause_after_index(self, index):
+        any_plan_status_changed = False # to reduce unnecessary emitting
         for i in range(index, len(self.plan_list)):
-            self.plan_list[i]['status'] = 'paused'
-        if self.plan_list_update_signal is not None:
-            self.plan_list_update_signal.emit()
+            if self.plan_list[i]['plan_status'] == 'normal':
+                self.plan_list[i]['plan_status'] = 'paused'
+                any_plan_status_changed = True
+        if any_plan_status_changed:
+            self._emit_plan_list_update_signal()
 
-    def resume_plan_list(self):
-        for i in range(len(self.plan_list)):
-            self.plan_list[i]['status'] = 'normal'
-        if self.plan_list_update_signal is not None:
-            self.plan_list_update_signal.emit()
-        self.run()
+    def unpause_plan_list(self):
+        self.unpause_before_index(len(self.plan_list))
+
+    def unpause_before_index(self, index):
+        any_plan_status_changed = False # to reduce unnecessary emitting
+        for i in range(index):
+            if self.plan_list[i]['plan_status'] == 'paused':
+                self.plan_list[i]['plan_status'] = 'normal'
+                any_plan_status_changed = True
+        if any_plan_status_changed:
+            self._emit_plan_list_update_signal()
+
 
     def clear_plan_list(self):
         idx = self.smallest_index
         for i in range(idx, len(self.plan_list)):
             self.plan_list.pop(idx)
+        self._emit_plan_list_update_signal()
 
+
+    def _emit_plan_list_update_signal(self):
         if self.plan_list_update_signal is not None:
             self.plan_list_update_signal.emit()
+
+    def _emit_status_update_signal(self):
+        if self.status_update_signal is not None:
+            self.status_update_signal.emit()
 
 
 
