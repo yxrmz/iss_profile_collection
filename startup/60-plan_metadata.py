@@ -73,13 +73,13 @@ def get_hhm_scan_md(name, comment, trajectory_filename, detectors, element, e0, 
     except:
         full_element_name = element
 
-    md_general = get_scan_md(name, comment, detectors, fn_ext)
+    md_scan = get_scan_md(name, comment, detectors, fn_ext)
 
-    md_scan = {'trajectory_filename': trajectory_filename,
+    md_hhm_scan = {'trajectory_filename': trajectory_filename,
                'element': element,
                'element_full': full_element_name,
                'edge': edge,
                'e0': e0}
-    return {**md_scan, **md_general, **metadata}
+    return {**md_hhm_scan, **md_scan, **metadata}
 
 
