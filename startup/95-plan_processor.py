@@ -52,6 +52,9 @@ class PlanProcessor():
         except IndexError:
             return 'normal'
 
+    def set_plan_status_at_index(self, index, status):
+        self.plan_list[index]['plan_status'] = status
+
     @property
     def top_plan_status(self):
         return self.plan_status_at_index(0)
@@ -62,9 +65,7 @@ class PlanProcessor():
 
     @property
     def top_plan_executing(self):
-        if self.RE_is_running:
-            return True
-        return False
+        return self.top_plan_status == 'executing'
 
     def add_plans(self, plans, add_at='tail'):
         if type(plans) != list:
@@ -72,10 +73,12 @@ class PlanProcessor():
 
         if add_at == 'tail':
             _plan_status = self.last_plan_status
+            if _plan_status == 'executing': _plan_status = 'normal'
             for plan in plans:
                 self.plan_list.append({'plan_info' : plan, 'plan_status' : _plan_status})
         elif add_at == 'head':
             _plan_status = self.top_plan_status
+            if _plan_status == 'executing': _plan_status = 'normal'
             idx = self.smallest_index
             for plan in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
                 self.plan_list.insert(idx, {'plan_info': plan, 'plan_status': _plan_status})
@@ -91,6 +94,7 @@ class PlanProcessor():
 
     def execute_top_plan(self):
         plan = self.make_plan_generator_object(0)
+        self.set_plan_status_at_index(0, 'executing')
         print(f'{ttime.ctime()}   started doing plan {plan}')
         self.RE(plan)
         print(f'{ttime.ctime()}   done doing plan {plan}')
@@ -110,8 +114,9 @@ class PlanProcessor():
             elif self.top_plan_status == 'paused':
                 break
 
-        self.update_status('idle')
         self.unpause_plan_list()
+        self.update_status('idle')
+
 
     def update_status(self, status):
         self.status = status
@@ -131,7 +136,7 @@ class PlanProcessor():
     def pause_after_index(self, index):
         any_plan_status_changed = False # to reduce unnecessary emitting
         for i in range(index, len(self.plan_list)):
-            if self.plan_list[i]['plan_status'] == 'normal':
+            if self.plan_status_at_index(i) == 'normal':
                 self.plan_list[i]['plan_status'] = 'paused'
                 any_plan_status_changed = True
         if any_plan_status_changed:
