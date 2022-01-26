@@ -62,6 +62,10 @@ def ensure_pilatus_is_in_detector_list(detectors):
         raise KeyDetectorNotIncluded(f'Error: Pilatus 100k not found in the detector list')
 
 
+def get_channels_and_scan_labels(detectors):
+
+
+
 
 motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
                     'slits_v_pos': {'name': slits.v_pos.name, 'description':'B1 Slit Vertical Position','object': slits.v_pos},

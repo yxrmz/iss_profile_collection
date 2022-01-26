@@ -38,9 +38,3 @@ aux_plan_funcs = {
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}
 
 
-def generate_plan_description(plan_name, plan_kwargs):
-    output = plan_name# + ': '
-
-    # for key, value in plan_kwargs.items():
-    #     output += f'{key} = {str(value)}, '
-    return output

@@ -3,6 +3,9 @@
 
 
 class PlanProcessor():
+    liveplot_funcs = None
+    plan_list_update_signal = None
+    status_update_signal = None
 
     def __init__(self):
         self.logger = self.get_logger()
@@ -10,8 +13,6 @@ class PlanProcessor():
         self.scan_manager = scan_manager
         self.plan_list = []
         self.status = 'idle'
-        self.plan_list_update_signal = None
-        self.status_update_signal = None
 
     def get_logger(self):
         # Setup beamline specifics:
@@ -171,10 +172,30 @@ class PlanProcessor():
             self.status_update_signal.emit()
 
 
+    def append_liveplot_func_dictionary(self, liveplot_funcs):
+        self.liveplot_funcs = liveplot_funcs
+
+    def generate_plan_liveplot(self, plan_name, plan_kwargs, plan_tag=None):
+        if (self.liveplot_funcs is not None):
+            if (plan_tag is not None):
+                liveplot_info = self.liveplot_funcs[plan_tag]
+                make_liveplot_func = liveplot_info['make_liveplot_func']
+                preferences = liveplot_info['preferences']
+
+                if plan_tag == 'data_collection':
+                    detectors = plan_kwargs['detectors']
+                    motor_name = 'SOMETHING'
+                    make_liveplot_func(detectors, motor_name)
+
+
 
 
 
 plan_processor = PlanProcessor()
+
+
+
+
 
 
 
