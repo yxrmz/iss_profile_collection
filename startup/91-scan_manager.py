@@ -191,13 +191,6 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
-    def generate_plan_description(self, plan_name, plan_kwargs):
-        output = plan_name  # + ': '
-
-        # for key, value in plan_kwargs.items():
-        #     output += f'{key} = {str(value)}, '
-        return output
-
     def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata={}, ):
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
@@ -332,11 +325,7 @@ class ScanManager():
                     plan_kwargs['rixs_file_name'] = rixs_file_name
 
             output.append({'plan_name': plan_name,
-                           'plan_kwargs': {**plan_kwargs, **common_kwargs},
-                           'plan_description': self.generate_plan_description(plan_name, {**plan_kwargs, **common_kwargs}),
-                           'plan_tag' : 'data_collection'})
-
-
+                           'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         return output
 

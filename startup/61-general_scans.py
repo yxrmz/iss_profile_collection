@@ -21,13 +21,15 @@ def general_scan_plan(detectors, motor, rel_start, rel_stop, num):
     yield from plan
     yield from shutter.close_plan()
 
-def general_scan(detectors, motor, rel_start, rel_stop, num, **kwargs):
+def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_steps=1, liveplot_kwargs={}):
 
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
     #print(f'Dets {detectors}')
     #print(f'Motors {motor}')
+    motor_device = get_motor_device(motor)
+    detector_devices = get_detector_device_list(detectors, flying=False)
     print('[General Scan] Starting scan...')
-    uid =  yield from (general_scan_plan(detectors, motor, rel_start, rel_stop, int(num)))
+    uid =  yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps)))
     print('[General Scan] Done!')
     return uid
 

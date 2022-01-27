@@ -62,9 +62,6 @@ def ensure_pilatus_is_in_detector_list(detectors):
         raise KeyDetectorNotIncluded(f'Error: Pilatus 100k not found in the detector list')
 
 
-def get_channels_and_scan_labels(detectors):
-
-
 
 
 motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 Slit Vertical Gap','object': slits.v_gap},
@@ -124,6 +121,11 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'i0_y_pos': {'name': i0_y.pos.name, 'description':'I0 Chamber height','object': i0_y.pos},
                     'it_y_pos': {'name': it_y.pos.name, 'description':'It Chamber height','object': it_y.pos},
                     'ir_y_pos': {'name': ir_y.pos.name, 'description':'Ir Chamber height','object': ir_y.pos},}
+
+def get_motor_device(motor_description):
+    for key, motor_dict in motor_dictionary.items():
+        if motor_description == motor_dict['description']:
+            return motor_dict['object']
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),

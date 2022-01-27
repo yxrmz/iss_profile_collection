@@ -47,6 +47,12 @@ class PlanProcessor():
     def append_gui_status_update_signal(self, signal):
         self.status_update_signal = signal
 
+    def append_liveplot_maker(self, liveplot_maker):
+        self.liveplot_maker = liveplot_maker
+
+    def make_liveplots(self, plan, plan_kwargs):
+        return self.liveplot_maker(plan, plan_kwargs)
+
     def plan_status_at_index(self, idx):
         try:
             return self.plan_list[idx]['plan_status']
@@ -72,6 +78,10 @@ class PlanProcessor():
         if type(plans) != list:
             plans = [plans]
 
+        for plan in plans:
+            if 'plan_description' not in plan.keys():
+                plan['plan_description'] = generate_plan_description(plan['plan_name'], plan['plan_kwargs'])
+
         if add_at == 'tail':
             _plan_status = self.last_plan_status
             if _plan_status == 'executing': _plan_status = 'normal'
@@ -86,20 +96,21 @@ class PlanProcessor():
 
         self._emit_plan_list_update_signal()
 
-    def make_plan_generator_object(self, idx):
+    def make_re_args(self, idx):
         plan_info = self.plan_list[idx]['plan_info']
         plan_name = plan_info['plan_name']
         plan_func = all_plan_funcs[plan_name]
         plan_kwargs = plan_info['plan_kwargs']
-        return plan_func(**plan_kwargs)
+        liveplots = self.make_liveplots(plan_name, plan_kwargs)
+        if len(liveplots) == 0:
+            return (plan_func(**plan_kwargs), )
+        else:
+            return (plan_func(**plan_kwargs), liveplots)
 
     def execute_top_plan(self):
-        plan = self.make_plan_generator_object(0)
+        re_args = self.make_re_args(0)
         self.set_plan_status_at_index(0, 'executing')
-        print(f'{ttime.ctime()}   started doing plan {plan}')
-        self.RE(plan)
-        print(f'{ttime.ctime()}   done doing plan {plan}')
-
+        self.RE(*re_args)
         self.plan_list.pop(0)
         self._emit_plan_list_update_signal()
 
@@ -118,6 +129,9 @@ class PlanProcessor():
         self.unpause_plan_list()
         self.update_status('idle')
 
+    def run_if_idle(self):
+        if self.status == 'idle':
+            self.run()
 
     def update_status(self, status):
         self.status = status

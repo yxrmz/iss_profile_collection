@@ -17,7 +17,8 @@ import time as ttime
 if not os.environ.get('AZURE_TESTING'):
     from isstools import xlive
 
-    xlive_gui = xlive.XliveGui(service_plan_funcs=service_plan_funcs,
+    xlive_gui = xlive.XliveGui(data_collection_plan_funcs=data_collection_plan_funcs,
+                               service_plan_funcs=service_plan_funcs,
                                aux_plan_funcs=aux_plan_funcs,
                                scan_manager=scan_manager,
                                plan_processor=plan_processor,
