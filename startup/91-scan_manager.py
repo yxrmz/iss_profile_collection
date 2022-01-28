@@ -204,7 +204,7 @@ class ScanManager():
                                                        metadata=metadata)
 
 
-    def parse_scan_to_plan_from_parameters(self, name, comment, scan, aux_parameters, sample_coordinates=None, metadata={}, rixs_file_name=None, make_liveplot_func=None):
+    def parse_scan_to_plan_from_parameters(self, name, comment, scan, aux_parameters, sample_coordinates=None, metadata={}, rixs_kwargs={}):
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
 
@@ -217,123 +217,133 @@ class ScanManager():
 
         output = []
 
-        # deal with RIXS via recursion
-        if scan_key == 'johann_rixs':
-            spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
-            if type(sample_coordinates) == list:
-                assert len(sample_coordinates) == len(spectrometer_energy_grid), 'number of positions on the sample must match the number of energy points on emission grid'
-            else:
-                sample_coordinates = [sample_coordinates] * len(spectrometer_energy_grid)
-
-            _local_rixs_file_name = create_interp_file_name(name, '.rixs')
-
-            for emission_energy, _local_sample_coordinates in zip(spectrometer_energy_grid, sample_coordinates):
-
-                _local_name = f'{name} E={str(emission_energy)}'
-                _local_comment = f'{comment} E={str(emission_energy)}'
-                _local_spectrometer_parameters = {'kind' : 'johann',
-                                                  'scan_type': 'constant energy',
-                                                  'scan_parameters': {'energy': emission_energy}}
-                _local_aux_parameters = copy.deepcopy(aux_parameters)
-                _local_aux_parameters['spectrometer'] = _local_spectrometer_parameters
-                _local_aux_parameters['scan_key'] = 'johann_herfd'
-                _local_output = self.parse_scan_to_plan_from_parameters(_local_name,
-                                                                        _local_comment,
-                                                                        scan,
-                                                                        _local_aux_parameters,
-                                                                        sample_coordinates=_local_sample_coordinates,
-                                                                        metadata=metadata,
-                                                                        rixs_file_name=_local_rixs_file_name,
-                                                                        make_liveplot_func=make_liveplot_func)
-                output.extend(_local_output)
-
-        # all the standard stuff
-        else:
-            if type(sample_coordinates) == dict:
-                plan_name = 'move_sample_stage_plan'
-                plan_kwargs = {'sample_coordinates': sample_coordinates}
-                output.append({'plan_name': plan_name,
-                               'plan_kwargs': plan_kwargs,
-                               'plan_description': self.generate_plan_description(plan_name, plan_kwargs)})
-
-            if scan_key == 'xas':
-                if scan_type == 'step scan':
-                    plan_name = 'step_scan_plan'
-                elif scan_type == 'fly scan':
-                    plan_name = 'fly_scan_plan'
-                plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                               'element': scan_parameters['element'],
-                               'edge': scan_parameters['edge'],
-                               'e0': scan_parameters['e0']}
-
-            elif scan_key == 'constant_e':
-                plan_name = 'collect_n_exposures_plan'
-                plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
-                               'dwell_time': scan_parameters['dwell_time'],
-                               'mono_energy': scan_parameters['energy']}
-
-            elif scan_key == 'von_hamos_xes':
-                plan_name = 'collect_von_hamos_xes_plan'
-                plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
-                               'dwell_time': scan_parameters['dwell_time'],
-                               'mono_energy': scan_parameters['energy']}
-
-            elif scan_key == 'von_hamos_rixs':
-                if scan_type == 'step scan':
-                    plan_name = 'step_scan_von_hamos_plan'
-                elif scan_type == 'fly scan':
-                    plan_name = 'fly_scan_von_hamos_plan'
-                plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                               'element': scan_parameters['element'],
-                               'edge': scan_parameters['edge'],
-                               'e0': scan_parameters['e0']}
-
-            elif scan_key == 'constant_e_johann':
-                plan_name = 'collect_n_exposures_johann_plan'
-                spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
-                plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
-                               'dwell_time': scan_parameters['dwell_time'],
-                               'mono_energy': scan_parameters['energy'],
-                               'spectrometer_energy': spectrometer_energy}
-
-            elif scan_key == 'johann_xes':
-                plan_name = 'step_scan_johann_xes_plan'
-                spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
-                spectrometer_time_grid = aux_parameters['spectrometer']['scan_parameters']['time_grid']
-                element = aux_parameters['spectrometer']['scan_parameters']['element']
-                line = aux_parameters['spectrometer']['scan_parameters']['line']
-                e0 = aux_parameters['spectrometer']['scan_parameters']['e0']
-                plan_kwargs = {'mono_energy': scan_parameters['energy'],
-                               'emission_energy_list': spectrometer_energy_grid,
-                               'emission_time_list': spectrometer_time_grid,
-                               'element': element,
-                               'line': line,
-                               'e0': e0}
-
-            elif scan_key == 'johann_herfd':
-                if scan_type == 'step scan':
-                    plan_name = 'step_scan_johann_herfd_plan'
-                elif scan_type == 'fly scan':
-                    plan_name = 'fly_scan_johann_herfd_plan'
-                spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
-                plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
-                               'element': scan_parameters['element'],
-                               'edge': scan_parameters['edge'],
-                               'e0': scan_parameters['e0'],
-                               'spectrometer_energy': spectrometer_energy}
-                if rixs_file_name is not None:
-                    plan_kwargs['rixs_file_name'] = rixs_file_name
-
+        if type(sample_coordinates) == dict:
+            plan_name = 'move_sample_stage_plan'
+            plan_kwargs = {'sample_coordinates': sample_coordinates}
             output.append({'plan_name': plan_name,
-                           'plan_kwargs': {**plan_kwargs, **common_kwargs}})
+                           'plan_kwargs': plan_kwargs})
+
+        if scan_key == 'xas':
+            if scan_type == 'step scan':
+                plan_name = 'step_scan_plan'
+            elif scan_type == 'fly scan':
+                plan_name = 'fly_scan_plan'
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0']}
+
+        elif scan_key == 'constant_e':
+            plan_name = 'collect_n_exposures_plan'
+            plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
+                           'dwell_time': scan_parameters['dwell_time'],
+                           'mono_energy': scan_parameters['energy']}
+
+        elif scan_key == 'von_hamos_xes':
+            plan_name = 'collect_von_hamos_xes_plan'
+            plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
+                           'dwell_time': scan_parameters['dwell_time'],
+                           'mono_energy': scan_parameters['energy']}
+
+        elif scan_key == 'von_hamos_rixs':
+            if scan_type == 'step scan':
+                plan_name = 'step_scan_von_hamos_plan'
+            elif scan_type == 'fly scan':
+                plan_name = 'fly_scan_von_hamos_plan'
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0']}
+
+        elif scan_key == 'constant_e_johann':
+            plan_name = 'collect_n_exposures_johann_plan'
+            spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+            plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
+                           'dwell_time': scan_parameters['dwell_time'],
+                           'mono_energy': scan_parameters['energy'],
+                           'spectrometer_energy': spectrometer_energy}
+
+        elif scan_key == 'johann_xes':
+            plan_name = 'step_scan_johann_xes_plan'
+            spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
+            spectrometer_time_grid = aux_parameters['spectrometer']['scan_parameters']['time_grid']
+            element = aux_parameters['spectrometer']['scan_parameters']['element']
+            line = aux_parameters['spectrometer']['scan_parameters']['line']
+            e0 = aux_parameters['spectrometer']['scan_parameters']['e0']
+            plan_kwargs = {'mono_energy': scan_parameters['energy'],
+                           'emission_energy_list': spectrometer_energy_grid,
+                           'emission_time_list': spectrometer_time_grid,
+                           'element': element,
+                           'line': line,
+                           'e0': e0}
+
+        elif scan_key == 'johann_herfd':
+            if scan_type == 'step scan':
+                plan_name = 'step_scan_johann_herfd_plan'
+            elif scan_type == 'fly scan':
+                plan_name = 'fly_scan_johann_herfd_plan'
+            spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0'],
+                           'spectrometer_energy': spectrometer_energy}
+            # if rixs_file_name is not None:
+            #     plan_kwargs['rixs_file_name'] = rixs_file_name
+
+        elif scan_key == 'johann_rixs':
+            if scan_type == 'step scan':
+                plan_name = 'step_scan_johann_rixs_plan_bundle'
+            elif scan_type == 'fly scan':
+                plan_name = 'fly_scan_johann_rixs_plan_bundle'
+            element_line = aux_parameters['spectrometer']['scan_parameters']['element']
+            line = aux_parameters['spectrometer']['scan_parameters']['line']
+            e0_line = aux_parameters['spectrometer']['scan_parameters']['e0']
+            emission_energy_list = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
+            plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
+                           'element': scan_parameters['element'],
+                           'edge': scan_parameters['edge'],
+                           'e0': scan_parameters['e0'],
+                           'element_line' : element_line,
+                           'line': line,
+                           'e0_line': e0_line,
+                           'emission_energy_list': emission_energy_list,
+                           'sample_coordinates' : sample_coordinates,
+                           'rixs_kwargs' : rixs_kwargs}
+
+            #
+            # _local_rixs_file_name = create_interp_file_name(name, '.rixs')
+            #
+            # for emission_energy, _local_sample_coordinates in zip(spectrometer_energy_grid, sample_coordinates):
+            #
+            #     _local_name = f'{name} E={str(emission_energy)}'
+            #     _local_comment = f'{comment} E={str(emission_energy)}'
+            #     _local_spectrometer_parameters = {'kind' : 'johann',
+            #                                       'scan_type': 'constant energy',
+            #                                       'scan_parameters': {'energy': emission_energy}}
+            #     _local_aux_parameters = copy.deepcopy(aux_parameters)
+            #     _local_aux_parameters['spectrometer'] = _local_spectrometer_parameters
+            #     _local_aux_parameters['scan_key'] = 'johann_herfd'
+            #     _local_output = self.parse_scan_to_plan_from_parameters(_local_name,
+            #                                                             _local_comment,
+            #                                                             scan,
+            #                                                             _local_aux_parameters,
+            #                                                             sample_coordinates=_local_sample_coordinates,
+            #                                                             metadata=metadata,
+            #                                                             )
+            #     output.extend(_local_output)
+
+
+        output.append({'plan_name': plan_name,
+                       'plan_kwargs': {**plan_kwargs, **common_kwargs}})
 
         return output
 
-    def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None, metadata={}, make_liveplot_func=None):
+    def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None, metadata={}):
         plans = []
         for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
-            plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates, metadata=metadata, make_liveplot_func=make_liveplot_func)
+            plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates, metadata=metadata)
             plans.extend(plan_list_for_scan)
             if delay > 0:
                 plans.append({'plan_name': 'sleep', 'plan_kwargs': {'delay': delay}})

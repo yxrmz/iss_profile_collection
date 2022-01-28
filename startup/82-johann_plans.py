@@ -47,12 +47,10 @@ def step_scan_johann_herfd_plan(**kwargs):
     yield from step_scan_plan(metadata=metadata, **kwargs)
 
 def fly_scan_johann_herfd_plan(**kwargs):
+    # rixs_file_name = kwargs.pop('rixs_file_name')
     yield from prepare_johann_scan_plan(kwargs['detectors'], kwargs['spectrometer_energy'])
     metadata, kwargs = prepare_johann_metadata_and_kwargs(**kwargs)
     yield from fly_scan_plan(metadata=metadata, **kwargs)
-
-
-
 
 
 def get_johann_xes_step_scan_md(name, comment, detectors, emission_energy_list, emission_time_list, element, e0, line, metadata):
@@ -90,6 +88,59 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from prepare_johann_scan_plan(all_detectors, emission_energy_list[0])
 
     yield from general_energy_step_scan(all_detectors, johann_spectrometer_motor.energy, emission_energy_list, emission_time_list, md=md)
+
+
+
+def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list):
+    if type(sample_coordinates) == list:
+        assert len(sample_coordinates) == len(emission_energy_list), 'number of positions on the sample must match the number of energy points on emission grid'
+    else:
+        sample_coordinates = [sample_coordinates] * len(emission_energy_list)
+        return sample_coordinates
+
+def get_johann_rixs_md(name, element_line, line, e0_line, metadata):
+    metadata['rixs_file_name'] = create_interp_file_name(name, '.rixs')
+    metadata['element_line'] = element_line
+    metadata['line'] = line
+    metadata['e0_line'] = e0_line
+    return metadata
+
+
+def johann_rixs_plan_bundle(plan_name, name=None, comment=None, detectors=[],
+                            trajectory_filename=None, mono_angle_offset=None,
+                            emission_energy_list=None, sample_coordinates=None,
+                            element='', edge='', e0=None, element_line='', line='', e0_line=None,
+                            rixs_kwargs={}, metadata={}):
+    sample_coordinates = deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list)
+    metadata = get_johann_rixs_md(name, element_line, line, e0_line, metadata)
+    plans = []
+    for emission_energy, sample_position in zip(emission_energy_list, sample_coordinates):
+
+        if sample_position is not None:
+            plans.append({'plan_name': 'move_sample_stage_plan',
+                          'plan_kwargs': {'sample_coordinates': sample_position}})
+
+        plans.append({'plan_name': plan_name,
+                      'plan_kwargs': {'name': name,
+                                      'comment': comment,
+                                      'detectors': detectors,
+                                      'trajectory_filename': trajectory_filename,
+                                      'element': element,
+                                      'edge': edge,
+                                      'e0': e0,
+                                      'spectrometer_energy': emission_energy,
+                                      'mono_angle_offset': mono_angle_offset,
+                                      'metadata': metadata}})
+        # deal with rixs_kwargs
+    return plans
+
+def fly_scan_johann_rixs_plan_bundle(**kwargs):
+    return johann_rixs_plan_bundle('fly_scan_johann_herfd_plan', **kwargs)
+
+def step_scan_johann_rixs_plan_bundle(**kwargs):
+    return johann_rixs_plan_bundle('step_scan_johann_herfd_plan', **kwargs)
+
+
 
 
 
