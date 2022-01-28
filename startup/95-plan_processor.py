@@ -3,7 +3,8 @@
 
 
 class PlanProcessor():
-    liveplot_funcs = None
+    liveplot_maker = None
+    gui_services_dict = None
     plan_list_update_signal = None
     status_update_signal = None
 
@@ -51,7 +52,24 @@ class PlanProcessor():
         self.liveplot_maker = liveplot_maker
 
     def make_liveplots(self, plan, plan_kwargs):
-        return self.liveplot_maker(plan, plan_kwargs)
+        if self.liveplot_maker is not None:
+            return self.liveplot_maker(plan, plan_kwargs)
+        else:
+            return []
+
+    def append_gui_services_dict(self, gui_services_dict):
+        self.gui_services_dict = gui_services_dict
+
+    def get_gui_services_kwargs(self, plan_info):
+        gui_services_kwargs = {}
+        if 'plan_gui_services' in plan_info.keys():
+            for service_key in plan_info['plan_gui_services']:
+                service_dict = self.gui_services_dict[service_key]
+                kwarg_name = service_dict['kwarg_name']
+                kwarg_value = service_dict['kwarg_value']
+                gui_services_kwargs[kwarg_name] = kwarg_value
+            return gui_services_kwargs
+        return gui_services_kwargs
 
     def plan_status_at_index(self, idx):
         try:
@@ -78,21 +96,21 @@ class PlanProcessor():
         if type(plans) != list:
             plans = [plans]
 
-        for plan in plans:
-            if 'plan_description' not in plan.keys():
-                plan['plan_description'] = generate_plan_description(plan['plan_name'], plan['plan_kwargs'])
+        for plan_dict in plans:
+            if 'plan_description' not in plan_dict.keys():
+                plan_dict['plan_description'] = generate_plan_description(plan_dict['plan_name'], plan_dict['plan_kwargs'])
 
         if add_at == 'tail':
             _plan_status = self.last_plan_status
             if _plan_status == 'executing': _plan_status = 'normal'
-            for plan in plans:
-                self.plan_list.append({'plan_info' : plan, 'plan_status' : _plan_status})
+            for plan_dict in plans:
+                self.plan_list.append({'plan_info' : plan_dict, 'plan_status' : _plan_status})
         elif add_at == 'head':
             _plan_status = self.top_plan_status
             if _plan_status == 'executing': _plan_status = 'normal'
             idx = self.smallest_index
-            for plan in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
-                self.plan_list.insert(idx, {'plan_info': plan, 'plan_status': _plan_status})
+            for plan_dict in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
+                self.plan_list.insert(idx, {'plan_info': plan_dict, 'plan_status': _plan_status})
 
         self._emit_plan_list_update_signal()
 
@@ -102,10 +120,12 @@ class PlanProcessor():
         plan_func = all_plan_funcs[plan_name]
         plan_kwargs = plan_info['plan_kwargs']
         liveplots = self.make_liveplots(plan_name, plan_kwargs)
+        gui_services_kwargs = self.get_gui_services_kwargs(plan_info)
+        plan_all_kwargs = {**plan_kwargs, **gui_services_kwargs}
         if len(liveplots) == 0:
-            return (plan_func(**plan_kwargs), )
+            return (plan_func(**plan_all_kwargs), )
         else:
-            return (plan_func(**plan_kwargs), liveplots)
+            return (plan_func(**plan_all_kwargs), liveplots)
 
     def execute_top_plan(self):
         re_args = self.make_re_args(0)
@@ -132,6 +152,13 @@ class PlanProcessor():
     def run_if_idle(self):
         if self.status == 'idle':
             self.run()
+
+    def add_plan_and_run_if_idle(self, plan_name, plan_kwargs, plan_gui_services=None):
+        plan_dict = {'plan_name': plan_name, 'plan_kwargs': plan_kwargs}
+        if plan_gui_services is not None:
+            plan_dict['plan_gui_services'] = plan_gui_services
+        self.add_plans(plan_dict)
+        self.run_if_idle()
 
     def update_status(self, status):
         self.status = status

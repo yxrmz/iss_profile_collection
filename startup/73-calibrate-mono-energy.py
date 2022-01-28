@@ -21,7 +21,7 @@ def standard_trajectory_filename_for_element_edge(element, edge, init_traj=True)
 
 
 
-def calibrate_mono_energy_plan(element, edge, dE=25, plot_func=None, error_message_func=None):
+def calibrate_mono_energy_plan(element='', edge='', dE=25, plot_func=None, error_message_func=None):
     # # check if current trajectory is good for this calibration
     validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
 

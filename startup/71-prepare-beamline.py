@@ -102,7 +102,7 @@ bl_prepare_energy_ranges = [
         },
     ]
 
-def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys.stdout):
+def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
     energy_ranges = bl_prepare_energy_ranges
 
     BPM_exposure_setter = bpm_es.exp_time
@@ -121,7 +121,8 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
     energy_range = [e_range for e_range in energy_ranges if
                   e_range['energy_end'] > energy >= e_range['energy_start']][0]
     if not energy_range:
-        print_to_gui('ERROR: Energy is outside of the beamline energy range',stdout=stdout)
+        # print_to_gui('ERROR: Energy is outside of the beamline energy range')
+        print('ERROR: Energy is outside of the beamline energy range')
         return
 
 
@@ -132,7 +133,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, stdout = sys
         move_filter = True
 
 
-    print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...',stdout=stdout)
+    print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...', stdout=stdout)
     if move_cm_mirror == True:
         start_cm_position = cm_setter.position
         end_cm_position = energy_range['CM1']
