@@ -144,22 +144,6 @@ tune_elements_ext =  [{'motor': hhm.pitch.name,
 #     print('[Beamline tuning] Beamline tuning complete')
 
 
-def move_bpm_fm_plan(action = 'insert'):
-    yield from bps.mv(bpm_fm, action)
-
-def put_bpm_fm_to_continuous_mode():
-    # if hasattr(detector, 'image_mode'):
-    yield from bps.mv(getattr(bpm_fm, 'image_mode'), 2)
-    yield from bps.mv(getattr(bpm_fm, 'acquire'), 1)
-
-def set_hhm_feedback_plan(state=0):
-    yield from bps.mv(hhm.fb_status, state)
-
-def print_message_plan(msg='', tag='', add_timestamp=False, ntabs=0):
-    print_message(msg, tag='', add_timestamp=add_timestamp, ntabs=ntabs)
-    yield from bps.null()
-
-
 def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_end : bool = True, do_liveplot=False):
 
     if extended_tuning:
@@ -218,19 +202,33 @@ def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_e
     return plans
 
 
+#
+# def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True):
+#     old_energy = hhm.energy.position
+#     if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
+#         yield from shutter.close_plan()
+#         yield from prepare_beamline_plan(energy, move_cm_mirror = True)
+#         yield from tune_beamline_plan(extended_tuning=extended_tuning, enable_fb_in_the_end=enable_fb_in_the_end)
+#     else:
+#         # print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
+#         yield from bps.mv(hhm.energy, energy)
 
-def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True):
-    stdout = sys.stdout
-    old_energy = hhm.energy.read()['hhm_energy']['value']
+
+def optimize_beamline_plan_bundle(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True, do_liveplot=False):
+    old_energy = hhm.energy.position
+    plans = []
     if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
-        yield from shutter.close_plan()
-        yield from prepare_beamline_plan(energy, move_cm_mirror = True)
-        yield from tune_beamline_plan(extended_tuning=extended_tuning, enable_fb_in_the_end=enable_fb_in_the_end)
+        plans.append({'plan_name' : 'shutter_close_plan', 'plan_kwargs' : {}})
+        plans.append({'plan_name' : 'prepare_beamline_plan',
+                      'plan_kwargs' : {'energy': energy, 'move_cm_mirror': True}})
+        tuning_plans = tune_beamline_plan_bundle(extended_tuning=extended_tuning, enable_fb_in_the_end=enable_fb_in_the_end, do_liveplot=do_liveplot)
+        plans.extend(tuning_plans)
+
     else:
-        print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
-        yield from bps.mv(hhm.energy, energy)
-
-
-
-
+        # print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
+        plans.append({'plan_name': 'move_mono_energy',
+                      'plan_kwargs': {'energy': energy}})
+        plans.append({'plan_name': 'print_message_plan',
+                      'plan_kwargs': {'msg': 'Beamline is already prepared for {energy} eV', 'tag': 'Beamline tuning'}})
+    return plans
 

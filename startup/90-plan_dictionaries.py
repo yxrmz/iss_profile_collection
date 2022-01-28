@@ -22,17 +22,23 @@ service_plan_funcs = {
         'set_attenuator': set_attenuator,
         'prepare_beamline_plan': prepare_beamline_plan,
         'tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : tune_beamline_plan_bundle},
-        'optimize_beamline_plan': optimize_beamline_plan,
+        'optimize_beamline_plan_bundle': {'kind' : 'bundle', 'func' : optimize_beamline_plan_bundle},
         'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'random_xy_step': move_sample_by_random_xy_step,
-    }
+        }
 
 
 aux_plan_funcs = {
         'general_scan': general_scan,
         'tuning_scan': tuning_scan,
         'bender_scan': bender_scan_plan,
+        'print_message_plan' : print_message_plan,
+        'move_bpm_fm_plan' : move_bpm_fm_plan,
+        'put_bpm_fm_to_continuous_mode' : put_bpm_fm_to_continuous_mode,
+        'set_hhm_feedback_plan' : set_hhm_feedback_plan,
+        'move_mono_energy' : move_mono_energy,
+        'shutter_close_plan' : shutter.close_plan,
     }
 
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}

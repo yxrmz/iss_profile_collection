@@ -96,25 +96,11 @@ class PlanProcessor():
         if 'plan_description' not in plan_dict.keys():
             plan_dict['plan_description'] = generate_plan_description(plan_dict['plan_name'], plan_dict['plan_kwargs'])
 
-    def deal_with_bundles_in_plan_list(self, plans):
-        output_plan_list = []
-        for plan in plans:
-            plan_name = plan['plan_name']
-            plan_func = all_plan_funcs[plan_name]
-            if callable(plan_func):
-                output_plan_list.append(plan)
-            elif type(plan_func) == dict:
-                if plan_func['kind'] == 'bundle':
-                    bundle_kwargs = plan['plan_kwargs']
-                    plan_bundle = plan_func['func'](**bundle_kwargs)
-                    output_plan_list.extend(plan_bundle)
-        return output_plan_list
-
-    def add_plans(self, plans, add_at='tail'):
+    def add_plans(self, plans, add_at='tail', idx=None):
         if type(plans) != list:
             plans = [plans]
 
-        plans = self.deal_with_bundles_in_plan_list(plans)
+        # plans = self.deal_with_bundles_in_plan_list(plans)
 
         for plan_dict in plans:
             self.describe_plan(plan_dict)
@@ -130,8 +116,25 @@ class PlanProcessor():
             idx = self.smallest_index
             for plan_dict in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
                 self.plan_list.insert(idx, {'plan_info': plan_dict, 'plan_status': _plan_status})
+        elif add_at == 'index':
+            _plan_status = self.plan_status_at_index(idx)
+            if _plan_status == 'executing':
+                _plan_status = 'normal'
+            for plan_dict in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
+                self.plan_list.insert(idx, {'plan_info': plan_dict, 'plan_status': _plan_status})
 
         self._emit_plan_list_update_signal()
+
+    def detect_and_unwrap_bundle(self, idx):
+        plan_info = self.plan_list[idx]['plan_info']
+        plan_name = plan_info['plan_name']
+        plan_func = all_plan_funcs[plan_name]
+        if type(plan_func) == dict:
+            if plan_func['kind'] == 'bundle':
+                bundle_kwargs = plan_info['plan_kwargs']
+                plan_bundle = plan_func['func'](**bundle_kwargs)
+                self.plan_list.pop(idx)
+                self.add_plans(plan_bundle, add_at='index', idx=idx)
 
     def make_re_args(self, idx):
         plan_info = self.plan_list[idx]['plan_info']
@@ -147,6 +150,7 @@ class PlanProcessor():
             return (plan_func(**plan_all_kwargs), liveplots)
 
     def execute_top_plan(self):
+        self.detect_and_unwrap_bundle(0)
         re_args = self.make_re_args(0)
         self.set_plan_status_at_index(0, 'executing')
         self.RE(*re_args)
