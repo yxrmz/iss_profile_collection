@@ -122,10 +122,14 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'it_y_pos': {'name': it_y.pos.name, 'description':'It Chamber height','object': it_y.pos},
                     'ir_y_pos': {'name': ir_y.pos.name, 'description':'Ir Chamber height','object': ir_y.pos},}
 
-def get_motor_device(motor_description):
+def get_motor_device(motor_attr, based_on='description'):
     for key, motor_dict in motor_dictionary.items():
-        if motor_description == motor_dict['description']:
-            return motor_dict['object']
+        if based_on == 'description':
+            if motor_attr == motor_dict['description']:
+                return motor_dict['object']
+        elif based_on == 'object_name':
+            if motor_attr == motor_attr['name']:
+                return motor_dict['object']
 
 
 shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),

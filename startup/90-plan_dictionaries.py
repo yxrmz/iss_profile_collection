@@ -21,7 +21,7 @@ service_plan_funcs = {
         'set_reference_foil': set_reference_foil,
         'set_attenuator': set_attenuator,
         'prepare_beamline_plan': prepare_beamline_plan,
-        'tune_beamline_plan': tune_beamline_plan,
+        'tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : tune_beamline_plan_bundle},
         'optimize_beamline_plan': optimize_beamline_plan,
         'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,

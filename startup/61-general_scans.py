@@ -29,18 +29,18 @@ def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_st
     motor_device = get_motor_device(motor)
     detector_devices = get_detector_device_list(detectors, flying=False)
     print('[General Scan] Starting scan...')
-    uid =  yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps)))
+    yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps)))
     print('[General Scan] Done!')
-    return uid
 
 
-def tuning_scan(motor, detector, scan_range, scan_step, n_tries = 3, **kwargs):
-    sys.stdout = kwargs.pop('stdout', sys.stdout)
+def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tries = 3, liveplot_kwargs={}):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     if type(motor) == list:
-        motor2 = motor[1]
-        motor = motor[0]
+        motor = get_motor_device(motor[0], based_on='object_name')
+        motor2 = get_motor_device(motor[1], based_on='object_name')
     else:
+        motor = get_motor_device(motor, based_on='object_name')
         motor2 = None
 
     channel = detector.hints['fields'][0]

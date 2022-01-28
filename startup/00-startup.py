@@ -25,8 +25,18 @@ import xraydb
 
 
 
-def print_now():
+def time_now_str():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
+
+def print_message(msg, tag='', add_timestamp=False, ntabs=0, stdout=sys.stdout):
+    msg = '\t'*ntabs + msg
+    if add_timestamp:
+        msg = f'({time_now_str()}) {msg}'
+    if tag:
+        msg = f'[{tag}] {msg}'
+    print(msg, file=stdout, flush=True)
+
+
 
 # Qt config for 4K displays.
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
@@ -225,8 +235,6 @@ RAW_FILEPATH = 'data'
 USER_FILEPATH = 'users'
 
 
-def print_to_gui(string, stdout=sys.stdout):
-    print(string, file=stdout, flush=True)
 
 import faulthandler
 faulthandler.enable()

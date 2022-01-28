@@ -92,13 +92,32 @@ class PlanProcessor():
     def top_plan_executing(self):
         return self.top_plan_status == 'executing'
 
+    def describe_plan(self, plan_dict):
+        if 'plan_description' not in plan_dict.keys():
+            plan_dict['plan_description'] = generate_plan_description(plan_dict['plan_name'], plan_dict['plan_kwargs'])
+
+    def deal_with_bundles_in_plan_list(self, plans):
+        output_plan_list = []
+        for plan in plans:
+            plan_name = plan['plan_name']
+            plan_func = all_plan_funcs[plan_name]
+            if callable(plan_func):
+                output_plan_list.append(plan)
+            elif type(plan_func) == dict:
+                if plan_func['kind'] == 'bundle':
+                    bundle_kwargs = plan['plan_kwargs']
+                    plan_bundle = plan_func['func'](**bundle_kwargs)
+                    output_plan_list.extend(plan_bundle)
+        return output_plan_list
+
     def add_plans(self, plans, add_at='tail'):
         if type(plans) != list:
             plans = [plans]
 
+        plans = self.deal_with_bundles_in_plan_list(plans)
+
         for plan_dict in plans:
-            if 'plan_description' not in plan_dict.keys():
-                plan_dict['plan_description'] = generate_plan_description(plan_dict['plan_name'], plan_dict['plan_kwargs'])
+            self.describe_plan(plan_dict)
 
         if add_at == 'tail':
             _plan_status = self.last_plan_status
