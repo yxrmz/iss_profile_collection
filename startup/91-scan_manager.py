@@ -99,6 +99,15 @@ class ScanManager():
 
         scan_parameters = scan['scan_parameters']
 
+        if mono_is_moving:
+            mono_description = f"mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge"
+            if scan['scan_type'] == 'step scan':
+                if 'grid_kind' in scan_parameters.keys():
+                    if scan_parameters['grid_kind'] == 'linear':
+                        mono_description = f"mono step scan between {scan_parameters['energy_min']} and {scan_parameters['energy_max']}"
+        else:
+            mono_description = f"mono at Ein={scan_parameters['energy']}"
+
         if spectrometer_is_used:
             spectrometer_is_moving = (aux_parameters['spectrometer']['scan_type'] != 'constant energy')
             spectrometer_is_vonhamos = (aux_parameters['spectrometer']['kind'] == 'von_hamos')
@@ -109,22 +118,22 @@ class ScanManager():
         if mono_is_moving:
             if (not spectrometer_is_used):
                 scan_key = 'xas'
-                scan_description = f"mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge"
+                scan_description = f"{mono_description}"
             else:
                 if spectrometer_is_moving: # only johann can move together with mono
                     scan_key = 'johann_rixs'
                     element = aux_parameters['spectrometer']['scan_parameters']['element']
                     line = aux_parameters['spectrometer']['scan_parameters']['line']
-                    scan_description = f"RIXS with mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge and Johann at {element}-{line} line"
+                    scan_description = f"RIXS with {mono_description} and Johann at {element}-{line} line"
 
                 else:
                     if spectrometer_is_vonhamos:
                         scan_key = 'von_hamos_rixs'
-                        scan_description = f"RIXS with mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge with Von Hamos"
+                        scan_description = f"RIXS with {mono_description} with Von Hamos"
                     else:
                         scan_key = 'johann_herfd'
                         spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
-                        scan_description = f"mono {scan['scan_type']} at {scan_parameters['element']}-{scan_parameters['edge']} edge with Johann at Eout={spectrometer_energy}"
+                        scan_description = f"{mono_description} with Johann at Eout={spectrometer_energy}"
         else:
             if (not spectrometer_is_used):
                 scan_key = 'constant_e'
@@ -134,15 +143,15 @@ class ScanManager():
                     scan_key = 'johann_xes'
                     element = aux_parameters['spectrometer']['scan_parameters']['element']
                     line = aux_parameters['spectrometer']['scan_parameters']['line']
-                    scan_description = f"mono at Ein={scan_parameters['energy']} with Johann {aux_parameters['spectrometer']['scan_type']} at {element}-{line} line"
+                    scan_description = f"{mono_description} with Johann {aux_parameters['spectrometer']['scan_type']} at {element}-{line} line"
                 else:
                     if spectrometer_is_vonhamos:
                         scan_key = 'von_hamos_xes'
-                        scan_description = f"mono at Ein={scan_parameters['energy']} with Von Hamos x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
+                        scan_description = f"{mono_description} with Von Hamos x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
                     else:
                         scan_key = 'constant_e_johann'
                         spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
-                        scan_description = f"mono at Ein={scan_parameters['energy']} with Johann at Eout={spectrometer_energy} x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
+                        scan_description = f"{mono_description} with Johann at Eout={spectrometer_energy} x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
 
         aux_parameters['scan_key'] = scan_key
         aux_parameters['scan_description'] = scan_description
@@ -179,17 +188,38 @@ class ScanManager():
         elif scan['scan_type'] == 'step scan':
             energy, dwell_time, _ = generate_energy_grid_from_dict(scan['scan_parameters'])
             data = np.vstack((energy, dwell_time)).T
-            element = scan['scan_parameters']['element']
-            edge = scan['scan_parameters']['edge']
-            e0 = scan['scan_parameters']['e0']
-            if scan['scan_parameters']['revert'] : direction = 'backward'
-            else: direction = 'forward'
-            header = f'element: {element}, edge: {edge}, E0: {e0}, direction: {direction}'
+            header = self._make_mono_step_scan_header(scan['scan_parameters'])
             np.savetxt(filepath, data, header=header)
         elif scan['scan_type'] == 'constant energy':
             filename = ''
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
+
+    def _make_mono_step_scan_header(self, scan_parameters):
+        if 'grid_kind' in scan_parameters.keys():
+            grid_kind = scan_parameters['grid_kind']
+        else:
+            grid_kind = 'xas'
+
+        if scan_parameters['revert']:
+            direction = 'backward'
+        else:
+            direction = 'forward'
+
+        if grid_kind == 'xas':
+            element = scan_parameters['element']
+            edge = scan_parameters['edge']
+            e0 = scan_parameters['e0']
+            header = f'element: {element}, edge: {edge}, E0: {e0}'
+        elif grid_kind == 'linear':
+            energy_min = scan_parameters['energy_min'],
+            energy_max = scan_parameters['energy_max'],
+            energy_step = scan_parameters['energy_step'],
+            dwell_time = scan_parameters['dwell_time']
+            header = f'energy_min: {energy_min}, energy_max: {energy_max}, energy_step: {energy_step}'
+        else:
+            header = ''
+        return f'{header}, direction: {direction}'
 
     def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata={}, ):
         scan_local = self.scan_list_local[scan_idx]
