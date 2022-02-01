@@ -8,7 +8,10 @@ def collect_von_hamos_xes_plan(**kwargs):
 
 def step_scan_von_hamos_plan(**kwargs):
     ensure_pilatus_is_in_detector_list(kwargs['detector'])
-    vh_metadata = {'spectrometer': 'von_hamos'}
+    name = kwargs['name']
+    rixs_file_name = create_interp_file_name(name, '.rixs')
+    vh_metadata = {'spectrometer': 'von_hamos',
+                   'rixs_file_name' : rixs_file_name}
     metadata = kwargs.pop('metadata')
     metadata = {**vh_metadata, **metadata}
     yield from step_scan_plan(**kwargs, metadata=metadata)
@@ -16,7 +19,10 @@ def step_scan_von_hamos_plan(**kwargs):
 
 def fly_scan_von_hamos_plan(**kwargs):
     ensure_pilatus_is_in_detector_list(kwargs['detector'])
-    vh_metadata = {'spectrometer': 'von_hamos'}
+    name = kwargs['name']
+    rixs_file_name = create_interp_file_name(name, '.rixs')
+    vh_metadata = {'spectrometer': 'von_hamos',
+                   'rixs_file_name': rixs_file_name}
     metadata = kwargs.pop('metadata')
     metadata = {**vh_metadata, **metadata}
     yield from fly_scan_plan(**kwargs, metadata=metadata)
