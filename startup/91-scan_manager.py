@@ -137,7 +137,7 @@ class ScanManager():
         else:
             if (not spectrometer_is_used):
                 scan_key = 'constant_e'
-                scan_description = f"mono at Ein={scan_parameters['energy']} x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
+                scan_description = f"{mono_description} x{scan_parameters['n_exposures']} for {scan_parameters['dwell_time']} s"
             else:
                 if spectrometer_is_moving:
                     scan_key = 'johann_xes'
