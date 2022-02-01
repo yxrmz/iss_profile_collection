@@ -143,6 +143,26 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
         self.stage_sigs['cam.image_mode'] = image_mode
         super().stage(*args, **kwargs)
 
+
+class FoilCAMERA(CAMERA):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.read_foil_data()
+
+    def _read_foil_info(self):
+        with open('/nsls2/xf08id/settings/json/foil_wheel.json') as fp:
+            foil_info = json.load(fp)
+        return foil_info
+
+    def read_foil_data(self):
+        foil_info = self._read_foil_info()
+        reference_foils = [item['element'] for item in foil_info]
+        edges = [item['edge'] for item in foil_info]
+        self.edge_dict = {}
+        for foil, edge in zip(reference_foils, edges):
+            self.edge_dict[foil] = edge
+
     @property
     def barcode1(self):
         return str(self.bar1.get()[:-1], encoding='UTF-8')
@@ -151,14 +171,38 @@ class CAMERA(SingleTrigger, ProsilicaDetector):
     def barcode2(self):
         return str(self.bar2.get()[:-1], encoding='UTF-8')
 
+    def read_current_foil(self, error_message_func=None):
+        if self.barcode1 != '':
+            return self.barcode1
+        if self.barcode2 != '':
+            return self.barcode2
+        msg = f'Reference foil not found'
+        if error_message_func is not None:
+            error_message_func(msg)
+        print_to_gui(msg)
+        raise Exception(msg)
+
+    def check_if_foil_is_in(self, error_message_func=None):
+        self.read_current_foil(error_message_func=error_message_func)
+
+    def read_current_foil_and_edge(self, error_message_func=None):
+        element = self.read_current_foil(error_message_func=error_message_func)
+        # element = 'Fe'
+        edge = self.edge_dict[element]
+        return element, edge
+
+    @property
+    def current_foil_and_edge(self):
+        return self.read_current_foil_and_edge()
+
     def validate_barcode(self, input, error_message_func):
-            if input in (self.barcode1, self.barcode2):
-                return
-            msg = f'String {input} not found in {self.name} barcodes'
-            if error_message_func is not None:
-                error_message_func(msg)
-            print_to_gui(msg)
-            raise Exception(msg)
+        if input in (self.barcode1, self.barcode2):
+            return
+        msg = f'String {input} not found in {self.name} barcodes'
+        if error_message_func is not None:
+            error_message_func(msg)
+        print_to_gui(msg)
+        raise Exception(msg)
 
 
 bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
@@ -176,7 +220,7 @@ camera_sp2 = BPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 
 #camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
 camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
-camera_sp5 = CAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
+camera_sp5 = FoilCAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
 camera_sp6 = CAMERA('XF:08IDB-BI{BPM:SP-6}', name='camera_sp6')
 
 foil_camera = camera_sp5

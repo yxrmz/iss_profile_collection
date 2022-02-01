@@ -18,6 +18,7 @@ from distutils.version import LooseVersion
 from datetime import datetime
 from xview.spectra_db.db_io import get_spectrum_catalog
 
+import json
 import time as ttime
 import numpy as np
 import pandas as pd
@@ -36,7 +37,8 @@ def print_message(msg, tag='', add_timestamp=False, ntabs=0, stdout=sys.stdout):
         msg = f'[{tag}] {msg}'
     print(msg, file=stdout, flush=True)
 
-
+def print_to_gui(msg):
+    print_message(msg)
 
 # Qt config for 4K displays.
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'

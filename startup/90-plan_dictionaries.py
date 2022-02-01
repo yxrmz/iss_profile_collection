@@ -27,14 +27,16 @@ service_plan_funcs = {
         'optimize_beamline_plan_bundle': {'kind' : 'bundle', 'func' : optimize_beamline_plan_bundle},
         'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
-        'random_xy_step': move_sample_by_random_xy_step,
+        'random_xy_step' : move_sample_by_random_xy_step,
+        'move_motor_plan' : move_motor_plan
         }
 
 
 aux_plan_funcs = {
         'general_scan': general_scan,
         'tuning_scan': tuning_scan,
-        'bender_scan': bender_scan_plan,
+        'bender_scan_plan_bundle' : {'kind' : 'bundle', 'func' : bender_scan_plan_bundle},
+        'single_bender_scan_bundle' : {'kind' : 'bundle', 'func' : single_bender_scan_bundle},
         'print_message_plan' : print_message_plan,
         'move_bpm_fm_plan' : move_bpm_fm_plan,
         'put_bpm_fm_to_continuous_mode' : put_bpm_fm_to_continuous_mode,

@@ -9,8 +9,7 @@ from xas.ft_analysis import data_ft
 
 
 
-def sleep_plan(delay : float = 1.0):
-    yield from bps.sleep(float(delay))
+
 
 # def sleep(delay : int=1, **kwargs):
 #     sys.stdout = kwargs.pop('stdout', sys.stdout)

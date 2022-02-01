@@ -68,7 +68,7 @@ class PlanProcessor():
                 kwarg_name = service_dict['kwarg_name']
                 kwarg_value = service_dict['kwarg_value']
                 gui_services_kwargs[kwarg_name] = kwarg_value
-            return gui_services_kwargs
+            # return gui_services_kwargs
         return gui_services_kwargs
 
     def plan_status_at_index(self, idx):
@@ -125,16 +125,36 @@ class PlanProcessor():
 
         self._emit_plan_list_update_signal()
 
-    def detect_and_unwrap_bundle(self, idx):
+    def plan_is_a_bundle(self, idx):
         plan_info = self.plan_list[idx]['plan_info']
         plan_name = plan_info['plan_name']
         plan_func = all_plan_funcs[plan_name]
         if type(plan_func) == dict:
             if plan_func['kind'] == 'bundle':
-                bundle_kwargs = plan_info['plan_kwargs']
-                plan_bundle = plan_func['func'](**bundle_kwargs)
-                self.plan_list.pop(idx)
-                self.add_plans(plan_bundle, add_at='index', idx=idx)
+                return True
+        return False
+
+    def unwrap_bundle(self, idx):
+        plan_info = self.plan_list[idx]['plan_info']
+        plan_name = plan_info['plan_name']
+        plan_func = all_plan_funcs[plan_name]
+        bundle_kwargs = plan_info['plan_kwargs']
+        bundle_gui_services = self.get_gui_services_kwargs(plan_info)
+        bundle_all_kwargs = {**bundle_kwargs, **bundle_gui_services}
+        plan_bundle = plan_func['func'](**bundle_all_kwargs)
+        self.plan_list.pop(idx)
+        self.add_plans(plan_bundle, add_at='index', idx=idx)
+
+    # def detect_and_unwrap_bundle(self, idx):
+    #     plan_info = self.plan_list[idx]['plan_info']
+    #     plan_name = plan_info['plan_name']
+    #     plan_func = all_plan_funcs[plan_name]
+    #     if type(plan_func) == dict:
+    #         if plan_func['kind'] == 'bundle':
+    #             bundle_kwargs = plan_info['plan_kwargs']
+    #             plan_bundle = plan_func['func'](**bundle_kwargs)
+    #             self.plan_list.pop(idx)
+    #             self.add_plans(plan_bundle, add_at='index', idx=idx)
 
     def make_re_args(self, idx):
         plan_info = self.plan_list[idx]['plan_info']
@@ -150,12 +170,15 @@ class PlanProcessor():
             return (plan_func(**plan_all_kwargs), liveplots)
 
     def execute_top_plan(self):
-        self.detect_and_unwrap_bundle(0)
-        re_args = self.make_re_args(0)
-        self.set_plan_status_at_index(0, 'executing')
-        self.RE(*re_args)
-        self.plan_list.pop(0)
-        self._emit_plan_list_update_signal()
+        if self.plan_is_a_bundle(0):
+            self.unwrap_bundle(0)
+            self.execute_top_plan()
+        else:
+            re_args = self.make_re_args(0)
+            self.set_plan_status_at_index(0, 'executing')
+            self.RE(*re_args)
+            self.plan_list.pop(0)
+            self._emit_plan_list_update_signal()
 
     def run(self):
         self.unpause_plan_list()
@@ -164,7 +187,12 @@ class PlanProcessor():
 
             if self.top_plan_status == 'normal':
                 self.update_status('running')
-                self.execute_top_plan()
+                try:
+                    self.execute_top_plan()
+                except Exception as e:
+                    print(e)
+                    print('Found and issue with the top plan. Stopping the queue')
+                    break
 
             elif self.top_plan_status == 'paused':
                 break

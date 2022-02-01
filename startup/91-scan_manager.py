@@ -195,6 +195,34 @@ class ScanManager():
 
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
+
+    def standard_scan_dict(self, element, edge):
+        return {'scan_type': 'fly scan',
+                'scan_parameters': {'element': element,
+                                    'edge': edge,
+                                    'e0': xraydb.xray_edge(element, edge).energy,
+                                    'preedge_start': -200.0,
+                                    'XANES_start': -30.0,
+                                    'XANES_end': 50.0,
+                                    'EXAFS_end': 16.0,
+                                    'type': 'standard',
+                                    'preedge_duration': 4.0,
+                                    'edge_duration': 6.0,
+                                    'postedge_duration': 20.0,
+                                    'preedge_flex': 0.5,
+                                    'postedge_flex': 0.3,
+                                    'pad': 0.5,
+                                    'repeat': 1,
+                                    'single_direction': True,
+                                    'revert': True,
+                                    'filename': ''}}
+
+
+    def standard_trajectory_filename(self, element, edge):
+        standard_scan_dict = self.standard_scan_dict(element, edge)
+        uid = self.check_if_brand_new(standard_scan_dict)
+        return self.scan_dict[uid]['scan_parameters']
+
     def _make_mono_step_scan_header(self, scan_parameters):
         if 'grid_kind' in scan_parameters.keys():
             grid_kind = scan_parameters['grid_kind']
