@@ -2,8 +2,7 @@
 import sys
 import numpy as np
 from xas.xray import energy2angle
-from xas.energy_calibration import get_energy_offset
-# from xas.image_analysis import determine_beam_position_from_fb_image
+
 
 
 def _compute_hhmy_value(energy):

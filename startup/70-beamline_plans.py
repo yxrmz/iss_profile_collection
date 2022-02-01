@@ -69,48 +69,64 @@ def bender_scan_plan_bundle(error_message_func=None):
 
 
 
-from xas.energy_calibration import get_foil_spectrum
+# from xas.energy_calibration import get_foil_spectrum
 
 
 
 
-def validate_element_edge_in_db_proc(element, edge, error_message_func=None):
-    try:
-        get_foil_spectrum(element, edge, db_proc)
-        return
-    except: # Denis, Oct 28, 2021: GUI breaks when error_message_func (the one opening the message box) is ran from exception, but this strange architecture works
-        pass
-    msg = f'Error: {element} {edge}-edge spectrum has not been added to the database yet'
-    if error_message_func is not None:
-        error_message_func(msg)
-    print_to_gui(msg)
-    raise Exception(msg)
-    # return False
+# def validate_element_edge_in_db_proc(element, edge, error_message_func=None):
+#     try:
+#         get_foil_spectrum(element, edge, db_proc)
+#         return
+#     except: # Denis, Oct 28, 2021: GUI breaks when error_message_func (the one opening the message box) is ran from exception, but this strange architecture works
+#         pass
+#     msg = f'Error: {element} {edge}-edge spectrum has not been added to the database yet'
+#     if error_message_func is not None:
+#         error_message_func(msg)
+#     print_to_gui(msg)
+#     raise Exception(msg)
+#     # return False
 
-def standard_trajectory_filename_for_element_edge(element, edge, init_traj=True):
-    return ''
+# def standard_trajectory_filename_for_element_edge(element, edge, init_traj=True):
+#     return ''
 
 
 
+# def single_calibration_scan_bundle(bender_position=None, **kwargs):
+#     loading = bender.load_cell.get()
+#     name = f"Bender scan at {kwargs['element']}-{kwargs['edge']} edge - {loading} N - {bender_position} um"
+#     plan_kwargs = {**{'name' : name, 'comment' : 'Bender scan'}, **kwargs}
+#     plans = [{'plan_name' : 'fly_scan_plan',
+#               'plan_kwargs' : plan_kwargs}]
+#     return plans
+
+from xas.energy_calibration import get_energy_offset
+# from xas.image_analysis import determine_beam_position_from_fb_image
+
+# can be made into a bundle?
 def calibrate_mono_energy_plan(element='', edge='', dE=25, plot_func=None, error_message_func=None):
     # # check if current trajectory is good for this calibration
-    validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
-
-    # success = trajectory_manager.validate_element(element, edge, error_message_func=error_message_func)
+    # validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
+    try:
+        db_proc.validate_foil_edge(element, edge)
+    except Exception as e:
+        print_to_gui(e)
+        if error_message_func is not None:
+            error_message_func(e)
 
     yield from set_reference_foil(element)
-    yield from bps.sleep(1)
+    yield from bps.sleep(2)
     foil_camera.validate_barcode(element, error_message_func=error_message_func)
 
-    trajectory_filename = standard_trajectory_filename_for_element_edge(element, edge, init_traj=True)
+    trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
 
     yield from adjust_ic_gains()
-    name = f'{element} {edge} foil energy calibration'
+    name = f'{element} {edge}-edge foil energy calibration'
 
     plan = fly_scan_plan
     plan_kwargs = {'name' : name, 'comment' : '',
                    'trajectory_filename' : trajectory_filename,
-                   'element' : element, 'e0' : 0, 'edge' : edge}
+                   'element' : element, 'e0' : xraydb.xray_edge(element, edge).energy, 'edge' : edge}
 
     yield from plan(**plan_kwargs)
     energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)

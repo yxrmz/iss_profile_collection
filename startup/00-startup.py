@@ -241,10 +241,10 @@ USER_FILEPATH = 'users'
 import faulthandler
 faulthandler.enable()
 
-# TODO: move it to db_proc class or elsewhere
-def validate_element_edge_in_db_proc(element):
-    r = db_proc.search({'Sample_name': element + ' foil'})
-    if len(r) == 0:
-        print_to_gui(f'Error: No matching foil has been found')
-        return False
-    return True
+# # TODO: move it to db_proc class or elsewhere
+# def validate_element_edge_in_db_proc(element):
+#     r = db_proc.search({'Sample_name': element + ' foil'})
+#     if len(r) == 0:
+#         print_to_gui(f'Error: No matching foil has been found')
+#         return False
+#     return True
