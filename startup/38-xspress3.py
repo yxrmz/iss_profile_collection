@@ -161,6 +161,16 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self._abs_trigger_count += 1
         return self._status
 
+    def test_exposure(self, acq_time=1, num_images=1):
+        _old_acquire_time = self.settings.acquire_time.value
+        _old_num_images = self.settings.num_images.value
+        set_and_wait(self.settings.acquire_time, acq_time)
+        set_and_wait(self.settings.num_images, num_images)
+        self._acquisition_signal.put(1, wait=True)
+        set_and_wait(self.settings.acquire_time, _old_acquire_time)
+        set_and_wait(self.settings.num_images, _old_num_images)
+
+
     def set_channels_for_hdf5(self, channels=(1, 2, 3, 4)):
         """
         Configure which channels' data should be saved in the resulted hdf5 file.
