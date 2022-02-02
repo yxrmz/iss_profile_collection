@@ -2,6 +2,9 @@
 from bluesky.plan_stubs import mv
 
 
+
+
+
 def batch_parse_and_run(hhm,sample_stage,batch,plans_dict ):
     # tm = trajectory_manager(hhm)
     for ii in range(batch.rowCount()):

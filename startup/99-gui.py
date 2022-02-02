@@ -21,6 +21,7 @@ if not os.environ.get('AZURE_TESTING'):
                                service_plan_funcs=service_plan_funcs,
                                aux_plan_funcs=aux_plan_funcs,
                                scan_manager=scan_manager,
+                               sample_manager=sample_manager,
                                plan_processor=plan_processor,
                                RE=RE,
                                db=db,
@@ -40,7 +41,8 @@ if not os.environ.get('AZURE_TESTING'):
                                shutter_dict=shutter_dictionary,
                                motor_dict=motor_dictionary,
                                camera_dict=camera_dictionary,
-                               sample_stage=giantxy,
+                               # sample_stage=giantxy,
+                               sample_stage=sample_stage,
                                tune_elements=tune_elements,
                                ic_amplifiers=ic_amplifiers,
                                window_title="XLive @ISS/08-ID NSLS-II")

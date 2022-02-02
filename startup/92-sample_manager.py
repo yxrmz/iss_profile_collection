@@ -1,42 +1,173 @@
 
-from PyQt5 import uic, QtGui, QtCore, QtWidgets
-from PyQt5.Qt import Qt
+# from PyQt5 import uic, QtGui, QtCore, QtWidgets
+# from PyQt5.Qt import Qt
 
-
+from pandas import DataFrame
 
 class Sample:
-    def __init__(self, name, comments = None, coords = None):
+    position_data = pd.DataFrame(columns=['x', 'y', 'z', 'th', 'exposure_time', 'exposed', 'uids'])
+
+    def __init__(self, name, comment='', coordinates=[], max_exposure=None):
         self.name = name
-        self.comments = comments
-        if coords is not None:
-            if (any(isinstance(element, list) for element in coords) and
-                    any(len(element) == 4 for element in coords)):
-                self.coords = coords
-            else:
-                print('ERROR: Incorrect list of coordinates!')
-                self.coords = []
+        self.comment = comment
+        self.max_exposure = max_exposure
+        self.add_new_positions_from_coordinates(coordinates)
+        # self.add_positions(positions)
 
-    def sample_to_dict(self):
-        sample = {}
-        sample['name'] = self.name
-        sample['comments'] = self.comments
-        sample['coords'] = self.coords
-        return sample
+    def validate_coordinates(self, coordinates_dict):
+        ok_flag = (type(coordinates_dict) == dict) or (len(coordinates_dict) != 4)
+        assert ok_flag, 'Unacceptable position format. Coordinates must be a dict with 4 elements corresponding to x, y, z, th coordinates.'
 
-    def add_coord(self, coord):
-        if (isinstance(coord, list) and (len(coord) == 4 )):
-            self.coords.append(coord)
-        else:
-            print('ERROR: Incorrect coordinates!')
+    def add_new_positions_from_coordinates(self, coordinates):
+        for coordinates_dict in coordinates:
+            self.add_new_position(coordinates_dict)
+
+    def add_new_position(self, coordinates_dict):
+        self.validate_coordinates(coordinates_dict)
+        point = {**coordinates_dict, **{'exposure_time': 0, 'exposed': False, 'uids': ''}}
+        self.add_one_position(point)
+
+    def add_one_position(self, point):
+        self.position_data = self.position_data.append(point, ignore_index=True)
+
+    def add_positions(self, positions):
+        for position in positions:
+            self.add_one_position(position)
+
+    def remove_positions(self, index_list):
+        self.position_data.drop(self.position_data.index[index_list], inplace=True)
+
+    def to_dict(self):
+        sample_dict = {}
+        sample_dict['name'] = self.name
+        sample_dict['comment'] = self.comment
+        sample_dict['position_data'] = self.position_data.to_dict()
+        return sample_dict
+
+    @property
+    def number_of_points(self):
+        return len(self.position_data.index)
+
+    @property
+    def number_of_unexposed_points(self):
+        return (self.number_of_points - sum(self.position_data['exposed']))
+
+    def index_coordinate_dict(self, index):
+        return self.position_data.iloc[index][['x', 'y', 'z', 'th']].to_dict()
+
+    def index_exposed(self, index):
+        return bool(self.position_data.iloc[index][['exposed']].item())
+
+    @classmethod
+    def from_dict(cls, sample_dict):
+        name = sample_dict['name']
+        comment = sample_dict['comment']
+        result = cls(name, comment=comment)
+        result.position_data = pd.DataFrame.from_dict(sample_dict['position_data'])
+        return result
+
 
 class SampleManager:
-    def __init__(self,):
+
+    sample_list_update_signal = None
+
+    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/sample_manager.json'):
         self.samples = []
+        self.json_file_path = json_file_path
+        self.init_from_settings()
+
+    # dealing with save/load to file
+    def init_from_settings(self):
+        try:
+            self.add_samples_from_file(self.json_file_path)
+        except FileNotFoundError:
+            self.save_to_settings()
+
+    def add_samples_from_file(self, file):
+        with open(file, 'r') as f:
+            sample_dict_list = json.loads(f.read())
+        self.add_samples_from_dict_list(sample_dict_list)
+
+    def save_to_settings(self):
+        self.save_to_file(self.json_file_path)
+
+    def save_to_file(self, file):
+        with open(file, 'w') as f:
+            json.dump(self.samples_as_dict_list, f )
+
+    def reset(self):
+        self.samples = []
+        self.save_to_settings()
+
+    @property
+    def samples_as_dict_list(self):
+        sample_dict_list = []
+        for sample in self.samples:
+            sample_dict_list.append(sample.to_dict())
+        return sample_dict_list
+
+    # dealing with addition and deletion of samples
+    def add_new_sample(self, name, comment='', coordinates=[], max_exopsure=None):
+        sample = Sample(name, comment=comment, coordinates=coordinates, max_exposure=max_exopsure)
+        self.add_sample(sample)
+
+    def insert_new_sample_at_index(self, index, name, comment='', coordinates=[], max_exopsure=None):
+        sample = Sample(name, comment=comment, coordinates=coordinates, max_exposure=max_exopsure)
+        self.insert_sample_at_index(index, sample)
 
     def add_sample(self, sample):
         self.samples.append(sample)
+        self.emit_sample_list_update_signal()
+
+    def add_samples_from_dict_list(self, sample_dict_list):
+        for sample_dict in sample_dict_list:
+            sample = Sample.from_dict(sample_dict)
+            self.add_sample(sample)
+        self.emit_sample_list_update_signal()
+
+    def insert_sample_at_index(self, index, sample):
+        self.samples.insert(index, sample)
+        self.emit_sample_list_update_signal()
+
+    def delete_sample_at_index(self, index, emit_signal=True):
+        _sample = self.samples.pop(index)
+        del(_sample)
+        if emit_signal:
+            self.emit_sample_list_update_signal()
+
+    def delete_multiple_samples(self, index_list):
+        new_samples = []
+        for i, sample in enumerate(self.samples):
+            if i not in index_list:
+                new_samples.append(sample)
+        del(self.samples)
+        self.samples = new_samples
+        self.emit_sample_list_update_signal()
+
+    def delete_with_index_dict(self, index_dict):
+        for sample_index, point_index_list in index_dict.items():
+            sample = self.samples[sample_index]
+            point_index_set = set(point_index_list)
+            if sample.number_of_points == len(point_index_set):
+                self.delete_sample_at_index(sample_index, emit_signal=False)
+            else:
+                sample.remove_positions(list(point_index_set))
+        self.emit_sample_list_update_signal()
+
+
+
+    # gui interaction functions
+    def append_sample_list_update_signal(self, sample_list_update_signal):
+        self.sample_list_update_signal = sample_list_update_signal
+
+    def emit_sample_list_update_signal(self):
+        if self.sample_list_update_signal is not None:
+            self.sample_list_update_signal.emit()
+        self.save_to_settings()
 
 sample_manager = SampleManager()
+
+
 
 
 # class SamplePointRegistry:
