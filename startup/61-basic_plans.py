@@ -19,7 +19,7 @@ def set_hhm_feedback_plan(state=0):
     yield from bps.mv(hhm.fb_status, state)
 
 def move_motor_plan(motor_attr='', based_on='description', position=None):
-    motor_device = get_motor_device(motor_description, based_on='description')
+    motor_device = get_motor_device(motor_attr, based_on=based_on)
     yield from bps.mv(motor_device, position)
 
 def move_mono_energy(energy=-1):

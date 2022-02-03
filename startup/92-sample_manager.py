@@ -157,12 +157,20 @@ class SampleManager:
                 sample.remove_positions(list(point_index_set))
         self.emit_sample_list_update_signal()
 
+    def update_sample_at_index(self, index, new_name, new_comment):
+        self.samples[index].name = new_name
+        self.samples[index].comment = new_comment
+        self.emit_sample_list_update_signal()
+
     @property
     def number_of_samples(self):
         return len(self.samples)
 
+    def sample_at_index(self, index):
+        return self.samples[index]
+
     def sample_name_at_index(self, index):
-        return self.samples[index].name
+        return self.sample_at_index(index).name
 
     def sample_coordinate_dict_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_coordinate_dict(sample_point_index)
