@@ -72,6 +72,7 @@ class SampleManager:
     sample_list_update_signal = None
 
     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/sample_manager.json'):
+        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
         self.samples = []
         self.json_file_path = json_file_path
         self.init_from_settings()
@@ -98,6 +99,7 @@ class SampleManager:
     def reset(self):
         self.samples = []
         self.save_to_settings()
+        self.emit_sample_list_update_signal()
 
     @property
     def samples_as_dict_list(self):
