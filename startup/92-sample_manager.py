@@ -117,14 +117,15 @@ class SampleManager:
         sample = Sample(name, comment=comment, coordinates=coordinates, max_exposure=max_exopsure)
         self.insert_sample_at_index(index, sample)
 
-    def add_sample(self, sample):
+    def add_sample(self, sample, emit_signal=True):
         self.samples.append(sample)
-        self.emit_sample_list_update_signal()
+        if emit_signal:
+            self.emit_sample_list_update_signal()
 
     def add_samples_from_dict_list(self, sample_dict_list):
         for sample_dict in sample_dict_list:
             sample = Sample.from_dict(sample_dict)
-            self.add_sample(sample)
+            self.add_sample(sample, emit_signal=False)
         self.emit_sample_list_update_signal()
 
     def insert_sample_at_index(self, index, sample):
@@ -156,9 +157,16 @@ class SampleManager:
                 sample.remove_positions(list(point_index_set))
         self.emit_sample_list_update_signal()
 
+    @property
+    def number_of_samples(self):
+        return len(self.samples)
 
+    def sample_name_at_index(self, index):
+        return self.samples[index].name
 
-    # gui interaction functions
+    def sample_coordinate_dict_at_index(self, sample_index, sample_point_index):
+        return self.samples[sample_index].index_coordinate_dict(sample_point_index)
+
     def append_sample_list_update_signal(self, sample_list_update_signal):
         self.sample_list_update_signal = sample_list_update_signal
 
