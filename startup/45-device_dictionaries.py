@@ -70,8 +70,12 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'slits_hor_out': {'name': slits.hor_out.name,'description':'B1 Slit Horisontal Outboard Position', 'object': slits.hor_out},
                     #'samplexy_x': {'name': samplexy.x.name, 'description':'B2 Sample Stage X','object': samplexy.x},
                     #'samplexy_y': {'name': samplexy.y.name, 'description':'B2 Sample Stage Y','object': samplexy.y},
-                    'giantxy_x': {'name': giantxy.x.name, 'description':'Sample stage X','object': giantxy.x, 'group': 'spectrometer','user':True},
-                    'giantxy_y': {'name': giantxy.y.name, 'description':'Sample stage Y','object': giantxy.y, 'group': 'spectrometer','user':True},
+                    # 'giantxy_x': {'name': giantxy.x.name, 'description':'Sample stage X','object': giantxy.x, 'group': 'spectrometer','user':True},
+                    # 'giantxy_y': {'name': giantxy.y.name, 'description':'Sample stage Y','object': giantxy.y, 'group': 'spectrometer','user':True},
+                    'sample_stage_x': {'name': sample_stage.x.name, 'description':'Sample stage X','object': sample_stage.x, 'group': 'spectrometer','user':True},
+                    'sample_stage_y': {'name': sample_stage.y.name, 'description':'Sample stage Y','object': sample_stage.y, 'group': 'spectrometer','user':True},
+                    'sample_stage_z': {'name': sample_stage.z.name, 'description':'Sample stage Z','object': sample_stage.z, 'group': 'spectrometer','user':True},
+                    'sample_stage_th': {'name': sample_stage.th.name, 'description':'Sample stage Th','object': sample_stage.th, 'group': 'spectrometer','user':True},
                     'bender' : {'name' : bender.name, 'description' : 'CM2 bender', 'object' : bender.pos, 'group': 'spectrometer'},
                     'auxxy_x': {'name': auxxy.x.name, 'description':'Crystal X','object': auxxy.x, 'group': 'spectrometer'},
                     'auxxy_y': {'name': auxxy.y.name, 'description':'Crystal Y','object': auxxy.y, 'group': 'spectrometer'},
@@ -128,7 +132,7 @@ def get_motor_device(motor_attr, based_on='description'):
             if motor_attr == motor_dict['description']:
                 return motor_dict['object']
         elif based_on == 'object_name':
-            if motor_attr == motor_attr['name']:
+            if motor_attr == motor_dict['name']:
                 return motor_dict['object']
 
 

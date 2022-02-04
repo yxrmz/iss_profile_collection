@@ -44,6 +44,10 @@ class Sample:
         sample_dict['position_data'] = self.position_data.to_dict()
         return sample_dict
 
+    def update_position_coordinates(self, index, new_coordinates):
+        for axis, coordinate in new_coordinates.items():
+            self.position_data[axis][index] = coordinate
+
     @property
     def number_of_points(self):
         return len(self.position_data.index)
@@ -161,6 +165,11 @@ class SampleManager:
         self.samples[index].name = new_name
         self.samples[index].comment = new_comment
         self.emit_sample_list_update_signal()
+
+    def update_sample_coordinates_at_index(self, sample_index, sample_point_index, new_coordinate_dict):
+        self.samples[sample_index].update_position_coordinates(sample_point_index, new_coordinate_dict)
+        self.emit_sample_list_update_signal()
+
 
     @property
     def number_of_samples(self):
