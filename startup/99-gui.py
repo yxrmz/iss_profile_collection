@@ -22,6 +22,7 @@ if not os.environ.get('AZURE_TESTING'):
                                aux_plan_funcs=aux_plan_funcs,
                                scan_manager=scan_manager,
                                sample_manager=sample_manager,
+                               scan_sequence_manager=scan_sequence_manager,
                                plan_processor=plan_processor,
                                RE=RE,
                                db=db,

@@ -13,11 +13,6 @@ import logging.handlers
 
 
 
-
-
-
-
-
 class ScanManager():
     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_manager.json'):
         self.init_global_manager(json_file_path)
