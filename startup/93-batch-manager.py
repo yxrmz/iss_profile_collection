@@ -188,6 +188,9 @@ class SampleManager:
     def sample_name_at_index(self, index):
         return self.sample_at_index(index).name
 
+    def sample_comment_at_index(self, index):
+        return self.sample_at_index(index).comment
+
     def sample_coord_str_at_index(self, sample_index, sample_point_index):
         return self.sample_at_index(sample_index).index_coordinate_str(sample_point_index)
 
@@ -353,7 +356,7 @@ scan_sequence_manager = ScanSequenceManager()
 class BatchManager:
     batch_list_update_signal = None
 
-    def __init__(self, sample_manager : SampleManager, scan_sequence_manager : ScanSequenceManager,
+    def __init__(self, sample_manager : SampleManager, scan_manager: ScanManager, scan_sequence_manager : ScanSequenceManager,
                  json_file_path='/nsls2/xf08id/settings/json/batch_manager.json'):
         self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
         self.experiments = []
@@ -361,6 +364,7 @@ class BatchManager:
         self.init_from_settings()
 
         self.sample_manager = sample_manager
+        self.scan_manager = scan_manager
         self.scan_sequence_manager = scan_sequence_manager
 
     # dealing with save/load to file
@@ -455,6 +459,10 @@ class BatchManager:
                                 'sample_index' : sample_index, 'sample_point_index' : sample_point_index,
                                 'element_list': element_list}
                 self.add_element_to_experiment(experiment_index, element_dict)
+
+        elif priority == 'sample_point':
+            pass
+
         self.emit_batch_list_update_signal()
 
     def add_service_to_element_list(self, index_tuple, service_dict):
@@ -462,14 +470,15 @@ class BatchManager:
         nidx = len(index_tuple)
         if nidx == 1:
             experiment_index = index_tuple[0]
-            self.experiments[experiment_index]['element_list'].insert(service_dict, 0)
+            self.experiments[experiment_index]['element_list'].insert(0, service_dict)
         elif nidx == 2:
             experiment_index, element_index1 = index_tuple
-            self.experiments[experiment_index]['element_list'].insert(service_dict, element_index1)
+            self.experiments[experiment_index]['element_list'].insert(element_index1, service_dict)
         elif nidx == 3:
             experiment_index, element_index1, element_index2 = index_tuple
-            self.experiments[experiment_index]['element_list'][element_index1]['element_list'].insert(service_dict, element_index2)
-
+            self.experiments[experiment_index]['element_list'][element_index1]['element_list'].insert(element_index2, service_dict)
+        self.emit_batch_list_update_signal()
+    # def add_many_elements(self, index_tuple_list):
 
     # def sample_point_data_from_index(self, sample_index, sample_point_index):
     #     sample = self.sample_manager.samples[sample_index]
@@ -529,13 +538,81 @@ class BatchManager:
         elif nidx == 3:
             experiment_index, element_index1, element_index2 = index_tuple
             self.experiments[experiment_index]['element_list'][element_index1]['element_list'].pop(element_index2)
+        self.emit_batch_list_update_signal()
 
 
     def get_booked_sample_points_list(self):
         pass
 
+    # def parse_element_into_plan(self, element):
+    #     plans = []
+    #     if element['type'] == 'experiment':
+    #         pass
+    #     elif
 
-batch_manager = BatchManager(sample_manager, scan_sequence_manager)
+
+    def get_sample_data_from_sample_element(self, sample_element):
+        sample_index = sample_element['sample_index']
+        sample_point_index = sample_element['sample_point_index']
+        sample_name = self.sample_manager.sample_name_at_index(sample_index)
+        sample_comment = self.sample_manager.sample_comment_at_index(sample_index)
+        sample_coordinates = self.sample_manager.sample_coordinate_dict_at_index(sample_index,
+                                                                                 sample_point_index)
+        return sample_name, sample_comment, sample_coordinates
+
+    def get_scan_data_from_scan_element(self, scan_element):
+        scan_dict = self.scan_sequence_manager.scan_at_index(scan_element['scan_sequence_index'])
+        return scan_dict['repeat'], scan_dict['delay'], scan_dict['scan_idx']
+
+    def get_data_from_element(self, element):
+        if element['type'] == 'scan':
+            return self.get_scan_data_from_scan_element(element)
+        elif element['type'] == 'sample':
+            return self.get_sample_data_from_sample_element(element)
+        elif element['type'] == 'service':
+            return [{'plan_name': element['plan_name'], 'plan_kwargs' : element['plan_kwargs']}]
+
+    def generate_plan_list(self):
+        plans = []
+        for experiment in self.experiments:
+            for element in experiment['element_list']:
+                if element['type'] == 'scan':
+                    repeat, delay, scan_idx = self.get_data_from_element(element)
+                    for sub_element in element['element_list']:
+                        if sub_element['type'] == 'sample':
+                            sample_name, sample_comment, sample_coordinates = self.get_data_from_element(sub_element)
+                            new_plans = self.scan_manager.generate_plan_list(sample_name, sample_comment,
+                                                                             repeat, delay, scan_idx,
+                                                                             sample_coordinates=sample_coordinates)
+                        elif sub_element['type'] == 'service':
+                            new_plans = self.get_data_from_element(sub_element)
+                        else:
+                            new_plans = []
+                        plans.extend(new_plans)
+
+                elif element['type'] == 'sample':
+                    sample_name, sample_comment, sample_coordinates = self.get_data_from_element(element)
+                    for sub_element in element['element_list']:
+                        if sub_element['type'] == 'scan':
+                            repeat, delay, scan_idx = self.get_data_from_element(sub_element)
+                            new_plans = self.scan_manager.generate_plan_list(sample_name, sample_comment,
+                                                                             repeat, delay, scan_idx,
+                                                                             sample_coordinates=sample_coordinates)
+
+                        elif sub_element['type'] == 'service':
+                            new_plans = self.get_data_from_element(sub_element)
+                        else:
+                            new_plans = []
+                        plans.extend(new_plans)
+                elif element['type'] == 'service':
+                    new_plans = self.get_data_from_element(element)
+                    plans.extend(new_plans)
+
+
+        return plans
+
+
+batch_manager = BatchManager(sample_manager, scan_manager, scan_sequence_manager)
 
 
 

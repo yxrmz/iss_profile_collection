@@ -244,7 +244,9 @@ class ScanManager():
             header = ''
         return f'{header}, direction: {direction}'
 
-    def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata={}, ):
+    def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata=None, ):
+        if metadata is None:
+            metadata = {}
         scan_local = self.scan_list_local[scan_idx]
         scan_uid = scan_local['uid']
         metadata['monochromator_scan_uid'] = scan_uid
@@ -257,7 +259,13 @@ class ScanManager():
                                                        metadata=metadata)
 
 
-    def parse_scan_to_plan_from_parameters(self, name, comment, scan, aux_parameters, sample_coordinates=None, metadata={}, rixs_kwargs={}):
+    def parse_scan_to_plan_from_parameters(self, name, comment, scan, aux_parameters, sample_coordinates=None, metadata=None,
+                                           rixs_kwargs=None):
+        if rixs_kwargs is None:
+            rixs_kwargs = {}
+        if metadata is None:
+            metadata = {}
+
         scan_type = scan['scan_type']
         scan_parameters = scan['scan_parameters']
 
@@ -392,7 +400,9 @@ class ScanManager():
 
         return output
 
-    def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None, metadata={}):
+    def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None, metadata=None):
+        if metadata is None:
+            metadata = dict()
         plans = []
         for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
