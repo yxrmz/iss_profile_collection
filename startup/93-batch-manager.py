@@ -73,38 +73,122 @@ class Sample:
         return result
 
 
-class SampleManager:
 
-    sample_list_update_signal = None
+def emit_list_update_signal_decorator(method):
+    def wrapper(obj, *args, emit_signal=True, **kwargs):
+        result = method(obj, *args, **kwargs)
+        if emit_signal:
+            obj.emit_list_update_signal()
+        return result
+    return wrapper
 
-    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/sample_manager.json'):
-        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
-        self.samples = []
+
+class PersistentListInteractingWithGUI:
+    list_update_signal = None
+
+    def __init__(self, json_file_path=''):
+        self.items = []
         self.json_file_path = json_file_path
         self.init_from_settings()
 
-    # dealing with save/load to file
     def init_from_settings(self):
         try:
-            self.add_samples_from_file(self.json_file_path)
+            self.add_items_from_file(self.json_file_path)
         except FileNotFoundError:
             self.save_to_settings()
 
-    def add_samples_from_file(self, file):
+    @emit_list_update_signal_decorator
+    def add_items_from_file(self, file):
+        self.items += self.item_list_from_file(file)
+
+    def item_list_from_file(self, file):
         with open(file, 'r') as f:
-            sample_dict_list = json.loads(f.read())
-        self.add_samples_from_dict_list(sample_dict_list)
+            item_list = json.loads(f.read())
+        return item_list
 
     def save_to_settings(self):
         self.save_to_file(self.json_file_path)
 
     def save_to_file(self, file):
         with open(file, 'w') as f:
-            json.dump(self.samples_as_dict_list, f )
+            json.dump(self.items, f)
 
+    @emit_list_update_signal_decorator
     def reset(self):
-        self.samples = []
-        self.emit_sample_list_update_signal()
+        self.items = []
+
+    @emit_list_update_signal_decorator
+    def insert_item_at_index(self, index, item):
+        self.items.insert(index, item)
+
+    @emit_list_update_signal_decorator
+    def add_item(self, item):
+        self.items.append(item)
+
+    @emit_list_update_signal_decorator
+    def delete_item_at_index(self, index):
+        self.items.pop(index)
+
+    @emit_list_update_signal_decorator
+    def delete_multiple_items(self, index_list):
+        index_list.sort(reverse=True)
+        for index in index_list:
+            self.delete_item_at_index(index, emit_signal=False)
+
+    @emit_list_update_signal_decorator
+    def update_item_at_index(self, index, item):
+        self.items[index] = index
+
+    def item_at_index(self, index):
+        return self.items[index]
+
+    def append_list_update_signal(self, signal):
+        self.list_update_signal = signal
+
+    def emit_list_update_signal(self):
+        if self.list_update_signal is not None:
+            self.list_update_signal.emit()
+        self.save_to_settings()
+
+
+class SampleManager(PersistentListInteractingWithGUI):
+
+    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/sample_manager.json'):
+        super().__init__(json_file_path)
+        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
+        # self.samples = []
+        # self.json_file_path = json_file_path
+        # self.init_from_settings()
+
+    #Class specific decorators
+    @property
+    def samples(self):
+        return self.items
+
+    @samples.setter
+    def samples(self, value):
+        self.items = value
+
+    @samples.deleter
+    def samples(self):
+        del self.items
+
+    # Dealing with file io
+    @emit_list_update_signal_decorator
+    def add_items_from_file(self, file):
+        items = self.item_list_from_file(file)
+        item_list = self.parse_sample_dict_list(items)
+        self.items += item_list
+
+    def parse_sample_dict_list(self, sample_dict_list):
+        sample_list = []
+        for sample_dict in sample_dict_list:
+            sample_list.append(Sample.from_dict(sample_dict))
+        return sample_list
+
+    def save_to_file(self, file):
+        with open(file, 'w') as f:
+            json.dump(self.samples_as_dict_list, f)
 
     @property
     def samples_as_dict_list(self):
@@ -120,40 +204,19 @@ class SampleManager:
 
     def insert_new_sample_at_index(self, index, name, comment='', coordinates=[], max_exopsure=None):
         sample = Sample(name, comment=comment, coordinates=coordinates, max_exposure=max_exopsure)
-        self.insert_sample_at_index(index, sample)
+        self.insert_item_at_index(index, sample)
 
-    def add_sample(self, sample, emit_signal=True):
-        self.samples.append(sample)
-        if emit_signal:
-            self.emit_sample_list_update_signal()
+    def add_sample(self, sample):
+        self.add_item(sample)
 
-    def add_samples_from_dict_list(self, sample_dict_list):
-        for sample_dict in sample_dict_list:
-            sample = Sample.from_dict(sample_dict)
-            self.add_sample(sample, emit_signal=False)
-        self.emit_sample_list_update_signal()
-
-    def insert_sample_at_index(self, index, sample):
-        self.samples.insert(index, sample)
-        self.emit_sample_list_update_signal()
-
-    def delete_sample_at_index(self, index, emit_signal=True):
-        _sample = self.samples.pop(index)
-        del(_sample)
-        if emit_signal:
-            self.emit_sample_list_update_signal()
+    def delete_sample_at_index(self, index):
+        self.delete_item_at_index(index)
 
     def delete_multiple_samples(self, index_list, emit_signal=True):
-        new_samples = []
-        for i, sample in enumerate(self.samples):
-            if i not in index_list:
-                new_samples.append(sample)
-        del(self.samples)
-        self.samples = new_samples
-        if emit_signal:
-            self.emit_sample_list_update_signal()
+        self.delete_multiple_items(index_list, emit_signal=emit_signal)
 
-    def delete_with_index_dict(self, index_dict):
+    @emit_list_update_signal_decorator
+    def delete_samples_with_index_dict(self, index_dict):
         sample_idx_to_delete = []
         for sample_index, point_index_list in index_dict.items():
             sample = self.samples[sample_index]
@@ -166,24 +229,23 @@ class SampleManager:
 
         if len(sample_idx_to_delete) > 0:
             self.delete_multiple_samples(sample_idx_to_delete, emit_signal=False)
-        self.emit_sample_list_update_signal()
 
+    @emit_list_update_signal_decorator
     def update_sample_at_index(self, index, new_name, new_comment):
         self.samples[index].name = new_name
         self.samples[index].comment = new_comment
-        self.emit_sample_list_update_signal()
 
+    @emit_list_update_signal_decorator
     def update_sample_coordinates_at_index(self, sample_index, sample_point_index, new_coordinate_dict):
         self.samples[sample_index].update_position_coordinates(sample_point_index, new_coordinate_dict)
-        self.emit_sample_list_update_signal()
 
-
+    # misc
     @property
     def number_of_samples(self):
         return len(self.samples)
 
     def sample_at_index(self, index):
-        return self.samples[index]
+        return self.item_at_index(index)
 
     def sample_name_at_index(self, index):
         return self.sample_at_index(index).name
@@ -197,104 +259,133 @@ class SampleManager:
     def sample_coordinate_dict_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_coordinate_dict(sample_point_index)
 
-    def append_sample_list_update_signal(self, sample_list_update_signal):
-        self.sample_list_update_signal = sample_list_update_signal
-
-    def emit_sample_list_update_signal(self):
-        if self.sample_list_update_signal is not None:
-            self.sample_list_update_signal.emit()
-        self.save_to_settings()
-
 sample_manager = SampleManager()
 
 
-# class ItemListInteractingWithGUI:
-#     list_update_signal = None
+
+
+# class ScanSequenceManager:
 #
-#     def __init__(self, json_file_path='', items_str='scans'):
-#         setattr(self, items_str) = []
+#     def __init__(self, json_file_path='/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
+#         self.scans = []
+#         self.json_file_path = json_file_path
+#         self.init_from_settings()
+#
+#     def init_from_settings(self):
+#         try:
+#             self.add_sequences_from_file(self.json_file_path)
+#         except FileNotFoundError:
+#             self.save_to_settings()
+#
+#     def add_sequences_from_file(self, file):
+#         with open(file, 'r') as f:
+#             self.scans += json.loads(f.read())
+#         self.emit_scan_list_update_signal()
+#
+#     def save_to_settings(self):
+#         self.save_to_file(self.json_file_path)
+#
+#     def save_to_file(self, file):
+#         with open(file, 'w') as f:
+#             json.dump(self.scans, f)
+#
+#     def reset(self):
+#         self.scans = []
+#         self.emit_scan_list_update_signal()
+#
+#     def append_scan_list_update_signal(self, scan_list_update_signal):
+#         self.scan_list_update_signal = scan_list_update_signal
+#
+#     def emit_scan_list_update_signal(self):
+#         if self.scan_list_update_signal is not None:
+#             self.scan_list_update_signal.emit()
+#         self.save_to_settings()
+#
+#     def validate_element(self, element_dict):
+#         if element_dict['type'] == 'scan':
+#             required_keys = ['name', 'repeat', 'delay', 'scan_idx']
+#         # elif element_dict['type'] == 'scan_sequence':
+#         #     required_keys = ['name', 'scan_list']
+#         #     for scan in element_dict['scan_list']:
+#         #         self.validate_element(scan)
+#         else:
+#             raise Exception(f'Type of scan element is unknown: {element_dict}')
+#
+#         valid = all([(k in element_dict.keys()) for k in required_keys])
+#         if not valid: raise Exception(f'element contains missing keys.\n'
+#                                       f'Element: {element_dict}. Required keys: {required_keys}')
+#
+#     def add_element(self, element_dict):
+#         self.validate_element(element_dict)
+#         self.scans.append(element_dict)
+#         self.emit_scan_list_update_signal()
+#
+#     def delete_element(self, element_index, emit_signal=True):
+#         if type(element_index) == int:
+#             self.scans.pop(element_index)
+#         # else:
+#         #     idx1, idx2 = element_index
+#         #     self.scans[idx1]['scan_sequence'].pop(idx2)
+#         if emit_signal:
+#             self.emit_scan_list_update_signal()
+#
+#     # def delete_many_elements(self, element_index_list):
+#     #     for element_index in element_index_list:
+#     #         self.delete_element(element_index, emit_signal=False)
+#     #     self.scan_list_update_signal.emit()
+#
+#     def update_element(self, element_index, element_dict):
+#         self.validate_element(element_dict)
+#         if type(element_index) == int:
+#             self.scans[element_index] = element_dict
+#         # else:
+#         #     idx1, idx2 = element_index
+#         #     self.scans[idx1]['scan_sequence'][idx2] = element_dict
+#         self.emit_scan_list_update_signal()
+#
+#     def check_if_scan_index_is_used(self, scan_index):
+#         bad_indexes = []
+#         for i, scan in enumerate(self.scans):
+#             if scan['type'] == 'scan':
+#                 if scan['scan_idx'] == scan_index:
+#                     bad_indexes.append(i)
+#             # elif scan['type'] == 'scan_sequence':
+#             #     for j, sub_scan in enumerate(scan['scan_list']):
+#             #         if sub_scan['scan_idx'] == scan_index:
+#             #             bad_indexes.append((i, j))
+#         return bad_indexes
+#
+#     def scan_at_index(self, index):
+#         return self.scans[index]
+#
+#     def scan_str_at_index(self, index):
+#         return self.scan_at_index(index)['name']
 
 
-        # self.json_file_path = json_file_path
-    #     self.init_from_settings()
-    #
-    #
-    # def init_from_settings(self):
-    #     try:
-    #         self.add_sequences_from_file(self.json_file_path)
-    #     except FileNotFoundError:
-    #         self.save_to_settings()
-    #
-    # def add_sequences_from_file(self, file):
-    #     with open(file, 'r') as f:
-    #         self.scans += json.loads(f.read())
-    #     self.emit_scan_list_update_signal()
-    #
-    # def save_to_settings(self):
-    #     self.save_to_file(self.json_file_path)
-    #
-    # def save_to_file(self, file):
-    #     with open(file, 'w') as f:
-    #         json.dump(self.scans, f)
-    #
-    # def reset(self):
-    #     self.scans = []
-    #     self.emit_scan_list_update_signal()
-    #
-    # def append_scan_list_update_signal(self, scan_list_update_signal):
-    #     self.scan_list_update_signal = scan_list_update_signal
-    #
-    # def emit_scan_list_update_signal(self):
-    #     if self.scan_list_update_signal is not None:
-    #         self.scan_list_update_signal.emit()
-    #     self.save_to_settings()
 
 
-class ScanSequenceManager:
-    scan_list_update_signal = None
+class ScanSequenceManager(PersistentListInteractingWithGUI):
+    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
+        super().__init__(json_file_path)
+        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
 
-    def __init__(self, json_file_path='/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
-        self.scans = []
-        self.json_file_path = json_file_path
-        self.init_from_settings()
+    #Class specific decorators
+    @property
+    def scans(self):
+        return self.items
 
-    def init_from_settings(self):
-        try:
-            self.add_sequences_from_file(self.json_file_path)
-        except FileNotFoundError:
-            self.save_to_settings()
+    @scans.setter
+    def scans(self, value):
+        self.items = value
 
-    def add_sequences_from_file(self, file):
-        with open(file, 'r') as f:
-            self.scans += json.loads(f.read())
-        self.emit_scan_list_update_signal()
+    @scans.deleter
+    def scans(self):
+        del self.items
 
-    def save_to_settings(self):
-        self.save_to_file(self.json_file_path)
-
-    def save_to_file(self, file):
-        with open(file, 'w') as f:
-            json.dump(self.scans, f)
-
-    def reset(self):
-        self.scans = []
-        self.emit_scan_list_update_signal()
-
-    def append_scan_list_update_signal(self, scan_list_update_signal):
-        self.scan_list_update_signal = scan_list_update_signal
-
-    def emit_scan_list_update_signal(self):
-        if self.scan_list_update_signal is not None:
-            self.scan_list_update_signal.emit()
-        self.save_to_settings()
-
+    # validator
     def validate_element(self, element_dict):
         if element_dict['type'] == 'scan':
             required_keys = ['name', 'repeat', 'delay', 'scan_idx']
-        # elif element_dict['type'] == 'scan_sequence':
-        #     required_keys = ['name', 'scan_list']
-        #     for scan in element_dict['scan_list']:
-        #         self.validate_element(scan)
         else:
             raise Exception(f'Type of scan element is unknown: {element_dict}')
 
@@ -304,31 +395,19 @@ class ScanSequenceManager:
 
     def add_element(self, element_dict):
         self.validate_element(element_dict)
-        self.scans.append(element_dict)
-        self.emit_scan_list_update_signal()
+        self.add_item(element_dict)
 
-    def delete_element(self, element_index, emit_signal=True):
+    def delete_element(self, element_index):
         if type(element_index) == int:
-            self.scans.pop(element_index)
-        # else:
-        #     idx1, idx2 = element_index
-        #     self.scans[idx1]['scan_sequence'].pop(idx2)
-        if emit_signal:
-            self.emit_scan_list_update_signal()
+            self.delete_item_at_index(element_index)
 
-    # def delete_many_elements(self, element_index_list):
-    #     for element_index in element_index_list:
-    #         self.delete_element(element_index, emit_signal=False)
-    #     self.scan_list_update_signal.emit()
+    def delete_many_elements(self, element_index_list):
+        self.delete_multiple_items(element_index_list)
 
-    def update_element(self, element_index, element_dict):
+    def update_element_at_index(self, element_index, element_dict):
         self.validate_element(element_dict)
         if type(element_index) == int:
-            self.scans[element_index] = element_dict
-        # else:
-        #     idx1, idx2 = element_index
-        #     self.scans[idx1]['scan_sequence'][idx2] = element_dict
-        self.emit_scan_list_update_signal()
+            self.update_item_at_index(element_index, element_dict)
 
     def check_if_scan_index_is_used(self, scan_index):
         bad_indexes = []
@@ -336,14 +415,10 @@ class ScanSequenceManager:
             if scan['type'] == 'scan':
                 if scan['scan_idx'] == scan_index:
                     bad_indexes.append(i)
-            # elif scan['type'] == 'scan_sequence':
-            #     for j, sub_scan in enumerate(scan['scan_list']):
-            #         if sub_scan['scan_idx'] == scan_index:
-            #             bad_indexes.append((i, j))
         return bad_indexes
 
     def scan_at_index(self, index):
-        return self.scans[index]
+        return self.item_at_index(index)
 
     def scan_str_at_index(self, index):
         return self.scan_at_index(index)['name']
@@ -353,51 +428,36 @@ class ScanSequenceManager:
 scan_sequence_manager = ScanSequenceManager()
 
 
-class BatchManager:
-    batch_list_update_signal = None
+# class ScanSequenceManager(PersistentListInteractingWithGUI):
+#     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
+#         super().__init__(json_file_path)
+#         self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
+
+
+class BatchManager(PersistentListInteractingWithGUI):
 
     def __init__(self, sample_manager : SampleManager, scan_manager: ScanManager, scan_sequence_manager : ScanSequenceManager,
                  json_file_path='/nsls2/xf08id/settings/json/batch_manager.json'):
+        super().__init__(json_file_path)
         self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
-        self.experiments = []
-        self.json_file_path = json_file_path
-        self.init_from_settings()
 
         self.sample_manager = sample_manager
         self.scan_manager = scan_manager
         self.scan_sequence_manager = scan_sequence_manager
 
-    # dealing with save/load to file
-    def init_from_settings(self):
-        try:
-            self.read_from_file(self.json_file_path)
-        except FileNotFoundError:
-            self.save_to_settings()
+    @property
+    def experiments(self):
+        return self.items
 
-    def read_from_file(self, file):
-        with open(file, 'r') as f:
-            self.experiments += json.loads(f.read())
-        self.emit_batch_list_update_signal()
+    @experiments.setter
+    def experiments(self, value):
+        self.items = value
 
-    def save_to_settings(self):
-        self.save_to_file(self.json_file_path)
+    @experiments.deleter
+    def experiments(self):
+        del self.items
 
-    def save_to_file(self, file):
-        with open(file, 'w') as f:
-            json.dump(self.experiments, f)
-
-    def reset(self):
-        self.experiments = []
-        self.emit_batch_list_update_signal()
-
-    def append_batch_list_update_signal(self, batch_list_update_signal):
-        self.batch_list_update_signal = batch_list_update_signal
-
-    def emit_batch_list_update_signal(self):
-        if self.batch_list_update_signal is not None:
-            self.batch_list_update_signal.emit()
-        self.save_to_settings()
-
+    # validator
     def validate_element(self, element_dict):
         if element_dict['type'] == 'experiment':
             required_keys = ['name', 'repeat', 'element_list']
@@ -420,13 +480,14 @@ class BatchManager:
 
     def add_experiment_from_dict(self, experiment_dict):
         self.validate_element(experiment_dict)
-        self.experiments.append(experiment_dict)
-        self.emit_batch_list_update_signal()
+        self.add_item(experiment_dict)
+        # self.emit_batch_list_update_signal()
 
     def add_new_experiment(self, name, repeat):
         experiment_dict = {'type' : 'experiment', 'name' : name, 'repeat' : repeat, 'element_list' : []}
         self.add_experiment_from_dict(experiment_dict)
 
+    @emit_list_update_signal_decorator
     def add_element_to_experiment(self, experiment_index, element_dict):
         self.validate_element(element_dict)
         self.experiments[experiment_index]['element_list'].append(element_dict)
@@ -436,6 +497,7 @@ class BatchManager:
             for point_index in point_index_list:
                 yield (sample_index, point_index)
 
+    @emit_list_update_signal_decorator
     def add_measurement_to_experiment(self, experiment_index, sample_index_dict, scan_indexes,
                                    priority='scan'):
         if priority == 'scan':
@@ -463,8 +525,8 @@ class BatchManager:
         elif priority == 'sample_point':
             pass
 
-        self.emit_batch_list_update_signal()
 
+    @emit_list_update_signal_decorator
     def add_service_to_element_list(self, index_tuple, service_dict):
         self.validate_element(service_dict)
         nidx = len(index_tuple)
@@ -477,8 +539,6 @@ class BatchManager:
         elif nidx == 3:
             experiment_index, element_index1, element_index2 = index_tuple
             self.experiments[experiment_index]['element_list'][element_index1]['element_list'].insert(element_index2, service_dict)
-        self.emit_batch_list_update_signal()
-    # def add_many_elements(self, index_tuple_list):
 
     # def sample_point_data_from_index(self, sample_index, sample_point_index):
     #     sample = self.sample_manager.samples[sample_index]
@@ -502,44 +562,21 @@ class BatchManager:
     def service_str_from_element(self, service_element):
         return f"{service_element['plan_name']} ({service_element['plan_kwargs']})"
 
-    # def batch_items_iterator(self):
-
-    # def trim_index_tuple_list_from_repeats(self, index_tuple_list):
-    #
-    #     # search level 0:
-    #     unique_experiment_idx = []
-    #     for index_tuple in index_tuple_list:
-    #         if len(index_tuple) == 1:
-    #             unique_experiment_idx.append(index_tuple[0])
-    #
-    #     unique_exp_elements_idx = []
-    #     for index_tuple in index_tuple_list:
-    #         if len(index_tuple) == 2:
-    #             if index_tuple[0] not in unique_experiment_idx:
-    #                 unique_exp_elements_idx.append(index_tuple)
-    #
-    #     unique_exp_el_elements_idx = []
-    #     for index_tuple in index_tuple_list:
-    #         if len(index_tuple) == 3:
-    #             this_unique_element_idx = [_tuple[1] for _tuple in unique_exp_elements_idx if _tuple[0]==index_tuple[0]]
-    #             if index_tuple[1] not in this_unique_element_idx:
-    #                 unique_exp_el_elements_idx.append(index_tuple)
-    #
-    #     return [(idx, ) for idx in unique_experiment_idx] + unique_exp_elements_idx + unique_exp_el_elements_idx
-
+    @emit_list_update_signal_decorator
     def delete_element(self, index_tuple):
         nidx = len(index_tuple)
         if nidx == 1:
             experiment_index = index_tuple[0]
-            self.experiments.pop(experiment_index)
+            self.delete_item_at_index(experiment_index, emit_signal=False)
         elif nidx == 2:
             experiment_index, element_index1 = index_tuple
             self.experiments[experiment_index]['element_list'].pop(element_index1)
         elif nidx == 3:
             experiment_index, element_index1, element_index2 = index_tuple
-            self.experiments[experiment_index]['element_list'][element_index1]['element_list'].pop(element_index2)
-        self.emit_batch_list_update_signal()
-
+            element = self.experiments[experiment_index]['element_list'][element_index1]
+            element['element_list'].pop(element_index2)
+            if len(element['element_list']) == 0:
+                self.delete_element(index_tuple[:-1])
 
     def get_booked_sample_points_list(self):
         pass
