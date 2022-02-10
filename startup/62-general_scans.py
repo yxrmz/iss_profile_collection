@@ -44,8 +44,10 @@ def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tr
     else:
         motor = get_motor_device(motor, based_on='object_name')
         motor2 = None
+    detector_device_list = get_detector_device_list([detector], flying=False)
+    detector_device = detector_device_list[0]
 
-    channel = detector.hints['fields'][0]
+    channel = detector_device.hints['fields'][0]
     for jj in range(n_tries):
         motor_init_position = motor.read()[motor.name]['value']
         min_limit = motor_init_position - scan_range / 2
@@ -60,18 +62,18 @@ def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tr
         min_threshold = scan_positions[0] + scan_range / 10
         max_threshold = scan_positions[-1] - scan_range / 10
         if motor2:
-            plan = bp.list_scan([detector], motor, scan_positions.tolist(),
+            plan = bp.list_scan([detector_device], motor, scan_positions.tolist(),
                                             motor2, scan_positions2.tolist())
         else:
-            plan = bp.list_scan([detector], motor, scan_positions.tolist())
-        if hasattr(detector, 'kickoff'):
-            plan = bpp.fly_during_wrapper(plan, [detector])
+            plan = bp.list_scan([detector_device], motor, scan_positions.tolist())
+        if hasattr(detector_device, 'kickoff'):
+            plan = bpp.fly_during_wrapper(plan, [detector_device])
         uid = (yield from plan)
         if uid:
             hdr = db[uid]
-            if detector.polarity == 'pos':
+            if detector_device.polarity == 'pos':
                 idx = getattr(hdr.table()[channel], 'idxmax')()
-            elif detector.polarity == 'neg':
+            elif detector_device.polarity == 'neg':
                 idx = getattr(hdr.table()[channel], 'idxmin')()
             motor_pos = hdr.table()[motor.name][idx]
             print_to_gui(f'New motor position {motor_pos}')

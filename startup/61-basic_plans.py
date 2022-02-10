@@ -1,5 +1,5 @@
 def print_message_plan(msg='', tag='', add_timestamp=False, ntabs=0):
-    print_message(msg, tag='', add_timestamp=add_timestamp, ntabs=ntabs)
+    print_to_gui(msg, tag=tag, add_timestamp=add_timestamp, ntabs=ntabs)
     yield from bps.null()
 
 def sleep_plan(delay : float = 1.0):
