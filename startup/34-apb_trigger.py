@@ -87,7 +87,7 @@ class AnalogPizzaBoxTrigger(Device):
 
 
     def collect(self):
-        print(f'{ttime.ctime()} >>> {self.name} collect starting')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} collect starting')
         now = ttime.time()
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}
@@ -95,7 +95,7 @@ class AnalogPizzaBoxTrigger(Device):
                    'timestamps': {key: now for key in data}, 'time': now,
                    'filled': {key: False for key in data}}
             # print(f'yield data {ttime.ctime(ttime.time())}')
-        print(f'{ttime.ctime()} >>> {self.name} collect complete')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} collect complete')
 
         # self.unstage()
 

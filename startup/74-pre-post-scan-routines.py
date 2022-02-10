@@ -60,7 +60,7 @@ def get_offsets_plan(time : float = 2):
 
     for i in range(0,8):
         mean =  float(table[f'apb_ave_ch{i+1}_mean'])
-        print(f'Mean {(mean)}')
+        print_to_gui(f'Mean {(mean)}')
         ch_offset = getattr(apb_ave, f'ch{i+1}_offset')
         yield from bps.abs_set(ch_offset, mean)
 
@@ -117,7 +117,7 @@ def general_set_gains_plan(*args):
         if type(hs) != bool:
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
-        print('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.get(), val, hs))
+        print_to_gui('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.get(), val, hs))
 
 
 def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
@@ -169,13 +169,13 @@ def optimize_gains_plan(n_tries=3):
 
             trace_extreme = trace_extreme / 1000
 
-            print(f'Extreme value {trace_extreme} for detector {channel.name}')
+            print_to_gui(f'Extreme value {trace_extreme} for detector {channel.name}')
             if abs(trace_extreme) > threshold_hi:
-                print(f'Decreasing gain for detector {channel.name}')
+                print_to_gui(f'Decreasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain - 1, False)
                 all_gains_are_good = False
             elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
-                print(f'Correct gain for detector {channel.name}')
+                print_to_gui(f'Correct gain for detector {channel.name}')
             elif abs(trace_extreme) <= threshold_lo:
                 print(f'Increasing gain for detector {channel.name}')
                 yield from channel.amp.set_gain_plan(current_gain + 1, False)

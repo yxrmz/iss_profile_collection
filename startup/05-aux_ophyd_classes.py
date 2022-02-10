@@ -18,7 +18,7 @@ class StuckingEpicsMotor(EpicsMotor):
                 ttime.sleep(self._stuck_check_delay)
                 new_pos = self.user_readback.get()
                 if new_pos == old_pos:
-                    print(f'[Debug message]: {ttime.ctime()}: {self.name} motor got stuck ... unstucking it')
+                    print_to_gui(f'[Debug message]: {ttime.ctime()}: {self.name} motor got stuck ... unstucking it')
                     self.stop()
                     self.move(cur_sp, wait=True, **kwargs)
                 else:

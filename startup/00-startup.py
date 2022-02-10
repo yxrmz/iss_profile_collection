@@ -29,16 +29,29 @@ import xraydb
 def time_now_str():
     return datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
 
-def print_message(msg, tag='', add_timestamp=False, ntabs=0, stdout=sys.stdout):
+# def print_to_gui(msg, tag='', add_timestamp=False, ntabs=0, stdout=sys.stdout):
+def print_to_gui(msg, tag='', add_timestamp=False, ntabs=0, stdout_alt=sys.stdout):
+    # print('THIS IS STDOUT', stdout, stdout is xlive_gui.emitstream_out)
+    try:
+        stdout = xlive_gui.emitstream_out
+    except NameError:
+        stdout = stdout_alt
+
     msg = '\t'*ntabs + msg
     if add_timestamp:
         msg = f'({time_now_str()}) {msg}'
     if tag:
         msg = f'[{tag}] {msg}'
+
     print(msg, file=stdout, flush=True)
 
-def print_to_gui(msg):
-    print_message(msg)
+
+# def print_and_sleep_plan(delay=3):
+#     print_to_gui('sleeping for 3 seconds ...', tag='Test', add_timestamp=True)
+#     yield from bps.sleep(delay)
+#     print_to_gui('done', tag='Test', add_timestamp=True)
+#
+# RE(print_and_sleep_plan())
 
 # Qt config for 4K displays.
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'

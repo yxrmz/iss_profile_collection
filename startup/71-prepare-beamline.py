@@ -132,35 +132,35 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
         move_filter = True
 
 
-    print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...', stdout=stdout)
+    print_to_gui(f'[Prepare Beamline] Starting setting up the beamline to {energy} eV...')
     if move_cm_mirror == True:
         start_cm_position = cm_setter.position
         end_cm_position = energy_range['CM1']
         cm_motion_range = abs(end_cm_position-start_cm_position)
         moving_cm = cm_setter.set(end_cm_position)
-
+    #
     start_hhrm_position = hhrm_setter.position
     end_hhrm_position = energy_range['HHRM']
     hhrm_motion_range = abs(start_hhrm_position-end_hhrm_position)
     moving_hhrm = hhrm_setter.set(end_hhrm_position)
-
-    print_to_gui('[Prepare Beamline] Setting high voltage supply to safe values...',stdout=stdout)
+    #
+    print_to_gui('[Prepare Beamline] Setting high voltage supply to safe values...')
 
     hv_setter_values = []
     for high_voltage_setter in high_voltage_setters:
         hv_setter_values.append(high_voltage_setter)
         hv_setter_values.append(safe_high_voltage)
     yield from bps.mv(*hv_setter_values)
-    print_to_gui('[Prepare Beamline] High voltage supply is set to safe values',stdout=stdout)
+    print_to_gui('[Prepare Beamline] High voltage supply is set to safe values')
 
 
     start_time = ttime.time()
-    print_to_gui('[Prepare Beamline] Setting ion chamber gas composition...', stdout=stdout)
+    print_to_gui('[Prepare Beamline] Setting ion chamber gas composition...')
     yield from bps.mv(
-                        He_flow_setter,energy_range['He_flow'],
-                        N2_flow_setter,energy_range['N2_flow'],
+                        He_flow_setter, energy_range['He_flow'],
+                        N2_flow_setter, energy_range['N2_flow'],
                       )
-    print_to_gui('[Prepare Beamline] Ion chamber gas composition set',stdout=stdout)
+    print_to_gui('[Prepare Beamline] Ion chamber gas composition set')
 
 
 
@@ -168,7 +168,7 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
 
 
     if move_filter:
-        print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter', stdout=stdout)
+        print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter')
         print('moving')
         # close shutter before moving the filter
         try:
@@ -176,16 +176,16 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
         except FailedStatus:
             raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
 
-        yield from bps.mv(filter_box_setter,energy_range['Filterbox'])
+        yield from bps.mv(filter_box_setter, energy_range['Filterbox'])
         print_to_gui('[Prepare Beamline] Filter set',stdout=stdout)
-        print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter',stdout=stdout)
+        print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter')
 
         try:
             yield from bps.mv(shutter_fe_2b, 'Open')
         except FailedStatus:
             print_to_gui(f'Error: Photon shutter failed to open.',stdout=stdout)
 
-    print_to_gui('[Prepare Beamline] Moving vertical position of the second monochromator crystal', stdout=stdout)
+    print_to_gui('[Prepare Beamline] Moving vertical position of the second monochromator crystal')
     hhmy_position = _compute_hhmy_value(energy)
     yield from bps.mv(hhm.y_precise, hhmy_position)
     if np.abs(hhm.y_precise.user_readback.get() - hhmy_position)>0.05:
@@ -193,42 +193,42 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False):
 
 
     while ttime.time() < (start_time + settling_time):
-        print_to_gui(f'[Prepare Beamline] {int(settling_time - (ttime.time()-start_time))} s left to settle the ion chamber gas flow',stdout=stdout)
+        print_to_gui(f'[Prepare Beamline] {int(settling_time - (ttime.time()-start_time))} s left to settle the ion chamber gas flow')
         yield from bps.sleep(10)
-    print_to_gui('[Prepare Beamline] Setting high voltage values',stdout=stdout)
+    print_to_gui('[Prepare Beamline] Setting high voltage values')
     hv_setter_values = []
     for high_voltage_setter in high_voltage_setters:
         hv_setter_values.append(high_voltage_setter)
         hv_setter_values.append(energy_range['IC_voltage'])
     yield from bps.mv(*hv_setter_values)
-    print_to_gui('[Prepare Beamline] High voltage values set',stdout=stdout)
+    print_to_gui('[Prepare Beamline] High voltage values set')
 
     while not moving_hhrm.done:
         motion_so_far = hhrm_setter.position
         percent_complete = int(abs(motion_so_far - start_hhrm_position) / hhrm_motion_range * 100)
-        print_to_gui(f'[Prepare Beamline] HHRM motion is {percent_complete} % complete',stdout=stdout)
+        print_to_gui(f'[Prepare Beamline] HHRM motion is {percent_complete} % complete')
         yield from bps.sleep(10)
 
-    print_to_gui('[Prepare Beamline] High harmonics rejection mirror position set',stdout=stdout)
+    print_to_gui('[Prepare Beamline] High harmonics rejection mirror position set')
 
 #
     if move_cm_mirror == True:
         while not moving_cm.done:
             motion_so_far = cm_setter.position
             percent_complete = int(abs(motion_so_far - start_cm_position) / cm_motion_range * 100)
-            print_to_gui(f'[Prepare Beamline] CM1 motion is {percent_complete} % set',stdout=stdout)
+            print_to_gui(f'[Prepare Beamline] CM1 motion is {percent_complete} % set')
             yield from bps.sleep(10)
-        print_to_gui('[Prepare Beamline] CM1 mirror position set',stdout=stdout)
+        print_to_gui('[Prepare Beamline] CM1 mirror position set')
 
-    print_to_gui('[Prepare Beamline] Moving to the target energy',stdout=stdout)
+    print_to_gui('[Prepare Beamline] Moving to the target energy')
     yield from bps.mv(hhm.energy, energy)
 
-    print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor', stdout=stdout)
-    yield from bps.mv(BPM_exposure_setter,energy_range['ES BPM exposure'])
-    print_to_gui('[Prepare Beamline] Beamline preparation is complete',stdout=stdout)
+    print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor')
+    yield from bps.mv(BPM_exposure_setter, energy_range['ES BPM exposure'])
+    print_to_gui('[Prepare Beamline] Beamline preparation is complete')
 
     if np.abs(hhm.y_precise.user_readback.get() - hhmy_position) > 0.05:
-        print_to_gui(f'Error: vertical position of the second monochromator crystal is not set. Set manually to {hhmy_position}',stdout=stdout)
+        print_to_gui(f'Error: vertical position of the second monochromator crystal is not set. Set manually to {hhmy_position}')
 
 
 

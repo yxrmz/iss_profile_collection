@@ -141,10 +141,10 @@ class HHM(Device):
 
     def abort_trajectory(self):
         if self.trajectory_running.get():
-            print('Stopping trajectory ... ', end='')
+            print_to_gui('Stopping trajectory ... ', end='')
             self.stop_trajectory.put('1')
             self.flying_status.set_finished()
-            print('done')
+            print_to_gui('done')
 
 
     def home_y_pos(self):

@@ -46,7 +46,7 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
         We had to replace "cam" with "settings" here.
         Also modified the stage sigs.
         """
-        print("warming up the hdf5 plugin...")
+        print_to_gui("warming up the hdf5 plugin...")
         set_and_wait(self.enable, 1)
         sigs = OrderedDict([(self.parent.settings.array_callbacks, 1),
                             (self.parent.settings.trigger_mode, 'Internal'),
@@ -69,7 +69,7 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
         for sig, val in reversed(list(original_vals.items())):
             ttime.sleep(0.1)
             set_and_wait(sig, val)
-        print("done")
+        print_to_gui("done")
 
     # def unstage(self):
     #   """A custom unstage method is needed to avoid these messages:

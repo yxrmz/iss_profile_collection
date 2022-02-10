@@ -32,7 +32,7 @@ class DeviceWithNegativeReadBack(Device):
     def set(self,value):
 
         def callback(*args,**kwargs):
-            if self._moving and  abs(abs(self.read_pv.get())-abs(self.write_pv.get())) < 0.5:
+            if self._moving and  abs(abs(self.read_pv.get())-abs(self.write_pv.get())) < 2:
                 self._moving = False
                 return True
             else:
@@ -111,22 +111,22 @@ class ShutterMotor(Device):
         self.function_call = None
 
     def open(self, printing=True, time_opening=False):
-        if printing: print(f'{ttime.ctime()} >>> {self.name} opening')
+        if printing: print_to_gui(f'{ttime.ctime()} >>> {self.name} opening')
         if time_opening: self._start_time = ttime.time()
         self.output.move(self.open_pos, wait=True)
 
     def close(self, printing=True):
-        if printing: print(f'{ttime.ctime()} >>> {self.name} closing', end='')
+        if printing: print_to_gui(f'{ttime.ctime()} >>> {self.name} closing', end='')
         self.output.move(self.closed_pos, wait=True)
         if self._start_time is not None:
             self.exposure_time.put(ttime.time() - self._start_time)
             self._start_time = None
-            print(f'. Total exposure time: {self.exposure_time.get():0.2f} s', end='')
+            print_to_gui(f'. Total exposure time: {self.exposure_time.get():0.2f} s', end='')
         print()
 
 
     def open_plan(self, printing=True):
-        if printing: print('Opening {}'.format(self.name))
+        if printing: print_to_gui('Opening {}'.format(self.name))
         yield from bps.mv(self.output, self.open_pos, wait=True)
 
     def close_plan(self, printing=True):

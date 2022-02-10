@@ -78,7 +78,7 @@ class FeedbackBPM(BPM):
             ttime.sleep(10)
             self.acquire.put(1)
         else:
-            print('ioc_reboot_pv is not appended. IOC reboot impossible.')
+            print_to_gui('ioc_reboot_pv is not appended. IOC reboot impossible.')
 
     @property
     def acquiring(self):

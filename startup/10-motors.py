@@ -63,7 +63,7 @@ class HHRM(Device):
         # else:
         #     stripe = 'undefined'
         # return stripe
-        print('WARNING HHRM STRIPE IS NOT DEFINED')
+        print_to_gui('WARNING HHRM STRIPE IS NOT DEFINED')
         return 'undefined'
 
 

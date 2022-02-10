@@ -68,11 +68,11 @@ class ScanManager():
                                 parameters_match = False
                                 break
                     if parameters_match:
-                        print('SCAN IS OLD')
+                        print_to_gui('SCAN IS OLD')
                         return uid
 
         new_uid = self.make_scan_uid()
-        print('SCAN IS NEW')
+        print_to_gui('SCAN IS NEW')
         self.scan_dict[new_uid] = new_scan
         self.create_trajectory_file(new_scan, new_uid)
         os.rename(self.json_file_path, f'{os.path.splitext(self.json_file_path)[0]}.bak')

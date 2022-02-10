@@ -187,12 +187,13 @@ class PlanProcessor():
 
             if self.top_plan_status == 'normal':
                 self.update_status('running')
-                try:
-                    self.execute_top_plan()
-                except Exception as e:
-                    print(e)
-                    print('Found and issue with the top plan. Stopping the queue')
-                    break
+                self.execute_top_plan()
+                # try:
+                #     self.execute_top_plan()
+                # except Exception as e:
+                #     print(e)
+                #     print('Found and issue with the top plan. Stopping the queue')
+                #     break
 
             elif self.top_plan_status == 'paused':
                 break

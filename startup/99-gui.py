@@ -55,7 +55,7 @@ if not os.environ.get('AZURE_TESTING'):
 
     xlive()
 
-    print(f'Startup complete at {ttime.ctime()}')
+    print_to_gui(f'Startup complete at {ttime.ctime()}')
     #sys.exit(app.exec_())
 
     sys.stdout = xlive_gui.emitstream_out

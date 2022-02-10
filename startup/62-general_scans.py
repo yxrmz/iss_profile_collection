@@ -28,9 +28,11 @@ def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_st
     #print(f'Motors {motor}')
     motor_device = get_motor_device(motor)
     detector_devices = get_detector_device_list(detectors, flying=False)
-    print('[General Scan] Starting scan...')
+    # print('[General Scan] Starting scan...')
+    print_to_gui('[General Scan] Starting scan...')
     yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps)))
-    print('[General Scan] Done!')
+    # print('[General Scan] Done!')
+    print_to_gui('[General Scan] Done!')
 
 
 def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tries = 3, liveplot_kwargs={}):
@@ -72,16 +74,16 @@ def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tr
             elif detector.polarity == 'neg':
                 idx = getattr(hdr.table()[channel], 'idxmin')()
             motor_pos = hdr.table()[motor.name][idx]
-            print(f'New motor position {motor_pos}')
+            print_to_gui(f'New motor position {motor_pos}')
 
             if motor_pos < min_threshold:
                 yield from bps.mv(motor,min_limit)
                 if jj+1 < n_tries:
-                    print(f' Starting {jj+2} try')
+                    print_to_gui(f' Starting {jj+2} try')
             elif max_threshold < motor_pos:
-                print('max')
+                print_to_gui('max')
                 if jj+1 < n_tries:
-                    print(f' Starting {jj+2} try')
+                    print_to_gui(f' Starting {jj+2} try')
                 yield from bps.mv(motor, max_limit)
             else:
                 yield from bps.mv(motor, motor_pos)

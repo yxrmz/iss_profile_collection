@@ -59,13 +59,13 @@ def check_gate_valves():
                 is_open = False
 
             else:
-                print(f'({ttime.ctime()}) Attempting to open {gate_valve.name}.')
+                print_to_gui(f'({ttime.ctime()}) Attempting to open {gate_valve.name}.')
                 is_open = gate_valve.open()
                 if not is_open:
-                    print(f'({ttime.ctime()}) Failed to open {gate_valve.name}.')
+                    print_to_gui(f'({ttime.ctime()}) Failed to open {gate_valve.name}.')
                     message += f'  Gate valve {gate_valve.name} cannot be opened. Contact beamline staff for assistance.\n'
                 else:
-                    print(f'({ttime.ctime()}) Successfully opened {gate_valve.name}.')
+                    print_to_gui(f'({ttime.ctime()}) Successfully opened {gate_valve.name}.')
         else:
             is_open = True
 
@@ -74,16 +74,16 @@ def check_gate_valves():
     all_open = all(is_open_list)
     if all_open:
         if shutter_fe_2b.status.get() == shutter_fe_2b.close_val:
-            print(f'({ttime.ctime()}) Attempting to open FE shutter.')
+            print_to_gui(f'({ttime.ctime()}) Attempting to open FE shutter.')
             try:
                 _status = shutter_fe_2b.set('Open')
                 _status.wait()
-                print(f'({ttime.ctime()}) Successfully opened FE shutter.')
+                print_to_gui(f'({ttime.ctime()}) Successfully opened FE shutter.')
             except:
-                print(f'({ttime.ctime()}) Failed to open FE shutter.')
+                print_to_gui(f'({ttime.ctime()}) Failed to open FE shutter.')
                 message += f'  FE shutter cannot be opened. Contact beamline staff for assistance.\n'
 
-            print(f'({ttime.ctime()}) All gate valves and/or shutters were successfully open')
+            print_to_gui(f'({ttime.ctime()}) All gate valves and/or shutters were successfully open')
     else:
         message = 'Gate valves cannot be opened. Reasons:\n' + message
 

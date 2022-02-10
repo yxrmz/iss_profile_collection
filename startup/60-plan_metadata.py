@@ -11,7 +11,7 @@ def get_general_md():
     # i0_volt = np.round(wps1.hv302.read_pv.get())
     # it_volt = np.round(wps1.hv303.read_pv.get())
     # ir_volt = np.round(wps1.hv305.read_pv.get())
-    print('WARNING VOLTAGES ARE NOT BEING READ FOR METADATA')
+    print_to_gui('WARNING VOLTAGES ARE NOT BEING READ FOR METADATA')
     i0_volt = 0
     it_volt = 0
     ir_volt = 0

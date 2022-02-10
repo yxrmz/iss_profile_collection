@@ -28,7 +28,7 @@ class FlyerHHM(Device):
         self.dets = []
 
     def stage(self):
-        print(f'{ttime.ctime()} Staging start')
+        print_to_gui(f'{ttime.ctime()} Staging start')
         self.dets = self.default_dets + self.aux_dets
         self.hhm.prepare()
         staged_list = super().stage()
@@ -37,16 +37,16 @@ class FlyerHHM(Device):
             if hasattr(det, 'prepare_to_fly'):
                 det.prepare_to_fly(scan_duration)
             staged_list += det.stage()
-        print(f'{ttime.ctime()} Staging done')
+        print_to_gui(f'{ttime.ctime()} Staging done')
         return staged_list
 
     def unstage(self):
-        print(f'{ttime.ctime()} Unstaging start')
+        print_to_gui(f'{ttime.ctime()} Unstaging start')
         unstaged_list = super().unstage()
         for det in self.dets:
             unstaged_list += det.unstage()
         self.flush_dets()
-        print(f'{ttime.ctime()} Unstaging done')
+        print_to_gui(f'{ttime.ctime()} Unstaging done')
         return unstaged_list
 
     def kickoff(self):
@@ -58,7 +58,7 @@ class FlyerHHM(Device):
         return self.kickoff_status
 
     def action_sequence(self):
-        print(f'{ttime.ctime()} Detector kickoff starting...')
+        print_to_gui(f'{ttime.ctime()} Detector kickoff starting...')
 
         # apb_status = self.apb_stream.kickoff()
         # apb_status.wait()
@@ -68,7 +68,7 @@ class FlyerHHM(Device):
         # det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets if (det is not self.apb_stream)])
         det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
         det_kickoff_status.wait()
-        print(f'{ttime.ctime()} Detector kickoff finished')
+        print_to_gui(f'{ttime.ctime()} Detector kickoff finished')
         # self.shutter.open() # this could be a better place to have shutter open
         print(f'{ttime.ctime()} Mono flight starting...')
         self.hhm_flying_status = self.hhm.kickoff()

@@ -46,19 +46,19 @@ class TrajectoryManager():
         ip = self.hhm.ip
         orig_file_path = self.trajectory_path
 
-        print('[Load Trajectory] Starting...')
+        print_to_gui('[Load Trajectory] Starting...')
         traj_fn = orig_file_name
 
         # Check if new_file_path is between the possible values
         if int(new_file_path) > 9 or int(new_file_path) < 1:
-            print(
+            print_to_gui(
                 "[Load Trajectory] Path '{}' not possible. Please use a value in the range 1 <= new_file_path <= 9.".format(
                     new_file_path))
             return False
 
         # Get number of lines in file
         file_size = self.file_len(orig_file_path + orig_file_name)
-        print('[Load Trajectory] Number of lines in file: {}'.format(file_size))
+        print_to_gui('[Load Trajectory] Number of lines in file: {}'.format(file_size))
 
         # Get min and max of trajectory in eV
         if orig_file_path[-1] != '/':
@@ -77,8 +77,8 @@ class TrajectoryManager():
             min_energy = int(xray.encoder2energy((-traj, self.hhm.pulses_per_deg).min()))
             max_energy = int(xray.encoder2energy((-traj, self.hhm.pulses_per_deg).max()))
 
-        print('[Load Trajectory] Min energy: {}'.format(min_energy))
-        print('[Load Trajectory] Max energy: {}'.format(max_energy))
+        print_to_gui('[Load Trajectory] Min energy: {}'.format(min_energy))
+        print_to_gui('[Load Trajectory] Max energy: {}'.format(max_energy))
 
         # Create ftp connection with default credential
         ftp = FTP(ip)

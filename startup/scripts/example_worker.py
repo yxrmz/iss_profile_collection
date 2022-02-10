@@ -18,19 +18,19 @@ mpn.patch()
 class ExampleWorker(event_model.SingleRunDocumentRouter):
 
     def start(self, start_doc):
-        print(f"start: {start_doc}")
+        print_to_gui(f"start: {start_doc}")
 
     def descriptor(self, descriptor_doc):
-        print(f"descriptor: {descriptor_doc}")
+        print_to_gui(f"descriptor: {descriptor_doc}")
 
     def event(self, event_doc):
-        print(f"event: {event_doc}")
+        print_to_gui(f"event: {event_doc}")
 
     def event_page(self, event_page_doc):
-        print(f"event_page: {event_page_doc}")
+        print_to_gui(f"event_page: {event_page_doc}")
 
     def stop(self, stop_doc):
-        print(f"stop: {stop_doc}")
+        print_to_gui(f"stop: {stop_doc}")
 
 
 def main():

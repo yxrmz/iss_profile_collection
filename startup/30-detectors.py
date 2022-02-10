@@ -124,7 +124,7 @@ class EncoderFS(Encoder):
 
 
     def complete(self):
-        print(f'{ttime.ctime()} >>> {self.name} complete: begin')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} complete: begin')
         set_and_wait(self.ignore_sel, 1)
 
         # print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
@@ -137,7 +137,7 @@ class EncoderFS(Encoder):
         workstation_file_root = '/mnt/xf08ida-ioc1/'
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
         # print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
-        print(f'{ttime.ctime()} Moving file from {workstation_full_path} to {self._full_path}')
+        print_to_gui(f'{ttime.ctime()} Moving file from {workstation_full_path} to {self._full_path}')
         cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
         # HACK: Make datum documents here so that they are available for collect_asset_docs
@@ -152,7 +152,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('datum', datum))
 
         self._datum_ids.append(datum_id)
-        print(f'{ttime.ctime()} >>> {self.name} complete: done')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} complete: done')
         return NullStatus()
 
     def collect(self):
@@ -163,7 +163,7 @@ class EncoderFS(Encoder):
         """
         # print(f'     !!!!! {datetime.now()} collect in {self.name}')
         # print('Collect of {} starting'.format(self.name))
-        print(f'{ttime.ctime()} >>> {self.name} collect starting')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} collect starting')
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.

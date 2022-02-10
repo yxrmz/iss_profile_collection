@@ -164,7 +164,7 @@ def scan_beam_position_vs_energy(camera=camera_sp2):
     centers = []
     energies = np.linspace(6000, 14000, 11)
     for energy in energies:
-        print(f'Energy is {energy}')
+        print_to_gui(f'Energy is {energy}')
         hhm.energy.move(energy)
         ttime.sleep(3)
         camera.adjust_camera_exposure_time(target_max_counts=150, atol=10)
@@ -175,6 +175,6 @@ def scan_beam_position_vs_energy(camera=camera_sp2):
             center = camera.stats4.centroid.x.get()
             _centers.append(center)
         centers.append(np.mean(_centers))
-        print(f'Center is {np.mean(_centers)}')
+        print_to_gui(f'Center is {np.mean(_centers)}')
 
     return energies, np.array(centers)
