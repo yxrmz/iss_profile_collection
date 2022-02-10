@@ -70,17 +70,17 @@ class FlyerHHM(Device):
         det_kickoff_status.wait()
         print_to_gui(f'{ttime.ctime()} Detector kickoff finished')
         # self.shutter.open() # this could be a better place to have shutter open
-        print(f'{ttime.ctime()} Mono flight starting...')
+        print_to_gui(f'{ttime.ctime()} Mono flight starting...')
         self.hhm_flying_status = self.hhm.kickoff()
         self.kickoff_status.set_finished()
 
         self.hhm_flying_status.wait()
-        print(f'{ttime.ctime()} Mono flight finished')
-        self.shutter.close()
-        print(f'{ttime.ctime()} Detector complete starting...')
+        print_to_gui(f'{ttime.ctime()} Mono flight finished')
+        print_to_gui(f'{ttime.ctime()} Detector complete starting...')
         det_complete_status = combine_status_list([det.complete() for det in self.dets])
         det_complete_status.wait()
-        print(f'{ttime.ctime()} Detector complete finished')
+        self.shutter.close()
+        print_to_gui(f'{ttime.ctime()} Detector complete finished')
         self.complete_status.set_finished()
 
     def complete(self):
@@ -96,10 +96,10 @@ class FlyerHHM(Device):
         return return_dict
 
     def collect(self):
-        print(f'{ttime.ctime()} Collect starting')
+        print_to_gui(f'{ttime.ctime()} Collect starting')
         for det in self.dets:
             yield from det.collect()
-        print(f'{ttime.ctime()} Collect finished')
+        print_to_gui(f'{ttime.ctime()} Collect finished')
 
     def collect_asset_docs(self):
         for det in self.dets:

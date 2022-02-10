@@ -216,7 +216,7 @@ class ScanManager():
     def standard_trajectory_filename(self, element, edge):
         standard_scan_dict = self.standard_scan_dict(element, edge)
         uid = self.check_if_brand_new(standard_scan_dict)
-        return self.scan_dict[uid]['scan_parameters']
+        return self.scan_dict[uid]['scan_parameters']['filename']
 
     def _make_mono_step_scan_header(self, scan_parameters):
         if 'grid_kind' in scan_parameters.keys():

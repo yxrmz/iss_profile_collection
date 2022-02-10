@@ -120,7 +120,7 @@ def calibrate_mono_energy_plan(element='', edge='', dE=25, plot_func=None, error
 
     trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
 
-    yield from adjust_ic_gains()
+    yield from optimize_gains_plan()
     name = f'{element} {edge}-edge foil energy calibration'
 
     plan = fly_scan_plan

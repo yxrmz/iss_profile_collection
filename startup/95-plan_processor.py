@@ -335,6 +335,10 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     def plan_list(self):
         del self.items
 
+    def reset(self):
+        super().reset()
+        self.update_status('idle')
+
     # dealing with RE
     @property
     def RE_state(self):

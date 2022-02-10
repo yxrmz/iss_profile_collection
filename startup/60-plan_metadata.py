@@ -8,13 +8,13 @@ def get_general_md():
     gas_he_perc = np.round(gas_he_flow / gas_tot_flow * 100)
     gas_n2_perc = np.round(gas_n2_flow / gas_tot_flow * 100)
 
-    # i0_volt = np.round(wps1.hv302.read_pv.get())
-    # it_volt = np.round(wps1.hv303.read_pv.get())
-    # ir_volt = np.round(wps1.hv305.read_pv.get())
-    print_to_gui('WARNING VOLTAGES ARE NOT BEING READ FOR METADATA')
-    i0_volt = 0
-    it_volt = 0
-    ir_volt = 0
+    i0_volt = np.round(wps1.hv302.read_pv.get())
+    it_volt = np.round(wps1.hv303.read_pv.get())
+    ir_volt = np.round(wps1.hv305.read_pv.get())
+    # print_to_gui('WARNING VOLTAGES ARE NOT BEING READ FOR METADATA')
+    # i0_volt = 0
+    # it_volt = 0
+    # ir_volt = 0
 
     md = {'nslsii_current' : nsls_ii.beam_current.get(),
           'nslsii_status' : nsls_ii.return_status_string(),

@@ -116,12 +116,12 @@ class ShutterMotor(Device):
         self.output.move(self.open_pos, wait=True)
 
     def close(self, printing=True):
-        if printing: print_to_gui(f'{ttime.ctime()} >>> {self.name} closing', end='')
+        if printing: print_to_gui(f'{ttime.ctime()} >>> {self.name} closing')
         self.output.move(self.closed_pos, wait=True)
         if self._start_time is not None:
             self.exposure_time.put(ttime.time() - self._start_time)
             self._start_time = None
-            print_to_gui(f'. Total exposure time: {self.exposure_time.get():0.2f} s', end='')
+            print_to_gui(f'. Total exposure time: {self.exposure_time.get():0.2f} s')
         print()
 
 
