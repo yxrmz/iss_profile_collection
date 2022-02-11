@@ -179,6 +179,9 @@ def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_e
                                'curr_mot_name' : element['motor']}
         else:
             liveplot_kwargs = {}
+        # plans = [{'plan_name': 'print_message_plan',
+        #           'plan_kwargs': {'msg': f'Step: {element["comment"]}', 'tag': 'Beamline tuning'}}]
+
         plan_dict = {'plan_name' : 'tuning_scan',
                      'plan_kwargs' : {'motor' : element['motor'],
                                       'detector' : element['detector'],

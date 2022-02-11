@@ -2,21 +2,80 @@ from xas.trajectory import TrajectoryCreator
 
 
 
+def tune_beamline_plan(extended_tuning : bool = False, enable_fb_in_the_end : bool = True):
+
+    if extended_tuning:
+        tune_elements_list = tune_elements_ext
+    else:
+        tune_elements_list = tune_elements
+
+    print_to_gui(f'[Beamline tuning] Starting...')
+    yield from bps.mv(hhm.fb_status, 0)
+    # print('bla')
+
+    # yield from bps.mv(bpm_fm, 'insert')
+
+    for element in tune_elements_list:
+        # detector = detector_dictionary[element['detector']]['device']
+        detector = element['detector']
+
+        if 'fb_enable' in element.keys():
+            if element['fb_enable']:
+                hhm_feedback.update_center()
+                hhm.fb_status.put(1)
+
+
+        # if detector == bpm_fm:
+        if detector == 'Focusing mirror BPM':
+            yield from bps.mv(bpm_fm, 'insert')
+        else:
+            yield from bps.mv(bpm_fm, 'retract')
+
+
+        # motor = motor_dictionary[element['motor']]['object']
+        motor = element['motor']
+        yield from tuning_scan(motor, detector,
+                              element['range'],
+                              element['step'],
+                              n_tries=element['retries'])
+        # turn camera into continuous mode
+        if hasattr(detector, 'image_mode'):
+            yield from bps.mv(getattr(detector, 'image_mode'), 2)
+            yield from bps.mv(getattr(detector, 'acquire'), 1)
+
+    # yield from bps.mv(bpm_fm, 'retract')
+    if enable_fb_in_the_end:
+        hhm_feedback.update_center()
+        # yield from update_hhm_fb_center(truncate_data=truncate_data)
+        hhm.fb_status.put(1)
+    print('[Beamline tuning] Beamline tuning complete')
+
+def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True):
+    old_energy = hhm.energy.position
+    if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
+        yield from shutter.close_plan()
+        yield from prepare_beamline_plan(energy, move_cm_mirror = True, move_hhm_y=False)
+        yield from tune_beamline_plan(extended_tuning=extended_tuning, enable_fb_in_the_end=enable_fb_in_the_end)
+    else:
+        # print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
+        yield from bps.mv(hhm.energy, energy)
+
 def tabulate_hhmy_position_plan(stdout=sys.stdout):
     _energies = [13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000]  # np.arange(5000, 11000, 1000)
+    # _energies = [23000]
     data_df = pd.DataFrame(columns=['energy', 'hhmy', 'hhrmy', 'uid'])
 
     for energy in _energies:
         # enable_fb_in_the_end = energy>13000
 
-        yield from optimize_beamline_plan(energy, tune_elements=tune_elements_ext, force_prepare=True, enable_fb_in_the_end=False)
+        yield from optimize_beamline_plan(energy, extended_tuning=True, force_prepare=True, enable_fb_in_the_end=False)
         uid = db[-3].start['uid']
         data_df = data_df.append({'energy' : energy,
                                   'hhmy' : hhm.y.user_readback.get(),
                                   'hhrmy' : hhrm.y.user_readback.get(),
                                   'uid' : uid},
                                    ignore_index=True)
-        data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation_high_energies.json')
+        data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_hhrmy_tabulation_high_energies.json')
 
 
 

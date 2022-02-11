@@ -37,6 +37,7 @@ def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_st
 
 def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tries = 3, liveplot_kwargs={}):
     # sys.stdout = kwargs.pop('stdout', sys.stdout)
+    print_to_gui(f'Scanning motor {motor}', tag='Tune Beamline')
 
     if type(motor) == list:
         motor = get_motor_device(motor[0], based_on='object_name')
