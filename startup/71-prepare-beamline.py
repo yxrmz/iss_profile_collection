@@ -101,7 +101,7 @@ bl_prepare_energy_ranges = [
         },
     ]
 
-def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_hhm_y=True):
+def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_hhm_y=False):
     energy_ranges = bl_prepare_energy_ranges
 
     BPM_exposure_setter = bpm_es.exp_time
