@@ -91,6 +91,10 @@ class PersistentListInteractingWithGUI:
         self.json_file_path = json_file_path
         self.init_from_settings()
 
+    @property
+    def local_file_default_path(self):
+        return f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
+
     def init_from_settings(self):
         try:
             self.add_items_from_file(self.json_file_path)
@@ -155,7 +159,6 @@ class SampleManager(PersistentListInteractingWithGUI):
 
     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/sample_manager.json'):
         super().__init__(json_file_path)
-        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
         # self.samples = []
         # self.json_file_path = json_file_path
         # self.init_from_settings()
@@ -262,112 +265,9 @@ class SampleManager(PersistentListInteractingWithGUI):
 sample_manager = SampleManager()
 
 
-
-
-# class ScanSequenceManager:
-#
-#     def __init__(self, json_file_path='/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
-#         self.scans = []
-#         self.json_file_path = json_file_path
-#         self.init_from_settings()
-#
-#     def init_from_settings(self):
-#         try:
-#             self.add_sequences_from_file(self.json_file_path)
-#         except FileNotFoundError:
-#             self.save_to_settings()
-#
-#     def add_sequences_from_file(self, file):
-#         with open(file, 'r') as f:
-#             self.scans += json.loads(f.read())
-#         self.emit_scan_list_update_signal()
-#
-#     def save_to_settings(self):
-#         self.save_to_file(self.json_file_path)
-#
-#     def save_to_file(self, file):
-#         with open(file, 'w') as f:
-#             json.dump(self.scans, f)
-#
-#     def reset(self):
-#         self.scans = []
-#         self.emit_scan_list_update_signal()
-#
-#     def append_scan_list_update_signal(self, scan_list_update_signal):
-#         self.scan_list_update_signal = scan_list_update_signal
-#
-#     def emit_scan_list_update_signal(self):
-#         if self.scan_list_update_signal is not None:
-#             self.scan_list_update_signal.emit()
-#         self.save_to_settings()
-#
-#     def validate_element(self, element_dict):
-#         if element_dict['type'] == 'scan':
-#             required_keys = ['name', 'repeat', 'delay', 'scan_idx']
-#         # elif element_dict['type'] == 'scan_sequence':
-#         #     required_keys = ['name', 'scan_list']
-#         #     for scan in element_dict['scan_list']:
-#         #         self.validate_element(scan)
-#         else:
-#             raise Exception(f'Type of scan element is unknown: {element_dict}')
-#
-#         valid = all([(k in element_dict.keys()) for k in required_keys])
-#         if not valid: raise Exception(f'element contains missing keys.\n'
-#                                       f'Element: {element_dict}. Required keys: {required_keys}')
-#
-#     def add_element(self, element_dict):
-#         self.validate_element(element_dict)
-#         self.scans.append(element_dict)
-#         self.emit_scan_list_update_signal()
-#
-#     def delete_element(self, element_index, emit_signal=True):
-#         if type(element_index) == int:
-#             self.scans.pop(element_index)
-#         # else:
-#         #     idx1, idx2 = element_index
-#         #     self.scans[idx1]['scan_sequence'].pop(idx2)
-#         if emit_signal:
-#             self.emit_scan_list_update_signal()
-#
-#     # def delete_many_elements(self, element_index_list):
-#     #     for element_index in element_index_list:
-#     #         self.delete_element(element_index, emit_signal=False)
-#     #     self.scan_list_update_signal.emit()
-#
-#     def update_element(self, element_index, element_dict):
-#         self.validate_element(element_dict)
-#         if type(element_index) == int:
-#             self.scans[element_index] = element_dict
-#         # else:
-#         #     idx1, idx2 = element_index
-#         #     self.scans[idx1]['scan_sequence'][idx2] = element_dict
-#         self.emit_scan_list_update_signal()
-#
-#     def check_if_scan_index_is_used(self, scan_index):
-#         bad_indexes = []
-#         for i, scan in enumerate(self.scans):
-#             if scan['type'] == 'scan':
-#                 if scan['scan_idx'] == scan_index:
-#                     bad_indexes.append(i)
-#             # elif scan['type'] == 'scan_sequence':
-#             #     for j, sub_scan in enumerate(scan['scan_list']):
-#             #         if sub_scan['scan_idx'] == scan_index:
-#             #             bad_indexes.append((i, j))
-#         return bad_indexes
-#
-#     def scan_at_index(self, index):
-#         return self.scans[index]
-#
-#     def scan_str_at_index(self, index):
-#         return self.scan_at_index(index)['name']
-
-
-
-
 class ScanSequenceManager(PersistentListInteractingWithGUI):
     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
         super().__init__(json_file_path)
-        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
 
     #Class specific decorators
     @property
@@ -439,7 +339,6 @@ class BatchManager(PersistentListInteractingWithGUI):
     def __init__(self, sample_manager : SampleManager, scan_manager: ScanManager, scan_sequence_manager : ScanSequenceManager,
                  json_file_path='/nsls2/xf08id/settings/json/batch_manager.json'):
         super().__init__(json_file_path)
-        self.local_file_default_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
 
         self.sample_manager = sample_manager
         self.scan_manager = scan_manager

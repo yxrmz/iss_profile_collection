@@ -41,6 +41,10 @@ class ScanManager():
         with open(self.json_file_path_local, 'w') as f:
             json.dump(self.scan_list_local, f )
 
+    def reset(self):
+        self.init_local_manager()
+        json.dump(self.scan_list_local, f )
+
     def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)
         scan_def = f"{name} ({aux_parameters['scan_description']})"
