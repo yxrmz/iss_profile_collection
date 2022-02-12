@@ -28,14 +28,18 @@ class FlyerHHM(Device):
         self.dets = []
 
     def stage(self):
-        print_to_gui(f'{ttime.ctime()} Staging start')
-        self.dets = self.default_dets + self.aux_dets
+        print_to_gui(f'{ttime.ctime()} Preparing mono start')
         self.hhm.prepare()
+        print_to_gui(f'{ttime.ctime()} Preparing mono done')
+
+        self.dets = self.default_dets + self.aux_dets
+        print_to_gui(f'{ttime.ctime()} Staging start')
         staged_list = super().stage()
         scan_duration = trajectory_manager.current_trajectory_duration
         for det in self.dets:
             if hasattr(det, 'prepare_to_fly'):
                 det.prepare_to_fly(scan_duration)
+            print_to_gui(f'\t\t{ttime.ctime()} start staging {det.name} ...')
             staged_list += det.stage()
         print_to_gui(f'{ttime.ctime()} Staging done')
         return staged_list

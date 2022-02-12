@@ -43,7 +43,7 @@ class ScanManager():
 
     def reset(self):
         self.init_local_manager()
-        json.dump(self.scan_list_local, f )
+        self.dump_local_scan_list()
 
     def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)

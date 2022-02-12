@@ -28,7 +28,8 @@ service_plan_funcs = {
         'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'random_xy_step' : move_sample_by_random_xy_step,
-        'move_motor_plan' : move_motor_plan
+        'move_motor_plan' : move_motor_plan,
+        'calibrate_mono_energy_plan_bundle' : {'kind' : 'bundle', 'func' : calibrate_mono_energy_plan_bundle}
         }
 
 
@@ -43,6 +44,8 @@ aux_plan_funcs = {
         'set_hhm_feedback_plan' : set_hhm_feedback_plan,
         'move_mono_energy' : move_mono_energy,
         'shutter_close_plan' : shutter.close_plan,
+        'foil_camera_validate_barcode_plan' : foil_camera_validate_barcode_plan,
+        'obtain_hhm_calibration_plan' : obtain_hhm_calibration_plan
     }
 
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}

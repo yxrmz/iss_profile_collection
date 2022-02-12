@@ -99,7 +99,8 @@ class EncoderFS(Encoder):
         self._filename = filename
 
         #self.filepath.put(self._full_path)   # commented out during disaster
-        self.filepath.put(self._ioc_full_path)
+        # self.filepath.put(self._ioc_full_path)
+        self.filepath.set(self._ioc_full_path)
 
         self._resource_uid = str(uuid.uuid4())
         resource = {'spec': 'PIZZABOX_ENC_FILE_TXT_PD',

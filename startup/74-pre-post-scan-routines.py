@@ -134,7 +134,7 @@ def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
 
 
 
-def optimize_gains_plan(n_tries=3):
+def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=None):
     # sys.stdout = kwargs.pop('stdout', sys.stdout)
 
     # if 'detector_names' not in kwargs:
@@ -143,14 +143,21 @@ def optimize_gains_plan(n_tries=3):
     channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
     # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
 
-    yield from actuate_photon_shutter_plan('Open')
-    yield from shutter.open_plan()
+    if trajectory_filename is not None:
+        trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
+
+    threshold_hi = 3.250
+    threshold_lo = 0.250
 
     e_min, e_max = trajectory_manager.read_trajectory_limits()
     scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
 
-    threshold_hi = 3.250
-    threshold_lo = 0.250
+    yield from actuate_photon_shutter_plan('Open')
+    yield from shutter.open_plan()
+
+
+
+
 
     for jj in range(n_tries):
 

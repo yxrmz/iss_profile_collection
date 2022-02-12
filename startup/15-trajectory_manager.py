@@ -78,7 +78,7 @@ class TrajectoryManager():
             max_energy = int(xray.encoder2energy((-traj, self.hhm.pulses_per_deg).max()))
 
         print_to_gui('[Load Trajectory] Min energy: {}'.format(min_energy))
-        print_to_gui('[Load Trajectory] Max energy: {}'.format(max_energy))
+        print('[Load Trajectory] Max energy: {}'.format(max_energy))
 
         # Create ftp connection with default credential
         ftp = FTP(ip)

@@ -144,6 +144,88 @@ def calibrate_mono_energy_plan(element='', edge='', dE=25, plot_func=None, error
         print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
 
 
+def foil_camera_validate_barcode_plan(element=None, error_message_func=None):
+    foil_camera.validate_barcode(element, error_message_func=error_message_func)
+    yield from bps.null()
+
+
+def obtain_hhm_calibration_plan(dE=25, is_final=False, plot_func=None, error_message_func=None):
+    energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
+
+    print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
+    hhm.calibrate(energy_nominal, energy_actual, error_message_func=error_message_func)
+
+    if is_final:
+        print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
+        if np.abs(energy_actual - energy_nominal) < 0.1:
+            print_to_gui(f'{ttime.ctime()} [Energy calibration] Completed')
+        else:
+            print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
+    yield from bps.null()
+
+
+
+def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_services=None, question_message_func=None, ):
+    # # check if current trajectory is good for this calibration
+    # validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
+    run_calibration = True
+    run_simple_scan = False
+    try:
+        db_proc.validate_foil_edge(element, edge)
+    except Exception as e:
+        print_to_gui(e)
+        if question_message_func is not None:
+            ret = question_message_func('Warning', f'{e}\n would you like to take a spectrum from this foil anyway to calibrate manually?'
+                                             f'\n If the spectum is good, do not forget to add to the library!')
+            run_calibration = False
+            run_simple_scan = ret
+
+    plans = []
+    if run_calibration or run_simple_scan:
+        plans.append({'plan_name' : 'set_reference_foil', 'plan_kwargs' : {'element' : element}})
+        plans.append({'plan_name': 'sleep', 'plan_kwargs': {'delay': 2}})
+        # print(plan_gui_services)
+        # print([*plan_gui_services].remove('beamline_setup_plot_energy_calibration_data'))
+
+        plans.append({'plan_name': 'foil_camera_validate_barcode_plan',
+                      'plan_kwargs': {'element': element},
+                      'plan_gui_services' : ['error_message_box']})
+
+
+        trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
+
+        plans.append({'plan_name': 'optimize_gains',
+                      'plan_kwargs': {'trajectory_filename': trajectory_filename}})
+
+        name = f'{element} {edge}-edge foil energy calibration'
+        scan_kwargs = {'name': name, 'comment': '',
+                       'trajectory_filename': trajectory_filename,
+                       'detectors': [],
+                       'element': element, 'e0': xraydb.xray_edge(element, edge).energy, 'edge': edge}
+
+
+    if run_calibration:
+        plans.append({'plan_name': 'fly_scan_plan',
+                      'plan_kwargs': {**scan_kwargs}})
+        plans.append({'plan_name': 'obtain_hhm_calibration_plan',
+                      'plan_kwargs': {'dE' : dE, 'is_final' : False},
+                     'plan_gui_services': plan_gui_services})
+        plans.append({'plan_name': 'fly_scan_plan',
+                      'plan_kwargs': {**scan_kwargs}})
+        plans.append({'plan_name': 'obtain_hhm_calibration_plan',
+                      'plan_kwargs': {'dE' : dE, 'is_final' : True},
+                      'plan_gui_services': plan_gui_services})
+    else:
+        if run_simple_scan:
+            plans.append({'plan_name': 'fly_scan_plan',
+                          'plan_kwargs': {**scan_kwargs}})
+    return plans
+
+
+
+
+
+
 
 
 
