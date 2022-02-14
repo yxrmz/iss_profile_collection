@@ -84,6 +84,9 @@ class ScanManager():
             json.dump(self.scan_dict, f )
         return new_uid
 
+    def trajectory_filename_from_uid(self, scan_uid):
+        return self.scan_dict[scan_uid]['scan_parameters']['filename']
+
     def make_scan_uid(self):
         return str(uuid.uuid4())[:13]
 

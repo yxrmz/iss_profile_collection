@@ -98,6 +98,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         except IndexError:
             return 'normal'
 
+    @emit_list_update_signal_decorator
     def set_plan_status_at_index(self, index, status):
         self.plan_list[index]['plan_status'] = status
 

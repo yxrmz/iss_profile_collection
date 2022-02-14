@@ -132,6 +132,16 @@ def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
     yield from general_set_gains_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs)
 
 
+def prepare_trajectory_plan(trajectory_filename, offset=None):
+    trajectory_stack.set_trajectory(trajectory_filename, offset=offset)
+    yield from bps.null()
+
+def prepare_scan_plan(scan_uid=None, aux_parameters=None):
+    scan = scan_manager.scan_dict[scan_uid]
+    mono_angle_offset = aux_parameters['offset']
+    trajectory_filename = scan['scan_parameters']['filename']
+
+    yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
 
 
 def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=None):
@@ -144,7 +154,8 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
     # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
 
     if trajectory_filename is not None:
-        trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
+        yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
+        # trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
 
     threshold_hi = 3.250
     threshold_lo = 0.250

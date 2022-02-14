@@ -507,12 +507,18 @@ class BatchManager(PersistentListInteractingWithGUI):
         if nidx == 1:
             experiment_index = index_tuple[0]
             # self.experiments[experiment_index]['element_list'].insert(0, service_dict)
-            self.experiments[experiment_index]['element_list'].append(service_dict)
+            element_to_service = self.experiments[experiment_index]
+            service_dict['element_to_service'] = element_to_service
+            element_to_service['element_list'].append(service_dict)
         elif nidx == 2:
             experiment_index, element_index1 = index_tuple
+            element_to_service = self.experiments[experiment_index]['element_list'][element_index1]
+            service_dict['element_to_service'] = element_to_service
             self.experiments[experiment_index]['element_list'].insert(element_index1, service_dict)
         elif nidx == 3:
             experiment_index, element_index1, element_index2 = index_tuple
+            element_to_service = self.experiments[experiment_index]['element_list'][element_index1]['element_list'][element_index2]
+            service_dict['element_to_service'] = element_to_service
             self.experiments[experiment_index]['element_list'][element_index1]['element_list'].insert(element_index2, service_dict)
 
     # def sample_point_data_from_index(self, sample_index, sample_point_index):
@@ -565,25 +571,41 @@ class BatchManager(PersistentListInteractingWithGUI):
 
 
     def get_sample_data_from_sample_element(self, sample_element):
-        sample_index = sample_element['sample_index']
-        sample_point_index = sample_element['sample_point_index']
-        sample_name = self.sample_manager.sample_name_at_index(sample_index)
-        sample_comment = self.sample_manager.sample_comment_at_index(sample_index)
-        sample_coordinates = self.sample_manager.sample_coordinate_dict_at_index(sample_index,
-                                                                                 sample_point_index)
-        return sample_name, sample_comment, sample_coordinates
+        return (sample_element['sample_name'], sample_element['sample_comment'], sample_element['sample_uid'],
+                sample_element['sample_coordinates'])
 
     def get_scan_data_from_scan_element(self, scan_element):
-        scan_dict = self.scan_sequence_manager.scan_at_index(scan_element['scan_sequence_index'])
-        return scan_dict['repeat'], scan_dict['delay'], scan_dict['scan_idx']
+        actual_scan_dict = scan_element['scan_local_dict']
+        scan_idx = scan_element['scan_idx']
+        nominal_scan_dict = self.scan_manager.scan_list_local[scan_idx]
+        if actual_scan_dict == nominal_scan_dict:
+            return scan_element['repeat'], scan_element['delay'], scan_idx
+        else:
+            raise Exception('Seems like the scan for batch measurement was deleted/cannot be found')
 
     def get_data_from_element(self, element):
         if element['type'] == 'scan':
             return self.get_scan_data_from_scan_element(element)
         elif element['type'] == 'sample':
             return self.get_sample_data_from_sample_element(element)
-        elif element['type'] == 'service':
-            return [{'plan_name': element['plan_name'], 'plan_kwargs' : element['plan_kwargs']}]
+
+    def convert_service_to_plans(self, service_element):
+        plans = []
+        if 'service_element' in service_element.keys():
+            element_to_service = service_element['element_to_service']
+            if element_to_service['type'] == 'scan':
+                scan_uid = element_to_service['scan_local_dict']['uid']
+                aux_parameters = element_to_service['scan_local_dict']['aux_parameters']
+                plans.append({'plan_name': 'prepare_scan_plan',
+                              'plan_kwargs': {'scan_uid' : scan_uid, 'aux_parameters' : aux_parameters}})
+            elif element_to_service['type'] == 'sample':
+                sample_coordinates = element_to_service['sample_coordinates']
+                plans.append({'plan_name': 'move_sample_stage_plan',
+                              'plan_kwargs': {'sample_coordinates': sample_coordinates}})
+
+        plans.append({'plan_name': service_element['plan_name'], 'plan_kwargs' : service_element['plan_kwargs']})
+        return plans
+
 
     def generate_plan_list(self):
         plans = []
@@ -593,12 +615,12 @@ class BatchManager(PersistentListInteractingWithGUI):
                     repeat, delay, scan_idx = self.get_data_from_element(element)
                     for sub_element in element['element_list']:
                         if sub_element['type'] == 'sample':
-                            sample_name, sample_comment, sample_coordinates = self.get_data_from_element(sub_element)
+                            sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
                             new_plans = self.scan_manager.generate_plan_list(sample_name, sample_comment,
                                                                              repeat, delay, scan_idx,
                                                                              sample_coordinates=sample_coordinates)
                         elif sub_element['type'] == 'service':
-                            new_plans = self.get_data_from_element(sub_element)
+                            new_plans = self.convert_service_to_plans(sub_element)
                         else:
                             new_plans = []
                         plans.extend(new_plans)
@@ -613,12 +635,12 @@ class BatchManager(PersistentListInteractingWithGUI):
                                                                              sample_coordinates=sample_coordinates)
 
                         elif sub_element['type'] == 'service':
-                            new_plans = self.get_data_from_element(sub_element)
+                            new_plans = self.convert_service_to_plans(sub_element)
                         else:
                             new_plans = []
                         plans.extend(new_plans)
                 elif element['type'] == 'service':
-                    new_plans = self.get_data_from_element(element)
+                    new_plans = self.convert_service_to_plans(element)
                     plans.extend(new_plans)
 
 
