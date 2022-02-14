@@ -15,7 +15,10 @@ def put_bpm_fm_to_continuous_mode():
 
 
 
-def set_hhm_feedback_plan(state=0):
+def set_hhm_feedback_plan(state=0, update_center=False):
+    if update_center:
+        hhm_feedback.update_center()
+        yield from sleep_plan(delay=0.3)
     yield from bps.mv(hhm.fb_status, state)
 
 def move_motor_plan(motor_attr='', based_on='description', position=None):
