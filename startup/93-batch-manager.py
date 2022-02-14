@@ -1,6 +1,6 @@
 # from xas.trajectory import trajectory, trajectory_manager
 from bluesky.plan_stubs import mv
-
+from collections import defaultdict
 
 class Sample:
     position_data = pd.DataFrame(columns=['x', 'y', 'z', 'th', 'exposure_time', 'exposed', 'uids'])
@@ -22,11 +22,14 @@ class Sample:
 
     def add_new_position(self, coordinates_dict):
         self.validate_coordinates(coordinates_dict)
-        point = {**coordinates_dict, **{'exposure_time': 0, 'exposed': False, 'uids': ''}}
+        point = {**coordinates_dict, **{'exposure_time': 0, 'exposed': False, 'sample_point_uid': self.make_point_uid()}}
         self.add_one_position(point)
 
     def add_one_position(self, point):
         self.position_data = self.position_data.append(point, ignore_index=True)
+
+    def make_point_uid(self):
+        return str(uuid.uuid4())[:13]
 
     def add_positions(self, positions):
         for position in positions:
@@ -64,6 +67,16 @@ class Sample:
     def index_exposed(self, index):
         return bool(self.position_data.iloc[index][['exposed']].item())
 
+    def set_exposed(self, index):
+        self.position_data['exposed'][index] = True
+
+    def index_uid(self, index):
+        return str(self.position_data.iloc[index][['sample_point_uid']].item())
+
+    @property
+    def uids(self):
+        return self.position_data['sample_point_uid'].tolist()
+
     @classmethod
     def from_dict(cls, sample_dict):
         name = sample_dict['name']
@@ -86,20 +99,21 @@ def emit_list_update_signal_decorator(method):
 class PersistentListInteractingWithGUI:
     list_update_signal = None
 
-    def __init__(self, json_file_path=''):
+    def __init__(self, json_file_path='', boot_fresh=False):
         self.items = []
         self.json_file_path = json_file_path
-        self.init_from_settings()
+        self.init_from_settings(boot_fresh=boot_fresh)
 
     @property
     def local_file_default_path(self):
         return f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
 
-    def init_from_settings(self):
-        try:
-            self.add_items_from_file(self.json_file_path)
-        except FileNotFoundError:
-            self.save_to_settings()
+    def init_from_settings(self, boot_fresh=False):
+        if not boot_fresh:
+            try:
+                self.add_items_from_file(self.json_file_path)
+            except FileNotFoundError:
+                self.save_to_settings()
 
     @emit_list_update_signal_decorator
     def add_items_from_file(self, file):
@@ -259,13 +273,47 @@ class SampleManager(PersistentListInteractingWithGUI):
     def sample_coord_str_at_index(self, sample_index, sample_point_index):
         return self.sample_at_index(sample_index).index_coordinate_str(sample_point_index)
 
+    def sample_uid_at_index(self, sample_index, sample_point_index):
+        return self.samples[sample_index].index_uid(sample_point_index)
+
     def sample_coordinate_dict_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_coordinate_dict(sample_point_index)
+
+    def sample_exposed_at_index(self, sample_index, sample_point_index):
+        return self.samples[sample_index].index_exposed(sample_point_index)
+
+    @property
+    def uids(self):
+        _uids = []
+        for sample in self.samples:
+            _uids.append(sample.uids)
+        return _uids
+
+    def uid_to_sample_index(self, uid):
+        for sample_index, sample in enumerate(self.samples):
+            if uid in sample.uids:
+                sample_point_index = sample.uids.index(uid)
+                return sample_index, sample_point_index
+        return None
+
+    def set_exposed_at_index(self, sample_index, sample_point_index):
+        self.samples[sample_index].set_exposed(sample_point_index)
+
+    def sample_exposed_at_uid(self, uid):
+        index_tuple = self.uid_to_sample_index(uid)
+        if index_tuple is not None:
+            self.sample_exposed_at_index(*index_tuple)
+
+    def set_exposed_at_uid(self, uid):
+        index_tuple = self.uid_to_sample_index(uid)
+        if index_tuple is not None:
+            self.set_exposed_at_index(*index_tuple)
+
 
 sample_manager = SampleManager()
 
 
-class ScanSequenceManager(PersistentListInteractingWithGUI):
+class BatchScanManager(PersistentListInteractingWithGUI):
     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
         super().__init__(json_file_path)
 
@@ -282,10 +330,14 @@ class ScanSequenceManager(PersistentListInteractingWithGUI):
     def scans(self):
         del self.items
 
+    @property
+    def required_keys(self):
+        return ['name', 'repeat', 'delay', 'scan_idx', 'scan_local_dict']
+
     # validator
     def validate_element(self, element_dict):
         if element_dict['type'] == 'scan':
-            required_keys = ['name', 'repeat', 'delay', 'scan_idx']
+            required_keys = self.required_keys
         else:
             raise Exception(f'Type of scan element is unknown: {element_dict}')
 
@@ -325,8 +377,8 @@ class ScanSequenceManager(PersistentListInteractingWithGUI):
 
 
 
-scan_sequence_manager = ScanSequenceManager()
-
+scan_sequence_manager = BatchScanManager()
+# batch_scan_manager = BatchScanManager()
 
 # class ScanSequenceManager(PersistentListInteractingWithGUI):
 #     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
@@ -336,7 +388,7 @@ scan_sequence_manager = ScanSequenceManager()
 
 class BatchManager(PersistentListInteractingWithGUI):
 
-    def __init__(self, sample_manager : SampleManager, scan_manager: ScanManager, scan_sequence_manager : ScanSequenceManager,
+    def __init__(self, sample_manager : SampleManager, scan_manager: ScanManager, scan_sequence_manager : BatchScanManager,
                  json_file_path='/nsls2/xf08id/settings/json/batch_manager.json'):
         super().__init__(json_file_path)
 
@@ -361,9 +413,9 @@ class BatchManager(PersistentListInteractingWithGUI):
         if element_dict['type'] == 'experiment':
             required_keys = ['name', 'repeat', 'element_list']
         elif element_dict['type'] == 'scan':
-            required_keys = ['scan_sequence_index']
+            required_keys = self.scan_sequence_manager.required_keys
         elif element_dict['type'] == 'sample':
-            required_keys = ['sample_index', 'sample_point_index']
+            required_keys = ['sample_name', 'sample_comment', 'sample_uid', 'sample_coordinates']
         elif element_dict['type'] == 'service':
             required_keys = ['plan_name', 'plan_kwargs']
         else:
@@ -391,39 +443,62 @@ class BatchManager(PersistentListInteractingWithGUI):
         self.validate_element(element_dict)
         self.experiments[experiment_index]['element_list'].append(element_dict)
 
-    def sample_index_iterator(self, sample_index_dict):
+    # def sample_index_iterator(self, sample_index_dict):
+    #     for sample_index, point_index_list in sample_index_dict.items():
+    #         for point_index in point_index_list:
+    #             yield (sample_index, point_index)
+
+    def sample_info_from_index(self, sample_index, sample_point_index):
+        name = self.sample_manager.sample_name_at_index(sample_index)
+        comment = self.sample_manager.sample_comment_at_index(sample_index)
+        uid = self.sample_manager.sample_uid_at_index(sample_index, sample_point_index)
+        coord_dict = self.sample_manager.sample_coordinate_dict_at_index(sample_index, sample_point_index)
+        return name, comment, uid, coord_dict
+
+    def scan_iterator(self, scan_indexes):
+        for scan_index in scan_indexes:
+            scan_dict = self.scan_sequence_manager.scan_at_index(scan_index)
+            yield {**{'type' : 'scan'}, **scan_dict}
+
+    def sample_iterator(self, sample_index_dict):
         for sample_index, point_index_list in sample_index_dict.items():
             for point_index in point_index_list:
-                yield (sample_index, point_index)
+                name, comment, uid, coord_dict = self.sample_info_from_index(sample_index, point_index)
+                yield {'type' : 'sample',
+                       'sample_name' : name, 'sample_comment' : comment, 'sample_uid' : uid,
+                       'sample_coordinates' : coord_dict}
+
+    def sample_point_intertor(self, sample_index_dict):
+        # reshuffle the dictionary
+        sample_point_index_dict = defaultdict(lambda : [])
+        for sample_index, point_index_list in sample_index_dict.items():
+            for point_index in point_index_list:
+                sample_point_index_dict[point_index].append(sample_index)
+
+        for point_index, sample_index_list in sample_point_index_dict.items():
+            for sample_index in sample_index_list:
+                name, comment, uid, coord_dict = self.sample_info_from_index(sample_index, point_index)
+                yield {'type' : 'sample',
+                       'sample_name' : name, 'sample_comment' : comment, 'sample_uid' : uid,
+                       'sample_coordinates' : coord_dict}
 
     @emit_list_update_signal_decorator
     def add_measurement_to_experiment(self, experiment_index, sample_index_dict, scan_indexes,
                                    priority='scan'):
         if priority == 'scan':
-            for scan_index in scan_indexes:
-                element_list = []
-                for sample_index, sample_point_index in self.sample_index_iterator(sample_index_dict):
-                    element_list.append({'type' : 'sample',
-                                         'sample_index' : sample_index, 'sample_point_index' : sample_point_index})
-                element_dict = {'type' : 'scan',
-                                'scan_sequence_index' : scan_index,
-                                'element_list' : element_list}
-                self.add_element_to_experiment(experiment_index, element_dict)
+            element_iterator = self.scan_iterator(scan_indexes)
+            element_list_iterator = self.sample_iterator(sample_index_dict)
         elif priority == 'sample':
-            for sample_index, sample_point_index in self.sample_index_iterator(sample_index_dict):
-                element_list = []
-                for scan_index in scan_indexes:
-                    element_list.append({'type' : 'scan',
-                                         'scan_sequence_index' : scan_index})
-
-                element_dict = {'type' : 'sample',
-                                'sample_index' : sample_index, 'sample_point_index' : sample_point_index,
-                                'element_list': element_list}
-                self.add_element_to_experiment(experiment_index, element_dict)
-
+            element_iterator = self.sample_iterator(sample_index_dict)
+            element_list_iterator = self.scan_iterator(scan_indexes)
         elif priority == 'sample_point':
-            pass
+            element_iterator = self.sample_point_intertor(sample_index_dict)
+            element_list_iterator = self.scan_iterator(scan_indexes)
 
+        for element_dict in element_iterator:
+            element_list = list(element_list_iterator)
+            measurement = {**element_dict, **{'element_list': element_list}}
+            self.add_element_to_experiment(experiment_index, measurement)
 
     @emit_list_update_signal_decorator
     def add_service_to_element_list(self, index_tuple, service_dict):
@@ -431,7 +506,8 @@ class BatchManager(PersistentListInteractingWithGUI):
         nidx = len(index_tuple)
         if nidx == 1:
             experiment_index = index_tuple[0]
-            self.experiments[experiment_index]['element_list'].insert(0, service_dict)
+            # self.experiments[experiment_index]['element_list'].insert(0, service_dict)
+            self.experiments[experiment_index]['element_list'].append(service_dict)
         elif nidx == 2:
             experiment_index, element_index1 = index_tuple
             self.experiments[experiment_index]['element_list'].insert(element_index1, service_dict)
@@ -444,8 +520,9 @@ class BatchManager(PersistentListInteractingWithGUI):
     #     return self.sample_manager.samples[sample_index].position_data.iloc[sample_point_index]
 
     def sample_str_from_element(self, sample_element):
-        return self.sample_str_from_index(sample_element['sample_index'],
-                                          sample_element['sample_point_index'])
+        name = sample_element['name']
+        point_coord_str = ' '.join([(f"{key}={value : 0.2f}") for key, value in sample_element['sample_coordinates'].items()])
+        return f'{name} at {point_coord_str} '
 
     def sample_str_from_index(self, sample_index, sample_point_index):
         sample_str = self.sample_manager.sample_name_at_index(sample_index)
