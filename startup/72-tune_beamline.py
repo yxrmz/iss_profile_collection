@@ -32,6 +32,23 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'comment': 'fine monochromator pitch tune'},
                 ]
 
+tune_elements_alt = [
+                  {'motor': hhm.pitch.name,
+                   'detector': 'Endstation BPM',
+                   'range': 1,
+                   'step': 0.02,
+                   'retries': 3,
+                   'comment': 'fine monochromator pitch tune'},
+                  {'motor': hhm.y_precise.name,
+                   'detector':'Endstation BPM',
+                   'range': 1,
+                   'step': 0.025,
+                   'retries': 3,
+                   'comment': 'monochromator crystal distance tune'},
+                  ]
+
+
+
 tune_elements_ext =  [{'motor': hhm.pitch.name,
                    'detector': 'Focusing mirror BPM',
                    'range': 10,

@@ -5,7 +5,8 @@ from xas.trajectory import TrajectoryCreator
 def tune_beamline_plan(extended_tuning : bool = False, enable_fb_in_the_end : bool = True):
 
     if extended_tuning:
-        tune_elements_list = tune_elements_ext
+        # tune_elements_list = tune_elements_ext
+        tune_elements_list = tune_elements_alt
     else:
         tune_elements_list = tune_elements
 
@@ -50,11 +51,11 @@ def tune_beamline_plan(extended_tuning : bool = False, enable_fb_in_the_end : bo
         hhm.fb_status.put(1)
     print('[Beamline tuning] Beamline tuning complete')
 
-def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True):
+def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=False):
     old_energy = hhm.energy.position
     if force_prepare or ((np.abs((energy-old_energy)/old_energy)> 0.1) or (np.sign(old_energy-13000)) != (np.sign(energy-13000))):
         yield from shutter.close_plan()
-        yield from prepare_beamline_plan(energy, move_cm_mirror = True, move_hhm_y=False)
+        yield from simple_prepare_beamline_plan(energy, move_cm_mirror = True)
         yield from tune_beamline_plan(extended_tuning=extended_tuning, enable_fb_in_the_end=enable_fb_in_the_end)
     else:
         # print_to_gui(f'Beamline is already prepared for {energy} eV', stdout=stdout)
@@ -62,20 +63,22 @@ def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, forc
 
 def tabulate_hhmy_position_plan(stdout=sys.stdout):
     _energies = [13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000]  # np.arange(5000, 11000, 1000)
+    # _energies = [4900, 5100, 5500, 6000, 7000, 8000, 9000, 10000, 11000, 12000]  # np.arange(5000, 11000, 1000)
+
     # _energies = [23000]
-    data_df = pd.DataFrame(columns=['energy', 'hhmy', 'hhrmy', 'uid'])
+    data_df = pd.DataFrame(columns=['energy', 'hhmy', 'uid'])
 
     for energy in _energies:
         # enable_fb_in_the_end = energy>13000
 
         yield from optimize_beamline_plan(energy, extended_tuning=True, force_prepare=True, enable_fb_in_the_end=False)
-        uid = db[-3].start['uid']
+        uid = db[-1].start['uid']
         data_df = data_df.append({'energy' : energy,
                                   'hhmy' : hhm.y.user_readback.get(),
-                                  'hhrmy' : hhrm.y.user_readback.get(),
+                                  #'hhrmy' : hhrm.y.user_readback.get(),
                                   'uid' : uid},
                                    ignore_index=True)
-        data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_hhrmy_tabulation_high_energies.json')
+        data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2_high_energies.json')
 
 
 

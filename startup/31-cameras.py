@@ -257,6 +257,9 @@ tc_mask2_3 = EpicsSignal('XF:08IDA-OP{Mir:2-CM}T:Msk2_3-I',
 bpm_fm.stats1.kind = 'hinted'
 bpm_fm.stats1.total.kind = 'hinted'
 
+bpm_es.stats1.kind = 'hinted'
+bpm_es.stats1.total.kind = 'hinted'
+
 
 camera_sp1.stats1.kind = 'hinted'
 camera_sp1.stats1.total.kind = 'hinted'
