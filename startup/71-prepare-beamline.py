@@ -10,8 +10,15 @@ def _compute_hhmy_value(energy):
     # data is stored in two files:
     # /nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation.json
     # /nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation_high_energies.json
-    energy_tab = np.array([ 4800,  5000,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
-    hhmy_tab = np.array([9.71275, 9.62515, 9.3645 , 9.202  , 9.09365, 9.03125, 8.99405, 8.9373 , 8.9378 , 8.86945, 8.8442 , 8.68795, 8.70085, 8.62675, 8.65015, 8.55135, 8.55645])
+    # energy_tab = np.array([ 4800,  5000,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
+    # hhmy_tab = np.array([9.71275, 9.62515, 9.3645 , 9.202  , 9.09365, 9.03125, 8.99405, 8.9373 , 8.9378 , 8.86945, 8.8442 , 8.68795, 8.70085, 8.62675, 8.65015, 8.55135, 8.55645])
+
+    # tabulation is done using data collected on 2021-09-12 and 2021-09-13
+    # data is stored in two files:
+    # /nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2.json
+    # /nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2_high_energies.json
+    energy_tab = np.array([ 4900,  5100,  5500,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
+    hhmy_tab = np.array([10.50305, 10.4034, 10.2787, 10.1834, 10.03375, 9.93225, 9.8564, 9.8066, 9.7828, 9.7352, 9.71385, 9.6686, 9.6497, 9.60675, 9.532, 9.4319, 9.457, 9.2823])
 
     def get_matrix_from_energy(energy_in, offset=0):
         theta_deg = energy2angle(energy_in)
@@ -101,7 +108,7 @@ bl_prepare_energy_ranges = [
         },
     ]
 
-def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_hhm_y=False):
+def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_hhm_y=True):
     energy_ranges = bl_prepare_energy_ranges
 
     BPM_exposure_setter = bpm_es.exp_time
