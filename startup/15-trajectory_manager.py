@@ -404,6 +404,8 @@ class TrajectoryStack:
             self.load_and_init_traj(filename, oldest_lut_number, offset)
 
     def load_and_init_traj(self, filename, lut_number_str, offset):
+        if type(lut_number_str) != str:
+            lut_number_str = str(lut_number_str)
         file_size, name, min_energy, max_energy, timestamp, offset = self.trajectory_manager.load(filename, lut_number_str, True, offset=offset)
         self.trajectory_manager.init(int(lut_number_str))
         self.slots.loc[lut_number_str] = [name, file_size, min_energy, max_energy, timestamp, offset]
