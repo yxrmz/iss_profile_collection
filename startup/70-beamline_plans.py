@@ -93,7 +93,7 @@ def foil_camera_validate_barcode_plan(element=None, error_message_func=None):
     foil_camera.validate_barcode(element, error_message_func=error_message_func)
     yield from bps.null()
 
-def prepare_foil_and_trajectory_plan_list(element, edge):
+def prepare_foil_scan(element, edge):
     plans = []
     plans.append({'plan_name': 'set_reference_foil', 'plan_kwargs': {'element': element}})
     plans.append({'plan_name': 'sleep', 'plan_kwargs': {'delay': 2}})
@@ -107,13 +107,13 @@ def prepare_foil_and_trajectory_plan_list(element, edge):
 
 
 def bender_scan_plan_bundle(element, edge, error_message_func=None):
-    element, edge = foil_camera.read_current_foil_and_edge(error_message_func=error_message_func)
-    trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
+    # element, edge = foil_camera.read_current_foil_and_edge(error_message_func=error_message_func)
+    # trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
 
     bender_current_position = bender.pos.user_readback.get()
     bender_positions = bender_current_position + np.arange(-15, 20, 5)
 
-    plans, trajectory_filename = prepare_foil_and_trajectory_plan_list(element, edge)
+    plans, trajectory_filename = prepare_foil_scan(element, edge)
 
     for bender_position in bender_positions:
         plans.append({'plan_name' : 'move_motor_plan',
@@ -124,6 +124,7 @@ def bender_scan_plan_bundle(element, edge, error_message_func=None):
                       'plan_kwargs': {'delay': 3}})
         plans.append({'plan_name' : 'single_bender_scan_bundle',
                       'plan_kwargs' : {'trajectory_filename' : trajectory_filename,
+                                       'detectors' : [],
                                        'element' : element,
                                        'e0' : xraydb.xray_edge(element, edge).energy,
                                        'edge' : edge}})
@@ -165,7 +166,7 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_servi
             run_simple_scan = ret
 
     if run_calibration or run_simple_scan:
-        plans = prepare_foil_and_trajectory_plan_list(element, edge)
+        plans, trajectory_filename = prepare_foil_scan(element, edge)
 
 
         name = f'{element} {edge}-edge foil energy calibration'

@@ -1,7 +1,6 @@
 
 
 
-sdfs
 class PlanProcessor(PersistentListInteractingWithGUI):
     liveplot_maker = None
     gui_services_dict = None

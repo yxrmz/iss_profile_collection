@@ -25,7 +25,7 @@ service_plan_funcs = {
         'prepare_beamline_plan': prepare_beamline_plan,
         'tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : tune_beamline_plan_bundle},
         'optimize_beamline_plan_bundle': {'kind' : 'bundle', 'func' : optimize_beamline_plan_bundle},
-        'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
+        # 'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'random_xy_step' : move_sample_by_random_xy_step,
         'move_motor_plan' : move_motor_plan,

@@ -173,9 +173,12 @@ class FoilCAMERA(CAMERA):
 
     def read_current_foil(self, error_message_func=None):
         if self.barcode1 != '':
-            return self.barcode1
+            if self.barcode1 != 'empty':
+                return self.barcode1
         if self.barcode2 != '':
-            return self.barcode2
+            if self.barcode2 != 'empty':
+                return self.barcode2
+
         msg = f'Reference foil not found'
         if error_message_func is not None:
             error_message_func(msg)
