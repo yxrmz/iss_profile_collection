@@ -91,6 +91,22 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
 # dpb_nsec = pb4.di.nsec_array
 # dpb_nsec_nelm = EpicsSignalRO(f'{dpb_nsec.pvname}.NELM', name='dpb_nsec_nelm')
 
+from event_model import compose_datum_page, schema_validators, DocumentNames, schemas
+
+# resource, datum_ids, datum_kwarg_list)
+def compose_bulk_datum(*, resource_uid, counter, datum_kwargs, validate=True):
+    # print_message_now(datum_kwargs)
+    # any_column, *_ = datum_kwargs
+    # print_message_now(any_column)
+    N = len(datum_kwargs)
+    # print_message_now(N)
+    doc = {'resource': resource_uid,
+           'datum_ids': ['{}/{}'.format(resource_uid, next(counter)) for _ in range(N)],
+           'datum_kwarg_list': datum_kwargs}
+    # if validate:
+    #     schema_validators[DocumentNames.bulk_datum].validate(doc)
+    return doc
+
 
 class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     roi_data = Cpt(PluginBase, 'ROIDATA:')
@@ -273,13 +289,25 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         self._datum_ids = []
         num_frames = self.hdf5.num_captured.get()
         _resource_uid = self.hdf5._resource_uid
+        datum_kwargs = [{'frame': i} for i in range(num_frames)]
+        print_to_gui('Composing datum page')
+        doc = compose_bulk_datum(resource_uid=_resource_uid,
+                                 counter=self._datum_counter,
+                                 datum_kwargs=datum_kwargs)
+        print_to_gui('DONE Composing datum page')
+        print_to_gui(str(doc))
+        self._asset_docs_cache.append(('bulk_datum', doc))
+        _datum_id_counter = itertools.count()
         for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
-            datum = {'resource': _resource_uid,
-                     'datum_kwargs': {'frame': frame_num},
-                     'datum_id': datum_id}
-            self._asset_docs_cache.append(('datum', datum))
+            datum_id = '{}/{}'.format(_resource_uid, next(_datum_id_counter))
             self._datum_ids.append(datum_id)
+        # for frame_num in range(num_frames):
+        #     datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
+        #     datum = {'resource': _resource_uid,
+        #              'datum_kwargs': {'frame': frame_num},
+        #              'datum_id': datum_id}
+        #     self._asset_docs_cache.append(('datum', datum))
+        #     self._datum_ids.append(datum_id)
         print(f'{ttime.ctime()} Xspress3 complete is done.')
         return NullStatus() and ext_trigger_status
 
