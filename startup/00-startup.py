@@ -140,8 +140,8 @@ if OLD_BLUESKY:
 else:
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
     from databroker.v0 import Broker
-    # db = Broker.named('iss-local')
-    db = Broker_local.named('iss-local')
+    db = Broker.named('iss-local')
+    # db = Broker_local.named('iss-local')
     # db = Broker_local.named('iss')
     db_proc = get_spectrum_catalog()
     nslsii.configure_base(get_ipython().user_ns, db, pbar=False)
