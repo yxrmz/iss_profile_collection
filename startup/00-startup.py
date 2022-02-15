@@ -37,6 +37,7 @@ def print_to_gui(msg, tag='', add_timestamp=False, ntabs=0, stdout_alt=sys.stdou
     except NameError:
         stdout = stdout_alt
 
+    msg = str(msg)
     msg = '\t'*ntabs + msg
     if add_timestamp:
         msg = f'({time_now_str()}) {msg}'
