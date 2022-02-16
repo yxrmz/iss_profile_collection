@@ -179,11 +179,12 @@ def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_e
             plans.append({'plan_name': 'move_bpm_fm_plan',
                           'plan_kwargs': {'action': 'retract'}})
 
-    for element in tune_elements_list:
+    for i, element in enumerate(tune_elements_list):
         detector_device = detector_dictionary[element['detector']]['device']
         if detector_device == bpm_fm:
-            plans.append({'plan_name': 'move_bpm_fm_plan',
-                          'plan_kwargs': {'action': 'insert'}})
+            if bpm_fm.retracted.get():
+                plans.append({'plan_name': 'move_bpm_fm_plan',
+                              'plan_kwargs': {'action': 'insert'}})
 
         if 'fb_enable' in element.keys():
             if element['fb_enable']:
@@ -207,10 +208,11 @@ def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_e
                                       'liveplot_kwargs' : liveplot_kwargs}})
 
         if detector_device == bpm_fm:
-            plans.append({'plan_name': 'move_bpm_fm_plan',
-                          'plan_kwargs': {'action': 'retract'}})
-            plans.append({'plan_name': 'put_bpm_fm_to_continuous_mode',
-                          'plan_kwargs': {}})
+            if ((i + 1) < len(tune_elements_list)) and (detector_dictionary[tune_elements_list[i + 1]['detector']]['device'] != bpm_fm):
+                plans.append({'plan_name': 'move_bpm_fm_plan',
+                              'plan_kwargs': {'action': 'retract'}})
+                plans.append({'plan_name': 'put_bpm_fm_to_continuous_mode',
+                              'plan_kwargs': {}})
 
     if enable_fb_in_the_end:
         plans.append({'plan_name': 'set_hhm_feedback_plan',

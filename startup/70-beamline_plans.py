@@ -158,9 +158,10 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_servi
     try:
         db_proc.validate_foil_edge(element, edge)
     except Exception as e:
-        print_to_gui(e)
+        e_message = str(e)
+        print_to_gui(e_message)
         if question_message_func is not None:
-            ret = question_message_func('Warning', f'{e}\n would you like to take a spectrum from this foil anyway to calibrate manually?'
+            ret = question_message_func('Warning', f'{e_message}\n would you like to take a spectrum from this foil anyway to calibrate manually?'
                                              f'\n If the spectum is good, do not forget to add to the library!')
             run_calibration = False
             run_simple_scan = ret

@@ -290,12 +290,12 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         num_frames = self.hdf5.num_captured.get()
         _resource_uid = self.hdf5._resource_uid
         datum_kwargs = [{'frame': i} for i in range(num_frames)]
-        print_to_gui('Composing datum page')
+        # print_to_gui('Composing datum page')
         doc = compose_bulk_datum(resource_uid=_resource_uid,
                                  counter=self._datum_counter,
                                  datum_kwargs=datum_kwargs)
-        print_to_gui('DONE Composing datum page')
-        print_to_gui(str(doc))
+        # print_to_gui('DONE Composing datum page')
+        # print_to_gui(str(doc))
         self._asset_docs_cache.append(('bulk_datum', doc))
         _datum_id_counter = itertools.count()
         for frame_num in range(num_frames):
