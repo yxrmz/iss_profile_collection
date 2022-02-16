@@ -119,7 +119,7 @@ class Broker_local(Broker):
         doc : dict
             Document
         """
-        print_to_gui(name, add_timestamp=True)
+        # print_to_gui(name, add_timestamp=True)
         # super().insert(name, doc)
         if name in {'event', 'bulk_events', 'descriptor'}:
             return self.event_source_for_insert.insert(name, doc)

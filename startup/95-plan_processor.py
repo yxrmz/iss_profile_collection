@@ -19,7 +19,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         # Setup beamline specifics:
         beamline_gpfs_path = '/nsls2/xf08id'
 
-        logger = logging.getLogger('xas_logger')
+        logger = logging.getLogger('xas_re_logger')
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
         # only add handlers if not added before

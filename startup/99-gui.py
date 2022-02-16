@@ -47,6 +47,7 @@ if not os.environ.get('AZURE_TESTING'):
                                sample_stage=sample_stage,
                                tune_elements=tune_elements,
                                ic_amplifiers=ic_amplifiers,
+                               print_to_gui=print_to_gui,
                                window_title="XLive @ISS/08-ID NSLS-II")
 
 
