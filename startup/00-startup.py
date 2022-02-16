@@ -37,7 +37,6 @@ def print_to_gui(msg, tag='', add_timestamp=False, ntabs=0, stdout_alt=sys.stdou
     except NameError:
         stdout = stdout_alt
 
-    msg = str(msg)
     msg = '\t'*ntabs + msg
     if add_timestamp:
         msg = f'({time_now_str()}) {msg}'
@@ -102,6 +101,13 @@ if not OLD_BLUESKY:
 from databroker.v0 import Broker
 
 class Broker_local(Broker):
+    '''
+    This broker works with bulk_datum events unlike the original one!
+    The key here is the following line:
+        elif name == 'bulk_datum':
+            return self.reg.bulk_insert_datum(**doc)
+    In normal Broker there is kwarg ignore_duplicate_error=True which cannot be used with bulk datum!
+    '''
 
     def insert(self, name, doc):
         """
@@ -141,8 +147,8 @@ if OLD_BLUESKY:
 else:
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
     from databroker.v0 import Broker
-    db = Broker.named('iss-local')
-    # db = Broker_local.named('iss-local')
+    # db = Broker.named('iss-local')
+    db = Broker_local.named('iss-local')
     # db = Broker_local.named('iss')
     db_proc = get_spectrum_catalog()
     nslsii.configure_base(get_ipython().user_ns, db, pbar=False)
