@@ -494,8 +494,8 @@ class BatchManager(PersistentListInteractingWithGUI):
             element_iterator = self.sample_point_intertor(sample_index_dict)
             element_list_iterator = self.scan_iterator(scan_indexes)
 
+        element_list = list(element_list_iterator)
         for element_dict in element_iterator:
-            element_list = list(element_list_iterator)
             measurement = {**element_dict, **{'element_list': element_list}}
             self.add_element_to_experiment(experiment_index, measurement)
 

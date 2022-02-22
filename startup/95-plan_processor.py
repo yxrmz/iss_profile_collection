@@ -235,8 +235,8 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         plan_dict = self.make_plan_dict_from_name_and_kwargs(plan_name, plan_kwargs,
                                                              plan_gui_services=plan_gui_services)
         self.add_plans(plan_dict, add_at='head')
-        idx = self.plan_list.index(plan_dict)
-        self.pause_after_index(idx)
+        idx = self.plan_list.index({'plan_info' : plan_dict, 'plan_status' : 'normal'})
+        self.pause_after_index(idx+1)
         self.run_if_idle(unpause=False)
 
 
