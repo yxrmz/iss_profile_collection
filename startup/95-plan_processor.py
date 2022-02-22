@@ -47,8 +47,9 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     def plan_list(self):
         del self.items
 
-    def reset(self):
-        super().reset()
+    @emit_list_update_signal_decorator
+    def reset(self, *args, **kwargs):
+        super().reset(*args, **kwargs)
         self.update_status('idle')
 
     # dealing with RE

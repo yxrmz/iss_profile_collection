@@ -448,7 +448,7 @@ class BatchManager(PersistentListInteractingWithGUI):
     #             yield (sample_index, point_index)
 
     def sample_info_from_index(self, sample_index, sample_point_index):
-        name = self.sample_manager.sample_name_at_index(sample_index)
+        name = f'{self.sample_manager.sample_name_at_index(sample_index)} (pos {(sample_point_index+1):3d})'
         comment = self.sample_manager.sample_comment_at_index(sample_index)
         uid = self.sample_manager.sample_uid_at_index(sample_index, sample_point_index)
         coord_dict = self.sample_manager.sample_coordinate_dict_at_index(sample_index, sample_point_index)
