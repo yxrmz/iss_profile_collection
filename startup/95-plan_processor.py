@@ -143,8 +143,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
                 self.insert_item_at_index(idx, {'plan_info': plan_dict, 'plan_status': _plan_status}, emit_signal=False)
         elif add_at == 'index':
             _plan_status = self.plan_status_at_index(idx)
-            if _plan_status == 'executing':
-                _plan_status = 'normal'
+            if _plan_status == 'executing': _plan_status = 'normal'
             for plan_dict in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
                 self.insert_item_at_index(idx, {'plan_info': plan_dict, 'plan_status': _plan_status}, emit_signal=False)
 
@@ -194,8 +193,9 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             self.RE(*re_args)
             self.plan_list.pop(0)
 
-    def run(self):
-        self.unpause_plan_list()
+    def run(self, unpause=True):
+        if unpause:
+            self.unpause_plan_list()
 
         while len(self.plan_list) > 0:
 
@@ -215,16 +215,30 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         # self.unpause_plan_list()
         self.update_status('idle')
 
-    def run_if_idle(self):
+    def run_if_idle(self, unpause=True):
         if self.status == 'idle':
-            self.run()
+            self.run(unpause=unpause)
 
-    def add_plan_and_run_if_idle(self, plan_name, plan_kwargs, plan_gui_services=None):
+    def make_plan_dict_from_name_and_kwargs(self, plan_name, plan_kwargs, plan_gui_services=None):
         plan_dict = {'plan_name': plan_name, 'plan_kwargs': plan_kwargs}
         if plan_gui_services is not None:
             plan_dict['plan_gui_services'] = plan_gui_services
+        return plan_dict
+
+    def add_plan_and_run_if_idle(self, plan_name, plan_kwargs, plan_gui_services=None):
+        plan_dict = self.make_plan_dict_from_name_and_kwargs(plan_name, plan_kwargs,
+                                                             plan_gui_services=plan_gui_services)
         self.add_plans(plan_dict)
         self.run_if_idle()
+
+    def add_execute_pause_plan_at_head(self, plan_name, plan_kwargs, plan_gui_services=None):
+        plan_dict = self.make_plan_dict_from_name_and_kwargs(plan_name, plan_kwargs,
+                                                             plan_gui_services=plan_gui_services)
+        self.add_plans(plan_dict, add_at='head')
+        idx = self.plan_list.index(plan_dict)
+        self.pause_after_index(idx)
+        self.run_if_idle(unpause=False)
+
 
     def update_status(self, status):
         self.status = status
