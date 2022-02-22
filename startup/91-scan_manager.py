@@ -53,7 +53,8 @@ class ScanManager():
     def add_scan(self, scan, aux_parameters, name):
         uid = self.check_if_brand_new(scan)
         scan_def = f"{name} ({aux_parameters['scan_description']})"
-        scan_local = {'uid' : uid, 'scan_def' : scan_def, 'aux_parameters' : aux_parameters}
+        scan_name = f"{name}"
+        scan_local = {'uid' : uid, 'scan_def' : scan_def, 'scan_name' : scan_name, 'aux_parameters' : aux_parameters}
         self.scan_list_local.append(scan_local)
         self.dump_local_scan_list()
         return uid

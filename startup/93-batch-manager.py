@@ -448,7 +448,7 @@ class BatchManager(PersistentListInteractingWithGUI):
     #             yield (sample_index, point_index)
 
     def sample_info_from_index(self, sample_index, sample_point_index):
-        name = f'{self.sample_manager.sample_name_at_index(sample_index)} (pos {(sample_point_index+1):3d})'
+        name = f'{self.sample_manager.sample_name_at_index(sample_index)} (pos {(sample_point_index+1):0>3d})'
         comment = self.sample_manager.sample_comment_at_index(sample_index)
         uid = self.sample_manager.sample_uid_at_index(sample_index, sample_point_index)
         coord_dict = self.sample_manager.sample_coordinate_dict_at_index(sample_index, sample_point_index)
@@ -575,12 +575,26 @@ class BatchManager(PersistentListInteractingWithGUI):
         return (sample_element['name'], sample_element['comment'], sample_element['sample_uid'],
                 sample_element['sample_coordinates'])
 
+    def get_scan_name_from_scan_dict(self, scan_dict):
+        if 'name' in scan_dict.keys():
+            scan_name = scan_dict['name']
+        else:
+            try:
+                scan_description = scan_dict['aux_parameters']['scan_description']
+                scan_def = scan_dict['scan_def']
+                _idx = scan_def.index('(' + scan_description)
+                scan_name = scan_def[:_idx]
+            except:
+                scan_name = scan_def
+        return scan_name
+
     def get_scan_data_from_scan_element(self, scan_element):
         actual_scan_dict = scan_element['scan_local_dict']
         scan_idx = scan_element['scan_idx']
         nominal_scan_dict = self.scan_manager.scan_list_local[scan_idx]
         if actual_scan_dict == nominal_scan_dict:
-            return scan_element['repeat'], scan_element['delay'], scan_idx
+            scan_name = self.get_scan_name_from_scan_dict(actual_scan_dict)
+            return scan_element['repeat'], scan_element['delay'], scan_idx, scan_name
         else:
             raise Exception('Seems like the scan for batch measurement was deleted/cannot be found')
 
@@ -621,14 +635,15 @@ class BatchManager(PersistentListInteractingWithGUI):
                 for element in experiment['element_list']:
 
                     if element['type'] == 'scan':
-                        repeat, delay, scan_idx = self.get_data_from_element(element)
+                        repeat, delay, scan_idx, scan_name = self.get_data_from_element(element)
                         new_plans = self.prepare_scan_plan_from_scan_element(element)
                         for sub_element in element['element_list']:
                             if sub_element['type'] == 'sample':
                                 sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
                                 sample_plans = [{'plan_name': 'move_sample_stage_plan',
                                                  'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
-                                scan_plans = self.scan_manager.generate_plan_list(sample_name, sample_comment,
+                                sample_name_for_scan = f'{sample_name} {scan_name}'
+                                scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
                                                                                  repeat, delay, scan_idx)
                                 new_plans.extend(sample_plans + scan_plans)
                             elif sub_element['type'] == 'service':
@@ -637,13 +652,14 @@ class BatchManager(PersistentListInteractingWithGUI):
                             # plans.extend(new_plans)
 
                     elif element['type'] == 'sample':
-                        sample_name, sample_comment, sample_coordinates = self.get_data_from_element(element)
+                        sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(element)
                         new_plans = [{'plan_name': 'move_sample_stage_plan',
                                       'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
                         for sub_element in element['element_list']:
                             if sub_element['type'] == 'scan':
-                                repeat, delay, scan_idx = self.get_data_from_element(sub_element)
-                                new_plans.extend(self.scan_manager.generate_plan_list(sample_name, sample_comment,
+                                repeat, delay, scan_idx, scan_name = self.get_data_from_element(sub_element)
+                                sample_name_for_scan = f'{sample_name} {scan_name}'
+                                new_plans.extend(self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
                                                                                       repeat, delay, scan_idx,
                                                                                       sample_coordinates=sample_coordinates))
 
