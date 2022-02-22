@@ -16,6 +16,7 @@ detector_dictionary =   {
                     'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Camera SP1': {'device': camera_sp1, 'channels': ['camera_sp1_stats1_total','camera_sp1_stats2_total']},
                     'Camera SP2': {'device': camera_sp2, 'channels': ['camera_sp2_stats1_total', 'camera_sp2_stats2_total']},
+                    'Camera SP3': {'device': camera_sp3, 'channels': ['camera_sp3_stats1_total', 'camera_sp3_stats2_total']},
                     'Camera SP5': {'device': camera_sp5, 'channels': ['camera_sp5_stats1_total', 'camera_sp5_stats2_total']},
                     'Camera SP6': {'device': camera_sp6, 'channels': ['camera_sp5_stats1_total', 'camera_sp5_stats2_total']},
                     'Pilatus 100k': {'device': pil100k, 'flying_device' : pil100k_stream,

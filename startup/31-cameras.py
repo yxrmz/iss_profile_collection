@@ -217,11 +217,14 @@ bpm_es = FeedbackBPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 bpm_es_ioc_reset = EpicsSignal('XF:08IDB-CT{IOC:BPM:ES}:SysReset', name='bpm_es_ioc_reset')
 bpm_es.append_ioc_reboot_pv(bpm_es_ioc_reset)
 
+# camera_sp3 = BPM('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
+
 camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 # camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 camera_sp2 = BPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
 
-#camera_sp3 = CAMERA('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
+camera_sp3 = BPM('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
+
 camera_sp4 = CAMERA('XF:08IDB-BI{BPM:SP-4}', name='camera_sp4')
 camera_sp5 = FoilCAMERA('XF:08IDB-BI{BPM:SP-5}', name='camera_sp5')
 camera_sp6 = CAMERA('XF:08IDB-BI{BPM:SP-6}', name='camera_sp6')
@@ -275,3 +278,9 @@ camera_sp2.stats1.total.kind = 'hinted'
 
 camera_sp2.stats2.kind = 'hinted'
 camera_sp2.stats2.total.kind = 'hinted'
+
+camera_sp3.stats1.kind = 'hinted'
+camera_sp3.stats1.total.kind = 'hinted'
+
+camera_sp3.stats2.kind = 'hinted'
+camera_sp3.stats2.total.kind = 'hinted'
