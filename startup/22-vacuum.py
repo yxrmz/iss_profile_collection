@@ -90,8 +90,12 @@ def check_gate_valves():
     return all_open, message
 
 
-def check_gate_valves_in_plan(error_message_func=None):
+def check_gate_valves_plan(error_message_func=None):
     foe_ready, err_msg = check_gate_valves()
-    print_to_gui(err_msg)
-    return foe_ready
+    if not foe_ready:
+        print_to_gui(err_msg)
+        if error_message_func is not None:
+            error_message_func(err_msg)
+        raise Exception(err_msg)
+    yield from bps.null()
 

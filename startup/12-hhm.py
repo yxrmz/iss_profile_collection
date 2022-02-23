@@ -141,9 +141,10 @@ class HHM(Device):
 
     def abort_trajectory(self):
         if self.trajectory_running.get():
-            print_to_gui('Stopping trajectory ... ', end='')
+            print_to_gui('Stopping trajectory ... ')
             self.stop_trajectory.put('1')
-            self.flying_status.set_finished()
+            if not self.flying_status.done:
+                self.flying_status.set_finished()
             print_to_gui('done')
 
 
