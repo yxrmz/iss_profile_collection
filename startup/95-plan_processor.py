@@ -176,6 +176,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         liveplots = self.make_liveplots(plan_name, plan_kwargs)
         gui_services_kwargs = self.get_gui_services_kwargs(plan_info)
         plan_all_kwargs = {**plan_kwargs, **gui_services_kwargs}
+        print_to_gui(f'Executing plan {plan_name}', add_timestamp=True, tag='Queue')
         if len(liveplots) == 0:
             return (plan_func(**plan_all_kwargs), )
         else:
@@ -189,6 +190,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             self.execute_top_plan()
         else:
             re_args = self.make_re_args(0)
+            # self.RE(actuate_photon_shutter_plan('Open'))
             self.set_plan_status_at_index(0, 'executing')
             self.RE(*re_args)
             self.plan_list.pop(0)
