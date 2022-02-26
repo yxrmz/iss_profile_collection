@@ -283,6 +283,11 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
     def complete(self):
         print(f'{ttime.ctime()} Xspress3 complete is starting...')
         set_and_wait(self.settings.acquire, 0)
+
+        # while self.hdf5.capture.get() != 0:
+        #     print_to_gui(f'hdf capturing {self.hdf5.capture.get()}', tag='DEBUG DEBUG', add_timestamp=True)
+        #     ttime.sleep(1)
+
         ext_trigger_status = self.ext_trigger_device.complete()
         for resource in self.hdf5._asset_docs_cache:
             self._asset_docs_cache.append(('resource', resource[1]))

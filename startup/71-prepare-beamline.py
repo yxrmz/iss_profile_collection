@@ -58,7 +58,7 @@ bl_prepare_energy_ranges = [
             'HHRM': 0,
             'CM1':0,# 0,
             'Filterbox': -69,
-            'ES BPM exposure': 0.1
+            'ES BPM exposure': 0.05
         },
         {
             'energy_start': 10000,
