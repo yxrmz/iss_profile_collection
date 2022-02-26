@@ -65,6 +65,11 @@ def get_offsets_plan(time : float = 2):
         yield from bps.abs_set(ch_offset, mean)
 
 
+def check_photon_shutter_plan():
+    if shutter_ph_2b.status.get() == shutter_ph_2b.close_val:
+        print_to_gui(f'Attempting to open PH shutter.', add_timestamp=True, tag='Beamline')
+        yield from actuate_photon_shutter_plan('Open')
+
 
 # def record_offsets_plan(suffix=''):
 #     fpath = '/nsls2/xf08id/log/offsets/' + str(datetime.now()).replace(':', '-')[:-7] + suffix + '.dat'

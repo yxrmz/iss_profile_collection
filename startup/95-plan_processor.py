@@ -6,14 +6,19 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     gui_services_dict = None
     plan_list_update_signal = None
     status_update_signal = None
+    add_plans_question_box=None
 
-    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/plan_processor.json'):
+    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/plan_processor_test.json'):
         super().__init__(json_file_path, boot_fresh=True)
         self.logger = self.get_logger()
         self.RE = RE
         self.scan_manager = scan_manager
         # self.plan_list = []
         self.status = 'idle'
+
+        self.check_valves = False
+        self.check_shutters = False
+        self.auto_foil_set = False
 
     def get_logger(self):
         # Setup beamline specifics:
@@ -120,7 +125,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
 
     # dealing with plan adding and converting to RE-digestible pieces
     @emit_list_update_signal_decorator
-    def add_plans(self, plans, add_at='tail', idx=None):
+    def _add_plans(self, plans, add_at='tail', idx=None):
         if type(plans) != list:
             plans = [plans]
 
@@ -130,6 +135,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             self.describe_plan(plan_dict)
 
         if add_at == 'tail':
+            idx = len(self.plan_list) - 1
             _plan_status = self.last_plan_status
             if _plan_status == 'executing': _plan_status = 'normal'
             for plan_dict in plans:
@@ -146,6 +152,19 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             if _plan_status == 'executing': _plan_status = 'normal'
             for plan_dict in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
                 self.insert_item_at_index(idx, {'plan_info': plan_dict, 'plan_status': _plan_status}, emit_signal=False)
+
+        return idx + len(plans)
+
+    def append_add_plans_question_box_func(self, func):
+        self.add_plans_question_box = func
+
+    def add_plans(self, plans, add_at='tail', idx=None, pause_after=False):
+        if (len(self.plan_list) > 0) and (self.add_plans_question_box is not None):
+            plans, add_at, idx, pause_after = self.add_plans_question_box(plans, add_at, idx, pause_after)
+        last_added_plan_index = self._add_plans(plans, add_at, idx)
+        print(last_added_plan_index, pause_after)
+        if pause_after:
+            self.pause_after_index(last_added_plan_index)
 
     def plan_is_a_bundle(self, idx):
         plan_info = self.plan_list[idx]['plan_info']
@@ -165,7 +184,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         bundle_all_kwargs = {**bundle_kwargs, **bundle_gui_services}
         plan_bundle = plan_func['func'](**bundle_all_kwargs)
         self.plan_list.pop(idx)
-        self.add_plans(plan_bundle, add_at='index', idx=idx)
+        self._add_plans(plan_bundle, add_at='index', idx=idx)
 
 
     def make_re_args(self, idx):
@@ -190,6 +209,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         else:
             re_args = self.make_re_args(0)
             self.set_plan_status_at_index(0, 'executing')
+            # self.perform_pre_scan_routines()
             self.RE(*re_args)
             self.plan_list.pop(0)
 
@@ -215,7 +235,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         # self.unpause_plan_list()
         self.update_status('idle')
 
-    def run_if_idle(self, unpause=True):
+    def run_if_idle(self, unpause=False):
         if self.status == 'idle':
             self.run(unpause=unpause)
 
@@ -281,35 +301,24 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         idx = self.smallest_index
         for i in range(idx, len(self.plan_list)):
             self.plan_list.pop(idx)
-        # self._emit_plan_list_update_signal()
-
-    # def _emit_plan_list_update_signal(self):
-    #     if self.plan_list_update_signal is not None:
-    #         self.plan_list_update_signal.emit()
 
     def _emit_status_update_signal(self):
         if self.status_update_signal is not None:
             self.status_update_signal.emit()
 
-
     def append_liveplot_func_dictionary(self, liveplot_funcs):
         self.liveplot_funcs = liveplot_funcs
 
-    # def generate_plan_liveplot(self, plan_name, plan_kwargs, plan_tag=None):
-    #     if (self.liveplot_funcs is not None):
-    #         if (plan_tag is not None):
-    #             liveplot_info = self.liveplot_funcs[plan_tag]
-    #             make_liveplot_func = liveplot_info['make_liveplot_func']
-    #             preferences = liveplot_info['preferences']
-    #
-    #             if plan_tag == 'data_collection':
-    #                 detectors = plan_kwargs['detectors']
-    #                 motor_name = 'SOMETHING'
-    #                 make_liveplot_func(detectors, motor_name)
-
-
-
-
+    def perform_pre_scan_routines(self, idx=0):
+        if self.check_valves: # this also checks FE shutter
+            self.RE(check_gate_valves_plan())
+        if self.check_shutters:
+            self.RE(check_photon_shutter_plan())
+        if self.auto_foil_set:
+            plan_info = self.plan_list[idx]['plan_info']
+            plan_kwargs = plan_info['plan_kwargs']
+            if 'element' in plan_kwargs:
+                self.RE(set_reference_foil(plan_kwargs['element']))
 
 plan_processor = PlanProcessor()
 
