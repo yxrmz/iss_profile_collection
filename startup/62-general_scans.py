@@ -99,6 +99,8 @@ def prepare_detectors_for_exposure_plan(detectors, n_exposures=1):
             yield from bps.abs_set(apb_ave.divide, 373, wait=True)
         if det.name == 'xs':
             yield from bps.mv(det.total_points, n_exposures)
+        # if det.name == 'pil100k':
+        #     yield from bps.mv(det.total_points, n_exposures)
 
 
 def set_detector_exposure_time_plan(detectors, exposure_time):
@@ -146,7 +148,7 @@ def collect_n_exposures_plan(name : str = '', comment : str = '',
 
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     default_detectors = [apb_ave, hhm_encoder]
-    aux_detectors = get_detector_device_list(detectors)
+    aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
 
     md = get_n_exposures_plan_md(name, comment, mono_energy, detectors, n_exposures, dwell_time, metadata)

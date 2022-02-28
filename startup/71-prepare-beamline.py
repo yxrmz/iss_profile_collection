@@ -44,7 +44,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 5,
             'N2_flow': 1,
             'IC_voltage': 1000,
-            'HHRM': 0,
+            'HHRM': 4,
             'CM1':0,# 0,
             'Filterbox': 1,
             'ES BPM exposure': 0.05
@@ -55,7 +55,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 5,
             'N2_flow': 3,
             'IC_voltage': 1700,
-            'HHRM': 0,
+            'HHRM': 5,
             'CM1':0,# 0,
             'Filterbox': -69,
             'ES BPM exposure': 0.05
@@ -66,7 +66,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 5,
             'N2_flow': 5,
             'IC_voltage': 1700,
-            'HHRM': 0, # IS THIS SUPPOSED TO BE 80?
+            'HHRM': 75, # IS THIS SUPPOSED TO BE 80?
             'CM1':0,# 0,
             'Filterbox': -139,
             'ES BPM exposure': 0.1
@@ -77,7 +77,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 5,
             'N2_flow': 5,
             'IC_voltage': 1700,
-            'HHRM': 80,
+            'HHRM': 75,
             'CM1': 40,# 0,
             'Filterbox': -139,
             'ES BPM exposure': 0.2
@@ -88,7 +88,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 2,
             'N2_flow': 5,
             'IC_voltage': 1900,
-            'HHRM': 80,
+            'HHRM': 75,
             'CM1': 40,# 0,
             'Filterbox': -209,
             'ES BPM exposure': 0.8
@@ -100,7 +100,7 @@ bl_prepare_energy_ranges = [
             'He_flow': 2,
             'N2_flow': 5,
             'IC_voltage': 1900,
-            'HHRM': 80,
+            'HHRM': 75,
             'CM1': 40,# 0,
             'Filterbox': -209,
             'ES BPM exposure': 0.8

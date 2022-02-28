@@ -67,8 +67,8 @@ class Sample:
     def index_exposed(self, index):
         return bool(self.position_data.iloc[index][['exposed']].item())
 
-    def set_exposed(self, index):
-        self.position_data['exposed'][index] = True
+    def set_exposed(self, index, exposed=True):
+        self.position_data['exposed'][index] = exposed
 
     def index_uid(self, index):
         return str(self.position_data.iloc[index][['sample_point_uid']].item())
@@ -282,6 +282,12 @@ class SampleManager(PersistentListInteractingWithGUI):
     def sample_exposed_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_exposed(sample_point_index)
 
+    @emit_list_update_signal_decorator
+    def set_as_exposed_with_index_dict(self, index_dict, exposed=True):
+        for sample_index, point_index_list in index_dict.items():
+            for point_index in set(point_index_list):
+                self.set_exposed_at_index(sample_index, point_index, exposed=exposed)
+
     @property
     def uids(self):
         _uids = []
@@ -296,8 +302,8 @@ class SampleManager(PersistentListInteractingWithGUI):
                 return sample_index, sample_point_index
         return None
 
-    def set_exposed_at_index(self, sample_index, sample_point_index):
-        self.samples[sample_index].set_exposed(sample_point_index)
+    def set_exposed_at_index(self, sample_index, sample_point_index, exposed=True):
+        self.samples[sample_index].set_exposed(sample_point_index, exposed=exposed)
 
     def sample_exposed_at_uid(self, uid):
         index_tuple = self.uid_to_sample_index(uid)
@@ -507,17 +513,17 @@ class BatchManager(PersistentListInteractingWithGUI):
             experiment_index = index_tuple[0]
             # self.experiments[experiment_index]['element_list'].insert(0, service_dict)
             element_to_service = self.experiments[experiment_index]
-            service_dict['element_to_service'] = element_to_service
+            service_dict['element_to_service'] = {k : v for k, v in element_to_service.items() if k!='element_list'}
             element_to_service['element_list'].append(service_dict)
         elif nidx == 2:
             experiment_index, element_index1 = index_tuple
             element_to_service = self.experiments[experiment_index]['element_list'][element_index1]
-            service_dict['element_to_service'] = element_to_service
+            service_dict['element_to_service'] = {k : v for k, v in element_to_service.items() if k!='element_list'}
             self.experiments[experiment_index]['element_list'].insert(element_index1, service_dict)
         elif nidx == 3:
             experiment_index, element_index1, element_index2 = index_tuple
             element_to_service = self.experiments[experiment_index]['element_list'][element_index1]['element_list'][element_index2]
-            service_dict['element_to_service'] = element_to_service
+            service_dict['element_to_service'] = {k : v for k, v in element_to_service.items() if k!='element_list'}
             self.experiments[experiment_index]['element_list'][element_index1]['element_list'].insert(element_index2, service_dict)
 
     # def sample_point_data_from_index(self, sample_index, sample_point_index):

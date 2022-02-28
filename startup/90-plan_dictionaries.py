@@ -47,7 +47,8 @@ aux_plan_funcs = {
         'foil_camera_validate_barcode_plan' : foil_camera_validate_barcode_plan,
         'obtain_hhm_calibration_plan' : obtain_hhm_calibration_plan,
         'move_sample_stage_plan' : move_sample_stage_plan,
-        'prepare_scan_plan' : prepare_scan_plan
+        'prepare_scan_plan' : prepare_scan_plan,
+        'take_pil100k_test_image_plan' : take_pil100k_test_image_plan
     }
 
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}

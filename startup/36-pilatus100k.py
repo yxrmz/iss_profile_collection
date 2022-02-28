@@ -345,6 +345,11 @@ pil100k.set_primary_roi(1)
 
 # pil100k.cam.ensure_nonblocking()
 
+def take_pil100k_test_image_plan():
+    yield from shutter.open_plan()
+    pil100k.cam.acquire.set(1)
+    yield from bps.sleep(pil100k.cam.acquire_time.value + 0.1)
+    yield from shutter.close_plan()
 
 
 def pil_count(acq_time:int = 1, num_frames:int =1, open_shutter:bool=True):
