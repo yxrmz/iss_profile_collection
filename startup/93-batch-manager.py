@@ -68,7 +68,8 @@ class Sample:
         return bool(self.position_data.iloc[index][['exposed']].item())
 
     def set_exposed(self, index, exposed=True):
-        self.position_data['exposed'][index] = exposed
+        # self.position_data['exposed'][index] = exposed
+        self.position_data['exposed'].iloc[index] = exposed
 
     def index_uid(self, index):
         return str(self.position_data.iloc[index][['sample_point_uid']].item())

@@ -43,6 +43,7 @@ aux_plan_funcs = {
         'put_bpm_fm_to_continuous_mode' : put_bpm_fm_to_continuous_mode,
         'set_hhm_feedback_plan' : set_hhm_feedback_plan,
         'move_mono_energy' : move_mono_energy,
+        'move_johann_spectrometer_energy' : move_johann_spectrometer_energy,
         'shutter_close_plan' : shutter.close_plan,
         'foil_camera_validate_barcode_plan' : foil_camera_validate_barcode_plan,
         'obtain_hhm_calibration_plan' : obtain_hhm_calibration_plan,

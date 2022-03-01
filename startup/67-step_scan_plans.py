@@ -11,16 +11,16 @@ def step_scan_action_factory(energy_steps, time_steps):
 
     def per_step_action(detectors, motor, step):
         time_step=energy_to_time_step[step]
-        yield from set_exposure_time_plan(detectors, time_step)
-        # for det in detectors:
-        #     if det.name == 'apb_ave':
-        #         samples = 250*(np.ceil(time_step*1005/250)) #hn I forget what that does... let's look into the new PB OPI
-        #         yield from bps.abs_set(det.sample_len, samples, wait=True)
-        #         yield from bps.abs_set(det.wf_len, samples, wait=True)
-        #     elif det.name == 'pil100k':
-        #         yield from bps.mv(det.cam.acquire_time, time_step)
-        #     elif det.name == 'xs':
-        #         yield from bps.mv(det.settings.acquire_time, time_step)
+        # yield from set_exposure_time_plan(detectors, time_step)
+        for det in detectors:
+            if det.name == 'apb_ave':
+                samples = 250*(np.ceil(time_step*1005/250)) #hn I forget what that does... let's look into the new PB OPI
+                yield from bps.abs_set(det.sample_len, samples, wait=True)
+                yield from bps.abs_set(det.wf_len, samples, wait=True)
+            elif det.name == 'pil100k':
+                yield from bps.mv(det.cam.acquire_time, time_step)
+            elif det.name == 'xs':
+                yield from bps.mv(det.settings.acquire_time, time_step)
 
         yield from bps.mv(motor, step)
         devices = [*detectors, motor]

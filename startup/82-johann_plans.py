@@ -24,12 +24,12 @@ def plot_radiation_damage_scan_data(db, uid):
 
 def prepare_johann_scan_plan(detectors, spectrometer_energy):
     ensure_pilatus_is_in_detector_list(detectors)
-    yield from bp.mv(johann_spectrometer_motor.energy, spectrometer_energy)
+    yield from bps.mv(johann_spectrometer_motor.energy, spectrometer_energy)
 
 def prepare_johann_metadata_and_kwargs(**kwargs):
     metadata = kwargs.pop('metadata')
     j_metadata = {'spectrometer': 'johann'}
-    if spectrometer_energy in kwargs.keys():
+    if 'spectrometer_energy' in kwargs.keys():
         spectrometer_energy = kwargs.pop('spectrometer_energy')
         j_metadata['spectrometer_energy'] = spectrometer_energy
     return {**j_metadata, **metadata}, kwargs
@@ -78,14 +78,14 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
                               metadata={}):
 
     default_detectors = [apb_ave, hhm_encoder]
-    aux_detectors = get_detector_device_list(detectors)
+    aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
 
     md = get_johann_xes_step_scan_md(name, comment, detectors, emission_energy_list, emission_time_list, element, e0, line, metadata)
 
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
-    yield from bp.mv(hhm.energy, mono_energy)
-    yield from prepare_johann_scan_plan(all_detectors, emission_energy_list[0])
+    yield from bps.mv(hhm.energy, mono_energy)
+    yield from prepare_johann_scan_plan(detectors, emission_energy_list[0])
 
     yield from general_energy_step_scan(all_detectors, johann_spectrometer_motor.energy, emission_energy_list, emission_time_list, md=md)
 
