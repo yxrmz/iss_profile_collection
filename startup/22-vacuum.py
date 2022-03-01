@@ -83,19 +83,17 @@ def check_gate_valves():
                 print_to_gui(f'({ttime.ctime()}) Failed to open FE shutter.')
                 message += f'  FE shutter cannot be opened. Contact beamline staff for assistance.\n'
 
-            print_to_gui(f'({ttime.ctime()}) All gate valves and/or shutters were successfully open')
+            # print_to_gui(f'({ttime.ctime()}) All gate valves and/or shutters were successfully open')
     else:
         message = 'Gate valves cannot be opened. Reasons:\n' + message
 
     return all_open, message
 
 
-def check_gate_valves_plan(error_message_func=None):
+def check_gate_valves_plan():
     foe_ready, err_msg = check_gate_valves()
     if not foe_ready:
         print_to_gui(err_msg)
-        if error_message_func is not None:
-            error_message_func(err_msg)
         raise Exception(err_msg)
     yield from bps.null()
 
