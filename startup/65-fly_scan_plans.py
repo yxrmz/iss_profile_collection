@@ -132,7 +132,7 @@ flyer_hhm = FlyerHHM([apb_stream, hhm_encoder], hhm, shutter, name='flyer_apb')
 def get_fly_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata):
     md_general = get_hhm_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata, fn_ext='.raw')
     md_scan = {'experiment': 'fly_scan'}
-    return {**md_general, **md_scan, **metadata}
+    return {**md_general, **md_scan}
 
 
 def fly_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_offset=None, detectors=[], element='', e0=0, edge='', metadata={}):
