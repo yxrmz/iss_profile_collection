@@ -63,7 +63,7 @@ def step_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle
     energy_list, time_list = read_step_scan_file(trajectory_filename)
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     default_detectors = [apb_ave, hhm_encoder]
-    aux_detectors = get_detector_device_list(detectors)
+    aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
     md = get_step_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata)
 
