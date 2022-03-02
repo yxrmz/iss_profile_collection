@@ -103,9 +103,8 @@ class HHM(Device):
     #     return super().stage()
 
     def _ensure_mono_faces_down(self):
-        curr_energy = hhm.energy.position
-        hhm.energy.move(curr_energy + 200)
-        hhm.energy.move(curr_energy)
+        _, emax = trajectory_manager.read_trajectory_limits()
+        hhm.energy.move(emax + 50)
 
     def prepare(self):
         def callback(value, old_value, **kwargs):
@@ -119,9 +118,14 @@ class HHM(Device):
 
         status = SubscriptionStatus(self.trajectory_ready, callback)
 
+        # print_to_gui(f'Mono trajectory prepare starting...', add_timestamp=True, ntabs=2)
+
+        self._ensure_mono_faces_down()
         self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
         status.wait()
-        self._ensure_mono_faces_down()
+        # print_to_gui(f'Ensuring mono faces down (starting)', add_timestamp=True, ntabs=2)
+        # self._ensure_mono_faces_down()
+        # print_to_gui(f'Mono trajectory prepare done', add_timestamp=True, ntabs=2)
         self.flying_status = None
 
     def kickoff(self):

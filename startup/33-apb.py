@@ -224,6 +224,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
 
     def complete(self, *args, **kwargs):
         # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
+        print_to_gui(f'{self.name} complete starting', add_timestamp=True)
         set_and_wait(self.stream, 0)
         def callback_saving(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
@@ -241,10 +242,12 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         self._asset_docs_cache.append(('datum', datum))
         # print(f'{ttime.ctime()} >>> {self.name} complete: done')
         self._datum_ids.append(datum_id)
+        print_to_gui(f'{self.name} complete done', add_timestamp=True)
         return filebin_st & filetxt_st
 
     def collect(self): # Copied from 30-detectors.py (class EncoderFS)
-        print(f'{ttime.ctime()} >>> {self.name} collect starting')
+        # print(f'{ttime.ctime()} >>> {self.name} collect starting')
+        print_to_gui(f'{self.name} collect starting', add_timestamp=True)
         now = ttime.time()
         for datum_id in self._datum_ids:
             data = {self.name: datum_id}
@@ -252,7 +255,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                    'timestamps': {key: now for key in data},
                    'time': now,
                    'filled': {key: False for key in data}}
-        print(f'{ttime.ctime()} >>> {self.name} collect complete')
+        print_to_gui(f'{self.name} collect done', add_timestamp=True)
+        # print(f'{ttime.ctime()} >>> {self.name} collect complete')
 
     def describe_collect(self):
         return_dict = {self.name:

@@ -177,7 +177,8 @@ class EncoderFS(Encoder):
                    'timestamps': {key: now for key in data},
                    'time': now,
                    'filled': {key: False for key in data}}
-        print(f'{ttime.ctime()} >>> {self.name} collect complete')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} collect done')
+        # print(f'{ttime.ctime()} >>> {self.name} collect complete')
 
     def describe_collect(self):
         # TODO Return correct shape (array dims)

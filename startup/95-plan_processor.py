@@ -162,7 +162,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         if (len(self.plan_list) > 0) and (self.add_plans_question_box is not None):
             plans, add_at, idx, pause_after = self.add_plans_question_box(plans, add_at, idx, pause_after)
         last_added_plan_index = self._add_plans(plans, add_at, idx)
-        print(last_added_plan_index, pause_after)
+        # print(last_added_plan_index, pause_after)
         if pause_after:
             self.pause_after_index(last_added_plan_index)
 
