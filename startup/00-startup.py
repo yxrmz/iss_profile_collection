@@ -45,6 +45,8 @@ def print_to_gui(msg, tag='', add_timestamp=False, ntabs=0, stdout_alt=sys.stdou
 
     print(msg, file=stdout, flush=True)
 
+def print_debug(msg):
+    print_to_gui(msg, tag='>> DEBUG <<', add_timestamp=True, ntabs=1)
 
 # def print_and_sleep_plan(delay=3):
 #     print_to_gui('sleeping for 3 seconds ...', tag='Test', add_timestamp=True)

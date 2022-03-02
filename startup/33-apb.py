@@ -232,7 +232,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                 return False
         filebin_st = SubscriptionStatus(self.filebin_status, callback_saving)
         filetxt_st = SubscriptionStatus(self.filetxt_status, callback_saving)
-
+        # print_debug(f'filebin_st={filebin_st} filetxt_st={filetxt_st}')
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
         datum = {'resource': self._resource_uid,

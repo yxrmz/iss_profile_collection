@@ -118,3 +118,18 @@ def combine_status_list(status_list):
     for st in status_list[1:]:
         st_all = st_all and st
     return st_all
+
+
+
+def compose_bulk_datum(*, resource_uid, counter, datum_kwargs, validate=True):
+    # print_message_now(datum_kwargs)
+    # any_column, *_ = datum_kwargs
+    # print_message_now(any_column)
+    N = len(datum_kwargs)
+    # print_message_now(N)
+    doc = {'resource': resource_uid,
+           'datum_ids': ['{}/{}'.format(resource_uid, next(counter)) for _ in range(N)],
+           'datum_kwarg_list': datum_kwargs}
+    # if validate:
+    #     schema_validators[DocumentNames.bulk_datum].validate(doc)
+    return doc

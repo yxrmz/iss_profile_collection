@@ -94,18 +94,7 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
 from event_model import compose_datum_page, schema_validators, DocumentNames, schemas
 
 # resource, datum_ids, datum_kwarg_list)
-def compose_bulk_datum(*, resource_uid, counter, datum_kwargs, validate=True):
-    # print_message_now(datum_kwargs)
-    # any_column, *_ = datum_kwargs
-    # print_message_now(any_column)
-    N = len(datum_kwargs)
-    # print_message_now(N)
-    doc = {'resource': resource_uid,
-           'datum_ids': ['{}/{}'.format(resource_uid, next(counter)) for _ in range(N)],
-           'datum_kwarg_list': datum_kwargs}
-    # if validate:
-    #     schema_validators[DocumentNames.bulk_datum].validate(doc)
-    return doc
+
 
 
 class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
@@ -281,8 +270,12 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         return self.ext_trigger_device.kickoff()
 
     def complete(self):
-        print(f'{ttime.ctime()} Xspress3 complete is starting...')
-        set_and_wait(self.settings.acquire, 0)
+        # print(f'{ttime.ctime()} Xspress3 complete is starting...')
+        print_to_gui(f'Xspress3 complete is starting...', add_timestamp=True)
+        # set_and_wait(self.settings.acquire, 0)
+        acquire_status = self.settings.acquire.set(0)
+        capture_status = self.hdf5.capture.set(0)
+        (acquire_status and capture_status).wait()
 
         # while self.hdf5.capture.get() != 0:
         #     print_to_gui(f'hdf capturing {self.hdf5.capture.get()}', tag='DEBUG DEBUG', add_timestamp=True)
@@ -313,11 +306,13 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         #              'datum_id': datum_id}
         #     self._asset_docs_cache.append(('datum', datum))
         #     self._datum_ids.append(datum_id)
-        print(f'{ttime.ctime()} Xspress3 complete is done.')
+        # print(f'{ttime.ctime()} Xspress3 complete is done.')
+        print_to_gui(f'Xspress3 complete is done.', add_timestamp=True)
         return NullStatus() and ext_trigger_status
 
     def collect(self):
-        print(f'{ttime.ctime()} Xspress3 collect is starting...')
+        # print(f'{ttime.ctime()} Xspress3 collect is starting...')
+        print_to_gui(f'Xspress3 collect is starting...', add_timestamp=True)
         num_frames = len(self._datum_ids)
 
         for frame_num in range(num_frames):
@@ -330,7 +325,8 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
                    'timestamps': {key: ts for key in data},
                    'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
                    'filled': {key: False for key in data}}
-        print(f'{ttime.ctime()} Xspress3 collect is complete')
+        # print(f'{ttime.ctime()} Xspress3 collect is complete')
+        print_to_gui(f'Xspress3 collect is done.', add_timestamp=True)
         yield from self.ext_trigger_device.collect()
 
     def describe_collect(self):
