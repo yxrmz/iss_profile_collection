@@ -1,13 +1,13 @@
 
 def collect_von_hamos_xes_plan(**kwargs):
-    ensure_pilatus_is_in_detector_list(kwargs['detector'])
+    ensure_pilatus_is_in_detector_list(kwargs['detectors'])
     vh_metadata = {'spectrometer': 'von_hamos'}
     metadata = kwargs.pop('metadata')
     metadata = {**vh_metadata, **metadata}
     yield from collect_n_exposures_plan(**kwargs, metadata=metadata)
 
 def step_scan_von_hamos_plan(**kwargs):
-    ensure_pilatus_is_in_detector_list(kwargs['detector'])
+    ensure_pilatus_is_in_detector_list(kwargs['detectors'])
     name = kwargs['name']
     rixs_file_name = create_interp_file_name(name, '.rixs')
     vh_metadata = {'spectrometer': 'von_hamos',
@@ -18,7 +18,7 @@ def step_scan_von_hamos_plan(**kwargs):
 
 
 def fly_scan_von_hamos_plan(**kwargs):
-    ensure_pilatus_is_in_detector_list(kwargs['detector'])
+    ensure_pilatus_is_in_detector_list(kwargs['detectors'])
     name = kwargs['name']
     rixs_file_name = create_interp_file_name(name, '.rixs')
     vh_metadata = {'spectrometer': 'von_hamos',

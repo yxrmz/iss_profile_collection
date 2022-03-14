@@ -287,8 +287,8 @@ stop = timer()
 
 print("MD handling complete in {} sec".format(stop - start))
 
-# from bluesky.utils import ts_msg_hook
-# RE.msg_hook = ts_msg_hook
+from bluesky.utils import ts_msg_hook
+RE.msg_hook = ts_msg_hook
 
 
 # the file paths for acquitision and analysis

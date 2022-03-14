@@ -143,10 +143,10 @@ def prepare_trajectory_plan(trajectory_filename, offset=None):
 
 def prepare_scan_plan(scan_uid=None, aux_parameters=None):
     scan = scan_manager.scan_dict[scan_uid]
-    mono_angle_offset = aux_parameters['offset']
-    trajectory_filename = scan['scan_parameters']['filename']
-
-    yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
+    if scan['scan_type'] == 'fly scan':
+        mono_angle_offset = aux_parameters['offset']
+        trajectory_filename = scan['scan_parameters']['filename']
+        yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
 
 
 def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=None):
