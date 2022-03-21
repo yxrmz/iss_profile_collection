@@ -13,6 +13,9 @@ def put_bpm_fm_to_continuous_mode():
     yield from bps.mv(getattr(bpm_fm, 'image_mode'), 2)
     yield from bps.mv(getattr(bpm_fm, 'acquire'), 1)
 
+def set_bpm_es_exposure_time(value : float = 0.2):
+    yield from bps.mv(bpm_es.exp_time, value)
+
 
 
 def set_hhm_feedback_plan(state=0, update_center=False):
@@ -25,8 +28,15 @@ def move_motor_plan(motor_attr='', based_on='description', position=None):
     motor_device = get_motor_device(motor_attr, based_on=based_on)
     yield from bps.mv(motor_device, position)
 
-def move_mono_energy(energy=-1):
+def move_mono_energy(energy : float = -1):
     yield from move_motor_plan(motor_attr=hhm.energy.name, based_on='object_name', position=energy)
+
+def move_mono_pitch(value: float = 680):
+    yield from set_hhm_feedback_plan(0)
+    yield from move_motor_plan(motor_attr=hhm.pitch.name, based_on='object_name', position=value)
+    yield from set_hhm_feedback_plan(1)
+
+
 
 def move_johann_spectrometer_energy(energy=-1):
     yield from move_motor_plan(motor_attr=johann_spectrometer_motor.name, based_on='object_name', position=energy)

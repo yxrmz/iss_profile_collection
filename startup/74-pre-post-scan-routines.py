@@ -110,19 +110,19 @@ def general_set_gains_plan(*args):
     if mod:
         args = args[:-mod]
 
-    for ic, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0],
+    for ic_amp, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0],
                        [val for index, val in enumerate(args) if index % 3 == 1],
                        [hs for index, hs in enumerate(args) if index % 3 == 2]):
-        yield from ic.set_gain_plan(val, hs)
+        yield from ic_amp.set_gain_plan(val, hs)
 
-        if type(ic) != ICAmplifier:
+        if type(ic_amp) != ICAmplifier:
             raise Exception('Wrong type: {} - it should be ICAmplifier'.format(type(ic)))
         if type(val) != int:
             raise Exception('Wrong type: {} - it should be int'.format(type(val)))
         if type(hs) != bool:
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
-        print_to_gui('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.get(), val, hs))
+        print_to_gui('set amplifier gain for {}: {}, {}'.format(ic_amp.name, val, hs))
 
 
 def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
@@ -135,6 +135,7 @@ def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
         hs = hs == 'True'
 
     yield from general_set_gains_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs)
+    yield from get_offsets_plan()
 
 
 def prepare_trajectory_plan(trajectory_filename, offset=None):
@@ -239,13 +240,13 @@ def set_attenuator(thickness:int  = 0, **kwargs):
     # Adding reference foil element list
     with open('/nsls2/xf08id/settings/json/attenuator.json') as fp:
         attenuators_list = json.load(fp)
-    thickness_list = [item['attenuator'] for item in attenuators_list]
-
-    if thickness in thickness_list:
-        indx = thickness_list.index(thickness)
+    thickness_str_list = [item['attenuator'] for item in attenuators_list]
+    thickness_str = str(thickness)
+    if thickness_str in thickness_str_list:
+        indx = thickness_str_list.index(thickness_str)
         yield from mv(attenuator_motor.pos, attenuators_list[indx]['position'])
     else:
-        yield from mv(attenuator_motor.pos,0)
+        yield from mv(attenuator_motor.pos, 0)
 
 
 
