@@ -213,6 +213,82 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
     yield from get_offsets_plan()
 
 
+def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=None):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    # if 'detector_names' not in kwargs:
+    # detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    detectors = [apb_ave]
+    channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
+    # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
+
+    if trajectory_filename is not None:
+        yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
+        # trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
+
+    threshold_hi = 3.250
+    threshold_lo = 0.250
+
+    e_min, e_max = trajectory_manager.read_trajectory_limits()
+    e_min -= 50
+    e_max += 50
+    # scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
+
+    yield from actuate_photon_shutter_plan('Open')
+    yield from shutter.open_plan()
+
+    for jj in range(n_tries):
+
+        # current_energy = hhm.energy.position
+        # e1 = np.abs(current_energy - e_min), np.abs(current_energy - e_max)
+
+        yield from bps.mv(hhm.energy, e_max)
+
+        @return_NullStatus_decorator
+        def _move_energy_plan():
+            yield from move_mono_energy(e_min, step=200, beampos_tol=10)
+
+        ramp_plan = ramp_plan_with_multiple_monitors(_move_energy_plan(), [hhm.energy] + [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4], bps.null)
+        yield from ramp_plan
+
+        # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
+        # yield from plan
+        table = process_monitor_scan(db, -1)
+
+        all_gains_are_good = True
+
+        for channel in channels:
+            current_gain = channel.amp.get_gain()[0]
+            if channel.polarity == 'neg':
+                trace_extreme = table[channel.name].min()
+            else:
+                trace_extreme = table[channel.name].max()
+
+            trace_extreme = trace_extreme / 1000
+
+            print_to_gui(f'Extreme value {trace_extreme} for detector {channel.name}')
+            if abs(trace_extreme) > threshold_hi:
+                if current_gain - 1 >= 1:
+                    print_to_gui(f'Decreasing gain for detector {channel.name}')
+                    yield from channel.amp.set_gain_plan(current_gain - 1, False)
+                    all_gains_are_good = False
+            elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
+                print_to_gui(f'Correct gain for detector {channel.name}')
+            elif abs(trace_extreme) <= threshold_lo:
+                if current_gain - 1 <= 5:
+                    print(f'Increasing gain for detector {channel.name}')
+                    yield from channel.amp.set_gain_plan(current_gain + 1, False)
+                    all_gains_are_good = False
+
+        if all_gains_are_good:
+            print(f'Gains are correct. Taking offsets..')
+            break
+
+    yield from shutter.close_plan()
+    yield from get_offsets_plan()
+
+
+
 
 def set_reference_foil(element:str = 'Mn'):
     # Adding reference foil element list
@@ -250,9 +326,42 @@ def set_attenuator(thickness:int  = 0, **kwargs):
 
 
 
+def scan_beam_center(camera=camera_sp1, emin=6000, emax=12000, nsteps=10, roll_range=2, roll_nsteps=4):
+
+    original_roll = hhm.roll.position
+    hhm_rolls = np.linspace(original_roll-roll_range/2, original_roll+roll_range/2, roll_nsteps+1)
+    energies = np.linspace(emin, emax, nsteps+1).tolist()
+
+    yield from bps.open_run()
+
+    for hhm_roll in hhm_rolls:
+        for energy in energies:
+            # yield from bps.mv(hhm.energy, energy)
+            yield from bps.mv(hhm.roll, hhm_roll)
+            yield from move_mono_energy(energy, step=500, beampos_tol=10)
+            camera.adjust_camera_exposure_time()
+            yield from bps.trigger_and_read([hhm.energy, hhm.roll, camera_sp1.stats1.centroid])
+
+    yield from bps.close_run()
+
+    yield from bps.mv(hhm.roll, original_roll)
 
 
 
+def plot_beam_center_scan(db, uid):
+    t = db[-1].table()
+
+    plt.figure(1, clear=True)
+
+    unique_rolls = np.unique(t.hhm_roll_user_setpoint.values)
+    for unique_roll in unique_rolls:
+        mask = t.hhm_roll_user_setpoint == unique_roll
+        plt.plot(t.hhm_energy[mask], t.camera_sp1_stats1_centroid_x[mask], label=str(unique_roll))
+
+    plt.legend()
+
+
+plot_beam_center_scan(db, -1)
 
 
 

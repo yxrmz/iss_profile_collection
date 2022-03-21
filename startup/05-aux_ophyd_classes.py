@@ -3,6 +3,9 @@ from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
 from ophyd import Device, Component as Cpt, EpicsSignal, EpicsSignalRO, Kind, set_and_wait
 from ophyd.sim import NullStatus
 
+from bluesky.preprocessors import monitor_during_wrapper
+
+
 class StuckingEpicsMotor(EpicsMotor):
 
     def __init__(self, *args, **kwargs):
@@ -133,3 +136,33 @@ def compose_bulk_datum(*, resource_uid, counter, datum_kwargs, validate=True):
     # if validate:
     #     schema_validators[DocumentNames.bulk_datum].validate(doc)
     return doc
+
+
+def return_NullStatus_decorator(plan):
+    def wrapper(*args, **kwargs):
+        yield from plan(*args, **kwargs)
+        return NullStatus()
+    return wrapper
+
+
+# def ramp_plan_fixed(go_plan, monitor_sig, inner_plan_func,
+#                     take_pre_data=True, timeout=None, period=None, md=None):
+#
+#     @return_NullStatus_decorator
+#     def _go_plan():
+#         yield from go_plan
+#
+#     yield from bp.ramp_plan(_go_plan, monitor_sig, inner_plan_func,
+#                             take_pre_data=take_pre_data, timeout=timeout, period=period, md=md)
+
+
+def ramp_plan_with_multiple_monitors(go_plan, monitor_list, inner_plan_func,
+                                     take_pre_data=True, timeout=None, period=None, md=None):
+    mon1 = monitor_list[0]
+    mon_rest = monitor_list[1:]
+    ramp_plan = bp.ramp_plan(go_plan, mon1, inner_plan_func,
+                                take_pre_data=take_pre_data, timeout=timeout, period=period, md=md)
+    yield from monitor_during_wrapper(ramp_plan, mon_rest)
+
+
+

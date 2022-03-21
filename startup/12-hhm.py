@@ -26,6 +26,8 @@ class HHM(Device):
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(StuckingEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
+    # theta_speed = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.VMAX', kind='hinted')
+    # theta_speed_max = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.VELO', kind='hinted')
     energy = Cpt(StuckingEpicsMotorThatFlies, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
