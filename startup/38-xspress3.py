@@ -232,12 +232,31 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
                 getattr(channel.rois, roi_n).value_sum.kind = 'omitted'
 
 
+# def compose_bulk_datum_xs(*, resource_uid, counter, datum_kwargs, validate=True):
+#     # print_message_now(datum_kwargs)
+#     # any_column, *_ = datum_kwargs
+#     # print_message_now(any_column)
+#     N = len(datum_kwargs)
+#     # print_message_now(N)
+#     doc = {'resource': resource_uid,
+#            'datum_ids': ['{}/{}'.format(resource_uid, next(counter)) for _ in range(N)],
+#            'datum_kwarg_list': datum_kwargs}
+#     # if validate:
+#     #     schema_validators[DocumentNames.bulk_datum].validate(doc)
+#     return doc
+
 class ISSXspress3DetectorStream(ISSXspress3Detector):
 
     def __init__(self, *args, ext_trigger_device=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.ext_trigger_device = ext_trigger_device
         self._datum_counter = None
+
+        self.datum_keys = []
+        for i in range(self.hdf5.array_size.height.get()):
+            self.datum_keys.append(f'{self.name}_ch{i + 1:02d}_spectrum')
+            self.datum_keys.append(f'{self.name}_ch{i + 1:02d}_roi')
+
 
     def prepare_to_fly(self, traj_duration):
         acq_rate = self.ext_trigger_device.freq.get()
@@ -270,75 +289,76 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         return self.ext_trigger_device.kickoff()
 
     def complete(self):
-        # print(f'{ttime.ctime()} Xspress3 complete is starting...')
         print_to_gui(f'Xspress3 complete is starting...', add_timestamp=True)
-        # set_and_wait(self.settings.acquire, 0)
+
         acquire_status = self.settings.acquire.set(0)
         capture_status = self.hdf5.capture.set(0)
         (acquire_status and capture_status).wait()
 
-        # while self.hdf5.capture.get() != 0:
-        #     print_to_gui(f'hdf capturing {self.hdf5.capture.get()}', tag='DEBUG DEBUG', add_timestamp=True)
-        #     ttime.sleep(1)
 
         ext_trigger_status = self.ext_trigger_device.complete()
         for resource in self.hdf5._asset_docs_cache:
             self._asset_docs_cache.append(('resource', resource[1]))
-        self._datum_ids = []
-        num_frames = self.hdf5.num_captured.get()
+
         _resource_uid = self.hdf5._resource_uid
-        datum_kwargs = [{'frame': i} for i in range(num_frames)]
-        # print_to_gui('Composing datum page')
-        doc = compose_bulk_datum(resource_uid=_resource_uid,
-                                 counter=self._datum_counter,
-                                 datum_kwargs=datum_kwargs)
-        # print_to_gui('DONE Composing datum page')
-        # print_to_gui(str(doc))
-        self._asset_docs_cache.append(('bulk_datum', doc))
-        _datum_id_counter = itertools.count()
-        for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(_resource_uid, next(_datum_id_counter))
-            self._datum_ids.append(datum_id)
-        # for frame_num in range(num_frames):
-        #     datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
-        #     datum = {'resource': _resource_uid,
-        #              'datum_kwargs': {'frame': frame_num},
-        #              'datum_id': datum_id}
-        #     self._asset_docs_cache.append(('datum', datum))
-        #     self._datum_ids.append(datum_id)
-        # print(f'{ttime.ctime()} Xspress3 complete is done.')
+
+        for datum_key in self.datum_keys:
+            doc = {'resource': _resource_uid,
+                    'datum_id': f'{_resource_uid}/{datum_key}',
+                    'datum_kwargs': {"data_key": datum_key}}
+            self._asset_docs_cache.append(('datum', doc))
+
+        self._datum_ids = {}
+        for datum_key in self.datum_keys:
+            datum_id = f'{_resource_uid}/{datum_key}'
+            self._datum_ids[datum_key] = datum_id
+
         print_to_gui(f'Xspress3 complete is done.', add_timestamp=True)
         return NullStatus() and ext_trigger_status
 
     def collect(self):
         # print(f'{ttime.ctime()} Xspress3 collect is starting...')
         print_to_gui(f'Xspress3 collect is starting...', add_timestamp=True)
-        num_frames = len(self._datum_ids)
+        # num_frames = len(self._datum_ids)
 
-        for frame_num in range(num_frames):
-            datum_id = self._datum_ids[frame_num]
-            data = {self.name: datum_id}
+        ts = ttime.time()
 
-            ts = ttime.time()
-
-            yield {'data': data,
-                   'timestamps': {key: ts for key in data},
-                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
-                   'filled': {key: False for key in data}}
+        yield {'data': self._datum_ids,
+               'timestamps': {key: ts for key in self.datum_keys},
+               'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
+               'filled': {key: False for key in self.datum_keys}}
         # print(f'{ttime.ctime()} Xspress3 collect is complete')
         print_to_gui(f'Xspress3 collect is done.', add_timestamp=True)
         yield from self.ext_trigger_device.collect()
 
     def describe_collect(self):
-        return_dict_xs = {self.name:
-                           {f'{self.name}': {'source': 'XS',
-                                             'dtype': 'array',
-                                             'shape': [self.settings.num_images.get(),
-                                                       #self.settings.array_counter.get()
-                                                       self.hdf5.array_size.height.get(),
-                                                       self.hdf5.array_size.width.get()],
-                                            'filename': f'{self.hdf5.full_file_name.get()}',
-                                             'external': 'FILESTORE:'}}}
+
+        xs3_spectra_dicts = {}
+
+        for i in range(self.hdf5.array_size.height.get()):
+            key_spectrum = f'{self.name}_ch{i + 1:02d}_spectrum'
+            value_spectrum = {'source': 'XS',
+                              'dtype': 'array',
+                              'shape': [self.hdf5.array_size.width.get(),
+                                        self.settings.num_images.get(),
+                                        # self.hdf5.array_size.height.get(),
+                                        ],
+                              'dims' : ['spectrum', 'frame'],
+                              'external': 'FILESTORE:'}
+            xs3_spectra_dicts[key_spectrum] = value_spectrum
+
+            key_roi = f'{self.name}_ch{i + 1:02d}_roi'
+            value_roi = {'source': 'XS',
+                         'dtype': 'array',
+                         'shape': [self.settings.num_images.get()],
+                         'dims': ['frame'],
+                         'external': 'FILESTORE:'}
+            xs3_spectra_dicts[key_roi] = value_roi
+
+
+
+        return_dict_xs = {self.name : xs3_spectra_dicts}
+
         return_dict_trig = self.ext_trigger_device.describe_collect()
         return {**return_dict_xs, **return_dict_trig}
 
@@ -346,6 +366,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
+        print_to_gui(f"items = {items}", tag='XS DEBUG')
         self._asset_docs_cache.clear()
         for item in items:
             yield item
