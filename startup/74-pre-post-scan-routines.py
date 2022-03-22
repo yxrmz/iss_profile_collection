@@ -361,7 +361,7 @@ def plot_beam_center_scan(db, uid):
     plt.legend()
 
 
-plot_beam_center_scan(db, -1)
+# plot_beam_center_scan(db, -1)
 
 
 

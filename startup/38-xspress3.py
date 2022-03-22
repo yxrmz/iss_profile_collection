@@ -254,9 +254,30 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
         self.datum_keys = []
         for i in range(self.hdf5.array_size.height.get()):
-            self.datum_keys.append(f'{self.name}_ch{i + 1:02d}_spectrum')
-            self.datum_keys.append(f'{self.name}_ch{i + 1:02d}_roi')
+            # self.datum_keys.append({"name": f"{self.name}",
+            #                         "channel": i + 1,
+            #                         "type": "spectrum"})
+            # self.datum_keys.append({"name": f"{self.name}",
+            #                         "channel": i + 1,
+            #                         "type": "roi"})
+            self.datum_keys.append({"data_type": "spectrum",
+                                    "channel": i + 1})
 
+            channel = getattr(self, f"channel{i+1}")
+            for roi_num in range(1, channel.rois.num_rois.get() + 1):
+                if getattr(channel.rois, f"roi{roi_num:02d}").enable.get() == 1:
+                    self.datum_keys.append({"data_type": "roi",
+                                            "channel": i + 1,
+                                            "roi_num": roi_num})
+
+            # self.datum_keys.append(f'{self.name}_ch{i + 1:02d}_roi')
+
+    def format_datum_key(self, input_dict):
+        # return f'{input_dict["name"]}_ch{input_dict["channel"]:02d}_{input_dict["type"]}'
+        output =f'ch{input_dict["channel"]:02d}_{input_dict["data_type"]}'
+        if input_dict["data_type"] == 'roi':
+            output += f'{input_dict["roi_num"]:02d}'
+        return output
 
     def prepare_to_fly(self, traj_duration):
         acq_rate = self.ext_trigger_device.freq.get()
@@ -301,61 +322,50 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
             self._asset_docs_cache.append(('resource', resource[1]))
 
         _resource_uid = self.hdf5._resource_uid
-
-        for datum_key in self.datum_keys:
-            doc = {'resource': _resource_uid,
-                    'datum_id': f'{_resource_uid}/{datum_key}',
-                    'datum_kwargs': {"data_key": datum_key}}
-            self._asset_docs_cache.append(('datum', doc))
-
         self._datum_ids = {}
-        for datum_key in self.datum_keys:
+
+        for datum_key_dict in self.datum_keys:
+            datum_key = self.format_datum_key(datum_key_dict)
             datum_id = f'{_resource_uid}/{datum_key}'
             self._datum_ids[datum_key] = datum_id
+            doc = {'resource': _resource_uid,
+                    'datum_id': datum_id,
+                    'datum_kwargs': datum_key_dict}
+            self._asset_docs_cache.append(('datum', doc))
 
         print_to_gui(f'Xspress3 complete is done.', add_timestamp=True)
         return NullStatus() and ext_trigger_status
 
     def collect(self):
-        # print(f'{ttime.ctime()} Xspress3 collect is starting...')
         print_to_gui(f'Xspress3 collect is starting...', add_timestamp=True)
-        # num_frames = len(self._datum_ids)
-
         ts = ttime.time()
-
         yield {'data': self._datum_ids,
-               'timestamps': {key: ts for key in self.datum_keys},
+               'timestamps': {self.format_datum_key(key_dict): ts for key_dict in self.datum_keys},
                'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
-               'filled': {key: False for key in self.datum_keys}}
-        # print(f'{ttime.ctime()} Xspress3 collect is complete')
+               'filled': {self.format_datum_key(key_dict): False for key_dict in self.datum_keys}}
         print_to_gui(f'Xspress3 collect is done.', add_timestamp=True)
         yield from self.ext_trigger_device.collect()
 
     def describe_collect(self):
-
         xs3_spectra_dicts = {}
-
-        for i in range(self.hdf5.array_size.height.get()):
-            key_spectrum = f'{self.name}_ch{i + 1:02d}_spectrum'
-            value_spectrum = {'source': 'XS',
-                              'dtype': 'array',
-                              'shape': [self.hdf5.array_size.width.get(),
-                                        self.settings.num_images.get(),
-                                        # self.hdf5.array_size.height.get(),
-                                        ],
-                              'dims' : ['spectrum', 'frame'],
-                              'external': 'FILESTORE:'}
-            xs3_spectra_dicts[key_spectrum] = value_spectrum
-
-            key_roi = f'{self.name}_ch{i + 1:02d}_roi'
-            value_roi = {'source': 'XS',
+        for datum_key_dict in self.datum_keys:
+            datum_key = self.format_datum_key(datum_key_dict)
+            if datum_key_dict['data_type'] == 'spectrum':
+                value = {'source': 'XS',
+                         'dtype': 'array',
+                         'shape': [self.settings.num_images.get(),
+                                   self.hdf5.array_size.width.get()],
+                         'dims': ['frames', 'row'],
+                         'external': 'FILESTORE:'}
+            elif datum_key_dict['data_type'] == 'roi':
+                value = {'source': 'XS',
                          'dtype': 'array',
                          'shape': [self.settings.num_images.get()],
-                         'dims': ['frame'],
+                         'dims': ['frames'],
                          'external': 'FILESTORE:'}
-            xs3_spectra_dicts[key_roi] = value_roi
-
-
+            else:
+                raise KeyError(f'data_type={datum_key_dict["data_type"]} not supported')
+            xs3_spectra_dicts[datum_key] = value
 
         return_dict_xs = {self.name : xs3_spectra_dicts}
 
@@ -366,7 +376,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
     def collect_asset_docs(self):
         items = list(self._asset_docs_cache)
-        print_to_gui(f"items = {items}", tag='XS DEBUG')
+        # print_to_gui(f"items = {items}", tag='XS DEBUG')
         self._asset_docs_cache.clear()
         for item in items:
             yield item
@@ -383,38 +393,43 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._roi_data = None
-        self._num_channels = None
+        # self._num_channels = None
 
-    def _get_dataset(self): # readpout of the following stuff should be done only once, this is why I redefined _get_dataset method - Denis Leshchev Feb 9, 2021
-        # dealing with parent
+    def _get_dataset(self):
         super()._get_dataset()
 
-        # finding number of channels
-        if self._num_channels is not None:
+        if self._roi_data is not None:
             return
         print(f'{ttime.ctime()} Determining number of channels...')
         shape = self.dataset.shape
         if len(shape) != 3:
             raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
-        self._num_channels = shape[1]
+        _num_channels = shape[1]
 
-        if self._roi_data is not None:
-            return
-        print(f'{ttime.ctime()} reading ROI data...')
-        self.chanrois = [f'CHAN{c}ROI{r}' for c, r in product([1, 2, 3, 4], [1, 2, 3, 4])]
-        _data_columns = [self._file['/entry/instrument/detector/NDAttributes'][chanroi][()] for chanroi in
-                         self.chanrois]
-        data_columns = np.vstack(_data_columns).T
-        self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
+        self._roi_data = {}
+        all_keys = self._file['/entry/instrument/detector/NDAttributes'].keys()
+        for chan in range(1, _num_channels + 1):
+            base = f'CHAN{chan}ROI'
+            keys = [k for k in all_keys if k.startswith(base) and not k.endswith('LM')]
+            for key in keys:
+                roi_num = int(key.replace(base, ''))
+                self._roi_data[(chan, roi_num)] = self._file['/entry/instrument/detector/NDAttributes'][key][()]
 
-
-    def __call__(self, *args, frame=None, **kwargs):
+    def __call__(self, data_type:str='spectrum', channel:int=1, roi_num:int=1):
         # print(f'{ttime.ctime()} XS dataset retrieving starting...')
         self._get_dataset()
-        return_dict = {f'ch_{i+1}' : self._dataset[frame, i, :] for i in range(self._num_channels)}
-        return_dict_rois = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
-        return {**return_dict, **return_dict_rois}
-        # print(f'{ttime.ctime()} XS dataset retrieving complete')
+
+        if data_type=='spectrum':
+            output = self._dataset[:, channel - 1, :]
+            print(output.shape, output.squeeze().shape)
+            return self._dataset[:, channel - 1, :].squeeze()
+
+        elif data_type=='roi':
+            return self._roi_data[(channel, roi_num)].squeeze()
+
+        else:
+            raise KeyError(f'data_type={data_type} not supported')
+
 
 
 # heavy-weight file handler
