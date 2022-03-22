@@ -172,10 +172,6 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
     yield from actuate_photon_shutter_plan('Open')
     yield from shutter.open_plan()
 
-
-
-
-
     for jj in range(n_tries):
 
         plan = bp.list_scan(detectors, hhm.energy, scan_positions)
@@ -258,7 +254,7 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
         all_gains_are_good = True
 
         for channel in channels:
-            current_gain = channel.amp.get_gain()[0]
+
             if channel.polarity == 'neg':
                 trace_extreme = table[channel.name].min()
             else:
@@ -267,15 +263,17 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
             trace_extreme = trace_extreme / 1000
 
             print_to_gui(f'Extreme value {trace_extreme} for detector {channel.name}')
+
+            current_gain = channel.amp.get_gain()[0]
             if abs(trace_extreme) > threshold_hi:
-                if current_gain - 1 >= 1:
+                if current_gain >= 4:
                     print_to_gui(f'Decreasing gain for detector {channel.name}')
                     yield from channel.amp.set_gain_plan(current_gain - 1, False)
                     all_gains_are_good = False
             elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
                 print_to_gui(f'Correct gain for detector {channel.name}')
             elif abs(trace_extreme) <= threshold_lo:
-                if current_gain - 1 <= 5:
+                if current_gain <= 6:
                     print(f'Increasing gain for detector {channel.name}')
                     yield from channel.amp.set_gain_plan(current_gain + 1, False)
                     all_gains_are_good = False
@@ -361,7 +359,7 @@ def plot_beam_center_scan(db, uid):
     plt.legend()
 
 
-plot_beam_center_scan(db, -1)
+# plot_beam_center_scan(db, -1)
 
 
 
