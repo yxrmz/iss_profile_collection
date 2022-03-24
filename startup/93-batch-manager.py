@@ -601,7 +601,8 @@ class BatchManager(PersistentListInteractingWithGUI):
         nominal_scan_dict = self.scan_manager.scan_list_local[scan_idx]
         if actual_scan_dict == nominal_scan_dict:
             scan_name = self.get_scan_name_from_scan_dict(actual_scan_dict)
-            return scan_element['repeat'], scan_element['delay'], scan_idx, scan_name
+            scan_key = actual_scan_dict['aux_parameters']['scan_key']
+            return scan_element['repeat'], scan_element['delay'], scan_idx, scan_name, scan_key
         else:
             raise Exception('Seems like the scan for batch measurement was deleted/cannot be found')
 
@@ -642,20 +643,40 @@ class BatchManager(PersistentListInteractingWithGUI):
                 for element in experiment['element_list']:
 
                     if element['type'] == 'scan':
-                        repeat, delay, scan_idx, scan_name = self.get_data_from_element(element)
+                        repeat, delay, scan_idx, scan_name, scan_key = self.get_data_from_element(element)
                         new_plans = self.prepare_scan_plan_from_scan_element(element)
-                        for sub_element in element['element_list']:
-                            if sub_element['type'] == 'sample':
-                                sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
-                                sample_plans = [{'plan_name': 'move_sample_stage_plan',
-                                                 'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
-                                sample_name_for_scan = f'{sample_name} {scan_name}'
-                                scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
-                                                                                 repeat, delay, scan_idx)
-                                new_plans.extend(sample_plans + scan_plans)
-                            elif sub_element['type'] == 'service':
-                                new_plans.extend(self.convert_service_to_plans(sub_element))
 
+                        if scan_key != 'johann_rixs':
+                            for sub_element in element['element_list']:
+                                if sub_element['type'] == 'sample':
+                                    sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
+                                    sample_plans = [{'plan_name': 'move_sample_stage_plan',
+                                                     'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
+                                    sample_name_for_scan = f'{sample_name} {scan_name}'
+                                    scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
+                                                                                     repeat, delay, scan_idx)
+                                    new_plans.extend(sample_plans + scan_plans)
+                                elif sub_element['type'] == 'service':
+                                    new_plans.extend(self.convert_service_to_plans(sub_element))
+                        else:
+                            print('!!!!!!', scan_key)
+                            sample_coordinates_list = []
+                            for sub_element in element['element_list']:
+                                if sub_element['type'] == 'sample':
+                                    sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
+                                    sample_coordinates_list.append(sample_coordinates)
+                                elif sub_element['type'] == 'service':
+                                    new_plans.extend(self.convert_service_to_plans(sub_element))
+                                sample_name_for_scan = f'{sample_name} {scan_name}'
+
+                            print(len(sample_coordinates_list))
+                            if len(sample_coordinates_list) == 1:
+                                sample_coordinates_list = sample_coordinates_list[0]
+
+                            scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan,
+                                                                              sample_comment,
+                                                                              repeat, delay, scan_idx, sample_coordinates=sample_coordinates_list)
+                            new_plans.extend(scan_plans)
                             # plans.extend(new_plans)
 
                     elif element['type'] == 'sample':
