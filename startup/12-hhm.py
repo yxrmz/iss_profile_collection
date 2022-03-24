@@ -145,13 +145,18 @@ class HHM(Device):
         self.start_trajectory.set('1')
         return self.flying_status
 
+    def complete(self):
+        self.flying_status = None
+
     def abort_trajectory(self):
-        if self.trajectory_running.get():
-            print_to_gui('Stopping trajectory ... ')
-            self.stop_trajectory.put('1')
+        is_flying = (self.flying_status is not None) and (not self.flying_status.done)
+        self.stop_trajectory.put('1')
+        if is_flying:
+            print_to_gui('Stopping trajectory ... ', tag='HHM')
             if not self.flying_status.done:
                 self.flying_status.set_finished()
-            print_to_gui('done')
+            print_to_gui('Stopped trajectory', tag='HHM')
+        return is_flying
 
 
     def home_y_pos(self):
