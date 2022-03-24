@@ -214,8 +214,9 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
 
     # if 'detector_names' not in kwargs:
     # detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
-    detectors = [apb_ave]
-    channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
+    # detectors = [apb_ave]
+    # channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
+    channels = [apb.ch1, apb.ch2, apb.ch3, apb.ch4]
     # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
 
     if trajectory_filename is not None:
@@ -244,7 +245,7 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
         def _move_energy_plan():
             yield from move_mono_energy(e_min, step=200, beampos_tol=10)
 
-        ramp_plan = ramp_plan_with_multiple_monitors(_move_energy_plan(), [hhm.energy] + [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4], bps.null)
+        ramp_plan = ramp_plan_with_multiple_monitors(_move_energy_plan(), [hhm.energy] + channels, bps.null)
         yield from ramp_plan
 
         # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
@@ -255,10 +256,10 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
 
         for channel in channels:
 
-            if channel.polarity == 'neg':
-                trace_extreme = table[channel.name].min()
-            else:
-                trace_extreme = table[channel.name].max()
+            # if channel.polarity == 'neg':
+            trace_extreme = table[channel.name].min()
+            # else:
+            #     trace_extreme = table[channel.name].max()
 
             trace_extreme = trace_extreme / 1000
 
@@ -266,14 +267,14 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
 
             current_gain = channel.amp.get_gain()[0]
             if abs(trace_extreme) > threshold_hi:
-                if current_gain >= 4:
+                if current_gain > 3:
                     print_to_gui(f'Decreasing gain for detector {channel.name}')
                     yield from channel.amp.set_gain_plan(current_gain - 1, False)
                     all_gains_are_good = False
             elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
                 print_to_gui(f'Correct gain for detector {channel.name}')
             elif abs(trace_extreme) <= threshold_lo:
-                if current_gain <= 6:
+                if current_gain < 7:
                     print(f'Increasing gain for detector {channel.name}')
                     yield from channel.amp.set_gain_plan(current_gain + 1, False)
                     all_gains_are_good = False
