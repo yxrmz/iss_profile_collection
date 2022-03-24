@@ -19,7 +19,7 @@ service_plan_funcs = {
         'sleep': sleep_plan,
         'get_offsets': get_offsets_plan,
         'set_gains': set_gains_plan,
-        'optimize_gains': optimize_gains_plan,
+        'optimize_gains': quick_optimize_gains_plan,
         'set_reference_foil': set_reference_foil,
         'set_attenuator': set_attenuator,
         'prepare_beamline_plan': prepare_beamline_plan,
@@ -30,9 +30,10 @@ service_plan_funcs = {
         'random_xy_step' : move_sample_by_random_xy_step,
         'move_motor_plan' : move_motor_plan,
         'calibrate_mono_energy_plan_bundle' : {'kind' : 'bundle', 'func' : calibrate_mono_energy_plan_bundle},
-        'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
+        'quick_pitch_optimization' : quick_pitch_optimization,
+        # 'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
         'move_mono_energy' : move_mono_energy,
-        'move_mono_pitch' : move_mono_pitch,
+        # 'move_mono_pitch' : move_mono_pitch,
         }
 
 

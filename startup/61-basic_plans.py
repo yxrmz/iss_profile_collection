@@ -88,22 +88,24 @@ def move_mono_energy(energy : float=-1, with_feedback : bool=True, step : float=
 
 
 
-def quick_pitch_optimization(pitch_range=0.5, pitch_speed=0.2, n_tries=3):
+def quick_pitch_optimization(pitch_range=1, pitch_speed=0.2, n_tries=3):
     yield from set_hhm_feedback_plan(0)
-    current_pitch_value = hhm.pitch.position
+
 
     for i in range(n_tries):
-
+        current_pitch_value = hhm.pitch.position
         print_to_gui(f'Starting attempt #{i + 1}', tag='Pitch Scan')
 
-        yield from bps.mvr(hhm.pitch, -pitch_range / 2, wait=True)
+        yield from bps.mvr(hhm.pitch, -pitch_range / 2)
+        yield from bps.sleep(0.2)
 
         @return_NullStatus_decorator
         def _move_pitch_plan():
-            yield from bps.mvr(hhm.pitch, pitch_range, wait=True)
+            yield from bps.mvr(hhm.pitch, pitch_range)
+            yield from bps.sleep(0.2)
 
         yield from bps.mv(hhm.pitch.velocity, pitch_speed)
-        ramp_plan = ramp_plan_with_multiple_monitors(_move_pitch_plan(), [hhm.pitch, apb_ave.ch1], bps.null)
+        ramp_plan = ramp_plan_with_multiple_monitors(_move_pitch_plan(), [hhm.pitch, apb.ch1], bps.null)
         yield from ramp_plan
         yield from bps.mv(hhm.pitch.velocity, 60)
         new_pitch_pos = find_optimum_pitch_pos(db, -1)
@@ -113,6 +115,8 @@ def quick_pitch_optimization(pitch_range=0.5, pitch_speed=0.2, n_tries=3):
         min_threshold = current_pitch_value - pitch_range / 2 + pitch_range / 10
         max_threshold = current_pitch_value + pitch_range / 2 - pitch_range / 10
 
+        # print(f'PITCH RESULTS:\ncurrent_pitch_value={current_pitch_value}\nmin_threshold={min_threshold}\nnew_pitch_pos={new_pitch_pos}\nmax_threshold={max_threshold}')
+
         if (new_pitch_pos > min_threshold) and (new_pitch_pos < max_threshold):
             break
         else:
@@ -121,6 +125,52 @@ def quick_pitch_optimization(pitch_range=0.5, pitch_speed=0.2, n_tries=3):
 
     yield from set_hhm_feedback_plan(1, update_center=True)
 
+
+
+# def quick_pitch_scan(pitch_range=0.5, pitch_speed=0.2):
+#     yield from bps.mvr(hhm.pitch, -pitch_range / 2, wait=True)
+#     @return_NullStatus_decorator
+#     def _move_pitch_plan():
+#         yield from bps.mvr(hhm.pitch, pitch_range, wait=True)
+#
+#     yield from bps.mv(hhm.pitch.velocity, pitch_speed)
+#     ramp_plan = ramp_plan_with_multiple_monitors(_move_pitch_plan(), [hhm.pitch, apb_ave.ch1], bps.null)
+#     yield from ramp_plan
+#     yield from bps.mv(hhm.pitch.velocity, 60)
+#
+#
+# def quick_pitch_optimization(pitch_range=0.5, pitch_speed=0.2, n_tries=3):
+#     yield from set_hhm_feedback_plan(0)
+#     current_pitch_value = hhm.pitch.position
+#
+#     for i in range(n_tries):
+#
+#         print_to_gui(f'Starting attempt #{i + 1}', tag='Pitch Scan')
+#
+#         yield from quick_pitch_scan(pitch_range=pitch_range, pitch_speed=pitch_speed)
+#
+#         new_pitch_pos = find_optimum_pitch_pos(db, -1)
+#         print_to_gui(f'New pitch position: {new_pitch_pos}', tag='Pitch Scan')
+#         yield from bps.mv(hhm.pitch, new_pitch_pos, wait=True)
+#
+#         min_threshold = current_pitch_value - pitch_range / 2 + pitch_range / 10
+#         max_threshold = current_pitch_value + pitch_range / 2 - pitch_range / 10
+#
+#         if (new_pitch_pos > min_threshold) and (new_pitch_pos < max_threshold):
+#             break
+#         else:
+#             if (i+1) > n_tries:
+#                 print_to_gui(f'Exceeded number of attempts. Adjust pitch manually.', tag='Pitch Scan')
+#
+#     yield from set_hhm_feedback_plan(1, update_center=True)
+# def plot_monitor_scan(db, uid):
+#     hdr = db[uid]
+#     # df = {}
+#     plt.figure()
+#     for stream_name in hdr.stream_names:
+#         t = hdr.table(stream_name=stream_name)
+#         column_name = stream_name.replace('_monitor', '')
+#         plt.plot(t.time, t[column_name])
 
 
 def process_monitor_scan(db, uid):
@@ -134,11 +184,11 @@ def process_monitor_scan(db, uid):
 
         column_name = stream_name.replace('_monitor', '')
         this_data = t[column_name].values
-        df[column_name] = np.interp(df['time'], t['time'], this_data)
+        df[column_name] = np.interp(df['time'], this_time, this_data)
 
     return pd.DataFrame(df)
 
-def find_optimum_pitch_pos(db, uid, motor='hhm_pitch', channel='apb_ave_ch1'):
+def find_optimum_pitch_pos(db, uid, motor='hhm_pitch', channel='apb_ch1'):
     df = process_monitor_scan(db, uid)
     idx = df[channel].idxmin()
     return df[motor][idx]
