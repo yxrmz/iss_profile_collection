@@ -10,7 +10,7 @@ import os
 
 import logging
 import logging.handlers
-
+from collections import Counter
 
 
 class ScanManager():
@@ -70,7 +70,8 @@ class ScanManager():
                 new_scan_parameters = new_scan['scan_parameters']
                 keys =  scan_parameters.keys()
                 new_keys = new_scan_parameters.keys()
-                if all([(new_k in keys) for new_k in new_keys]):
+                # if all([(new_k in keys) for new_k in new_keys]):
+                if Counter(new_keys) == Counter(keys):
                     parameters_match = True
                     for k in keys:
                         if k != 'filename':
