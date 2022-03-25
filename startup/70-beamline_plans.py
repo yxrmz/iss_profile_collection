@@ -30,64 +30,16 @@ def vibration_diagnostics(time=1):
 
 
 def single_bender_scan_bundle(bender_position=None, **kwargs):
-    loading = bender.load_cell.get()
+    loading = int(bender.load_cell.get())
+    if bender_position is None:
+        bender_position = np.round(bender.pos.position, 2)
     name = f"Bender scan at {kwargs['element']}-{kwargs['edge']} edge - {loading} N - {bender_position} um"
     plan_kwargs = {**{'name' : name, 'comment' : 'Bender scan'}, **kwargs}
     plans = [{'plan_name' : 'fly_scan_plan',
               'plan_kwargs' : plan_kwargs}]
     return plans
 
-
-
-
-
-
-
-
-
 from xas.energy_calibration import get_energy_offset
-# from xas.image_analysis import determine_beam_position_from_fb_image
-
-# # can be made into a bundle?
-# def calibrate_mono_energy_plan(element='', edge='', dE=25, plot_func=None, error_message_func=None):
-#     # # check if current trajectory is good for this calibration
-#     # validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
-#     try:
-#         db_proc.validate_foil_edge(element, edge)
-#     except Exception as e:
-#         print_to_gui(e)
-#         if error_message_func is not None:
-#             error_message_func(e)
-#
-#     yield from set_reference_foil(element)
-#     yield from bps.sleep(2)
-#     foil_camera.validate_barcode(element, error_message_func=error_message_func)
-#
-#     trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
-#
-#     yield from optimize_gains_plan()
-#     name = f'{element} {edge}-edge foil energy calibration'
-#
-#     plan = fly_scan_plan
-#     plan_kwargs = {'name' : name, 'comment' : '',
-#                    'trajectory_filename' : trajectory_filename,
-#                    'element' : element, 'e0' : xraydb.xray_edge(element, edge).energy, 'edge' : edge}
-#
-#     yield from plan(**plan_kwargs)
-#     energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
-#
-#     print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual-energy_nominal:.2f} eV')
-#     hhm.calibrate(energy_nominal, energy_actual, error_message_func=error_message_func)
-#
-#     yield from plan(**plan_kwargs)
-#     energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
-#
-#     print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
-#     if np.abs(energy_actual - energy_nominal) < 0.1:
-#         print_to_gui(f'{ttime.ctime()} [Energy calibration] Completed')
-#     else:
-#         print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
-
 
 def foil_camera_validate_barcode_plan(element=None, error_message_func=None):
     foil_camera.validate_barcode(element, error_message_func=error_message_func)
@@ -100,7 +52,7 @@ def prepare_foil_scan(element, edge):
     plans.append({'plan_name': 'foil_camera_validate_barcode_plan',
                   'plan_kwargs': {'element': element},
                   'plan_gui_services': ['error_message_box']})
-    trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
+    trajectory_filename = scan_manager.standard_trajectory_filename(element, edge, short=True)
     plans.append({'plan_name': 'optimize_gains',
                   'plan_kwargs': {'trajectory_filename': trajectory_filename}})
     return plans, trajectory_filename

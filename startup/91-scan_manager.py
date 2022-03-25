@@ -205,19 +205,39 @@ class ScanManager():
         self.scan_dict[uid]['scan_parameters']['filename'] = filename
 
 
-    def standard_scan_dict(self, element, edge):
+    def standard_scan_dict(self, element, edge, short=False):
+        if short:
+            preedge_start = -150.0
+            XANES_start = -30.0
+            XANES_end = 30.0
+            EXAFS_end = 8.0
+            type = 'standard'
+            preedge_duration = 2.0
+            edge_duration = 3.0
+            postedge_duration = 5.0
+        else:
+            preedge_start = -200.0
+            XANES_start = -30.0
+            XANES_end = 50.0
+            EXAFS_end = 16.0
+            type = 'standard'
+            preedge_duration = 4.0
+            edge_duration = 6.0
+            postedge_duration = 20.0
+
+
         return {'scan_type': 'fly scan',
                 'scan_parameters': {'element': element,
                                     'edge': edge,
                                     'e0': xraydb.xray_edge(element, edge).energy,
-                                    'preedge_start': -200.0,
-                                    'XANES_start': -30.0,
-                                    'XANES_end': 50.0,
-                                    'EXAFS_end': 16.0,
-                                    'type': 'standard',
-                                    'preedge_duration': 4.0,
-                                    'edge_duration': 6.0,
-                                    'postedge_duration': 20.0,
+                                    'preedge_start': preedge_start,
+                                    'XANES_start': XANES_start,
+                                    'XANES_end': XANES_end,
+                                    'EXAFS_end': EXAFS_end,
+                                    'type': type,
+                                    'preedge_duration': preedge_duration,
+                                    'edge_duration': edge_duration,
+                                    'postedge_duration': postedge_duration,
                                     'preedge_flex': 0.5,
                                     'postedge_flex': 0.3,
                                     'pad': 0.5,
@@ -227,8 +247,8 @@ class ScanManager():
                                     'filename': ''}}
 
 
-    def standard_trajectory_filename(self, element, edge):
-        standard_scan_dict = self.standard_scan_dict(element, edge)
+    def standard_trajectory_filename(self, element, edge, short=False):
+        standard_scan_dict = self.standard_scan_dict(element, edge, short=short)
         uid = self.check_if_brand_new(standard_scan_dict)
         return self.scan_dict[uid]['scan_parameters']['filename']
 

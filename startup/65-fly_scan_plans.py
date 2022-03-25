@@ -93,6 +93,7 @@ class FlyerHHM(Device):
         print_to_gui(f'Detector complete starting...', add_timestamp=True, tag='Flyer')
         det_complete_status = combine_status_list([det.complete() for det in self.dets])
         det_complete_status.wait()
+        self.hhm.complete()
         self.shutter.close()
         # print_to_gui(f'{ttime.ctime()} Detector complete finished')
         print_to_gui(f'Detector complete finished', add_timestamp=True, tag='Flyer')

@@ -126,6 +126,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     # dealing with plan adding and converting to RE-digestible pieces
     @emit_list_update_signal_decorator
     def _add_plans(self, plans, add_at='tail', idx=None):
+        success = True
         if type(plans) != list:
             plans = [plans]
 
@@ -152,8 +153,9 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             if _plan_status == 'executing': _plan_status = 'normal'
             for plan_dict in plans[::-1]: # [::-1] is needed so insert doesn't revert the list order
                 self.insert_item_at_index(idx, {'plan_info': plan_dict, 'plan_status': _plan_status}, emit_signal=False)
-
-        return idx + len(plans)
+        if len(plans) == 0:
+            success = False
+        return (idx + len(plans)), success
 
     def append_add_plans_question_box_func(self, func):
         self.add_plans_question_box = func
@@ -161,10 +163,11 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     def add_plans(self, plans, add_at='tail', idx=None, pause_after=False):
         if (len(self.plan_list) > 0) and (self.add_plans_question_box is not None):
             plans, add_at, idx, pause_after = self.add_plans_question_box(plans, add_at, idx, pause_after)
-        last_added_plan_index = self._add_plans(plans, add_at, idx)
-        # print(last_added_plan_index, pause_after)
+        last_added_plan_index, success = self._add_plans(plans, add_at, idx)
         if pause_after:
             self.pause_after_index(last_added_plan_index)
+        return success
+
 
     def plan_is_a_bundle(self, idx):
         plan_info = self.plan_list[idx]['plan_info']
@@ -211,7 +214,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             re_args = self.make_re_args(0)
             # self.RE(actuate_photon_shutter_plan('Open'))
             self.set_plan_status_at_index(0, 'executing')
-            # self.perform_pre_scan_routines()
+            self.perform_pre_scan_routines()
             self.RE(*re_args)
             self.plan_list.pop(0)
 
@@ -250,16 +253,19 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     def add_plan_and_run_if_idle(self, plan_name, plan_kwargs, plan_gui_services=None):
         plan_dict = self.make_plan_dict_from_name_and_kwargs(plan_name, plan_kwargs,
                                                              plan_gui_services=plan_gui_services)
-        self.add_plans(plan_dict)
-        self.run_if_idle()
+        success = self.add_plans(plan_dict)
+        if success:
+            self.run_if_idle()
 
-    def add_execute_pause_plan_at_head(self, plan_name, plan_kwargs, plan_gui_services=None):
-        plan_dict = self.make_plan_dict_from_name_and_kwargs(plan_name, plan_kwargs,
-                                                             plan_gui_services=plan_gui_services)
-        self.add_plans(plan_dict, add_at='head')
-        idx = self.plan_list.index({'plan_info' : plan_dict, 'plan_status' : 'normal'})
-        self.pause_after_index(idx+1)
-        self.run_if_idle(unpause=False)
+    # #### LEGACY FUNCTION
+    # def add_execute_pause_plan_at_head(self, plan_name, plan_kwargs, plan_gui_services=None):
+    #     plan_dict = self.make_plan_dict_from_name_and_kwargs(plan_name, plan_kwargs,
+    #                                                          plan_gui_services=plan_gui_services)
+    #     self.add_plans(plan_dict, add_at='head')
+    #     idx = self.plan_list.index({'plan_info' : plan_dict, 'plan_status' : 'normal'})
+    #     self.pause_after_index(idx+1)
+    #     self.run_if_idle(unpause=False)
+    # ####
 
 
     def update_status(self, status):
@@ -319,7 +325,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         if self.auto_foil_set:
             plan_info = self.plan_list[idx]['plan_info']
             plan_kwargs = plan_info['plan_kwargs']
-            if 'element' in plan_kwargs:
+            if ('element' in plan_kwargs) and (plan_kwargs['element'] != ''):
                 self.RE(set_reference_foil(plan_kwargs['element']))
 
 plan_processor = PlanProcessor()

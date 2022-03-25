@@ -184,6 +184,9 @@ class PilatusHDF5(PilatusBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_primary_roi(1)
+        # self.set_primary_roi(2)
+        # self.set_primary_roi(3)
+        # self.set_primary_roi(4)
 
     def set_primary_roi(self, num):
         st = f'stats{num}'
@@ -337,6 +340,11 @@ pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id
 pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream", ext_trigger_device=apb_trigger_pil100k)
 
 pil100k.set_primary_roi(1)
+pil100k.stats1.kind = 'hinted'
+pil100k.stats2.kind = 'hinted'
+pil100k.stats3.kind = 'hinted'
+pil100k.stats4.kind = 'hinted'
+
 
 
 # pil100k.cam.ensure_nonblocking()

@@ -110,19 +110,19 @@ def general_set_gains_plan(*args):
     if mod:
         args = args[:-mod]
 
-    for ic, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0],
+    for ic_amp, val, hs in zip([ic for index, ic in enumerate(args) if index % 3 == 0],
                        [val for index, val in enumerate(args) if index % 3 == 1],
                        [hs for index, hs in enumerate(args) if index % 3 == 2]):
-        yield from ic.set_gain_plan(val, hs)
+        yield from ic_amp.set_gain_plan(val, hs)
 
-        if type(ic) != ICAmplifier:
+        if type(ic_amp) != ICAmplifier:
             raise Exception('Wrong type: {} - it should be ICAmplifier'.format(type(ic)))
         if type(val) != int:
             raise Exception('Wrong type: {} - it should be int'.format(type(val)))
         if type(hs) != bool:
             raise Exception('Wrong type: {} - it should be bool'.format(type(hs)))
 
-        print_to_gui('set amplifier gain for {}: {}, {}'.format(ic.par.dev_name.get(), val, hs))
+        print_to_gui('set amplifier gain for {}: {}, {}'.format(ic_amp.name, val, hs))
 
 
 def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
@@ -135,6 +135,7 @@ def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
         hs = hs == 'True'
 
     yield from general_set_gains_plan(i0_amp, i0_gain, hs, it_amp, it_gain, hs, iff_amp, iff_gain, hs, ir_amp, ir_gain, hs)
+    yield from get_offsets_plan()
 
 
 def prepare_trajectory_plan(trajectory_filename, offset=None):
@@ -143,10 +144,10 @@ def prepare_trajectory_plan(trajectory_filename, offset=None):
 
 def prepare_scan_plan(scan_uid=None, aux_parameters=None):
     scan = scan_manager.scan_dict[scan_uid]
-    mono_angle_offset = aux_parameters['offset']
-    trajectory_filename = scan['scan_parameters']['filename']
-
-    yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
+    if scan['scan_type'] == 'fly scan':
+        mono_angle_offset = aux_parameters['offset']
+        trajectory_filename = scan['scan_parameters']['filename']
+        yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
 
 
 def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=None):
@@ -170,10 +171,6 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
 
     yield from actuate_photon_shutter_plan('Open')
     yield from shutter.open_plan()
-
-
-
-
 
     for jj in range(n_tries):
 
@@ -212,6 +209,85 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
     yield from get_offsets_plan()
 
 
+def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=None):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
+
+    # if 'detector_names' not in kwargs:
+    # detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
+    # detectors = [apb_ave]
+    # channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
+    channels = [apb.ch1, apb.ch2, apb.ch3, apb.ch4]
+    # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
+
+    if trajectory_filename is not None:
+        yield from prepare_trajectory_plan(trajectory_filename, offset=mono_angle_offset)
+        # trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
+
+    threshold_hi = 3.250
+    threshold_lo = 0.250
+
+    e_min, e_max = trajectory_manager.read_trajectory_limits()
+    e_min -= 50
+    e_max += 50
+    # scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
+
+    yield from actuate_photon_shutter_plan('Open')
+    yield from shutter.open_plan()
+
+    for jj in range(n_tries):
+
+        # current_energy = hhm.energy.position
+        # e1 = np.abs(current_energy - e_min), np.abs(current_energy - e_max)
+
+        yield from bps.mv(hhm.energy, e_max)
+
+        @return_NullStatus_decorator
+        def _move_energy_plan():
+            yield from move_mono_energy(e_min, step=200, beampos_tol=10)
+
+        ramp_plan = ramp_plan_with_multiple_monitors(_move_energy_plan(), [hhm.energy] + channels, bps.null)
+        yield from ramp_plan
+
+        # plan = bp.list_scan(detectors, hhm.energy, scan_positions)
+        # yield from plan
+        table = process_monitor_scan(db, -1)
+
+        all_gains_are_good = True
+
+        for channel in channels:
+
+            # if channel.polarity == 'neg':
+            trace_extreme = table[channel.name].min()
+            # else:
+            #     trace_extreme = table[channel.name].max()
+
+            trace_extreme = trace_extreme / 1000
+
+            print_to_gui(f'Extreme value {trace_extreme} for detector {channel.name}')
+
+            current_gain = channel.amp.get_gain()[0]
+            if abs(trace_extreme) > threshold_hi:
+                if current_gain > 3:
+                    print_to_gui(f'Decreasing gain for detector {channel.name}')
+                    yield from channel.amp.set_gain_plan(current_gain - 1, False)
+                    all_gains_are_good = False
+            elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
+                print_to_gui(f'Correct gain for detector {channel.name}')
+            elif abs(trace_extreme) <= threshold_lo:
+                if current_gain < 7:
+                    print(f'Increasing gain for detector {channel.name}')
+                    yield from channel.amp.set_gain_plan(current_gain + 1, False)
+                    all_gains_are_good = False
+
+        if all_gains_are_good:
+            print(f'Gains are correct. Taking offsets..')
+            break
+
+    yield from shutter.close_plan()
+    yield from get_offsets_plan()
+
+
+
 
 def set_reference_foil(element:str = 'Mn'):
     # Adding reference foil element list
@@ -239,19 +315,52 @@ def set_attenuator(thickness:int  = 0, **kwargs):
     # Adding reference foil element list
     with open('/nsls2/xf08id/settings/json/attenuator.json') as fp:
         attenuators_list = json.load(fp)
-    thickness_list = [item['attenuator'] for item in attenuators_list]
-
-    if thickness in thickness_list:
-        indx = thickness_list.index(thickness)
+    thickness_str_list = [item['attenuator'] for item in attenuators_list]
+    thickness_str = str(thickness)
+    if thickness_str in thickness_str_list:
+        indx = thickness_str_list.index(thickness_str)
         yield from mv(attenuator_motor.pos, attenuators_list[indx]['position'])
     else:
-        yield from mv(attenuator_motor.pos,0)
+        yield from mv(attenuator_motor.pos, 0)
 
 
 
+def scan_beam_center(camera=camera_sp1, emin=6000, emax=12000, nsteps=10, roll_range=2, roll_nsteps=4):
+
+    original_roll = hhm.roll.position
+    hhm_rolls = np.linspace(original_roll-roll_range/2, original_roll+roll_range/2, roll_nsteps+1)
+    energies = np.linspace(emin, emax, nsteps+1).tolist()
+
+    yield from bps.open_run()
+
+    for hhm_roll in hhm_rolls:
+        for energy in energies:
+            # yield from bps.mv(hhm.energy, energy)
+            yield from bps.mv(hhm.roll, hhm_roll)
+            yield from move_mono_energy(energy, step=500, beampos_tol=10)
+            camera.adjust_camera_exposure_time()
+            yield from bps.trigger_and_read([hhm.energy, hhm.roll, camera_sp1.stats1.centroid])
+
+    yield from bps.close_run()
+
+    yield from bps.mv(hhm.roll, original_roll)
 
 
 
+def plot_beam_center_scan(db, uid):
+    t = db[-1].table()
+
+    plt.figure(1, clear=True)
+
+    unique_rolls = np.unique(t.hhm_roll_user_setpoint.values)
+    for unique_roll in unique_rolls:
+        mask = t.hhm_roll_user_setpoint == unique_roll
+        plt.plot(t.hhm_energy[mask], t.camera_sp1_stats1_centroid_x[mask], label=str(unique_roll))
+
+    plt.legend()
+
+
+# plot_beam_center_scan(db, -1)
 
 
 

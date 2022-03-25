@@ -5,11 +5,11 @@ def elastic_scan_plan(DE=5, dE=0.1):
     yield from plan
 
 
-def johann_calibration_scan_plan(energies, DE=5, dE=0.1):
+def johann_calibration_scan_plan(energies=None, DE=5, dE=0.1):
     for energy in energies:
         yield from bps.mv(hhm.energy, energy)
         # yield from move_emission_energy_plan(energy)
-        yield from bps.mv(motor_emission, energy)
+        yield from bps.mv(johann_spectrometer_motor, energy)
         yield from elastic_scan_plan(DE=DE, dE=dE)
 
 
@@ -96,7 +96,8 @@ def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_li
         assert len(sample_coordinates) == len(emission_energy_list), 'number of positions on the sample must match the number of energy points on emission grid'
     else:
         sample_coordinates = [sample_coordinates] * len(emission_energy_list)
-        return sample_coordinates
+    return sample_coordinates
+
 
 def get_johann_rixs_md(name, element_line, line, e0_line, metadata):
     metadata['rixs_file_name'] = create_interp_file_name(name, '.rixs')

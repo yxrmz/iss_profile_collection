@@ -43,7 +43,8 @@ def get_general_md():
 
     for indx in range(8):
         md[f'ch{indx+1}_offset'] = getattr(apb, f'ch{indx+1}_offset').get()
-        amp = getattr(apb, f'amp_ch{indx+1}')
+        _ch = getattr(apb, f'ch{indx+1}')
+        amp = _ch.amp
         if amp:
             md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
         else:

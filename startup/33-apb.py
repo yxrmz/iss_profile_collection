@@ -27,7 +27,6 @@ class AnalogPizzaBox(Device):
     ch7 = Cpt(EpicsSignal, 'SA:Ch7:mV-I')
     ch8 = Cpt(EpicsSignal, 'SA:Ch8:mV-I')
 
-    ch1.polarity = ch2.polarity = ch3.polarity = ch4.polarity = 'neg'
 
     ch1_offset = Cpt(EpicsSignal, 'Ch1:User:Offset-SP', kind=Kind.config)
     ch2_offset = Cpt(EpicsSignal, 'Ch2:User:Offset-SP', kind=Kind.config)
@@ -289,20 +288,32 @@ apb_stream.wait_for_connection(timeout=10)
 _ = apb_stream.read()
 _ = apb_stream.streaming.read()
 
-apb.amp_ch1 = i0_amp
-apb.amp_ch2 = it_amp
-apb.amp_ch3 = ir_amp
-apb.amp_ch4 = iff_amp
-apb.amp_ch5 = None
-apb.amp_ch6 = None
-apb.amp_ch7 = None
-apb.amp_ch8 = None
+apb.ch1.polarity = 'neg'
+apb.ch2.polarity = 'neg'
+apb.ch3.polarity = 'neg'
+apb.ch4.polarity = 'neg'
+apb.ch1.amp = i0_amp
+apb.ch2.amp = it_amp
+apb.ch3.amp = ir_amp
+apb.ch4.amp = iff_amp
+apb.ch5.amp = None
+apb.ch6.amp = None
+apb.ch7.amp = None
+apb.ch8.amp = None
+
+# apb.amp_ch1 = i0_amp
+# apb.amp_ch2 = it_amp
+# apb.amp_ch3 = ir_amp
+# apb.amp_ch4 = iff_amp
+# apb.amp_ch5 = None
+# apb.amp_ch6 = None
+# apb.amp_ch7 = None
+# apb.amp_ch8 = None
 
 apb_ave.ch1.polarity = 'neg'
 apb_ave.ch2.polarity = 'neg'
 apb_ave.ch3.polarity = 'neg'
 apb_ave.ch4.polarity = 'neg'
-
 apb_ave.ch1.amp = i0_amp
 apb_ave.ch2.amp = it_amp
 apb_ave.ch3.amp = ir_amp

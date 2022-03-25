@@ -26,6 +26,8 @@ class HHM(Device):
     roll = Cpt(EpicsMotor, 'Mono:HHM-Ax:R}Mtr', kind='hinted')
     y = Cpt(StuckingEpicsMotor, 'Mono:HHM-Ax:Y}Mtr', kind='hinted')
     theta = Cpt(EpicsMotor, 'Mono:HHM-Ax:Th}Mtr', kind='hinted')
+    # theta_speed = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.VMAX', kind='hinted')
+    # theta_speed_max = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.VELO', kind='hinted')
     energy = Cpt(StuckingEpicsMotorThatFlies, 'Mono:HHM-Ax:E}Mtr', kind=Kind.hinted)
 
     main_motor_res = Cpt(EpicsSignal, 'Mono:HHM-Ax:Th}Mtr.MRES')
@@ -143,13 +145,18 @@ class HHM(Device):
         self.start_trajectory.set('1')
         return self.flying_status
 
+    def complete(self):
+        self.flying_status = None
+
     def abort_trajectory(self):
-        if self.trajectory_running.get():
-            print_to_gui('Stopping trajectory ... ')
-            self.stop_trajectory.put('1')
+        is_flying = (self.flying_status is not None) and (not self.flying_status.done)
+        self.stop_trajectory.put('1')
+        if is_flying:
+            print_to_gui('Stopping trajectory ... ', tag='HHM')
             if not self.flying_status.done:
                 self.flying_status.set_finished()
-            print_to_gui('done')
+            print_to_gui('Stopped trajectory', tag='HHM')
+        return is_flying
 
 
     def home_y_pos(self):
