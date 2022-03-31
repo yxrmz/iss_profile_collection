@@ -42,8 +42,11 @@ class CannotActuateShutter(Exception):
 def actuate_photon_shutter_plan(state):
     try:
         yield from bps.mv(shutter_ph_2b, state)
-    except FailedStatus:
-        raise CannotActuateShutter(f'Error: Photon shutter failed to {state.lower()}.')
+    # except FailedStatus:
+    #     raise CannotActuateShutter(f'Error: Photon shutter failed to {state.lower()}.')
+    except Exception as e:
+        print_to_gui(f'{str(e)}', tag='SHUTTER DEBUG')
+        yield from bps.null()
 
 def get_offsets_plan(time : float = 2):
     apb_ave.save_current_status()
