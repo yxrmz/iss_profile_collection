@@ -685,7 +685,7 @@ class BatchManager(PersistentListInteractingWithGUI):
                                       'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
                         for sub_element in element['element_list']:
                             if sub_element['type'] == 'scan':
-                                repeat, delay, scan_idx, scan_name = self.get_data_from_element(sub_element)
+                                repeat, delay, scan_idx, scan_name, scan_key  = self.get_data_from_element(sub_element)
                                 sample_name_for_scan = f'{sample_name} {scan_name}'
                                 new_plans.extend(self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
                                                                                       repeat, delay, scan_idx,
