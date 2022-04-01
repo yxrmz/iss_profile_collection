@@ -198,7 +198,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         liveplots = self.make_liveplots(plan_name, plan_kwargs)
         gui_services_kwargs = self.get_gui_services_kwargs(plan_info)
         plan_all_kwargs = {**plan_kwargs, **gui_services_kwargs}
-        print_to_gui(f'Executing plan {plan_name}', add_timestamp=True, tag='Queue')
+        print_to_gui(f'Execution of plan {plan_name} starting...', add_timestamp=True, tag='Queue')
         if len(liveplots) == 0:
             return (plan_func(**plan_all_kwargs), )
         else:

@@ -29,13 +29,13 @@ class FlyerHHM(Device):
 
     def stage(self):
         # print_to_gui(f'{ttime.ctime()} Preparing mono start')
-        print_to_gui(f'Preparing mono start', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Preparing mono starting...', add_timestamp=True, tag='Flyer')
         self.hhm.prepare()
         # print_to_gui(f'{ttime.ctime()} Preparing mono done')
-        print_to_gui(f'Preparing mono done', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Preparing mono complete', add_timestamp=True, tag='Flyer')
 
         self.dets = self.default_dets + self.aux_dets
-        print_to_gui(f'Staging start', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Fly scan staging starting...', add_timestamp=True, tag='Flyer')
         # print_to_gui(f'{ttime.ctime()} Staging start')
         staged_list = super().stage()
         scan_duration = trajectory_manager.current_trajectory_duration
@@ -45,18 +45,18 @@ class FlyerHHM(Device):
             print_to_gui(f'start staging {det.name} ...', add_timestamp=True, tag='Flyer', ntabs=1)
             staged_list += det.stage()
         # print_to_gui(f'{ttime.ctime()} Staging done')
-        print_to_gui(f'Staging done', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Fly scan staging complete', add_timestamp=True, tag='Flyer')
         return staged_list
 
     def unstage(self):
         # print_to_gui(f'{ttime.ctime()} Unstaging start')
-        print_to_gui(f'Unstaging start', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Fly scan unstaging starting...', add_timestamp=True, tag='Flyer')
         unstaged_list = super().unstage()
         for det in self.dets:
             unstaged_list += det.unstage()
         self.flush_dets()
         # print_to_gui(f'{ttime.ctime()} Unstaging done')
-        print_to_gui(f'Unstaging done', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Fly scan unstaging complete', add_timestamp=True, tag='Flyer')
         return unstaged_list
 
     def kickoff(self):
@@ -79,16 +79,16 @@ class FlyerHHM(Device):
         det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
         det_kickoff_status.wait()
         # print_to_gui(f'{ttime.ctime()} Detector kickoff finished')
-        print_to_gui(f'Detector kickoff finished', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Detector kickoff complete', add_timestamp=True, tag='Flyer')
         # self.shutter.open() # this could be a better place to have shutter open
         # print_to_gui(f'{ttime.ctime()} Mono flight starting...')
-        print_to_gui(f'Mono trajectory motion started', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Mono trajectory motion starting...', add_timestamp=True, tag='Flyer')
         self.hhm_flying_status = self.hhm.kickoff()
         self.kickoff_status.set_finished()
 
         self.hhm_flying_status.wait()
         # print_to_gui(f'{ttime.ctime()} Mono flight finished')
-        print_to_gui(f'Mono trajectory motion ended', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Mono trajectory motion complete', add_timestamp=True, tag='Flyer')
         # print_to_gui(f'{ttime.ctime()} Detector complete starting...')
         print_to_gui(f'Detector complete starting...', add_timestamp=True, tag='Flyer')
         det_complete_status = combine_status_list([det.complete() for det in self.dets])
@@ -96,7 +96,7 @@ class FlyerHHM(Device):
         self.hhm.complete()
         self.shutter.close()
         # print_to_gui(f'{ttime.ctime()} Detector complete finished')
-        print_to_gui(f'Detector complete finished', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Detector complete complete', add_timestamp=True, tag='Flyer')
         self.complete_status.set_finished()
 
     def complete(self):
@@ -113,17 +113,17 @@ class FlyerHHM(Device):
 
     def collect(self):
         # print_to_gui(f'{ttime.ctime()} Collect starting')
-        print_to_gui(f'Collect starting', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Collect starting...', add_timestamp=True, tag='Flyer')
         for det in self.dets:
             yield from det.collect()
         # print_to_gui(f'{ttime.ctime()} Collect finished')
-        print_to_gui(f'Collect finished', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Collect complete', add_timestamp=True, tag='Flyer')
 
     def collect_asset_docs(self):
-        print_to_gui(f'Collect Asset Docs starting', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Collect asset docs starting...', add_timestamp=True, tag='Flyer')
         for det in self.dets:
             yield from det.collect_asset_docs()
-        print_to_gui(f'Collect Asset Docs finished', add_timestamp=True, tag='Flyer')
+        print_to_gui(f'Collect asset docs complete', add_timestamp=True, tag='Flyer')
 
 
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
