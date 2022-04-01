@@ -111,7 +111,7 @@ class ShutterMotor(Device):
         self.function_call = None
 
     def open(self, printing=True, time_opening=False):
-        if printing: print_to_gui(f'{ttime.ctime()} >>> {self.name} opening')
+        if printing: print_to_gui(f'{ttime.ctime()} >>> {self.name} opening...')
         if time_opening: self._start_time = ttime.time()
         self.output.move(self.open_pos, wait=True)
 

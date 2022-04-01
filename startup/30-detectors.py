@@ -125,7 +125,7 @@ class EncoderFS(Encoder):
 
 
     def complete(self):
-        print_to_gui(f'{ttime.ctime()} >>> {self.name} complete: begin')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} complete starting...')
         set_and_wait(self.ignore_sel, 1)
 
         # print(f'     !!!!! {datetime.now()} complete in {self.name} after stop writing')
@@ -153,7 +153,7 @@ class EncoderFS(Encoder):
         self._asset_docs_cache.append(('datum', datum))
 
         self._datum_ids.append(datum_id)
-        print_to_gui(f'{ttime.ctime()} >>> {self.name} complete: done')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} complete complete')
         return NullStatus()
 
     def collect(self):
@@ -164,7 +164,7 @@ class EncoderFS(Encoder):
         """
         # print(f'     !!!!! {datetime.now()} collect in {self.name}')
         # print('Collect of {} starting'.format(self.name))
-        print_to_gui(f'{ttime.ctime()} >>> {self.name} collect starting')
+        print_to_gui(f'{ttime.ctime()} >>> {self.name} collect starting...')
 
         # Create an Event document and a datum record in filestore for each line
         # in the text file.
