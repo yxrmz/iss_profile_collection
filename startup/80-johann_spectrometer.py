@@ -31,7 +31,7 @@ class JohannSpectrometerMotor(PseudoPositioner):
         self.cr_x0=None
         self.cr_y0=None
         self.det_y0=None
-        self.spectrometer_root_path = f"{ROOT_PATH}/{USER_FILEPATH}"
+        self.spectrometer_root_path = f"{ROOT_PATH}/{USER_PATH}"
         self._initialized = False
 
 

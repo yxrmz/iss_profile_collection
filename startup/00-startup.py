@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 import xraydb
 
+ROOT_PATH_SHARED = '/nsls2/xf08id'
 
 
 def time_now_str():
@@ -248,7 +249,8 @@ except ImportError:
             """Force a reload from disk, overwriting current cache"""
             self._cache = dict(super().items())
 
-runengine_metadata_dir = Path('/nsls2/xf08id/metadata/') / Path("runengine-metadata")
+runengine_metadata_dir = Path(f'{ROOT_PATH_SHARED}/metadata/') / Path("runengine-metadata")
+#LUSTRE transition - pending decision
 
 # PersistentDict will create the directory if it does not exist
 RE.md = PersistentDict(runengine_metadata_dir)
@@ -294,10 +296,10 @@ def get_hook():
 # get_hook()
 
 # the file paths for acquitision and analysis
-ROOT_PATH = '/nsls2/xf08id'
-RAW_FILEPATH = 'data'
-USER_FILEPATH = 'users'
+ROOT_PATH = '/nsls2/data/iss/legacy'
 
+RAW_PATH = 'raw'
+USER_PATH = 'processed'
 
 
 import faulthandler

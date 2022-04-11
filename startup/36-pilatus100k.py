@@ -179,7 +179,7 @@ class PilatusHDF5(PilatusBase):
     hdf5 = Cpt(HDF5PluginWithFileStore,
                suffix='HDF1:',
                root='/',
-               write_path_template='/nsls2/xf08id/data/pil100k/%Y/%m/%d')
+               write_path_template=f'{ROOT_PATH}/{RAW_PATH}/pil100k/%Y/%m/%d')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

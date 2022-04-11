@@ -116,7 +116,7 @@ def set_detector_exposure_time_plan(detectors, exposure_time):
 
 
 def get_n_exposures_plan_md(name, comment, energy, detectors, n_exposures, dwell_time, metadata):
-        fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
+        fn = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
         fn = validate_file_exists(fn)
 
         md_general = get_general_md()

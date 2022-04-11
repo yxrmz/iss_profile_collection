@@ -54,7 +54,7 @@ def get_general_md():
 
 
 def create_interp_file_name(name, fn_ext):
-    fn = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}{fn_ext}"
+    fn = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}{fn_ext}"
     fn = validate_file_exists(fn)
     return fn
 
