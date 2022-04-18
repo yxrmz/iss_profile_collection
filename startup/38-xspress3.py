@@ -420,7 +420,7 @@ class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
         self._get_dataset()
 
         if data_type=='spectrum':
-            output = self._dataset[:, channel - 1, :]
+            # output = self._dataset[:, channel - 1, :]
             # print(output.shape, output.squeeze().shape)
             return self._dataset[:, channel - 1, :].squeeze()
 

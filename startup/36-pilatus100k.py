@@ -202,21 +202,24 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.ext_trigger_device = ext_trigger_device
         self._asset_docs_cache = deque()
         self._datum_counter = None
-        self._hdf5_capture_status = None
+
+
+        self.datum_keys = [{"data_type": "image"}]
+        for i in range(4):
+            self.datum_keys.append({"data_type" : "roi",
+                                    "roi_num" : i + 1})
+
+    def format_datum_key(self, input_dict):
+        output =f'pil100k_{input_dict["data_type"]}'
+        if input_dict["data_type"] == 'roi':
+            output += f'{input_dict["roi_num"]:01d}'
+        return output
 
     def prepare_to_fly(self, traj_duration):
         self.acq_rate = self.ext_trigger_device.freq.get()
         self.num_points = int(self.acq_rate * (traj_duration + 1))
         self.ext_trigger_device.prepare_to_fly(traj_duration)
 
-    # def _hdf5_capture_callback(self, value, old_value, **kwargs):
-    #     print_debug(f'self._hdf5_capture_callback : value = {value}, old_value = {old_value}')
-    #     # print_debug(f'{(old_value == 1) and (value == 0)}')
-    #     if (old_value == 1) and (value == 0):
-    #         print_debug('self._hdf5_capture_callback: DONE')
-    #         return True
-    #     print_debug('self._hdf5_capture_callback: NOT DONE')
-    #     return False
 
     # TODO: change blocking to NO upon staging of this class !!!
     def stage(self):
@@ -225,7 +228,7 @@ class PilatusStreamHDF5(PilatusHDF5):
         # self.is_flying = True
         self.hdf5._asset_docs_cache[0][1]['spec'] = 'PIL100k_HDF5'  # This is to make the files to go to correct handler
         self.hdf5._asset_docs_cache[0][1]['resource_kwargs'] = {}  # This is to make the files to go to correct handler
-        # self._hdf5_capture_status = SubscriptionStatus(self.hdf5.capture, self._hdf5_capture_callback)
+
         self.set_num_images(self.num_points)
         self.set_exposure_time(1 / self.acq_rate)
         self.cam.array_counter.put(0)
@@ -236,7 +239,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 
     def unstage(self):
         self._datum_counter = None
-        # self._hdf5_capture_status = None
+
         unstaged_list = super().unstage()
         self.cam.trigger_mode.put(0)
         self.cam.image_mode.put(0)
@@ -251,74 +254,98 @@ class PilatusStreamHDF5(PilatusHDF5):
 
     def complete(self):
         print_to_gui(f'Pilatus100k complete is starting...', add_timestamp=True)
-        # set_and_wait(self.cam.acquire, 0)
         acquire_status = self.cam.acquire.set(0)
         capture_status = self.hdf5.capture.set(0)
-        # print_debug(f'JUST SET: self.cam.acquire = {self.cam.acquire.get()}, self.hdf5.capture = {self.hdf5.capture.get()}')
         (acquire_status and capture_status).wait()
-        # self._hdf5_capture_status.wait()
-        # print_debug(f'AFTER WAIT: self.cam.acquire = {self.cam.acquire.get()}, self.hdf5.capture = {self.hdf5.capture.get()}')
-        # print_debug(f'self._hdf5_capture_status = {self._hdf5_capture_status}')
-        # print_debug(f'acquire_status = {acquire_status}')
+
         ext_trigger_status = self.ext_trigger_device.complete()
         for resource in self.hdf5._asset_docs_cache:
             self._asset_docs_cache.append(('resource', resource[1]))
         self._datum_ids = []
-        num_frames = self.hdf5.num_captured.get()
+        # num_frames = self.hdf5.num_captured.get()
         _resource_uid = self.hdf5._resource_uid
+        self._datum_ids = {}
 
-        datum_kwargs = [{'frame': i} for i in range(num_frames)]
-        # print_to_gui('Composing datum page')
-        doc = compose_bulk_datum(resource_uid=_resource_uid,
-                                 counter=self._datum_counter,
-                                 datum_kwargs=datum_kwargs)
-        self._asset_docs_cache.append(('bulk_datum', doc))
-        _datum_id_counter = itertools.count()
-        for frame_num in range(num_frames):
-            datum_id = '{}/{}'.format(_resource_uid, next(_datum_id_counter))
-            self._datum_ids.append(datum_id)
+        for datum_key_dict in self.datum_keys:
+            datum_key = self.format_datum_key(datum_key_dict)
+            datum_id = f'{_resource_uid}/{datum_key}'
+            self._datum_ids[datum_key] = datum_id
+            doc = {'resource': _resource_uid,
+                    'datum_id': datum_id,
+                    'datum_kwargs': datum_key_dict}
+            self._asset_docs_cache.append(('datum', doc))
 
+        # datum_kwargs = [{'frame': i} for i in range(num_frames)]
+        # doc = compose_bulk_datum(resource_uid=_resource_uid,
+        #                          counter=self._datum_counter,
+        #                          datum_kwargs=datum_kwargs)
+        # self._asset_docs_cache.append(('bulk_datum', doc))
+        # _datum_id_counter = itertools.count()
         # for frame_num in range(num_frames):
-        #     datum_id = '{}/{}'.format(_resource_uid, next(self._datum_counter))
-        #     datum = {'resource': _resource_uid,
-        #              'datum_kwargs': {'frame': frame_num},
-        #              # 'datum_kwargs': {},
-        #              'datum_id': datum_id}
-        #     self._asset_docs_cache.append(('datum', datum))
+        #     datum_id = '{}/{}'.format(_resource_uid, next(_datum_id_counter))
         #     self._datum_ids.append(datum_id)
-        # print(f'{ttime.ctime()} Pilatus100k complete is done.')
+
         print_to_gui(f'Pilatus100k complete is done.', add_timestamp=True)
         return NullStatus() and ext_trigger_status
 
 
     def collect(self):
         print_to_gui(f'Pilatus100k collect is starting...', add_timestamp=True)
-        num_frames = len(self._datum_ids)
+        ts = ttime.time()
+        yield {'data': self._datum_ids,
+               'timestamps': {self.format_datum_key(key_dict): ts for key_dict in self.datum_keys},
+               'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
+               'filled': {self.format_datum_key(key_dict): False for key_dict in self.datum_keys}}
 
-        for frame_num in range(num_frames):
-            datum_id = self._datum_ids[frame_num]
-            data = {self.name: datum_id}
-
-            ts = ttime.time()
-
-            yield {'data': data,
-                   'timestamps': {key: ts for key in data},
-                   'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
-                   'filled': {key: False for key in data}}
+        # num_frames = len(self._datum_ids)
+        #
+        # for frame_num in range(num_frames):
+        #     datum_id = self._datum_ids[frame_num]
+        #     data = {self.name: datum_id}
+        #
+        #     ts = ttime.time()
+        #
+        #     yield {'data': data,
+        #            'timestamps': {key: ts for key in data},
+        #            'time': ts,  # TODO: use the proper timestamps from the mono start and stop times
+        #            'filled': {key: False for key in data}}
         print_to_gui(f'Pilatus100k collect is complete', add_timestamp=True)
         yield from self.ext_trigger_device.collect()
 
     def describe_collect(self):
-        return_dict_pil100k = {self.name:
-                           {f'{self.name}': {'source': 'PIL100k_HDF5',
-                                             'dtype': 'array',
-                                             'shape': [self.cam.num_images.get(),
-                                                       #self.settings.array_counter.get()
-                                                       self.hdf5.array_size.height.get(),
-                                                       self.hdf5.array_size.width.get()],
-                                            'filename': f'{self.hdf5.full_file_name.get()}',
-                                             'external': 'FILESTORE:'}}}
+        pil100k_spectra_dicts = {}
+        for datum_key_dict in self.datum_keys:
+            datum_key = self.format_datum_key(datum_key_dict)
+            if datum_key_dict['data_type'] == 'image':
+                value = {'source': 'PIL100k_HDF5',
+                         'dtype': 'array',
+                         'shape': [self.cam.num_images.get(),
+                                   self.hdf5.array_size.height.get(),
+                                   self.hdf5.array_size.width.get()],
+                         'dims': ['frames', 'row', 'col'],
+                         'external': 'FILESTORE:'}
+            elif datum_key_dict['data_type'] == 'roi':
+                value = {'source': 'PIL100k_HDF5',
+                         'dtype': 'array',
+                         'shape': [self.cam.num_images.get()],
+                         'dims': ['frames'],
+                         'external': 'FILESTORE:'}
+            else:
+                raise KeyError(f'data_type={datum_key_dict["data_type"]} not supported')
+            pil100k_spectra_dicts[datum_key] = value
 
+        return_dict_pil100k = {self.name: pil100k_spectra_dicts}
+
+        # return_dict_pil100k = {self.name:
+        #                    {f'{self.name}': {'source': 'PIL100k_HDF5',
+        #                                      'dtype': 'array',
+        #                                      'shape': [self.cam.num_images.get(),
+        #                                                #self.settings.array_counter.get()
+        #                                                self.hdf5.array_size.height.get(),
+        #                                                self.hdf5.array_size.width.get()],
+        #                                     'filename': f'{self.hdf5.full_file_name.get()}',
+        #                                      'external': 'FILESTORE:'}}}
+        #
         return_dict_trig = self.ext_trigger_device.describe_collect()
         return {**return_dict_pil100k, **return_dict_trig}
 
@@ -388,17 +415,31 @@ class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Ha
             return
 
         _data_columns = [self._file[self._key + f'/_{chanroi}Total'][()] for chanroi in self.hdfrois]
-        data_columns = np.vstack(_data_columns).T
+        self._roi_data = np.vstack(_data_columns).T
+        self._image_data = self._file['entry/data/data'][()]
+        # self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
+        # self._dataset = data_columns
 
-        self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
-        self._dataset = data_columns
-
-    def __call__(self, *args, frame=None,  **kwargs):
+    def __call__(self, data_type:str='image', roi_num:int=1):
+        # print(f'{ttime.ctime()} XS dataset retrieving starting...')
         self._get_dataset()
-        return_dict = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
-        # return_dict['image'] = self._image_data[frame, :, :].squeeze()
-        return return_dict
-        # return self._roi_data
+
+        if data_type=='image':
+            # print(output.shape, output.squeeze().shape)
+            return self._image_data
+
+        elif data_type=='roi':
+            return self._roi_data[:, roi_num - 1].squeeze()
+
+        else:
+            raise KeyError(f'data_type={data_type} not supported')
+
+    # def __call__(self, *args, frame=None,  **kwargs):
+    #     self._get_dataset()
+    #     return_dict = {chanroi: self._roi_data[chanroi][frame] for chanroi in self.chanrois}
+    #     # return_dict['image'] = self._image_data[frame, :, :].squeeze()
+    #     return return_dict
+    #     # return self._roi_data
 
 db.reg.register_handler('PIL100k_HDF5',
                          ISSPilatusHDF5Handler, overwrite=True)
