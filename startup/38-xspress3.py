@@ -24,7 +24,7 @@ from nslsii.detectors.xspress3 import (XspressTrigger, Xspress3Detector,
 
 import bluesky.plans as bp
 import bluesky.plan_stubs as bps
-bp.list_scan
+# bp.list_scan
 import numpy as np
 import itertools
 import time as ttime
