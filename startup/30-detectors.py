@@ -142,7 +142,7 @@ class EncoderFS(Encoder):
         print_to_gui(f'{ttime.ctime()} Moving file from {workstation_full_path} to {self._full_path}')
 
         print_to_gui(f'Here')
-        #cp_stat = shutil.copy(workstation_full_path, self._full_path)
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
         print_to_gui(f'Copy done')
         # HACK: Make datum documents here so that they are available for collect_asset_docs
         # before collect() is called. May need changes to RE to do this properly. - Dan A.
