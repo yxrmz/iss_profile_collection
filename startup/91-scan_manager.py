@@ -438,9 +438,11 @@ class ScanManager():
         if metadata is None:
             metadata = dict()
         plans = []
-        # add run id
-        run_uid =str(uuid.uuid4())
-        metadata['run_uid']=run_uid
+
+        # add scan group uid
+        if 'scan_group_uid' not in metadata:
+            metadata['scan_group_uid'] = str(uuid.uuid4())
+
         for indx in range(int(repeat)):
             name_n = '{} {:04d}'.format(name, indx + 1)
             plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates, metadata=metadata)

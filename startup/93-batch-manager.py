@@ -659,7 +659,6 @@ class BatchManager(PersistentListInteractingWithGUI):
                                 elif sub_element['type'] == 'service':
                                     new_plans.extend(self.convert_service_to_plans(sub_element))
                         else:
-                            print('!!!!!!', scan_key)
                             sample_coordinates_list = []
                             for sub_element in element['element_list']:
                                 if sub_element['type'] == 'sample':
