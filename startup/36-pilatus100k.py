@@ -204,7 +204,7 @@ class PilatusStreamHDF5(PilatusHDF5):
         self._datum_counter = None
 
 
-        self.datum_keys = [{"data_type": "image"}]
+        self.datum_keys = [{"data_type": "image", "roi_num" : 0}]
         for i in range(4):
             self.datum_keys.append({"data_type" : "roi",
                                     "roi_num" : i + 1})
@@ -398,41 +398,41 @@ from databroker.assets.handlers import HandlerBase, PilatusCBFHandler, AreaDetec
 
 
 
-PIL100k_HDF_DATA_KEY = 'entry/instrument/NDAttributes'
-class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Handler as basis since it has all the basic functionality and I more or less understand how it works
-    specs = {'PIL100k_HDF5'} | HandlerBase.specs
-    HANDLER_NAME = 'PIL100k_HDF5'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, key=PIL100k_HDF_DATA_KEY, **kwargs)
-        self._roi_data = None
-        self.hdfrois = [f'ROI{i + 1}' for i in range(4)]
-        self.chanrois = [f'pil100k_ROI{i + 1}' for i in range(4)]
-
-
-    def _get_dataset(self):
-        if self._dataset is not None:
-            return
-
-        _data_columns = [self._file[self._key + f'/_{chanroi}Total'][()] for chanroi in self.hdfrois]
-        self._roi_data = np.vstack(_data_columns).T
-        self._image_data = self._file['entry/data/data'][()]
-        # self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
-        # self._dataset = data_columns
-
-    def __call__(self, data_type:str='image', roi_num:int=1):
-        # print(f'{ttime.ctime()} XS dataset retrieving starting...')
-        self._get_dataset()
-
-        if data_type=='image':
-            # print(output.shape, output.squeeze().shape)
-            return self._image_data
-
-        elif data_type=='roi':
-            return self._roi_data[:, roi_num - 1].squeeze()
-
-        else:
-            raise KeyError(f'data_type={data_type} not supported')
+# PIL100k_HDF_DATA_KEY = 'entry/instrument/NDAttributes'
+# class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Handler as basis since it has all the basic functionality and I more or less understand how it works
+#     specs = {'PIL100k_HDF5'} | HandlerBase.specs
+#     HANDLER_NAME = 'PIL100k_HDF5'
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, key=PIL100k_HDF_DATA_KEY, **kwargs)
+#         self._roi_data = None
+#         self.hdfrois = [f'ROI{i + 1}' for i in range(4)]
+#         self.chanrois = [f'pil100k_ROI{i + 1}' for i in range(4)]
+#
+#
+#     def _get_dataset(self):
+#         if self._dataset is not None:
+#             return
+#
+#         _data_columns = [self._file[self._key + f'/_{chanroi}Total'][()] for chanroi in self.hdfrois]
+#         self._roi_data = np.vstack(_data_columns).T
+#         self._image_data = self._file['entry/data/data'][()]
+#         # self._roi_data = pd.DataFrame(data_columns, columns=self.chanrois)
+#         # self._dataset = data_columns
+#
+#     def __call__(self, data_type:str='image', roi_num=None):
+#         # print(f'{ttime.ctime()} XS dataset retrieving starting...')
+#         self._get_dataset()
+#
+#         if data_type=='image':
+#             # print(output.shape, output.squeeze().shape)
+#             return self._image_data
+#
+#         elif data_type=='roi':
+#             return self._roi_data[:, roi_num - 1].squeeze()
+#
+#         else:
+#             raise KeyError(f'data_type={data_type} not supported')
 
     # def __call__(self, *args, frame=None,  **kwargs):
     #     self._get_dataset()
@@ -441,5 +441,7 @@ class ISSPilatusHDF5Handler(Xspress3HDF5Handler): # Denis: I used Xspress3HDF5Ha
     #     return return_dict
     #     # return self._roi_data
 
+
+from xas.handlers import ISSPilatusHDF5Handler
 db.reg.register_handler('PIL100k_HDF5',
                          ISSPilatusHDF5Handler, overwrite=True)

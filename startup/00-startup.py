@@ -100,7 +100,9 @@ from ophyd.signal import EpicsSignalBase
 if not OLD_BLUESKY:
     EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
-from databroker.v0 import Broker
+# from databroker.v0 import Broker
+from databroker import Broker
+
 
 class Broker_local(Broker):
     '''
@@ -148,9 +150,9 @@ if OLD_BLUESKY:
     # nslsii.configure_base(get_ipython().user_ns, 'iss')  # , pbar=False)
 else:
     # We need to use v0 to have a pandas.Dataframe type returned via hdr.data() using the APBBinFileHandler handler.
-    from databroker.v0 import Broker
-    # db = Broker.named('iss-local')
-    db = Broker_local.named('iss-local')
+    # from databroker.v0 import Broker
+    db = Broker.named('iss-local')
+    # db = Broker_local.named('iss-local')
     # db = Broker_local.named('iss')
     db_proc = get_spectrum_catalog()
     nslsii.configure_base(get_ipython().user_ns, db, pbar=False)

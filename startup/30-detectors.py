@@ -255,13 +255,15 @@ hhm_encoder = pb9.enc1
 hhm_encoder.pulses_per_deg = 360000
 pb9.wait_for_connection(timeout=10)
 
-class PizzaBoxEncHandlerTxtPD(HandlerBase):
-    "Read PizzaBox text files using info from filestore."
-    def __init__(self, fpath):
-        self.df = pd.read_table(fpath, names=['ts_s', 'ts_ns', 'encoder', 'index', 'state'], sep=' ')
+# class PizzaBoxEncHandlerTxtPD(HandlerBase):
+#     "Read PizzaBox text files using info from filestore."
+#     def __init__(self, fpath):
+#         self.df = pd.read_table(fpath, names=['ts_s', 'ts_ns', 'encoder', 'index', 'state'], sep=' ')
+#
+#     def __call__(self):
+#         return self.df
 
-    def __call__(self):
-        return self.df
+from xas.handlers import PizzaBoxEncHandlerTxtPD
 
 db.reg.register_handler('PIZZABOX_ENC_FILE_TXT_PD',
                         PizzaBoxEncHandlerTxtPD, overwrite=True)

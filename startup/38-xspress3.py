@@ -31,7 +31,6 @@ import time as ttime
 from collections import deque, OrderedDict
 from itertools import product
 import pandas as pd
-from databroker.assets.handlers import HandlerBase, Xspress3HDF5Handler
 import warnings
 
 
@@ -261,7 +260,8 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
             #                         "channel": i + 1,
             #                         "type": "roi"})
             self.datum_keys.append({"data_type": "spectrum",
-                                    "channel": i + 1})
+                                    "channel": i + 1,
+                                    "roi_num" : 0})
 
             channel = getattr(self, f"channel{i+1}")
             for roi_num in range(1, channel.rois.num_rois.get() + 1):
@@ -387,51 +387,52 @@ xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger_xs)
 
 
+#
+# class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self._roi_data = None
+#         # self._num_channels = None
+#
+#     def _get_dataset(self):
+#         super()._get_dataset()
+#
+#         if self._roi_data is not None:
+#             return
+#         print(f'{ttime.ctime()} Determining number of channels...')
+#         shape = self.dataset.shape
+#         if len(shape) != 3:
+#             raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
+#         _num_channels = shape[1]
+#
+#         self._roi_data = {}
+#         all_keys = self._file['/entry/instrument/detector/NDAttributes'].keys()
+#         for chan in range(1, _num_channels + 1):
+#             base = f'CHAN{chan}ROI'
+#             keys = [k for k in all_keys if k.startswith(base) and not k.endswith('LM')]
+#             for key in keys:
+#                 roi_num = int(key.replace(base, ''))
+#                 self._roi_data[(chan, roi_num)] = self._file['/entry/instrument/detector/NDAttributes'][key][()]
+#
+#     def __call__(self, data_type:str='spectrum', channel:int=1, roi_num:int=1):
+#         # print(f'{ttime.ctime()} XS dataset retrieving starting...')
+#         self._get_dataset()
+#
+#         if data_type=='spectrum':
+#             # output = self._dataset[:, channel - 1, :]
+#             # print(output.shape, output.squeeze().shape)
+#             return self._dataset[:, channel - 1, :].squeeze()
+#
+#         elif data_type=='roi':
+#             return self._roi_data[(channel, roi_num)].squeeze()
+#
+#         else:
+#             raise KeyError(f'data_type={data_type} not supported')
 
-class ISSXspress3HDF5Handler(Xspress3HDF5Handler):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._roi_data = None
-        # self._num_channels = None
-
-    def _get_dataset(self):
-        super()._get_dataset()
-
-        if self._roi_data is not None:
-            return
-        print(f'{ttime.ctime()} Determining number of channels...')
-        shape = self.dataset.shape
-        if len(shape) != 3:
-            raise RuntimeError(f'The ndim of the dataset is not 3, but {len(shape)}')
-        _num_channels = shape[1]
-
-        self._roi_data = {}
-        all_keys = self._file['/entry/instrument/detector/NDAttributes'].keys()
-        for chan in range(1, _num_channels + 1):
-            base = f'CHAN{chan}ROI'
-            keys = [k for k in all_keys if k.startswith(base) and not k.endswith('LM')]
-            for key in keys:
-                roi_num = int(key.replace(base, ''))
-                self._roi_data[(chan, roi_num)] = self._file['/entry/instrument/detector/NDAttributes'][key][()]
-
-    def __call__(self, data_type:str='spectrum', channel:int=1, roi_num:int=1):
-        # print(f'{ttime.ctime()} XS dataset retrieving starting...')
-        self._get_dataset()
-
-        if data_type=='spectrum':
-            # output = self._dataset[:, channel - 1, :]
-            # print(output.shape, output.squeeze().shape)
-            return self._dataset[:, channel - 1, :].squeeze()
-
-        elif data_type=='roi':
-            return self._roi_data[(channel, roi_num)].squeeze()
-
-        else:
-            raise KeyError(f'data_type={data_type} not supported')
 
 
-
+from xas.handlers import ISSXspress3HDF5Handler
 # heavy-weight file handler
 db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
                         ISSXspress3HDF5Handler, overwrite=True)
