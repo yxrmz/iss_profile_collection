@@ -182,6 +182,40 @@ class SampleStage(Device):
     z = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
     th = Cpt(EpicsMotor, 'XF:08IDB-OP{Gon:Th:1}Mtr')
 
+    def mv(self, pos_dict):
+        '''
+        pos_dict = {'x' : -300,
+                      'y' : -60}
+        or
+        pos_dict = {'th' : -800}
+        '''
+        st_list = []
+        for axis, pos in pos_dict.items():
+            motor = getattr(self, axis)
+            if not motor.moving:
+                st = motor.move(pos, wait=False)
+                st_list.append(st)
+        if len(st_list) > 0:
+            return combine_status_list(st_list)
+        else:
+            return NullStatus()
+
+    def mvr(self, delta_dict):
+        pos_dict = {}
+        for axis, delta in delta_dict.items():
+            motor = getattr(self, axis)
+            if not motor.moving:
+                pos_dict[axis] = motor.position + delta
+        return self.mv(pos_dict)
+
+    def positions(self, *axes):
+        if len(axes) == 0:
+            axes = ['x', 'y', 'z', 'th']
+        pos_dict = {}
+        for axis in axes:
+            motor = getattr(self, axis)
+            pos_dict[axis] = motor.position
+        return pos_dict
 
 sample_stage = SampleStage(name='sample_stage')
 # samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
