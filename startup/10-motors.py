@@ -208,13 +208,17 @@ class SampleStage(Device):
                 pos_dict[axis] = motor.position + delta
         return self.mv(pos_dict)
 
-    def positions(self, *axes):
+    def positions(self, *axes, prefix=''):
         if len(axes) == 0:
             axes = ['x', 'y', 'z', 'th']
         pos_dict = {}
         for axis in axes:
             motor = getattr(self, axis)
-            pos_dict[axis] = motor.position
+            if len(prefix) > 0:
+                key = f'{prefix}_{axis}'
+            else:
+                key = axis
+            pos_dict[key] = motor.position
         return pos_dict
 
 sample_stage = SampleStage(name='sample_stage')
