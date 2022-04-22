@@ -262,12 +262,12 @@ if OLD_BLUESKY:
     install_qt_kicker()
 else:
     # Patch to fix Tom's terrible deeds
-    import matplotlib.backends.backend_qt5
+    import matplotlib.backends.backend_qt
     from matplotlib._pylab_helpers import Gcf
-    from matplotlib.backends.backend_qt5 import _create_qApp
+    from matplotlib.backends.backend_qt import _create_qApp
 
     _create_qApp()
-    qApp = matplotlib.backends.backend_qt5.qApp
+    qApp = matplotlib.backends.backend_qt.qApp
 
 
 RE.is_aborted = False
