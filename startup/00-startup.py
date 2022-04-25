@@ -156,6 +156,7 @@ else:
     # db = Broker_local.named('iss')
     db_proc = get_spectrum_catalog()
     nslsii.configure_base(get_ipython().user_ns, db, pbar=False)
+    nslsii.configure_kafka_publisher(RE, "iss")
 
 # nslsii.configure_base(get_ipython().user_ns, 'iss',  publish_documents_to_kafka=True)
 
