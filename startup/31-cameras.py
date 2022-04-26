@@ -151,7 +151,7 @@ class FoilCAMERA(CAMERA):
         self.read_foil_data()
 
     def _read_foil_info(self):
-        with open('/nsls2/xf08id/settings/json/foil_wheel.json') as fp:
+        with open(f'{ROOT_PATH_SHARED}/settings/json/foil_wheel.json') as fp:
             foil_info = json.load(fp)
         return foil_info
 

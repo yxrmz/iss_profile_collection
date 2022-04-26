@@ -8,7 +8,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     status_update_signal = None
     add_plans_question_box=None
 
-    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/plan_processor_test.json'):
+    def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/plan_processor_test.json'):
         super().__init__(json_file_path, boot_fresh=True)
         self.logger = self.get_logger()
         self.RE = RE
@@ -22,7 +22,6 @@ class PlanProcessor(PersistentListInteractingWithGUI):
 
     def get_logger(self):
         # Setup beamline specifics:
-        beamline_gpfs_path = '/nsls2/xf08id'
 
         logger = logging.getLogger('xas_re_logger')
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -31,8 +30,7 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         if not len(logger.handlers):
             logger.setLevel(logging.DEBUG)
             # Write DEBUG and INFO messages to /var/log/data_processing_worker/debug.log.
-            debug_file = logging.handlers.RotatingFileHandler(
-                beamline_gpfs_path + '/log/data_collection_debug.log',
+            debug_file = logging.handlers.RotatingFileHandler(f'{ROOT_PATH_SHARED}/log/data_collection_debug.log',
                 maxBytes=10000000, backupCount=9)
             debug_file.setLevel(logging.DEBUG)
             debug_file.setFormatter(formatter)

@@ -24,7 +24,8 @@ import numpy as np
 import pandas as pd
 import xraydb
 
-ROOT_PATH_SHARED = '/nsls2/xf08id'
+# ROOT_PATH_SHARED = '/nsls2/xf08id'
+ROOT_PATH_SHARED = '/nsls2/data/iss/legacy/xf08id'
 
 
 def time_now_str():

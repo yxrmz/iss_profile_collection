@@ -172,7 +172,7 @@ class PersistentListInteractingWithGUI:
 
 class SampleManager(PersistentListInteractingWithGUI):
 
-    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/sample_manager.json'):
+    def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/sample_manager.json'):
         super().__init__(json_file_path)
         # self.samples = []
         # self.json_file_path = json_file_path
@@ -321,7 +321,7 @@ sample_manager = SampleManager()
 
 
 class BatchScanManager(PersistentListInteractingWithGUI):
-    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
+    def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/scan_sequence_manager.json'):
         super().__init__(json_file_path)
 
     #Class specific decorators
@@ -395,7 +395,7 @@ scan_sequence_manager = BatchScanManager()
 class BatchManager(PersistentListInteractingWithGUI):
 
     def __init__(self, sample_manager : SampleManager, scan_manager: ScanManager, scan_sequence_manager : BatchScanManager,
-                 json_file_path='/nsls2/xf08id/settings/json/batch_manager.json'):
+                 json_file_path=f'{ROOT_PATH_SHARED}/settings/json/batch_manager.json'):
         super().__init__(json_file_path)
 
         self.sample_manager = sample_manager

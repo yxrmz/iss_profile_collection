@@ -14,7 +14,7 @@ from collections import Counter
 
 
 class ScanManager():
-    def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_manager.json'):
+    def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/scan_manager.json'):
         self.init_global_manager(json_file_path)
         self.load_local_manager()
         self.trajectory_path = trajectory_manager.trajectory_path

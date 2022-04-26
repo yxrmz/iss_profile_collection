@@ -294,7 +294,7 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
 
 def set_reference_foil(element:str = 'Mn'):
     # Adding reference foil element list
-    with open('/nsls2/xf08id/settings/json/foil_wheel.json') as fp:
+    with open(f'{ROOT_PATH_SHARED}/settings/json/foil_wheel.json') as fp:
         reference_foils = json.load(fp)
     elems = [item['element'] for item in reference_foils]
 
@@ -316,7 +316,7 @@ def set_reference_foil(element:str = 'Mn'):
 
 def set_attenuator(thickness:int  = 0, **kwargs):
     # Adding reference foil element list
-    with open('/nsls2/xf08id/settings/json/attenuator.json') as fp:
+    with open(f'{ROOT_PATH_SHARED}/settings/json/attenuator.json') as fp:
         attenuators_list = json.load(fp)
     thickness_str_list = [item['attenuator'] for item in attenuators_list]
     thickness_str = str(thickness)
