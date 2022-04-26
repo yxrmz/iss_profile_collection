@@ -54,7 +54,7 @@ def make_filename(filename):
         Makes a rootpath, filepath pair
     '''
     # RAW_FILEPATH is a global defined in 00-startup.py
-    write_path_template = os.path.join(RAW_FILEPATH, '%Y/%m/%d')
+    write_path_template = os.path.join(RAW_PATH, 'encpb','%Y/%m/%d')
     # path without the root
     filepath = os.path.join(datetime.now().strftime(write_path_template), filename)
     return filepath
@@ -89,6 +89,7 @@ class EncoderFS(Encoder):
         full_path = make_filename(filename)
         # with the root
         self._full_path = os.path.join(ROOT_PATH, full_path)  # stash for future reference
+        #print_to_gui(f' filepath {self._full_path}')
 
         # FIXME: Quick TEMPORARY fix for beamline disaster
         # we are writing the file to a temp directory in the ioc and
@@ -139,8 +140,10 @@ class EncoderFS(Encoder):
         workstation_full_path = os.path.join(workstation_file_root, self._filename)
         # print('Moving file from {} to {}'.format(workstation_full_path, self._full_path))
         print_to_gui(f'{ttime.ctime()} Moving file from {workstation_full_path} to {self._full_path}')
-        cp_stat = shutil.copy(workstation_full_path, self._full_path)
 
+        print_to_gui(f'Here')
+        cp_stat = shutil.copy(workstation_full_path, self._full_path)
+        print_to_gui(f'Copy done')
         # HACK: Make datum documents here so that they are available for collect_asset_docs
         # before collect() is called. May need changes to RE to do this properly. - Dan A.
 

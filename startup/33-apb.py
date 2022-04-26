@@ -171,7 +171,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         #self.filename_target = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         # Note: temporary static file name in GPFS, due to the limitation of 40 symbols in the filename field.
         #self.filename = f'{ROOT_PATH}/data/apb/{file_uid[:8]}'
-        self.filename = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
+        self.filename = f'{ROOT_PATH}/{RAW_PATH}/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}'
         self.filename_bin.put(f'{self.filename}.bin')
         self.filename_txt.put(f'{self.filename}.txt')
 

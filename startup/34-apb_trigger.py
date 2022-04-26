@@ -50,7 +50,7 @@ class AnalogPizzaBoxTrigger(Device):
         staged_list = super().stage()
 
         file_uid = new_uid()
-        self.fn = f'{ROOT_PATH}/data/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}.bin'
+        self.fn = f'{ROOT_PATH}/{RAW_PATH}/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}.bin'
         set_and_wait(self.filename, self.fn)
         # self.poke_streaming_destination()
         self._resource_uid = new_uid()
