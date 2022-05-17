@@ -310,21 +310,15 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     det_arm = Cpt(DetectorArm, name='det_arm')
     crystal1 = Cpt(MainJohannCrystal, name='crystal1')
 
-    # det_arm_ba = det_arm.ba
-
-
     ba = Cpt(PseudoSingle, name='ba')
 
-    # _real = ['det_arm_ba']#, 'det_arm.x_det', 'det_arm.y_det',
-             # 'crystal1.ba', 'crystal1.x_cr']
-
     def __init__(self, *args, R=1000, crystal_material='Si', hkl='733', **kwargs):
-
         super().__init__(*args, **kwargs)
-        # self._real = [self.det_arm.ba, self.det_arm.x_det, self.det_arm.y_det,
-        #               self.crystal1.ba, self.crystal1.x_cr]
-        # self._real = [getattr(self, attr)
-        #               for attr, cpt in self._get_real_positioners()]
+        self.RC = RowlandCircle(R)
+        self.crystal_material = crystal_material
+        self.hkl = [int(i) for i in hkl]
+
+    def update_crystal(self, R, crystal_material, hkl):
         self.RC = RowlandCircle(R)
         self.crystal_material = crystal_material
         self.hkl = [int(i) for i in hkl]
@@ -335,9 +329,6 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
         x_cr, _ = self.RC.crystal_coords
         x_cr = self.RC.R + x_cr
         x_det, y_det = self.RC.detector_coords
-        # return self.RealPosition(det_arm_ba=ba, det_arm_x_det=x_det, det_arm_y_det=y_det,
-        #                          crystal1_ba=ba, crystal1_x_cr=x_cr)
-
         det_arm_real_pos = self.det_arm.PseudoPosition(ba=ba, x_det=x_det, y_det=y_det)
         crystal1_real_pos = self.crystal1.PseudoPosition(ba=ba, x_cr=x_cr)
         return self.RealPosition(det_arm=det_arm_real_pos,
