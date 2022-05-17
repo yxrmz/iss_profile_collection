@@ -196,15 +196,15 @@ class DetectorArm(PseudoPositioner):
         '''
         Read parking positions from previous records
         '''
-
         self.x_0 = -204.5
-        self.dx = 177.21
         self.th1_0 = 62
         self.th2_0 = -62
+        self.dx = 177.21
+        self.h = 485.6211760724097
 
 
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
+    def _forward(self, pseudo_pos):
+        # print(pseudo_pos)
         ba, x_det, y_det = pseudo_pos.ba, pseudo_pos.x_det, pseudo_pos.y_det
         # print(f'{}, {}, {}')
         # print(f'{ba_deg=}, {x_det=}, {y_det=}')
@@ -216,77 +216,125 @@ class DetectorArm(PseudoPositioner):
         th1 = np.arcsin(sin_th1)
         th2 = phi + th1
         x = self.x_0 - self.dx + self.L1 * np.cos(th1) - self.L2 * np.cos(phi) - x_det
-        kwargs = {f'{self.name}_x': ba, f'{self.name}_th1': np.rad2deg(th1), f'{self.name}_th2': -np.rad2deg(th2)}
-        return self.RealPosition(**kwargs)
+
+        # print('I am at the end of forward')
+        # kwargs = {f'{self.name}_x': ba, f'{self.name}_th1': np.rad2deg(th1), f'{self.name}_th2': -np.rad2deg(th2)}
+        # return self.RealPosition(**kwargs)
+        return self.RealPosition(x, np.rad2deg(th1), -np.rad2deg(th2))
+
+    def _inverse(self, real_pos):
+        # print(real_pos)
+        x, th1, th2 = real_pos.x, real_pos.th1, real_pos.th2
+        th2 *= -1
+        ba = (180 - (th2 - th1)) / 2
+        x_det = self.x_0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
+        y_det = self.h - self.L1 * np.sin(np.deg2rad(th1)) - self.L2 * np.sin(np.deg2rad(th2 - th1))
+        # print('I am at the end of inverse')
+        # kwargs = {f'{self.name}_ba': ba, f'{self.name}_x_det': x_det, f'{self.name}_y_det': y_det}
+        # return self.PseudoPosition(**kwargs)
+        return self.PseudoPosition(ba, x_det, y_det)
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        return self._forward(pseudo_pos)
 
     @real_position_argument
     def inverse(self, real_pos):
-        x, th1, th2 = real_pos.x, real_pos.th1, real_pos.th2
-        th2 *= -1
-        ba = (180 - (th2 - th1))/2
-        y_det = self.h - self.L1 * np.sin(np.deg2rad(th1)) - self.L2 * np.sin(np.deg2rad(th2 - th1))
-        x_det = self.x_0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
-        kwargs = {f'{self.name}_ba' : ba, f'{self.name}_x_det' : x_det, f'{self.name}_y_det' : y_det}
-        return self.PseudoPosition(**kwargs)
+        return self._inverse(real_pos)
+
 
 det_arm = DetectorArm(name='det_arm')
 ttime.sleep(0.1)
 # det_arm.set_parking_pos()
 
-#######
+dffddfdfgdfdfg
 
-
-# def forward(pseudo_pos, h=det_arm.h, L1=det_arm.L1, L2=det_arm.L2, x_0=det_arm.x_0, dx=det_arm.dx):
-#     ba_deg, x_det, y_det = pseudo_pos
-#     # print(f'{}, {}, {}')
-#     print(f'{ba_deg=}, {x_det=}, {y_det=}')
-#     ba = np.deg2rad(ba_deg)
-#     phi = np.pi - 2 * ba
-#     print(f'{phi=}')
-#     sin_th1 = (h - L2 * np.sin(phi) - y_det) / L1
-#     print(f'{sin_th1=}')
-#     th1 = np.arcsin(sin_th1)
-#     th2 = phi + th1
-#     x = x_0 - dx + L1 * np.cos(th1) - L2 * np.cos(phi) - x_det
+# #######
+# from ophyd import SoftPositioner
+# class SPseudo3x3(PseudoPositioner):
+#     """
+#     Interface to three positioners in a coordinate system that flips the sign.
+#     """
+#     pseudo1 = Cpt(PseudoSingle, limits=(-10, 10), egu='a')
+#     pseudo2 = Cpt(PseudoSingle, limits=(-10, 10), egu='b')
+#     pseudo3 = Cpt(PseudoSingle, limits=None, egu='c')
 #
-#     return x, np.rad2deg(th1), -np.rad2deg(th2)
+#     real1 = Cpt(SoftPositioner, init_pos=10.)
+#     real2 = Cpt(SoftPositioner, init_pos=10.)
+#     real3 = Cpt(SoftPositioner, init_pos=10.)
+#
+#     @pseudo_position_argument
+#     def forward(self, pseudo_pos):
+#         "Given a position in the psuedo coordinate system, transform to the real coordinate system."
+#         return self.RealPosition(
+#             real1=-pseudo_pos.pseudo1,
+#             real2=-pseudo_pos.pseudo2,
+#             real3=-pseudo_pos.pseudo3
+#         )
+#
+#     @real_position_argument
+#     def inverse(self, real_pos):
+#         "Given a position in the real coordinate system, transform to the pseudo coordinate system."
+#         return self.PseudoPosition(
+#             pseudo1=-real_pos.real1,
+#             pseudo2=-real_pos.real2,
+#             pseudo3=-real_pos.real3
+#         )
+#
+# bla = SPseudo3x3(name='bla')
+#
+# ######
+# # def forward(pseudo_pos, h=det_arm.h, L1=det_arm.L1, L2=det_arm.L2, x_0=det_arm.x_0, dx=det_arm.dx):
+# #     ba_deg, x_det, y_det = pseudo_pos
+# #     # print(f'{}, {}, {}')
+# #     print(f'{ba_deg=}, {x_det=}, {y_det=}')
+# #     ba = np.deg2rad(ba_deg)
+# #     phi = np.pi - 2 * ba
+# #     print(f'{phi=}')
+# #     sin_th1 = (h - L2 * np.sin(phi) - y_det) / L1
+# #     print(f'{sin_th1=}')
+# #     th1 = np.arcsin(sin_th1)
+# #     th2 = phi + th1
+# #     x = x_0 - dx + L1 * np.cos(th1) - L2 * np.cos(phi) - x_det
+# #
+# #     return x, np.rad2deg(th1), -np.rad2deg(th2)
+#
+# ba_set = 89
+# row_circle.compute_geometry(ba_set)
+# ccs = det_arm.forward((ba_set, *row_circle.detector_coords))
+# print(ccs)
+#
+# det_arm.inverse((det_arm.x.position, det_arm.th1.position, det_arm.th2.position))
+#
+# det_arm.x.move(ccs[0], wait=False)
+# det_arm.th1.move(ccs[1], wait=False)
+# det_arm.th2.move(ccs[2], wait=False)
+#
+# plt.figure(2, clear=True)
+# for ba_set in np.arange(65, 91):
+#     row_circle.compute_geometry(ba_set)
+#     ccs = forward((ba_set, *row_circle.detector_coords))
+#     plt.plot(ba_set, ccs[0], 'k.')
+#     plt.plot(ba_set, ccs[1], 'm.')
+#     plt.plot(ba_set, ccs[2], 'b.')
+# # # det_arm.forward((90, 0, 0))
 
-ba_set = 89
-row_circle.compute_geometry(ba_set)
-ccs = det_arm.forward((ba_set, *row_circle.detector_coords))
-print(ccs)
 
-det_arm.inverse((det_arm.x.position, det_arm.th1.position, det_arm.th2.position))
-
-det_arm.x.move(ccs[0], wait=False)
-det_arm.th1.move(ccs[1], wait=False)
-det_arm.th2.move(ccs[2], wait=False)
-
-plt.figure(2, clear=True)
-for ba_set in np.arange(65, 91):
-    row_circle.compute_geometry(ba_set)
-    ccs = forward((ba_set, *row_circle.detector_coords))
-    plt.plot(ba_set, ccs[0], 'k.')
-    plt.plot(ba_set, ccs[1], 'm.')
-    plt.plot(ba_set, ccs[2], 'b.')
-# # det_arm.forward((90, 0, 0))
-
-
-class JohannMultiCrystalSpectrometer(Device):
-# class JohannMultiCrystalSpectrometer(PseudoPositioner):
-
-    # crystal0 = Cpt(JohannCrystal, ':0', leading=True)
-    # crystal1 = Cpt(JohannCrystal, name='crystal1')
-    det_arm = Cpt(DetectorArm, name='det_arm')
-
-
-
-    # _real = ['motor_crystal_x',
-    #          'motor_crystal_y',
-    #          'motor_detector_y']
-# PseudoPositioner
-
-johann_spectrometer = JohannMultiCrystalSpectrometer(name='johann_spectrometer')
+# class JohannMultiCrystalSpectrometer(Device):
+# # class JohannMultiCrystalSpectrometer(PseudoPositioner):
+#
+#     # crystal0 = Cpt(JohannCrystal, ':0', leading=True)
+#     # crystal1 = Cpt(JohannCrystal, name='crystal1')
+#     det_arm = Cpt(DetectorArm, name='det_arm')
+#
+#
+#
+#     # _real = ['motor_crystal_x',
+#     #          'motor_crystal_y',
+#     #          'motor_detector_y']
+# # PseudoPositioner
+#
+# johann_spectrometer = JohannMultiCrystalSpectrometer(name='johann_spectrometer')
 
 # class JohannMultiCrystalSpectrometer(PseudoPositioner, JohannMotorCollection):
 #
@@ -304,15 +352,15 @@ johann_spectrometer = JohannMultiCrystalSpectrometer(name='johann_spectrometer')
 
 
 
-    y_all = Cpt(EpicsMotor, '-Ax:P}Mtr')
-    x_all = Cpt(EpicsMotor, '-Ax:P}Mtr')
-    motor_crystal_x = auxxy.x
-    motor_crystal_y = auxxy.y
-    motor_detector_y = huber_stage.z
-    _real = ['x0', 'y0', 'pitch0', 'yaw0']
-
-    # def __init__(self):
+    # y_all = Cpt(EpicsMotor, '-Ax:P}Mtr')
+    # x_all = Cpt(EpicsMotor, '-Ax:P}Mtr')
+    # motor_crystal_x = auxxy.x
+    # motor_crystal_y = auxxy.y
+    # motor_detector_y = huber_stage.z
+    # _real = ['x0', 'y0', 'pitch0', 'yaw0']
     #
+    # # def __init__(self):
+    # #
 
 
 
