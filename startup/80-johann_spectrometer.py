@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from xas.spectrometer import Crystal, analyze_many_elastic_scans
 import copy
@@ -104,6 +105,214 @@ motor_emission_key = 'motor_emission'
 motor_emission_dict = {'name': johann_spectrometer_motor.name, 'description' : 'Emission energy', 'object': johann_spectrometer_motor, 'group': 'spectrometer'}
 motor_dictionary['motor_emission'] = motor_emission_dict
 
+# class JohannCrystal(Device):
+#     x = Cpt(EpicsMotor, '}X')
+#     y = Cpt(EpicsMotor, '}Y')
+#     pitch = Cpt(EpicsMotor, '}PITCH')
+#     yaw = Cpt(EpicsMotor, '}YAW')
+#
+#     def __init__(self, *args, leading=True, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.leading = leading
+
+class RowlandCircle:
+
+    def __init__(self, R=1000, det_dR=0, src_x=0, src_y=0):
+        self.R = R
+        self.det_dR = det_dR
+        self.x_src = src_x
+        self.y_src = src_y
+
+    def compute_geometry(self, ba_deg):
+        ba = np.deg2rad(ba_deg)
+
+        self.y_cr = 0 + self.x_src
+        self.x_cr = -self.R * np.cos(np.pi / 2 - ba) + self.y_src
+
+        self.x_det = +2 * self.x_cr * np.cos(ba) * np.cos(ba) - self.det_dR * np.cos(np.pi - 2 * ba) + self.x_src
+        self.y_det = -2 * self.x_cr * np.cos(ba) * np.sin(ba) - self.det_dR * np.sin(np.pi - 2 * ba) + self.y_src
+
+    @property
+    def crystal_coords(self):
+        return (self.x_cr, self.y_cr)
+
+    @property
+    def detector_coords(self):
+        return (self.x_det, self.y_det)
+    #
+    def plot_full_range(self):
+
+        ba_deg = np.linspace(65, 89, 101)
+        plt.figure(1)
+        plt.clf()
+        plt.plot(self.x_src, self.y_src, 'ko')
+
+        for each_ba_deg in ba_deg:
+            self.compute_geometry(each_ba_deg)
+            x_cr, y_cr = self.crystal_coords
+            x_det, y_det = self.detector_coords
+
+            plt.plot(x_cr, y_cr, 'bo')
+            plt.plot(x_det, y_det, 'ro')
+            plt.axis('square')
+
+
+
+
+
+row_circle = RowlandCircle()
+row_circle.plot_full_range()
+
+# class DetectorArm(Device):
+class DetectorArm(PseudoPositioner):
+
+    L1 = 550  # length of the big arm
+    L2 = 81  # distance between the second gon and the sensetive surface of the detector
+
+    x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
+    th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc:2-Ax:8}Mtr') # give better names
+    th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc:2-Ax:6}Mtr')
+
+    ba = Cpt(PseudoSingle, name='ba')
+    x_det = Cpt(PseudoSingle, name='x_det')
+    y_det = Cpt(PseudoSingle, name='y_det')
+
+    # _real = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # self._real = [x.name, th1.name, th2.name]
+        self.restore_parking_pos()
+
+
+    def set_parking_pos(self):
+        self.th1_0 = self.th1.position
+        self.th2_0 = self.th2.position
+        self.h = self.L1 * np.sin(np.deg2rad(self.th1_0))
+        self.x_0 = self.x.position
+        self.dx = self.L1 * np.cos(np.deg2rad(self.th1_0)) - self.L2
+
+    def restore_parking_pos(self):
+        '''
+        Read parking positions from previous records
+        '''
+
+        self.x_0 = -204.5
+        self.dx = 177.21
+        self.th1_0 = 62
+        self.th2_0 = -62
+
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        ba, x_det, y_det = pseudo_pos.ba, pseudo_pos.x_det, pseudo_pos.y_det
+        # print(f'{}, {}, {}')
+        # print(f'{ba_deg=}, {x_det=}, {y_det=}')
+        ba_rad = np.deg2rad(ba)
+        phi = np.pi - 2 * ba_rad
+        # print(f'{phi=}')
+        sin_th1 = (self.h - self.L2 * np.sin(phi) - y_det) / self.L1
+        # print(f'{sin_th1=}')
+        th1 = np.arcsin(sin_th1)
+        th2 = phi + th1
+        x = self.x_0 - self.dx + self.L1 * np.cos(th1) - self.L2 * np.cos(phi) - x_det
+        kwargs = {f'{self.name}_x': ba, f'{self.name}_th1': np.rad2deg(th1), f'{self.name}_th2': -np.rad2deg(th2)}
+        return self.RealPosition(**kwargs)
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        x, th1, th2 = real_pos.x, real_pos.th1, real_pos.th2
+        th2 *= -1
+        ba = (180 - (th2 - th1))/2
+        y_det = self.h - self.L1 * np.sin(np.deg2rad(th1)) - self.L2 * np.sin(np.deg2rad(th2 - th1))
+        x_det = self.x_0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
+        kwargs = {f'{self.name}_ba' : ba, f'{self.name}_x_det' : x_det, f'{self.name}_y_det' : y_det}
+        return self.PseudoPosition(**kwargs)
+
+det_arm = DetectorArm(name='det_arm')
+ttime.sleep(0.1)
+# det_arm.set_parking_pos()
+
+#######
+
+
+# def forward(pseudo_pos, h=det_arm.h, L1=det_arm.L1, L2=det_arm.L2, x_0=det_arm.x_0, dx=det_arm.dx):
+#     ba_deg, x_det, y_det = pseudo_pos
+#     # print(f'{}, {}, {}')
+#     print(f'{ba_deg=}, {x_det=}, {y_det=}')
+#     ba = np.deg2rad(ba_deg)
+#     phi = np.pi - 2 * ba
+#     print(f'{phi=}')
+#     sin_th1 = (h - L2 * np.sin(phi) - y_det) / L1
+#     print(f'{sin_th1=}')
+#     th1 = np.arcsin(sin_th1)
+#     th2 = phi + th1
+#     x = x_0 - dx + L1 * np.cos(th1) - L2 * np.cos(phi) - x_det
+#
+#     return x, np.rad2deg(th1), -np.rad2deg(th2)
+
+ba_set = 89
+row_circle.compute_geometry(ba_set)
+ccs = det_arm.forward((ba_set, *row_circle.detector_coords))
+print(ccs)
+
+det_arm.inverse((det_arm.x.position, det_arm.th1.position, det_arm.th2.position))
+
+det_arm.x.move(ccs[0], wait=False)
+det_arm.th1.move(ccs[1], wait=False)
+det_arm.th2.move(ccs[2], wait=False)
+
+plt.figure(2, clear=True)
+for ba_set in np.arange(65, 91):
+    row_circle.compute_geometry(ba_set)
+    ccs = forward((ba_set, *row_circle.detector_coords))
+    plt.plot(ba_set, ccs[0], 'k.')
+    plt.plot(ba_set, ccs[1], 'm.')
+    plt.plot(ba_set, ccs[2], 'b.')
+# # det_arm.forward((90, 0, 0))
+
+
+class JohannMultiCrystalSpectrometer(Device):
+# class JohannMultiCrystalSpectrometer(PseudoPositioner):
+
+    # crystal0 = Cpt(JohannCrystal, ':0', leading=True)
+    # crystal1 = Cpt(JohannCrystal, name='crystal1')
+    det_arm = Cpt(DetectorArm, name='det_arm')
+
+
+
+    # _real = ['motor_crystal_x',
+    #          'motor_crystal_y',
+    #          'motor_detector_y']
+# PseudoPositioner
+
+johann_spectrometer = JohannMultiCrystalSpectrometer(name='johann_spectrometer')
+
+# class JohannMultiCrystalSpectrometer(PseudoPositioner, JohannMotorCollection):
+#
+#     energy = Cpt(PseudoSingle, name='emission_energy')
+#
+#     x0 = Cpt(EpicsMotor, '')
+#     y0 = Cpt(EpicsMotor, '')
+#     pitch0 = Cpt(EpicsMotor, '')
+#     yaw0 = Cpt(EpicsMotor, '')
+#
+#     det_gon0
+
+
+
+
+
+
+    y_all = Cpt(EpicsMotor, '-Ax:P}Mtr')
+    x_all = Cpt(EpicsMotor, '-Ax:P}Mtr')
+    motor_crystal_x = auxxy.x
+    motor_crystal_y = auxxy.y
+    motor_detector_y = huber_stage.z
+    _real = ['x0', 'y0', 'pitch0', 'yaw0']
+
+    # def __init__(self):
+    #
 
 
 
