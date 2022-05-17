@@ -117,20 +117,19 @@ motor_dictionary['motor_emission'] = motor_emission_dict
 
 class RowlandCircle:
 
-    def __init__(self, R=1000, det_dR=0, src_x=0, src_y=0):
+    def __init__(self, R=1000, src_x=0, src_y=0):
         self.R = R
-        self.det_dR = det_dR
         self.x_src = src_x
         self.y_src = src_y
 
-    def compute_geometry(self, ba_deg):
+    def compute_geometry(self, ba_deg, det_dR=0):
         ba = np.deg2rad(ba_deg)
 
         self.y_cr = 0 + self.x_src
         self.x_cr = -self.R * np.cos(np.pi / 2 - ba) + self.y_src
 
-        self.x_det = +2 * self.x_cr * np.cos(ba) * np.cos(ba) - self.det_dR * np.cos(np.pi - 2 * ba) + self.x_src
-        self.y_det = -2 * self.x_cr * np.cos(ba) * np.sin(ba) - self.det_dR * np.sin(np.pi - 2 * ba) + self.y_src
+        self.x_det = +2 * self.x_cr * np.cos(ba) * np.cos(ba) - det_dR * np.cos(np.pi - 2 * ba) + self.x_src
+        self.y_det = -2 * self.x_cr * np.cos(ba) * np.sin(ba) - det_dR * np.sin(np.pi - 2 * ba) + self.y_src
 
     @property
     def crystal_coords(self):
@@ -228,11 +227,11 @@ class DetectorArm(PseudoPositioner):
         return self._inverse(real_pos)
 
 
-det_arm = DetectorArm(name='det_arm')
+# det_arm = DetectorArm(name='det_arm')
 
 
 from ophyd import SoftPositioner
-class LeadingJohannCrystal(PseudoPositioner):
+class MainJohannCrystal(PseudoPositioner):
     x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
     y = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc:2-Ax:7}Mtr')
     roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
@@ -299,12 +298,64 @@ class LeadingJohannCrystal(PseudoPositioner):
 
     @real_position_argument
     def inverse(self, real_pos):
-        pseudo_pos = self._inverse(real_pos)
-        return pseudo_pos
+        return self._inverse(real_pos)
 
-j_cr = LeadingJohannCrystal(name='j_cr')
+# j_cr = LeadingJohannCrystal(name='j_cr')
+
+# class JohannMultiCrystalSpectrometer(Device):
+from collections import (OrderedDict, namedtuple)
 
 
+class JohannMultiCrystalSpectrometer(PseudoPositioner):
+    det_arm = Cpt(DetectorArm, name='det_arm')
+    crystal1 = Cpt(MainJohannCrystal, name='crystal1')
+
+    # det_arm_ba = det_arm.ba
+
+
+    ba = Cpt(PseudoSingle, name='ba')
+
+    # _real = ['det_arm_ba']#, 'det_arm.x_det', 'det_arm.y_det',
+             # 'crystal1.ba', 'crystal1.x_cr']
+
+    def __init__(self, *args, R=1000, crystal_material='Si', hkl='733', **kwargs):
+
+        super().__init__(*args, **kwargs)
+        # self._real = [self.det_arm.ba, self.det_arm.x_det, self.det_arm.y_det,
+        #               self.crystal1.ba, self.crystal1.x_cr]
+        # self._real = [getattr(self, attr)
+        #               for attr, cpt in self._get_real_positioners()]
+        self.RC = RowlandCircle(R)
+        self.crystal_material = crystal_material
+        self.hkl = [int(i) for i in hkl]
+
+    def _forward(self, pseudo_pos):
+        ba = pseudo_pos.ba
+        self.RC.compute_geometry(ba)
+        x_cr, _ = self.RC.crystal_coords
+        x_cr = self.RC.R + x_cr
+        x_det, y_det = self.RC.detector_coords
+        # return self.RealPosition(det_arm_ba=ba, det_arm_x_det=x_det, det_arm_y_det=y_det,
+        #                          crystal1_ba=ba, crystal1_x_cr=x_cr)
+
+        det_arm_real_pos = self.det_arm.PseudoPosition(ba=ba, x_det=x_det, y_det=y_det)
+        crystal1_real_pos = self.crystal1.PseudoPosition(ba=ba, x_cr=x_cr)
+        return self.RealPosition(det_arm=det_arm_real_pos,
+                                 crystal1=crystal1_real_pos)
+
+    def _inverse(self, real_pos):
+        bas = real_pos.det_arm.ba, real_pos.crystal1.ba
+        return self.PseudoPosition(ba=np.mean(bas))
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        return self._forward(pseudo_pos)
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        return self._inverse(real_pos)
+
+jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 # ba_set = 90
 # row_circle.compute_geometry(ba_set)
