@@ -337,9 +337,9 @@ def scan_beam_center(camera=camera_sp1, emin=6000, emax=12000, nsteps=10, roll_r
     yield from bps.open_run()
 
     for hhm_roll in hhm_rolls:
+        yield from bps.mv(hhm.roll, hhm_roll)
         for energy in energies:
             # yield from bps.mv(hhm.energy, energy)
-            yield from bps.mv(hhm.roll, hhm_roll)
             yield from move_mono_energy(energy, step=500, beampos_tol=10)
             camera.adjust_camera_exposure_time()
             yield from bps.trigger_and_read([hhm.energy, hhm.roll, camera_sp1.stats1.centroid])

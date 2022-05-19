@@ -48,7 +48,7 @@ class BPM(SingleTrigger, ProsilicaDetector):
             return status
 
     def adjust_camera_exposure_time(self, roi_index=1,
-                                    target_max_counts=150, atol=10,
+                                    target_max_counts=80, atol=10,
                                     max_exp_time_thresh=1,
                                     min_exp_time_thresh=0.00002):
         stats = getattr(self, f'stats{roi_index}')
