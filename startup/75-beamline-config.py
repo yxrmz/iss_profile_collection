@@ -62,9 +62,9 @@ def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, forc
         yield from bps.mv(hhm.energy, energy)
 
 def tabulate_hhmy_position_plan(stdout=sys.stdout):
-    _energies = [13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000]  # np.arange(5000, 11000, 1000)
+    # _energies = [13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000]  # np.arange(5000, 11000, 1000)
     # _energies = [4900, 5100, 5500, 6000, 7000, 8000, 9000, 10000, 11000, 12000]  # np.arange(5000, 11000, 1000)
-
+    _energies = [25000, 27500, 30000]  # np.arange(5000, 11000, 1000)
     # _energies = [23000]
     data_df = pd.DataFrame(columns=['energy', 'hhmy', 'uid'])
 
@@ -78,7 +78,9 @@ def tabulate_hhmy_position_plan(stdout=sys.stdout):
                                   #'hhrmy' : hhrm.y.user_readback.get(),
                                   'uid' : uid},
                                    ignore_index=True)
-        data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2_high_energies.json')
+        # data_df.to_json('/nsls2/data/iss/legacy/xf08id/calibration/beamline_hhmy_tabulation_2022_05_19.json')
+        data_df.to_json('/nsls2/data/iss/legacy/xf08id/calibration/beamline_hhmy_tabulation_2022_05_19_high_energies_2.json')
+        # data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2022_05_19_beamline_tabulation/beamline_hhmy_tabulation_high_energies.json')
 
 
 

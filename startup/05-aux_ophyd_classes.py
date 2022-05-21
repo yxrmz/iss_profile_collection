@@ -1,7 +1,10 @@
 from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
-                   EpicsSignal)
-from ophyd import Device, Component as Cpt, EpicsSignal, EpicsSignalRO, Kind, set_and_wait
+                   EpicsSignal, EpicsSignalRO, Kind, set_and_wait,
+                   PseudoPositioner, PseudoSingle, SoftPositioner)
 from ophyd.sim import NullStatus
+
+from ophyd.pseudopos import (pseudo_position_argument,
+                             real_position_argument)
 
 from bluesky.preprocessors import monitor_during_wrapper
 
