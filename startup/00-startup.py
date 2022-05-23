@@ -22,14 +22,18 @@ import pandas as pd
 import xraydb
 from bluesky.utils import PersistentDict
 
-
-# ROOT_PATH_SHARED = '/nsls2/xf08id'
-ROOT_PATH_SHARED = '/nsls2/data/iss/legacy/xf08id'
-
 # the file paths for acquitision and analysis
+
+ROOT_PATH_SHARED = '/nsls2/data/iss/legacy/xf08id'
 ROOT_PATH = '/nsls2/data/iss/legacy'
 RAW_PATH = 'raw'
 USER_PATH = 'processed'
+
+
+# ROOT_PATH_SHARED = '/nsls2/xf08id'
+# ROOT_PATH = '/nsls2/xf08id'
+# RAW_PATH = 'data'
+# USER_PATH = 'users'
 
 
 def time_now_str():

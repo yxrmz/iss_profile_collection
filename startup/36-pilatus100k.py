@@ -179,7 +179,8 @@ class PilatusHDF5(PilatusBase):
     hdf5 = Cpt(HDF5PluginWithFileStore,
                suffix='HDF1:',
                root='/',
-               write_path_template=f'{ROOT_PATH}/{RAW_PATH}/pil100k/%Y/%m/%d')
+               #write_path_template=f'{ROOT_PATH}/{RAW_PATH}/pil100k/%Y/%m/%d'),
+               write_path_template=f'/nsls2/xf08id/data/pil100k/%Y/%m/%d')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -234,6 +235,9 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.cam.array_counter.put(0)
         self.cam.trigger_mode.put(3)
         self.cam.image_mode.put(1)
+
+        # self.hdf5.blocking_callbacks.put(1)
+
         staged_list += self.ext_trigger_device.stage()
         return staged_list
 
@@ -245,6 +249,7 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.cam.image_mode.put(0)
         self.set_num_images(1)
         self.set_exposure_time(1)
+        # self.hdf5.blocking_callbacks.put(0)
         unstaged_list += self.ext_trigger_device.unstage()
         return unstaged_list
 

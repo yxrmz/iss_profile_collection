@@ -176,13 +176,9 @@ class DetectorArm(PseudoPositioner):
     x_det = Cpt(PseudoSingle, name='x_det')
     y_det = Cpt(PseudoSingle, name='y_det')
 
-    # _real = []
-
     def __init__(self, *args, **kwargs):
         self.restore_parking()
         super().__init__(*args, **kwargs)
-        # self._real = [x.name, th1.name, th2.name]
-
 
     def set_parking(self):
         self.x_0 = self.x.position
@@ -195,7 +191,7 @@ class DetectorArm(PseudoPositioner):
         '''
         Read parking positions from previous records
         '''
-        self.x_0 = -272.5
+        self.x_0 = 0 # high limit of this motor should be at 592 mm
         self.th1_0 = 69
         self.th2_0 = -69
         self.dx = self.L1 * np.cos(np.deg2rad(self.th1_0)) - self.L2
@@ -227,14 +223,11 @@ class DetectorArm(PseudoPositioner):
     def inverse(self, real_pos):
         return self._inverse(real_pos)
 
-
 # det_arm = DetectorArm(name='det_arm')
 
-
-# from ophyd import SoftPositioner
 class MainJohannCrystal(PseudoPositioner):
     x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
-    y = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc:2-Ax:7}Mtr')
+    y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
     roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
@@ -243,8 +236,8 @@ class MainJohannCrystal(PseudoPositioner):
     ba = Cpt(PseudoSingle, name='ba')
     x_cr = Cpt(PseudoSingle, name='x_cr')
 
-    _real = ['x', 'roll']
-    _pseudo = ['ba', 'x_cr']
+    _real = ['x', 'roll', 'y', 'yaw']
+    _pseudo = ['ba', 'x_cr', 'y', 'yaw']
 
     def __init__(self, *args, **kwargs):
         self.restore_parking()
@@ -264,7 +257,7 @@ class MainJohannCrystal(PseudoPositioner):
     def restore_parking(self):
         self.x_0 = 1000.000
         self.y_0 = 4.438
-        self.roll_0 = 3.740
+        self.roll_0 = 3.080
         self.yaw_0 = 0.370
 
 
@@ -279,21 +272,16 @@ class MainJohannCrystal(PseudoPositioner):
             raise Exception('angle offset for a crystal must be 1,2, or 3')
 
     def _forward(self, pseudo_pos):
-        ba, x_cr = pseudo_pos.ba, pseudo_pos.x_cr
-        # print(f'{ba=}, {x_cr=}')
-
+        ba, x_cr, y, yaw = pseudo_pos.ba, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
         roll = -(90 - ba - self.angle_offset.position - self.roll_0) * 1000
         x = self.x_0 - x_cr
-        # print(f'{x=}, {roll=}')
-        return self.RealPosition(x=x, roll=roll)
+        return self.RealPosition(x=x, roll=roll, y=y, yaw=yaw)
 
     def _inverse(self, real_pos):
-        x, roll = real_pos.x, real_pos.roll
+        x, roll, y, yaw = real_pos.x, real_pos.roll, real_pos.y, real_pos.yaw
         ba = 90 + roll/1000 - self.angle_offset.position - self.roll_0
         x_cr = self.x_0 - x
-        # print(f'{x_cr=}, {ba=}')
-
-        return self.PseudoPosition(ba=ba, x_cr=x_cr)
+        return self.PseudoPosition(ba=ba, x_cr=x_cr, y=y, yaw=yaw)
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -304,9 +292,6 @@ class MainJohannCrystal(PseudoPositioner):
         return self._inverse(real_pos)
 
 # j_cr = MainJohannCrystal(name='j_cr')
-
-# class JohannMultiCrystalSpectrometer(Device):
-from collections import (OrderedDict, namedtuple)
 
 
 class JohannMultiCrystalSpectrometer(PseudoPositioner):
@@ -325,17 +310,21 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     def _forward(self, pseudo_pos):
         ba = pseudo_pos.ba
         self.RC.compute_geometry(ba)
-        x_cr, _ = self.RC.crystal_coords
-        x_cr = self.RC.R + x_cr
+
         x_det, y_det = self.RC.detector_coords
         det_arm_real_pos = self.det_arm.PseudoPosition(ba=ba, x_det=x_det, y_det=y_det)
-        crystal1_real_pos = self.crystal1.PseudoPosition(ba=ba, x_cr=x_cr)
+
+        x_cr, _ = self.RC.crystal_coords
+        x_cr = self.RC.R + x_cr
+        y_cr = 4.438 #self.crystal1.y_0
+        yaw_cr = 0.37# self.crystal1.yaw_0
+        crystal1_real_pos = self.crystal1.PseudoPosition(ba=ba, x_cr=x_cr, y=y_cr, yaw=yaw_cr)
         return self.RealPosition(det_arm=det_arm_real_pos,
                                  crystal1=crystal1_real_pos)
 
     def _inverse(self, real_pos):
-        bas = real_pos.det_arm.ba, real_pos.crystal1.ba
-        return self.PseudoPosition(ba=np.mean(bas))
+        ba = real_pos.crystal1.ba
+        return self.PseudoPosition(ba=ba)
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -348,7 +337,7 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
 jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 
-motor_emission_dict = {'name': jsp.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp, 'group': 'spectrometer'}
+motor_emission_dict = {'name': jsp.ba.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp.ba, 'group': 'spectrometer'}
 motor_dictionary['motor_emission'] = motor_emission_dict
 
 
@@ -388,8 +377,11 @@ motor_dictionary['motor_emission'] = motor_emission_dict
 #
 #
 #
-# ba_set = 90
+# ba_set = 75.5
 # row_circle.compute_geometry(ba_set)
+# coords = row_circle.detector_coords
+# jsp.det_arm.move(ba=ba_set, x_det=coords[0], y_det=coords[1])
+
 # ccs_pseudo = (ba_set, *row_circle.detector_coords)
 # # ccs_real = det_arm.forward(ba_set, *row_circle.detector_coords)
 # # ccs_pseudo = det_arm.inverse(ccs_real)
