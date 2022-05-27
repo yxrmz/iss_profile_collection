@@ -117,10 +117,10 @@ motor_dictionary['motor_emission'] = motor_emission_dict
 
 class RowlandCircle:
 
-    def __init__(self, R=1000, src_x=0, src_y=0):
+    def __init__(self, R=1000, x_src=0, y_src=0):
         self.R = R
-        self.x_src = src_x
-        self.y_src = src_y
+        self.x_src = x_src
+        self.y_src = y_src
 
     def compute_geometry(self, ba_deg, det_dR=0):
         ba = np.deg2rad(ba_deg)
@@ -155,6 +155,17 @@ class RowlandCircle:
             plt.plot(x_det, y_det, 'ro')
             plt.axis('square')
 
+
+def compute_rowland_circle_geometry(x_src, y_src, R, ba_deg, det_dR):
+    ba = np.deg2rad(ba_deg)
+
+    x_cr = -R * np.cos(np.pi / 2 - ba) + x_src
+    y_cr = 0 + y_src
+
+    x_det = +2 * x_cr * np.cos(ba) * np.cos(ba) - det_dR * np.cos(np.pi - 2 * ba) + x_src
+    y_det = -2 * x_cr * np.cos(ba) * np.sin(ba) - det_dR * np.sin(np.pi - 2 * ba) + y_src
+
+    return x_cr, y_cr, x_det, y_det
 
 
 
@@ -257,8 +268,8 @@ class MainJohannCrystal(PseudoPositioner):
     def restore_parking(self):
         self.x_0 = 1000.000
         self.y_0 = 4.438
-        self.roll_0 = 3.080
-        self.yaw_0 = 0.370
+        self.roll_0 = 5.740
+        self.yaw_0 = 0.840
 
 
     def set_angle_offset(self, offset_num):
@@ -299,32 +310,54 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     crystal1 = Cpt(MainJohannCrystal, name='crystal1')
 
     ba = Cpt(PseudoSingle, name='ba')
+    det_dR = Cpt(PseudoSingle, name='det_dR')
+    x_sp = Cpt(PseudoSingle, name='x_sp')
 
-    def __init__(self, *args, R=1000, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.restore_config()
         super().__init__(*args, **kwargs)
-        self.update_rowland_circle(R)
+        # self.update_rowland_circle(self.R, self.src_x, self.src_y)
 
-    def update_rowland_circle(self, R):
-        self.RC = RowlandCircle(R)
+    def restore_config(self):
+        self.R = 1000
+        self.x_src = 0
+        self.y_src = 0
+
+    # def update_rowland_circle(self, R, x_src, y_src):
+    #     self.RC = RowlandCircle(R, x_src=x_src, y_src=y_src)
 
     def _forward(self, pseudo_pos):
-        ba = pseudo_pos.ba
-        self.RC.compute_geometry(ba)
+        ba, det_dR, x_sp = pseudo_pos.ba, pseudo_pos.det_dR, pseudo_pos.x_sp
 
-        x_det, y_det = self.RC.detector_coords
+        x_cr, y_cr, x_det, y_det = compute_rowland_circle_geometry(0, 0, self.R, ba, det_dR)
+
+        # self.RC.src_x = x_sp
+        # self.RC.compute_geometry(ba, det_dR=det_dR)
+
+        # x_det, y_det = self.RC.detector_coords
+        x_det -= x_sp
         det_arm_real_pos = self.det_arm.PseudoPosition(ba=ba, x_det=x_det, y_det=y_det)
 
-        x_cr, _ = self.RC.crystal_coords
-        x_cr = self.RC.R + x_cr
-        y_cr = 4.438 #self.crystal1.y_0
-        yaw_cr = 0.37# self.crystal1.yaw_0
+        # x_cr, _ = self.RC.crystal_coords
+        x_cr = self.R + x_cr - x_sp
+        y_cr = self.crystal1.y_0
+        yaw_cr = self.crystal1.yaw_0*1000
         crystal1_real_pos = self.crystal1.PseudoPosition(ba=ba, x_cr=x_cr, y=y_cr, yaw=yaw_cr)
         return self.RealPosition(det_arm=det_arm_real_pos,
                                  crystal1=crystal1_real_pos)
 
     def _inverse(self, real_pos):
         ba = real_pos.crystal1.ba
-        return self.PseudoPosition(ba=ba)
+
+        x_cr_ref, y_cr_ref, _, _ = compute_rowland_circle_geometry(0, 0, self.R, ba, 0)
+        x_cr = real_pos.crystal1.x_cr - self.R
+        x_sp = x_cr - x_cr_ref
+
+        _, _, x_det_ref, y_det_ref = compute_rowland_circle_geometry(x_sp, 0, self.R, ba, 0)
+        x_det, y_det = real_pos.det_arm.x_det, real_pos.det_arm.y_det
+        det_dR = np.sqrt((x_det - x_det_ref)**2 + (y_det - y_det_ref)**2) * np.sign(y_det_ref - y_det)
+
+        return self.PseudoPosition(ba=ba, det_dR=det_dR, x_sp=x_sp)
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -337,9 +370,21 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
 jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 
-motor_emission_dict = {'name': jsp.ba.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp.ba, 'group': 'spectrometer'}
-motor_dictionary['motor_emission'] = motor_emission_dict
+# motor_emission_dict = {'name': jsp.ba.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp.ba, 'group': 'spectrometer'}
+motor_dictionary['spectrometer_bragg_angle'] = {'name': jsp.ba.name,
+                                                'description' : 'Spectrometer Bragg Angle',
+                                                'object': jsp.ba,
+                                                'group': 'spectrometer'}
 
+motor_dictionary['spectrometer_det_focus'] =   {'name': jsp.det_dR.name,
+                                                'description' : 'Spectrometer Detector Focus',
+                                                'object': jsp.det_dR,
+                                                'group': 'spectrometer'}
+
+motor_dictionary['spectrometer_x'] =           {'name': jsp.x_sp.name,
+                                                'description' : 'Spectrometer X',
+                                                'object': jsp.x_sp,
+                                                'group': 'spectrometer'}
 
 # sdfasdgaww
 #
