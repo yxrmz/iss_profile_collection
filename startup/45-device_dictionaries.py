@@ -125,7 +125,9 @@ motor_dictionary = {'slits_v_gap': {'name': slits.v_gap.name, 'description':'B1 
                     'foil_wheel_wheel2' : {'name' : foil_wheel.wheel2.name, 'description' : 'Reference foil wheel 2', 'object' : foil_wheel.wheel2},
                     'i0_y_pos': {'name': i0_y.pos.name, 'description':'I0 Chamber height','object': i0_y.pos},
                     'it_y_pos': {'name': it_y.pos.name, 'description':'It Chamber height','object': it_y.pos},
-                    'ir_y_pos': {'name': ir_y.pos.name, 'description':'Ir Chamber height','object': ir_y.pos},}
+                    'ir_y_pos': {'name': ir_y.pos.name, 'description':'Ir Chamber height','object': ir_y.pos},
+                    'det2_stage_x': {'name': det2_stage_x.pos.name, 'description':'Detector stage 2 X','object': det2_stage_x.pos},
+                    'det2_stage_y': {'name': det2_stage_y.pos.name, 'description':'Detector stage 2 Y','object': det2_stage_y.pos},}
 
 def get_motor_device(motor_attr, based_on='description'):
     for key, motor_dict in motor_dictionary.items():
