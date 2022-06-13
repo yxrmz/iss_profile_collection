@@ -122,14 +122,14 @@ class RowlandCircle:
         self.x_src = x_src
         self.y_src = y_src
 
-    def compute_geometry(self, ba_deg, det_dR=0):
-        ba = np.deg2rad(ba_deg)
+    def compute_geometry(self, bragg_deg, det_dR=0):
+        bragg = np.deg2rad(bragg_deg)
 
         self.y_cr = 0 + self.x_src
-        self.x_cr = -self.R * np.cos(np.pi / 2 - ba) + self.y_src
+        self.x_cr = -self.R * np.cos(np.pi / 2 - bragg) + self.y_src
 
-        self.x_det = +2 * self.x_cr * np.cos(ba) * np.cos(ba) - det_dR * np.cos(np.pi - 2 * ba) + self.x_src
-        self.y_det = -2 * self.x_cr * np.cos(ba) * np.sin(ba) - det_dR * np.sin(np.pi - 2 * ba) + self.y_src
+        self.x_det = +2 * self.x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg) + self.x_src
+        self.y_det = -2 * self.x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg) + self.y_src
 
     @property
     def crystal_coords(self):
@@ -141,13 +141,13 @@ class RowlandCircle:
     #
     def plot_full_range(self):
 
-        ba_deg = np.linspace(65, 89, 101)
+        bragg_deg = np.linspace(65, 89, 101)
         plt.figure(1)
         plt.clf()
         plt.plot(self.x_src, self.y_src, 'ko')
 
-        for each_ba_deg in ba_deg:
-            self.compute_geometry(each_ba_deg)
+        for each_bragg_deg in bragg_deg:
+            self.compute_geometry(each_bragg_deg)
             x_cr, y_cr = self.crystal_coords
             x_det, y_det = self.detector_coords
 
@@ -156,14 +156,14 @@ class RowlandCircle:
             plt.axis('square')
 
 
-def compute_rowland_circle_geometry(x_src, y_src, R, ba_deg, det_dR):
-    ba = np.deg2rad(ba_deg)
+def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
+    bragg = np.deg2rad(bragg_deg)
 
-    x_cr = -R * np.cos(np.pi / 2 - ba) + x_src
+    x_cr = -R * np.cos(np.pi / 2 - bragg) + x_src
     y_cr = 0 + y_src
 
-    x_det = +2 * x_cr * np.cos(ba) * np.cos(ba) - det_dR * np.cos(np.pi - 2 * ba) + x_src
-    y_det = -2 * x_cr * np.cos(ba) * np.sin(ba) - det_dR * np.sin(np.pi - 2 * ba) + y_src
+    x_det = +2 * x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg) + x_src
+    y_det = -2 * x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg) + y_src
 
     return x_cr, y_cr, x_det, y_det
 
@@ -183,7 +183,7 @@ class DetectorArm(PseudoPositioner):
     th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr') # give better names
     th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
 
-    ba = Cpt(PseudoSingle, name='ba')
+    bragg = Cpt(PseudoSingle, name='bragg')
     x_det = Cpt(PseudoSingle, name='x_det')
     y_det = Cpt(PseudoSingle, name='y_det')
 
@@ -209,9 +209,9 @@ class DetectorArm(PseudoPositioner):
         self.h = self.L1 * np.sin(np.deg2rad(self.th1_0))
 
     def _forward(self, pseudo_pos):
-        ba, x_det, y_det = pseudo_pos.ba, pseudo_pos.x_det, pseudo_pos.y_det
-        ba_rad = np.deg2rad(ba)
-        phi = np.pi - 2 * ba_rad
+        bragg, x_det, y_det = pseudo_pos.bragg, pseudo_pos.x_det, pseudo_pos.y_det
+        bragg_rad = np.deg2rad(bragg)
+        phi = np.pi - 2 * bragg_rad
         sin_th1 = (self.h - self.L2 * np.sin(phi) - y_det) / self.L1
         th1 = np.arcsin(sin_th1)
         th2 = phi + th1
@@ -221,10 +221,10 @@ class DetectorArm(PseudoPositioner):
     def _inverse(self, real_pos):
         x, th1, th2 = real_pos.x, real_pos.th1, real_pos.th2
         th2 *= -1
-        ba = (180 - (th2 - th1)) / 2
+        bragg = (180 - (th2 - th1)) / 2
         x_det = self.x_0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
         y_det = self.h - self.L1 * np.sin(np.deg2rad(th1)) - self.L2 * np.sin(np.deg2rad(th2 - th1))
-        return self.PseudoPosition(ba, x_det, y_det)
+        return self.PseudoPosition(bragg, x_det, y_det)
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -244,11 +244,11 @@ class MainJohannCrystal(PseudoPositioner):
 
     angle_offset = Cpt(SoftPositioner, init_pos=0.0) # software representation of the angular offset on the crystal stage
 
-    ba = Cpt(PseudoSingle, name='ba')
+    bragg = Cpt(PseudoSingle, name='bragg')
     x_cr = Cpt(PseudoSingle, name='x_cr')
 
     _real = ['x', 'roll', 'y', 'yaw']
-    _pseudo = ['ba', 'x_cr', 'y', 'yaw']
+    _pseudo = ['bragg', 'x_cr', 'y', 'yaw']
 
     def __init__(self, *args, **kwargs):
         self.restore_parking()
@@ -268,9 +268,8 @@ class MainJohannCrystal(PseudoPositioner):
     def restore_parking(self):
         self.x_0 = 1000.000
         self.y_0 = 4.438
-        self.roll_0 = 5.740
+        self.roll_0 = 4.940
         self.yaw_0 = 0.840
-
 
     def set_angle_offset(self, offset_num):
         if offset_num == 1:
@@ -283,16 +282,16 @@ class MainJohannCrystal(PseudoPositioner):
             raise Exception('angle offset for a crystal must be 1,2, or 3')
 
     def _forward(self, pseudo_pos):
-        ba, x_cr, y, yaw = pseudo_pos.ba, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
-        roll = -(90 - ba - self.angle_offset.position - self.roll_0) * 1000
+        bragg, x_cr, y, yaw = pseudo_pos.bragg, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
+        roll = -(90 - bragg - self.angle_offset.position - self.roll_0) * 1000
         x = self.x_0 - x_cr
         return self.RealPosition(x=x, roll=roll, y=y, yaw=yaw)
 
     def _inverse(self, real_pos):
         x, roll, y, yaw = real_pos.x, real_pos.roll, real_pos.y, real_pos.yaw
-        ba = 90 + roll/1000 - self.angle_offset.position - self.roll_0
+        bragg = 90 + roll/1000 - self.angle_offset.position - self.roll_0
         x_cr = self.x_0 - x
-        return self.PseudoPosition(ba=ba, x_cr=x_cr, y=y, yaw=yaw)
+        return self.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y, yaw=yaw)
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -309,7 +308,7 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     det_arm = Cpt(DetectorArm, name='det_arm')
     crystal1 = Cpt(MainJohannCrystal, name='crystal1')
 
-    ba = Cpt(PseudoSingle, name='ba')
+    bragg = Cpt(PseudoSingle, name='bragg')
     det_dR = Cpt(PseudoSingle, name='det_dR')
     x_sp = Cpt(PseudoSingle, name='x_sp')
 
@@ -327,37 +326,37 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     #     self.RC = RowlandCircle(R, x_src=x_src, y_src=y_src)
 
     def _forward(self, pseudo_pos):
-        ba, det_dR, x_sp = pseudo_pos.ba, pseudo_pos.det_dR, pseudo_pos.x_sp
+        bragg, det_dR, x_sp = pseudo_pos.bragg, pseudo_pos.det_dR, pseudo_pos.x_sp
 
-        x_cr, y_cr, x_det, y_det = compute_rowland_circle_geometry(0, 0, self.R, ba, det_dR)
+        x_cr, y_cr, x_det, y_det = compute_rowland_circle_geometry(0, 0, self.R, bragg, det_dR)
 
         # self.RC.src_x = x_sp
-        # self.RC.compute_geometry(ba, det_dR=det_dR)
+        # self.RC.compute_geometry(bragg, det_dR=det_dR)
 
         # x_det, y_det = self.RC.detector_coords
         x_det -= x_sp
-        det_arm_real_pos = self.det_arm.PseudoPosition(ba=ba, x_det=x_det, y_det=y_det)
+        det_arm_real_pos = self.det_arm.PseudoPosition(bragg=bragg, x_det=x_det, y_det=y_det)
 
         # x_cr, _ = self.RC.crystal_coords
         x_cr = self.R + x_cr - x_sp
         y_cr = self.crystal1.y_0
         yaw_cr = self.crystal1.yaw_0*1000
-        crystal1_real_pos = self.crystal1.PseudoPosition(ba=ba, x_cr=x_cr, y=y_cr, yaw=yaw_cr)
+        crystal1_real_pos = self.crystal1.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y_cr, yaw=yaw_cr)
         return self.RealPosition(det_arm=det_arm_real_pos,
                                  crystal1=crystal1_real_pos)
 
     def _inverse(self, real_pos):
-        ba = real_pos.crystal1.ba
+        bragg = real_pos.crystal1.bragg
 
-        x_cr_ref, y_cr_ref, _, _ = compute_rowland_circle_geometry(0, 0, self.R, ba, 0)
+        x_cr_ref, y_cr_ref, _, _ = compute_rowland_circle_geometry(0, 0, self.R, bragg, 0)
         x_cr = real_pos.crystal1.x_cr - self.R
         x_sp = x_cr - x_cr_ref
 
-        _, _, x_det_ref, y_det_ref = compute_rowland_circle_geometry(x_sp, 0, self.R, ba, 0)
+        _, _, x_det_ref, y_det_ref = compute_rowland_circle_geometry(x_sp, 0, self.R, bragg, 0)
         x_det, y_det = real_pos.det_arm.x_det, real_pos.det_arm.y_det
         det_dR = np.sqrt((x_det - x_det_ref)**2 + (y_det - y_det_ref)**2) * np.sign(y_det_ref - y_det)
 
-        return self.PseudoPosition(ba=ba, det_dR=det_dR, x_sp=x_sp)
+        return self.PseudoPosition(bragg=bragg, det_dR=det_dR, x_sp=x_sp)
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
@@ -367,61 +366,132 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     def inverse(self, real_pos):
         return self._inverse(real_pos)
 
-jsp = JohannMultiCrystalSpectrometer(name='jsp')
+# jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 
-# motor_emission_dict = {'name': jsp.ba.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp.ba, 'group': 'spectrometer'}
-motor_dictionary['spectrometer_bragg_angle'] = {'name': jsp.ba.name,
-                                                'description' : 'Spectrometer Bragg Angle',
-                                                'object': jsp.ba,
-                                                'group': 'spectrometer'}
+# motor_emission_dict = {'name': jsp.bragg.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp.bragg, 'group': 'spectrometer'}
+# motor_dictionary['johann_bragg_angle'] = {'name': jsp.bragg.name,
+#                                           'description' : 'Johann Bragg Angle',
+#                                           'object': jsp.bragg,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_det_focus'] =   {'name': jsp.det_dR.name,
+#                                           'description' : 'Johann Detector Focus',
+#                                           'object': jsp.det_dR,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_x'] =           {'name': jsp.x_sp.name,
+#                                           'description' : 'Johann X',
+#                                           'object': jsp.x_sp,
+#                                           'group': 'spectrometer'}
 
-motor_dictionary['spectrometer_det_focus'] =   {'name': jsp.det_dR.name,
-                                                'description' : 'Spectrometer Detector Focus',
-                                                'object': jsp.det_dR,
-                                                'group': 'spectrometer'}
 
-motor_dictionary['spectrometer_x'] =           {'name': jsp.x_sp.name,
-                                                'description' : 'Spectrometer X',
-                                                'object': jsp.x_sp,
-                                                'group': 'spectrometer'}
+from xas.xray import bragg2e, e2bragg
 
-# sdfasdgaww
-#
-# class JohannEmissionMotor(PseudoPositioner):
-#     spectrometer = Cpt(JohannMultiCrystalSpectrometer, name='ba')
-#     energy = Cpt(PseudoSingle, name='energy')
-#
-#     def __init__(self, *args, R=1000, crystal_material=None, hkl=None, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.spectrometer.update_rowland_circle(R)
-#         self.update_crystal(crystal_material, hkl)
-#
-#     def update_crystal(self, crystal_material, hkl):
-#         self.crystal_material = crystal_material
-#         self.hkl = hkl
-#
-#     def _forward(self, pseudo_pos):
-#         energy = pseudo_pos.energy
-#         ba = 00000 # COMPUTATION
-#         pos = self.spectrometer.PseudoPosition(ba=ba)
-#         return self.RealPosition(spectrometer=pos)
-#
-#     def _inverse(self, real_pos):
-#         ba = real_pos.spectrometer.ba
-#         energy = 00000 # COMPUTATION
-#         return self.PseudoPosition(energy=energy)
-#
-#     @pseudo_position_argument
-#     def forward(self, pseudo_pos):
-#         return self._forward(pseudo_pos)
-#
-#     @real_position_argument
-#     def inverse(self, real_pos):
-#         return self._inverse(real_pos)
-#
-#
-#
+class JohannEmissionMotor(PseudoPositioner):
+    spectrometer = Cpt(JohannMultiCrystalSpectrometer, name='bragg')
+    energy = Cpt(PseudoSingle, name='energy')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
+        self.init_from_settings()
+        self.bragg_offset = 0
+
+
+
+    #########
+    def load_config(self, file):
+        with open(file, 'r') as f:
+            config = json.loads(f.read())
+        return config
+
+    def init_from_settings(self):
+        try:
+            config = self.load_config(self.json_path)
+        except FileNotFoundError:
+            config = {'crystal' : 'Si',
+                      'hkl': (7, 3, 3),
+                      'R': 1000,
+                      'x_src': 0,
+                      'y_src' : 0}
+        self.update_johann_parameters(config)
+
+    def update_johann_parameters(self, config):
+        self.crystal = config['crystal']
+        self.hkl = config['hkl']
+        self.spectrometer.R = config['R']
+        self.spectrometer.x_src = config['x_src']
+        self.spectrometer.y_src = config['y_src']
+
+    def get_config(self):
+        return {'crystal' : self.crystal,
+                'hkl': self.hkl,
+                'R': self.spectrometer.R,
+                'x_src': self.spectrometer.x_src,
+                'y_src' : self.spectrometer.y_src}
+
+    def save_config(self, file):
+        config = self.get_config()
+        with open(file, 'w') as f:
+            json.dump(config, f)
+
+    def save_to_settings(self):
+        self.save_config(self.json_path)
+
+    # def register_offsets_for_energy(self, energy):
+    #     bragg_nominal = e2bragg(energy)
+    #     bragg_actual = self.spectrometer.bragg.position
+    #     self.bragg_offset = bragg_nominal - bragg_actual
+
+
+
+    ########
+
+    def _forward(self, pseudo_pos):
+        energy = pseudo_pos.energy
+        bragg = e2bragg(energy, self.crystal, self.hkl)
+        det_dR = self.spectrometer.det_dR.position
+        x_sp = self.spectrometer.x_sp.position
+        pos = self.spectrometer.PseudoPosition(bragg=bragg, det_dR=det_dR, x_sp=x_sp)
+        return self.RealPosition(spectrometer=pos)
+
+    def _inverse(self, real_pos):
+        bragg = real_pos.spectrometer.bragg
+        energy = bragg2e(bragg, self.crystal, self.hkl)
+        return self.PseudoPosition(energy=energy)
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        return self._forward(pseudo_pos)
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        return self._inverse(real_pos)
+
+johann_emission = JohannEmissionMotor(name='johann_emission')
+
+
+motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.spectrometer.bragg.name,
+                                          'description' : 'Johann Bragg Angle',
+                                          'object': johann_emission.spectrometer.bragg,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_det_focus'] =   {'name': johann_emission.spectrometer.det_dR.name,
+                                          'description' : 'Johann Detector Focus',
+                                          'object': johann_emission.spectrometer.det_dR,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_x'] =           {'name': johann_emission.spectrometer.x_sp.name,
+                                          'description' : 'Johann X',
+                                          'object': johann_emission.spectrometer.x_sp,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+                                          'description' : 'Johann Energy',
+                                          'object': johann_emission.energy,
+                                          'group': 'spectrometer'}
+
 # ba_set = 75.5
 # row_circle.compute_geometry(ba_set)
 # coords = row_circle.detector_coords
