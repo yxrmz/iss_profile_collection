@@ -159,13 +159,13 @@ class RowlandCircle:
 def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
     bragg = np.deg2rad(bragg_deg)
 
-    x_cr = -R * np.cos(np.pi / 2 - bragg) + x_src
-    y_cr = 0 + y_src
+    x_cr = -R * np.cos(np.pi / 2 - bragg)
+    y_cr = 0
 
-    x_det = +2 * x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg) + x_src
-    y_det = -2 * x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg) + y_src
+    x_det = +2 * x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg)
+    y_det = -2 * x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg)
 
-    return x_cr, y_cr, x_det, y_det
+    return (x_cr + x_src), (y_cr + y_src), (x_det + x_src), (y_det + y_src)
 
 
 
@@ -174,7 +174,85 @@ row_circle = RowlandCircle()
 # row_circle.plot_full_range()
 
 # class DetectorArm(Device):
-class DetectorArm(PseudoPositioner):
+
+class ISSPseudoPositioner(PseudoPositioner):
+
+    def __init__(self, *args, special_pseudo='bragg', **kwargs):
+        self.pseudo_keys = [k for k, _ in self._get_pseudo_positioners()]
+        self.real_keys = [k for k, _ in self._get_real_positioners()]
+        self.motor_keys = self.pseudo_keys + self.real_keys
+        super().__init__(*args, **kwargs)
+
+        self.special_pseudo = special_pseudo
+        self.reset_correction()
+        self.reset_calibration_data()
+        self.apply_correction = True
+
+    def reset_correction(self):
+        self.correction_dict = {'act2nom': {k: [0] for k in self.pseudo_keys},
+                                'nom2act': {k: [0] for k in self.pseudo_keys}}
+
+    def reset_calibration_data(self):
+        self.calibration_data = {'actual': {k: [] for k in self.pseudo_keys},
+                                 'nominal': {k: [] for k in self.pseudo_keys}}
+
+    def register_calibration_point(self, special_pseudo_pos):
+        pseudo_dict = self.pseudo_pos2dict(self.position)
+        actual_dict = copy.deepcopy(pseudo_dict)
+        actual_dict[self.special_pseudo] = special_pseudo_pos
+        nominal_dict = self.pseudo_pos2dict(self.inverse(self.forward(**{self.special_pseudo : pseudo_dict[self.special_pseudo]})))
+        for k in self.pseudo_keys:
+            self.calibration_data['actual'][k].append(actual_dict[k])
+            self.calibration_data['nominal'][k].append(nominal_dict[k])
+
+        # real_dict = self.real_pos2dict(self.real_position)
+        # actual_dict = copy.deepcopy(real_dict)
+        # actual_dict[self.special_pseudo] = special_pseudo_pos
+        # nominal_dict = self.pseudo_pos2dict(
+        #     self.inverse(self.forward(**{self.special_pseudo: pseudo_dict[self.special_pseudo]})))
+        # for k in self.pseudo_keys:
+        #     self.calibration_data['actual'][k].append(actual_dict[k])
+        #     self.calibration_data['nominal'][k].append(nominal_dict[k])
+
+    def process_calibration(self, npoly=None):
+        if npoly is None:
+            npoly = len(self.calibration_data['nominal'][self.special_pseudo]) - 1
+        for key in self.pseudo_keys:
+            x_nom = np.array(self.calibration_data['nominal'][key])
+            x_act = np.array(self.calibration_data['actual'][key])
+            self.correction_dict['nom2act'][key] = np.polyfit(x_nom, x_act - x_nom, npoly)
+            self.correction_dict['act2nom'][key] = np.polyfit(x_act, x_nom - x_act, npoly)
+
+    def correct(self, pseudo_dict, way='act2nom'):
+        if self.apply_correction:
+            for k in pseudo_dict.keys():
+                delta = np.polyval(self.correction_dict[way][k], pseudo_dict[k])
+                pseudo_dict[k] += delta
+        return pseudo_dict
+
+    def pseudo_pos2dict(self, pseudo_pos):
+        return {k : getattr(pseudo_pos, k) for k in self.pseudo_keys}
+
+    def real_pos2dict(self, real_pos):
+        return {k: getattr(real_pos, k) for k in self.real_keys}
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        pseudo_dict = self.pseudo_pos2dict(pseudo_pos)
+        pseudo_dict = self.correct(pseudo_dict, way='act2nom')
+        real_dict = self._forward(pseudo_dict)
+        # real_dict = self._forward(pseudo_pos)
+        return self.RealPosition(**real_dict)
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        real_dict = self.real_pos2dict(real_pos)
+        pseudo_dict = self._inverse(real_dict)
+        pseudo_dict = self.correct(pseudo_dict, way='nom2act')
+        return self.PseudoPosition(**pseudo_dict)
+
+
+class DetectorArm(ISSPseudoPositioner):
 
     L1 = 550  # length of the big arm
     L2 = 91  # distance between the second gon and the sensitive surface of the detector
@@ -208,35 +286,34 @@ class DetectorArm(PseudoPositioner):
         self.dx = self.L1 * np.cos(np.deg2rad(self.th1_0)) - self.L2
         self.h = self.L1 * np.sin(np.deg2rad(self.th1_0))
 
-    def _forward(self, pseudo_pos):
-        bragg, x_det, y_det = pseudo_pos.bragg, pseudo_pos.x_det, pseudo_pos.y_det
+    # def _forward(self, pseudo_pos):
+    #     bragg, x_det, y_det = pseudo_pos.bragg, pseudo_pos.x_det, pseudo_pos.y_det
+
+    def _forward(self, pseudo_dict):
+        bragg, x_det, y_det = pseudo_dict['bragg'], pseudo_dict['x_det'], pseudo_dict['y_det']
         bragg_rad = np.deg2rad(bragg)
         phi = np.pi - 2 * bragg_rad
         sin_th1 = (self.h - self.L2 * np.sin(phi) - y_det) / self.L1
         th1 = np.arcsin(sin_th1)
         th2 = phi + th1
         x = self.x_0 - self.dx + self.L1 * np.cos(th1) - self.L2 * np.cos(phi) - x_det
-        return self.RealPosition(x, np.rad2deg(th1), -np.rad2deg(th2))
+        return {'x' : x, 'th1' : np.rad2deg(th1), 'th2' : -np.rad2deg(th2)}
 
-    def _inverse(self, real_pos):
-        x, th1, th2 = real_pos.x, real_pos.th1, real_pos.th2
+    # def _inverse(self, real_pos):
+    #     x, th1, th2 = real_pos.x, real_pos.th1, real_pos.th2
+    def _inverse(self, real_dict):
+        x, th1, th2 = real_dict['x'], real_dict['th1'], real_dict['th2']
         th2 *= -1
         bragg = (180 - (th2 - th1)) / 2
         x_det = self.x_0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
         y_det = self.h - self.L1 * np.sin(np.deg2rad(th1)) - self.L2 * np.sin(np.deg2rad(th2 - th1))
-        return self.PseudoPosition(bragg, x_det, y_det)
+        return {'bragg' : bragg, 'x_det' : x_det, 'y_det' : y_det}
 
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        return self._forward(pseudo_pos)
 
-    @real_position_argument
-    def inverse(self, real_pos):
-        return self._inverse(real_pos)
+det_arm = DetectorArm(name='det_arm')
 
-# det_arm = DetectorArm(name='det_arm')
-
-class MainJohannCrystal(PseudoPositioner):
+# class MainJohannCrystal(PseudoPositioner):
+class MainJohannCrystal(ISSPseudoPositioner):
     x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
     y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
     roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
@@ -244,11 +321,14 @@ class MainJohannCrystal(PseudoPositioner):
 
     angle_offset = Cpt(SoftPositioner, init_pos=0.0) # software representation of the angular offset on the crystal stage
 
-    bragg = Cpt(PseudoSingle, name='bragg')
     x_cr = Cpt(PseudoSingle, name='x_cr')
+    y_cr = Cpt(PseudoSingle, name='y_cr')
+    bragg = Cpt(PseudoSingle, name='bragg')
+    yaw_cr = Cpt(PseudoSingle, name='yaw_cr')
 
-    _real = ['x', 'roll', 'y', 'yaw']
-    _pseudo = ['bragg', 'x_cr', 'y', 'yaw']
+
+    _real = ['x', 'y', 'roll', 'yaw']
+    _pseudo = ['x_cr', 'y_cr', 'bragg', 'yaw_cr']
 
     def __init__(self, *args, **kwargs):
         self.restore_parking()
@@ -281,30 +361,56 @@ class MainJohannCrystal(PseudoPositioner):
         else:
             raise Exception('angle offset for a crystal must be 1,2, or 3')
 
-    def _forward(self, pseudo_pos):
-        bragg, x_cr, y, yaw = pseudo_pos.bragg, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
+    # def _forward(self, pseudo_pos):
+    #     bragg, x_cr, y, yaw = pseudo_pos.bragg, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
+
+    def _forward(self, pseudo_dict):
+        # bragg, x_cr, y, yaw = pseudo_dict['bragg'], pseudo_dict['x_cr'], pseudo_dict['y'], pseudo_dict['yaw']
+        x_cr, y_cr, bragg, yaw_cr = pseudo_dict['x_cr'], pseudo_dict['y_cr'], pseudo_dict['bragg'], pseudo_dict['yaw_cr']
         roll = -(90 - bragg - self.angle_offset.position - self.roll_0) * 1000
         x = self.x_0 - x_cr
-        return self.RealPosition(x=x, roll=roll, y=y, yaw=yaw)
+        return {'x' : x, 'roll' : roll, 'y' : y_cr, 'yaw' : yaw_cr}
+        # return self.RealPosition(x=x, roll=roll, y=y, yaw=yaw)
 
-    def _inverse(self, real_pos):
-        x, roll, y, yaw = real_pos.x, real_pos.roll, real_pos.y, real_pos.yaw
+    # def _inverse(self, real_pos):
+    #     x, roll, y, yaw = real_pos.x, real_pos.roll, real_pos.y, real_pos.yaw
+
+    def _inverse(self, real_dict):
+        x, roll, y, yaw = real_dict['x'], real_dict['roll'], real_dict['y'], real_dict['yaw'],
         bragg = 90 + roll/1000 - self.angle_offset.position - self.roll_0
         x_cr = self.x_0 - x
-        return self.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y, yaw=yaw)
+        return {'x_cr' : x_cr, 'y_cr' : y, 'bragg' : bragg, 'yaw_cr' : yaw}
+        # return self.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y, yaw=yaw)
 
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        return self._forward(pseudo_pos)
 
-    @real_position_argument
-    def inverse(self, real_pos):
-        return self._inverse(real_pos)
+
+    # @pseudo_position_argument
+    # def forward(self, pseudo_pos):
+    #     return self._forward(pseudo_pos)
+    #
+    # @real_position_argument
+    # def inverse(self, real_pos):
+    #     return self._inverse(real_pos)
 
 # j_cr = MainJohannCrystal(name='j_cr')
 
+# j_cr.calibration_data = {'actual':  {'x_cr': [-1.9267746534999333, 0.35132603950000885],
+#                                      'y_cr': [4.4379225, 4.4379225],
+#                                      'bragg': [83, 82],
+#                                      'yaw_cr': [840.0, 840.0]},
+#                          'nominal': {'x_cr': [-1.9267746534999333, 0.35132603950000885],
+#                                      'y_cr': [4.4379225, 4.4379225],
+#                                      'bragg': [83.10000000000001, 82.05],
+#                                      'yaw_cr': [840.0, 840.0]}}
 
-class JohannMultiCrystalSpectrometer(PseudoPositioner):
+# j_cr.process_calibration()
+
+
+
+
+
+
+class JohannMultiCrystalSpectrometer(ISSPseudoPositioner):
     det_arm = Cpt(DetectorArm, name='det_arm')
     crystal1 = Cpt(MainJohannCrystal, name='crystal1')
 
@@ -325,48 +431,64 @@ class JohannMultiCrystalSpectrometer(PseudoPositioner):
     # def update_rowland_circle(self, R, x_src, y_src):
     #     self.RC = RowlandCircle(R, x_src=x_src, y_src=y_src)
 
-    def _forward(self, pseudo_pos):
-        bragg, det_dR, x_sp = pseudo_pos.bragg, pseudo_pos.det_dR, pseudo_pos.x_sp
+    def register_calibration_point(self, special_pseudo_pos):
+        super().register_calibration_point(special_pseudo_pos)
+        # _pos = self.calibration_data['nominal'][self.special_pseudo][-1]
+        for key in self.real_keys:
+            getattr(self, key).register_calibration_point(special_pseudo_pos)
+            # _pos = getattr(self, self.special_pseudo).position
+            # getattr(self, key).register_calibration_point(_pos)
+
+    def process_calibration(self, npoly=None):
+        super().process_calibration(npoly=npoly)
+        for key in self.real_keys:
+            getattr(self, key).process_calibration(npoly=npoly)
+
+    def reset_correction(self):
+        super().reset_correction()
+        for key in self.real_keys:
+            getattr(self, key).reset_correction()
+
+    def reset_calibration_data(self):
+        super().reset_calibration_data()
+        for key in self.real_keys:
+            getattr(self, key).reset_calibration_data()
+
+    # def _forward(self, pseudo_pos):
+        # bragg, det_dR, x_sp = pseudo_pos.bragg, pseudo_pos.det_dR, pseudo_pos.x_sp
+    def _forward(self, pseudo_dict):
+        bragg, det_dR, x_sp = pseudo_dict['bragg'], pseudo_dict['det_dR'], pseudo_dict['x_sp']
 
         x_cr, y_cr, x_det, y_det = compute_rowland_circle_geometry(0, 0, self.R, bragg, det_dR)
-
-        # self.RC.src_x = x_sp
-        # self.RC.compute_geometry(bragg, det_dR=det_dR)
-
-        # x_det, y_det = self.RC.detector_coords
         x_det -= x_sp
         det_arm_real_pos = self.det_arm.PseudoPosition(bragg=bragg, x_det=x_det, y_det=y_det)
-
-        # x_cr, _ = self.RC.crystal_coords
         x_cr = self.R + x_cr - x_sp
         y_cr = self.crystal1.y_0
         yaw_cr = self.crystal1.yaw_0*1000
-        crystal1_real_pos = self.crystal1.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y_cr, yaw=yaw_cr)
-        return self.RealPosition(det_arm=det_arm_real_pos,
-                                 crystal1=crystal1_real_pos)
+        crystal1_real_pos = self.crystal1.PseudoPosition(bragg=bragg, x_cr=x_cr, y_cr=y_cr, yaw_cr=yaw_cr)
+        # return self.RealPosition(det_arm=det_arm_real_pos,
+                                 # crystal1=crystal1_real_pos)
+        return {'det_arm' : det_arm_real_pos, 'crystal1' : crystal1_real_pos}
 
-    def _inverse(self, real_pos):
-        bragg = real_pos.crystal1.bragg
-
-        x_cr_ref, y_cr_ref, _, _ = compute_rowland_circle_geometry(0, 0, self.R, bragg, 0)
-        x_cr = real_pos.crystal1.x_cr - self.R
+    # def _inverse(self, real_pos):
+    #     bragg_cr = real_pos.crystal1.bragg
+    #     bragg_det = real_pos.det_arm.bragg
+    def _inverse(self, real_dict):
+        bragg_cr = real_dict['crystal1'].bragg
+        x_cr_ref, y_cr_ref, _, _ = compute_rowland_circle_geometry(0, 0, self.R, bragg_cr, 0)
+        x_cr = real_dict['crystal1'].x_cr - self.R
         x_sp = x_cr - x_cr_ref
 
-        _, _, x_det_ref, y_det_ref = compute_rowland_circle_geometry(x_sp, 0, self.R, bragg, 0)
-        x_det, y_det = real_pos.det_arm.x_det, real_pos.det_arm.y_det
+        bragg_det = real_dict['det_arm'].bragg
+        _, _, x_det_ref, y_det_ref = compute_rowland_circle_geometry(x_sp, 0, self.R, bragg_det, 0)
+        x_det, y_det = real_dict['det_arm'].x_det, real_dict['det_arm'].y_det
         det_dR = np.sqrt((x_det - x_det_ref)**2 + (y_det - y_det_ref)**2) * np.sign(y_det_ref - y_det)
 
-        return self.PseudoPosition(bragg=bragg, det_dR=det_dR, x_sp=x_sp)
+        # return self.PseudoPosition(bragg=bragg_cr, det_dR=det_dR, x_sp=x_sp)
 
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        return self._forward(pseudo_pos)
+        return {'bragg' : bragg_cr, 'det_dR' : det_dR, 'x_sp' : x_sp}
 
-    @real_position_argument
-    def inverse(self, real_pos):
-        return self._inverse(real_pos)
-
-# jsp = JohannMultiCrystalSpectrometer(name='jsp')
+jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 
 # motor_emission_dict = {'name': jsp.bragg.name, 'description' : 'Spectrometer Bragg angle', 'object': jsp.bragg, 'group': 'spectrometer'}
