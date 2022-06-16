@@ -509,7 +509,7 @@ jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 
 from xas.xray import bragg2e, e2bragg
-
+from xas.fitting import Nominal2ActualConverter
 class JohannEmissionMotor(PseudoPositioner):
     spectrometer = Cpt(JohannMultiCrystalSpectrometer, name='bragg')
     energy = Cpt(PseudoSingle, name='energy')
@@ -518,15 +518,24 @@ class JohannEmissionMotor(PseudoPositioner):
         super().__init__(*args, **kwargs)
         self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
         self.init_from_settings()
-        self.bragg_offset = 0
-
-
+        self.calibration_data = {'energy_nominal' : [], 'bragg_nominal' : [], 'bragg_actual' : []}
+        self.bragg_calibration = None
+        self.apply_calibration = True
+        self.bragg = self.spectrometer.bragg #alias
 
     #########
     def load_config(self, file):
         with open(file, 'r') as f:
             config = json.loads(f.read())
         return config
+
+    def save_config(self, file):
+        config = self.get_config()
+        with open(file, 'w') as f:
+            json.dump(config, f)
+
+    def save_to_settings(self):
+        self.save_config(self.json_path)
 
     def init_from_settings(self):
         try:
@@ -553,26 +562,21 @@ class JohannEmissionMotor(PseudoPositioner):
                 'x_src': self.spectrometer.x_src,
                 'y_src' : self.spectrometer.y_src}
 
-    def save_config(self, file):
-        config = self.get_config()
-        with open(file, 'w') as f:
-            json.dump(config, f)
+    def register_calibration_point(self, energy):
+        self.calibration_data['energy_nominal'].append(energy)
+        self.calibration_data['bragg_nominal'].append(e2bragg(energy))
+        self.calibration_data['bragg_actual'].append(self.spectrometer.bragg.position)
 
-    def save_to_settings(self):
-        self.save_config(self.json_path)
-
-    # def register_offsets_for_energy(self, energy):
-    #     bragg_nominal = e2bragg(energy)
-    #     bragg_actual = self.spectrometer.bragg.position
-    #     self.bragg_offset = bragg_nominal - bragg_actual
-
-
-
-    ########
+    def process_calibration(self, n_poly=2):
+        self.bragg_calibration = Nominal2ActualConverter(self.calibration_data['bragg_nominal'],
+                                                         self.calibration_data['bragg_actual'],
+                                                         n_poly=n_poly)
 
     def _forward(self, pseudo_pos):
         energy = pseudo_pos.energy
         bragg = e2bragg(energy, self.crystal, self.hkl)
+        if (self.bragg_calibration is not None) and (self.apply_calibration):
+            bragg = self.bragg_calibration.nom2act(bragg)
         det_dR = self.spectrometer.det_dR.position
         x_sp = self.spectrometer.x_sp.position
         pos = self.spectrometer.PseudoPosition(bragg=bragg, det_dR=det_dR, x_sp=x_sp)
@@ -580,6 +584,8 @@ class JohannEmissionMotor(PseudoPositioner):
 
     def _inverse(self, real_pos):
         bragg = real_pos.spectrometer.bragg
+        if (self.bragg_calibration is not None) and (self.apply_calibration):
+            bragg = self.bragg_calibration.act2nom(bragg)
         energy = bragg2e(bragg, self.crystal, self.hkl)
         return self.PseudoPosition(energy=energy)
 
