@@ -604,7 +604,8 @@ class BatchManager(PersistentListInteractingWithGUI):
             scan_key = actual_scan_dict['aux_parameters']['scan_key']
             return scan_element['repeat'], scan_element['delay'], scan_idx, scan_name, scan_key
         else:
-            raise Exception('Seems like the scan for batch measurement was deleted/cannot be found')
+            # raise Exception('Seems like the scan for batch measurement was deleted/cannot be found')
+            print('Warning: Seems like the scan for batch measurement was deleted/cannot be found')
 
     def prepare_scan_plan_from_scan_element(self, scan_element):
         actual_scan_dict = scan_element['scan_local_dict']
@@ -620,18 +621,19 @@ class BatchManager(PersistentListInteractingWithGUI):
 
     def convert_service_to_plans(self, service_element):
         plans = []
-        if 'service_element' in service_element.keys():
+        if 'element_to_service' in service_element.keys():
             element_to_service = service_element['element_to_service']
             if element_to_service['type'] == 'scan':
+                # print('THIS IS SCAN')
                 scan_uid = element_to_service['scan_local_dict']['uid']
                 aux_parameters = element_to_service['scan_local_dict']['aux_parameters']
                 plans.append({'plan_name': 'prepare_scan_plan',
                               'plan_kwargs': {'scan_uid' : scan_uid, 'aux_parameters' : aux_parameters}})
             elif element_to_service['type'] == 'sample':
+                # print('THIS IS SAMPLE')
                 sample_coordinates = element_to_service['sample_coordinates']
                 plans.append({'plan_name': 'move_sample_stage_plan',
                               'plan_kwargs': {'sample_coordinates': sample_coordinates}})
-
         plans.append({'plan_name': service_element['plan_name'], 'plan_kwargs' : service_element['plan_kwargs']})
         return plans
 
