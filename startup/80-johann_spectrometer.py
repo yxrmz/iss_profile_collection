@@ -348,8 +348,8 @@ class MainJohannCrystal(ISSPseudoPositioner):
     def restore_parking(self):
         self.x_0 = 1000.000
         self.y_0 = 4.438
-        self.roll_0 = 4.940
-        self.yaw_0 = 0.840
+        self.roll_0 = 5.750
+        self.yaw_0 = 0.170
 
     def set_angle_offset(self, offset_num):
         if offset_num == 1:
@@ -564,7 +564,7 @@ class JohannEmissionMotor(PseudoPositioner):
 
     def register_calibration_point(self, energy):
         self.calibration_data['energy_nominal'].append(energy)
-        self.calibration_data['bragg_nominal'].append(e2bragg(energy))
+        self.calibration_data['bragg_nominal'].append(e2bragg(energy, self.crystal, self.hkl))
         self.calibration_data['bragg_actual'].append(self.spectrometer.bragg.position)
 
     def process_calibration(self, n_poly=2):
