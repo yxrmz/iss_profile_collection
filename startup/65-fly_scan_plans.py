@@ -130,8 +130,8 @@ class FlyerHHM(Device):
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
 flyer_hhm = FlyerHHM([apb_stream, hhm_encoder], hhm, shutter, name='flyer_apb')
 
-def get_fly_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata):
-    md_general = get_hhm_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata, fn_ext='.raw')
+def get_fly_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata):
+    md_general = get_hhm_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata, fn_ext='.raw')
     md_scan = {'experiment': 'fly_scan'}
     return {**md_general, **md_scan}
 
@@ -142,8 +142,8 @@ def fly_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_
     trajectory_stack.set_trajectory(trajectory_filename, offset=mono_angle_offset)
     aux_detectors = get_detector_device_list(detectors, flying=True)
     flyer_hhm.set_aux_dets(aux_detectors)
-
-    md = get_fly_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata)
+    detectors_dict = {k :{'device' : v} for k, v in zip(detectors, aux_detectors)}
+    md = get_fly_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata)
 
     @bpp.stage_decorator([flyer_hhm])
     def _fly(md):

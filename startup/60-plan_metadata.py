@@ -58,23 +58,35 @@ def create_interp_file_name(name, fn_ext):
     fn = validate_file_exists(fn)
     return fn
 
-def get_scan_md(name, comment, detectors, fn_ext):
+def get_detector_md(detectors_dict):
+    md = {}
+    for detector, device_dict in detectors_dict.items():
+        device = device_dict['device']
+        if hasattr(device, 'read_config_metadata'):
+            config = device.read_config_metadata()
+        else:
+            config = {}
+        md[detector] = {'config' : config}
+    return md
+
+def get_scan_md(name, comment, detectors_dict, fn_ext):
     fn = create_interp_file_name(name, fn_ext)
     md_general = get_general_md()
+    md_detectors = get_detector_md(detectors_dict)
     md_scan = {'interp_filename': fn,
                'name': name,
                'comment': comment,
-               'detectors': detectors,
+               'detectors': md_detectors,
                'plot_hint': '$5/$1'}
     return {**md_general, **md_scan}
 
-def get_hhm_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata, fn_ext='.raw'):
+def get_hhm_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata, fn_ext='.raw'):
     try:
         full_element_name = getattr(elements, element).name.capitalize()
     except:
         full_element_name = element
 
-    md_scan = get_scan_md(name, comment, detectors, fn_ext)
+    md_scan = get_scan_md(name, comment, detectors_dict, fn_ext)
 
     md_hhm_scan = {'trajectory_filename': trajectory_filename,
                'element': element,

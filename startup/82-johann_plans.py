@@ -53,13 +53,12 @@ def fly_scan_johann_herfd_plan(**kwargs):
     yield from fly_scan_plan(metadata=metadata, **kwargs)
 
 
-def get_johann_xes_step_scan_md(name, comment, detectors, emission_energy_list, emission_time_list, element, e0, line, metadata):
+def get_johann_xes_step_scan_md(name, comment, detectors_dict, emission_energy_list, emission_time_list, element, e0, line, metadata):
     try:
         full_element_name = getattr(elements, element).name.capitalize()
     except:
         full_element_name = element
-
-    md_general = get_scan_md(name, comment, detectors, '.dat')
+    md_general = get_scan_md(name, comment, detectors_dict, '.dat')
 
     md_scan = {'experiment': 'step_scan',
                'spectrometer': 'johann',
@@ -80,8 +79,8 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     default_detectors = [apb_ave, hhm_encoder]
     aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
-
-    md = get_johann_xes_step_scan_md(name, comment, detectors, emission_energy_list, emission_time_list, element, e0, line, metadata)
+    detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
+    md = get_johann_xes_step_scan_md(name, comment, detectors_dict, emission_energy_list, emission_time_list, element, e0, line, metadata)
 
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     yield from bps.mv(hhm.energy, mono_energy)

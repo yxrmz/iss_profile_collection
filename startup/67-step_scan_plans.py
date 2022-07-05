@@ -40,8 +40,8 @@ def read_step_scan_file(filename):
     return energy.tolist(), dwell_time.tolist()
 
 
-def get_step_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata):
-    md_general = get_hhm_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata, fn_ext='.dat')
+def get_step_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata):
+    md_general = get_hhm_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata, fn_ext='.dat')
     md_scan = {'experiment': 'step_scan'}
     return {**md_general, **md_scan}
 
@@ -65,6 +65,7 @@ def step_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle
     default_detectors = [apb_ave, hhm_encoder]
     aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
-    md = get_step_scan_md(name, comment, trajectory_filename, detectors, element, e0, edge, metadata)
+    detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
+    md = get_step_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata)
 
     yield from general_energy_step_scan(all_detectors, hhm.energy, energy_list, time_list, md=md)

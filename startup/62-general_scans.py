@@ -116,17 +116,18 @@ def set_detector_exposure_time_plan(detectors, exposure_time):
             yield from bps.mv(det.settings.acquire_time, exposure_time)
 
 
-def get_n_exposures_plan_md(name, comment, energy, detectors, n_exposures, dwell_time, metadata):
+def get_n_exposures_plan_md(name, comment, energy, detectors_dict, n_exposures, dwell_time, metadata):
         fn = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{name}.dat"
         fn = validate_file_exists(fn)
 
         md_general = get_general_md()
+        md_detectors = get_detector_md(detectors_dict)
         md_scan = {'experiment': 'collect_n_exposures',
                    'interp_filename': fn,
                    'name': name,
                    'comment': comment,
                    'hhm_energy' : energy,
-                   'detectors': detectors,
+                   'detectors': md_detectors,
                    'n_exposures' : n_exposures,
                    'dwell_time' : dwell_time,
                    'plot_hint': '$5/$1'}
@@ -151,8 +152,8 @@ def collect_n_exposures_plan(name : str = '', comment : str = '',
     default_detectors = [apb_ave, hhm_encoder]
     aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
-
-    md = get_n_exposures_plan_md(name, comment, mono_energy, detectors, n_exposures, dwell_time, metadata)
+    detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
+    md = get_n_exposures_plan_md(name, comment, mono_energy, detectors_dict, n_exposures, dwell_time, metadata)
 
     yield from bps.mv(hhm.energy, mono_energy)
     yield from general_n_exposures(all_detectors, n_exposures, dwell_time, md)

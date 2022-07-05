@@ -159,6 +159,26 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         self.enforce_roi_match_between_plugins()
         return super().stage()
 
+    @property
+    def roi_metadata(self):
+        md = {}
+        key_table = {'x': 'min_x',
+                     'dx': 'size_x',
+                     'y': 'min_y',
+                     'dy': 'size_y'}
+        for i in range(1, 5):
+            k_roi = f'roi{i}'
+            roi_md = {}
+            for k_md, k_epics in key_table.items():
+                roi_md[k_md] = getattr(self.roistat, f'{k_roi}.{k_epics}').value
+            md[k_roi] = roi_md
+        return md
+
+    def read_config_metadata(self):
+        md = {}
+        md['device_name'] = self.name
+        md['roi'] = self.roi_metadata
+        return md
 
     # @property
     # def is_flying(self):
