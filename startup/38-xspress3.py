@@ -274,7 +274,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
     def format_datum_key(self, input_dict):
         # return f'{input_dict["name"]}_ch{input_dict["channel"]:02d}_{input_dict["type"]}'
-        output =f'ch{input_dict["channel"]:02d}_{input_dict["data_type"]}'
+        output =f'xs_ch{input_dict["channel"]:02d}_{input_dict["data_type"]}'
         if input_dict["data_type"] == 'roi':
             output += f'{input_dict["roi_num"]:02d}'
         return output
