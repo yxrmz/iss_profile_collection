@@ -64,25 +64,41 @@ class HHRM(Device):
     table_pitch = Cpt(EpicsMotor, 'Mir:HRM:TP}Mtr')
     y = Cpt(StuckingEpicsMotor, 'Mir:HRM:TY}Mtr')
 
+
+    #     # print_to_gui('WARNING HHRM STRIPE IS NOT DEFINED')
+    #     # return 'undefined'
+    #
+    # def get_current_stripe(self):
+    #     pos = self.hor_translation.user_readback.get()
+    #     if np.isclose(pos, 0, atol=15):
+    #         stripe = 'Si'
+    #     elif np.isclose(pos, -80, atol=15):
+    #         stripe = 'Pt'
+    #     elif np.isclose(pos, 80, atol=15):
+    #         stripe = 'Rh'
+    #     else:
+    #         stripe = 'undefined'
+    #     return stripe
+
+    def __init__(self, *args, pos_dict=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.x = self.hor_translation
+        if pos_dict is None:
+            pos_dict = {}
+        self.pos_dict = pos_dict
+
+    def get_current_stripe(self):
+        pos = self.x.position
+        for k, value in self.pos_dict.items():
+            if np.isclose(pos, value, atol=15):
+                return k
+        return 'undefined'
+
     @property
     def current_stripe(self):
         return self.get_current_stripe()
-        # print_to_gui('WARNING HHRM STRIPE IS NOT DEFINED')
-        # return 'undefined'
 
-    def get_current_stripe(self):
-        pos = self.hor_translation.user_readback.get()
-        if np.isclose(pos, 0, atol=15):
-            stripe = 'Si'
-        elif np.isclose(pos, -80, atol=15):
-            stripe = 'Pt'
-        elif np.isclose(pos, 80, atol=15):
-            stripe = 'Rh'
-        else:
-            stripe = 'undefined'
-        return stripe
-
-hhrm = HHRM('XF:08IDB-OP{', name='hhrm')
+hhrm = HHRM('XF:08IDB-OP{', name='hhrm', pos_dict={'Pt' : -80, 'Si' : 0, 'Rh': 80})
 
 
 class SampleXY(Device):
@@ -131,6 +147,7 @@ ir_y = IonChamberMotor('XF:08IDB-OP{IC-Ax:Y:3', name='ir_y')
 class Bender(Device):
     pos = Cpt(EpicsMotor, '}Mtr')
     load_cell = EpicsSignalRO('XF:08IDA-OP{Mir:CM-Ax:Bender}W-I', name='bender_loading')
+# TODO: change the name of the class/object to BenderCM2/bender_cm2
 bender = Bender('XF:08IDA-OP{Mir:CM-Bender', name='bender')
 
 class BenderFM(Device):
