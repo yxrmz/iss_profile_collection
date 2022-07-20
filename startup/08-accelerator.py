@@ -35,5 +35,8 @@ class Accelerator(Device):
     def status_str(self):
         return self.return_status_string()
 
+    def get_energy_str(self):
+        return self.energy_str
+
 nsls_ii=Accelerator('SR', name='nsls_ii')
 

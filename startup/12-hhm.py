@@ -187,7 +187,11 @@ class HHM(Device):
         new_angular_offset = self.angle_offset.value - angular_offset_shift
         return self.set_new_angle_offset(new_angular_offset, error_message_func=error_message_func)
 
+    def get_angle_offset_deg_str(self):
+        return f'{np.round(hhm.angle_offset.get() * 180 / np.pi, 3)} deg'
 
+    def get_mono_encoder_resolution_str(self):
+        return f'{(np.round(hhm.main_motor_res.get() * np.pi / 180 * 1e9))} nrad'
 
 
 hhm = HHM('XF:08IDA-OP{', name='hhm')

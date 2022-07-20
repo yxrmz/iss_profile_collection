@@ -318,6 +318,9 @@ class ICAmplifier(Device):
         elif self.high_speed_gain.get() == 0:
             return [int(self.low_noise_gain.enum_strs[self.low_noise_gain.get()][-1]),0]
 
+    def get_gain_value(self):
+        return self.get_gain()[0]
+
         '''
         if self.low_noise_gain.get() == 0:
             return [self.high_speed_gain.enum_strs[self.high_speed_gain.get()], 1]

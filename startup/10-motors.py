@@ -16,11 +16,24 @@ class Mirror(Device):
     yu = Cpt(EpicsMotor, '-Ax:YU}Mtr')
     yaw = Cpt(EpicsMotor, '-Ax:Yaw}Mtr')
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
-    
 
-cm1 = Mirror('XF:08IDA-OP{Mir:1-CM', name='cm1')
-cm2 = Mirror('XF:08IDA-OP{Mir:2-CM', name='cm2')
-fm = Mirror('XF:08IDA-OP{Mir:FM', name='fm')
+    def __init__(self, *args, pos_dict=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if pos_dict is None:
+            pos_dict = {}
+        self.pos_dict = pos_dict
+
+    def get_current_stripe(self):
+        pos = self.x.position
+        for k, value in self.pos_dict.items():
+            if np.isclose(pos, value, atol=15):
+                return k
+        return 'undefined'
+
+
+cm1 = Mirror('XF:08IDA-OP{Mir:1-CM', name='cm1', pos_dict={'Rh' : -40, 'Si' : 0, 'Pt': 40})
+cm2 = Mirror('XF:08IDA-OP{Mir:2-CM', name='cm2', pos_dict={'Pt' : -20, 'Rh' : 20})
+fm = Mirror('XF:08IDA-OP{Mir:FM', name='fm', pos_dict={'Pt' : -60, 'Rh': 60})
 
 # h = 20 # mm
 #
@@ -53,19 +66,21 @@ class HHRM(Device):
 
     @property
     def current_stripe(self):
+        return self.get_current_stripe()
+        # print_to_gui('WARNING HHRM STRIPE IS NOT DEFINED')
+        # return 'undefined'
+
+    def get_current_stripe(self):
         pos = self.hor_translation.user_readback.get()
-        if np.isclose(pos, 0, atol=1):
+        if np.isclose(pos, 0, atol=15):
             stripe = 'Si'
-        elif np.isclose(pos, 40, atol=1):
+        elif np.isclose(pos, -80, atol=15):
             stripe = 'Pt'
-        elif np.isclose(pos, -40, atol=1):
+        elif np.isclose(pos, 80, atol=15):
             stripe = 'Rh'
         else:
             stripe = 'undefined'
         return stripe
-        # print_to_gui('WARNING HHRM STRIPE IS NOT DEFINED')
-        # return 'undefined'
-
 
 hhrm = HHRM('XF:08IDB-OP{', name='hhrm')
 
@@ -118,6 +133,10 @@ class Bender(Device):
     load_cell = EpicsSignalRO('XF:08IDA-OP{Mir:CM-Ax:Bender}W-I', name='bender_loading')
 bender = Bender('XF:08IDA-OP{Mir:CM-Bender', name='bender')
 
+class BenderFM(Device):
+    pos = Cpt(EpicsMotor, '}Mtr')
+    load_cell = EpicsSignalRO('XF:08IDA-OP{Mir:FM-Ax:Bender}W-I', name='bender_fm_loading')
+bender_fm = BenderFM('XF:08IDA-OP{Mir:FM-Bender', name='bender_fm')
 
 class FilterBox(Device):
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')

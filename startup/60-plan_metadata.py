@@ -1,4 +1,36 @@
 from xas.file_io import validate_file_exists
+from xas.metadata import populate_standard_metadata_dict, get_standard_metadata
+populate_standard_metadata_dict()
+# populate_md_dict({'nslsii_status':                  nsls_ii.return_status_string,
+#                   'nslsii_current':                 nsls_ii.beam_current,
+#                   'nslsii_energy':                  nsls_ii.get_energy_str,
+#                   'beamline_cm1':                   cm1.get_current_stripe,
+#                   'beamline_cm2':                   cm2.get_current_stripe,
+#                   'beamline_cm2_bender':            bender.load_cell,
+#                   'beamline_fm':                    fm.get_current_stripe,
+#                   'beamline_fm_bender':             bender_fm.load_cell,
+#                   'beamline_harmonic_rejection':    hhrm.get_current_stripe,
+#                   'angle_offset' :                  hhm.angle_offset,
+#                   'angle_offset_deg' :              hhm.get_angle_offset_deg_str,
+#                   'mono_encoder_resolution':        hhm.get_mono_encoder_resolution_str,
+#                   'detector_i0_n2': (lambda : f'{np.round(gas_n2.flow.get() / (gas_he.flow.get() + gas_n2.flow.get()) * 100)}%'),
+#                   'detector_it_n2': (lambda : f'{np.round(gas_n2.flow.get() / (gas_he.flow.get() + gas_n2.flow.get()) * 100)}%'),
+#                   'detector_ir_n2': (lambda : f'{np.round(gas_n2.flow.get() / (gas_he.flow.get() + gas_n2.flow.get()) * 100)}%'),
+#                   'detector_i0_he': (lambda : f'{np.round(gas_he.flow.get() / (gas_he.flow.get() + gas_n2.flow.get()) * 100)}%'),
+#                   'detector_it_he': (lambda : f'{np.round(gas_he.flow.get() / (gas_he.flow.get() + gas_n2.flow.get()) * 100)}%'),
+#                   'detector_ir_he': (lambda : f'{np.round(gas_he.flow.get() / (gas_he.flow.get() + gas_n2.flow.get()) * 100)}%'),
+#                   'detector_i0_volt': wps1.hv302.read_pv,
+#                   'detector_it_volt': wps1.hv303.read_pv,
+#                   'detector_ir_volt': wps1.hv305.read_pv,
+#                   'i0_gain': i0_amp.get_gain_value,
+#                   'it_gain': it_amp.get_gain_value,
+#                   'ir_gain': ir_amp.get_gain_value,
+#                   'iff_gain': iff_amp.get_gain_value,
+#                   'sample_x_position':  sample_stage.x.user_readback,
+#                   'sample_y_position':  sample_stage.y.user_readback,
+#                   'sample_z_position':  sample_stage.z.user_readback,
+#                   'sample_th_position': sample_stage.th.user_readback,
+# })
 
 
 def get_general_md():
@@ -49,7 +81,11 @@ def get_general_md():
             md[f'ch{indx+1}_amp_gain']= amp.get_gain()[0]
         else:
             md[f'ch{indx+1}_amp_gain'] = 0
-    return md
+
+
+    sample_metadata = get_standard_metadata()
+
+    return {**md, **sample_metadata}
 
 
 
@@ -89,10 +125,10 @@ def get_hhm_scan_md(name, comment, trajectory_filename, detectors_dict, element,
     md_scan = get_scan_md(name, comment, detectors_dict, fn_ext)
 
     md_hhm_scan = {'trajectory_filename': trajectory_filename,
-               'element': element,
-               'element_full': full_element_name,
-               'edge': edge,
-               'e0': e0}
+                   'element': element,
+                   'element_full': full_element_name,
+                   'edge': edge,
+                   'e0': e0}
     return {**md_hhm_scan, **md_scan, **metadata}
 
 
