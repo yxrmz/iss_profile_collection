@@ -269,15 +269,19 @@ bpm_es.stats1.total.kind = 'hinted'
 
 camera_sp1.stats1.kind = 'hinted'
 camera_sp1.stats1.total.kind = 'hinted'
+camera_sp1.stats1.net.kind = 'hinted'
 
 camera_sp1.stats2.kind = 'hinted'
 camera_sp1.stats2.total.kind = 'hinted'
+camera_sp1.stats2.net.kind = 'hinted'
 
 camera_sp2.stats1.kind = 'hinted'
 camera_sp2.stats1.total.kind = 'hinted'
+camera_sp2.stats1.net.kind = 'hinted'
 
 camera_sp2.stats2.kind = 'hinted'
 camera_sp2.stats2.total.kind = 'hinted'
+camera_sp2.stats2.net.kind = 'hinted'
 
 camera_sp3.stats1.kind = 'hinted'
 camera_sp3.stats1.total.kind = 'hinted'
