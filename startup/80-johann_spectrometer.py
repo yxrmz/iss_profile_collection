@@ -319,7 +319,7 @@ class MainJohannCrystal(ISSPseudoPositioner):
     roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    angle_offset = Cpt(SoftPositioner, init_pos=0.0) # software representation of the angular offset on the crystal stage
+    roll_offset = Cpt(SoftPositioner, init_pos=0.0) # software representation of the angular offset on the crystal stage
 
     x_cr = Cpt(PseudoSingle, name='x_cr')
     y_cr = Cpt(PseudoSingle, name='y_cr')
@@ -330,36 +330,49 @@ class MainJohannCrystal(ISSPseudoPositioner):
     _real = ['x', 'y', 'roll', 'yaw']
     _pseudo = ['x_cr', 'y_cr', 'bragg', 'yaw_cr']
 
-    def __init__(self, *args, **kwargs):
-        self.restore_parking()
+    def __init__(self, *args, config=None, **kwargs):
+        self.restore_parking(config)
         super().__init__(*args, **kwargs)
-
-        self.angle_offset.set(0)
-        # self._real = [self.x, self.roll]
-
+        self.restore_roll_offset(config)
 
     def set_parking(self):
-        self.x_0 = self.x.position
-        self.y_0 = self.y.position
-        self.roll_0 = self.roll.position
-        self.yaw_0 = self.yaw.position
-        self.angle_offset_0 = self.angle_offset.position
+        self.x0 = self.x.position
+        self.y0 = self.y.position
+        self.roll0 = self.roll.position / 1000
+        self.yaw0 = self.yaw.position / 1000
+        # self.roll_offset0 = self.roll_offset.position
 
-    def restore_parking(self):
-        self.x_0 = 1000.000
-        self.y_0 = 4.438
-        self.roll_0 = 5.750
-        self.yaw_0 = 0.170
+    def restore_parking(self, config):
+        if config is not None:
+            try:
+                self.x0 = config['main_johann_crystal_x0']
+                self.y0 = config['main_johann_crystal_y0']
+                self.roll0 = config['main_johann_crystal_roll0']
+                self.yaw0 = config['main_johann_crystal_yaw0']
+                return
+            except:
+                pass
+        # some default values that are reasonable
+        self.x0 = 1000.000
+        self.y0 = 4.438
+        self.roll0 = 5.750
+        self.yaw0 = 0.170
 
-    def set_angle_offset(self, offset_num):
-        if offset_num == 1:
-            self.angle_offset.set(0)
-        elif offset_num == 2:
-            self.angle_offset.set(10)
-        elif offset_num == 3:
-            self.angle_offset.set(20)
+    def restore_roll_offset(self, config):
+        if config is not None:
+            self.roll_offset.set(config['main_johann_crystal_roll_offset0'])
         else:
-            raise Exception('angle offset for a crystal must be 1,2, or 3')
+            self.roll_offset.set(0)
+
+    def set_roll_offset(self, value):
+        self.roll_offset.set(value)
+
+    def read_current_config(self):
+        return {'main_johann_crystal_x0': self.x0,
+                'main_johann_crystal_y0': self.y0,
+                'main_johann_crystal_roll0': self.roll0,
+                'main_johann_crystal_yaw0': self.yaw0,
+                'main_johann_crystal_roll_offset0': self.roll_offset.position}
 
     # def _forward(self, pseudo_pos):
     #     bragg, x_cr, y, yaw = pseudo_pos.bragg, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
@@ -367,8 +380,8 @@ class MainJohannCrystal(ISSPseudoPositioner):
     def _forward(self, pseudo_dict):
         # bragg, x_cr, y, yaw = pseudo_dict['bragg'], pseudo_dict['x_cr'], pseudo_dict['y'], pseudo_dict['yaw']
         x_cr, y_cr, bragg, yaw_cr = pseudo_dict['x_cr'], pseudo_dict['y_cr'], pseudo_dict['bragg'], pseudo_dict['yaw_cr']
-        roll = -(90 - bragg - self.angle_offset.position - self.roll_0) * 1000
-        x = self.x_0 - x_cr
+        roll = -(90 - bragg - self.roll_offset.position - self.roll0) * 1000
+        x = self.x0 - x_cr
         return {'x' : x, 'roll' : roll, 'y' : y_cr, 'yaw' : yaw_cr}
         # return self.RealPosition(x=x, roll=roll, y=y, yaw=yaw)
 
@@ -377,8 +390,8 @@ class MainJohannCrystal(ISSPseudoPositioner):
 
     def _inverse(self, real_dict):
         x, roll, y, yaw = real_dict['x'], real_dict['roll'], real_dict['y'], real_dict['yaw'],
-        bragg = 90 + roll/1000 - self.angle_offset.position - self.roll_0
-        x_cr = self.x_0 - x
+        bragg = 90 + roll / 1000 - self.roll_offset.position - self.roll0
+        x_cr = self.x0 - x
         return {'x_cr' : x_cr, 'y_cr' : y, 'bragg' : bragg, 'yaw_cr' : yaw}
         # return self.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y, yaw=yaw)
 
@@ -463,8 +476,8 @@ class JohannMultiCrystalSpectrometer(ISSPseudoPositioner):
         x_det -= x_sp
         det_arm_real_pos = self.det_arm.PseudoPosition(bragg=bragg, x_det=x_det, y_det=y_det)
         x_cr = self.R + x_cr - x_sp
-        y_cr = self.crystal1.y_0
-        yaw_cr = self.crystal1.yaw_0*1000
+        y_cr = self.crystal1.y0
+        yaw_cr = self.crystal1.yaw0 * 1000
         crystal1_real_pos = self.crystal1.PseudoPosition(bragg=bragg, x_cr=x_cr, y_cr=y_cr, yaw_cr=yaw_cr)
         # return self.RealPosition(det_arm=det_arm_real_pos,
                                  # crystal1=crystal1_real_pos)
@@ -540,27 +553,32 @@ class JohannEmissionMotor(PseudoPositioner):
     def init_from_settings(self):
         try:
             config = self.load_config(self.json_path)
+            self.spectrometer.crystal1.restore_parking(config)
         except FileNotFoundError:
-            config = {'crystal' : 'Si',
-                      'hkl': (7, 3, 3),
-                      'R': 1000,
-                      'x_src': 0,
-                      'y_src' : 0}
-        self.update_johann_parameters(config)
+            config = {}
+        self.update_johann_parameters(**config)
 
-    def update_johann_parameters(self, config):
-        self.crystal = config['crystal']
-        self.hkl = config['hkl']
-        self.spectrometer.R = config['R']
-        self.spectrometer.x_src = config['x_src']
-        self.spectrometer.y_src = config['y_src']
+    def update_johann_parameters(self, crystal='Si', hkl=(7, 3, 3), R=1000, x_src=0, y_src=0, **kwargs):
+        self.crystal = crystal
+        self.hkl = hkl
+        self.spectrometer.R = R
+        self.spectrometer.x_src = x_src
+        self.spectrometer.y_src = y_src
 
     def get_config(self):
-        return {'crystal' : self.crystal,
+        config = {'crystal' : self.crystal,
                 'hkl': self.hkl,
                 'R': self.spectrometer.R,
                 'x_src': self.spectrometer.x_src,
                 'y_src' : self.spectrometer.y_src}
+        crystal1_config = self.spectrometer.crystal1.read_current_config()
+
+        return {**config, **crystal1_config}
+
+    def set_main_crystal_parking(self):
+        self.spectrometer.crystal1.set_parking()
+        self.save_to_settings()
+
 
     def register_calibration_point(self, energy):
         self.calibration_data['energy_nominal'].append(energy)

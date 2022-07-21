@@ -14,6 +14,10 @@ import time as ttime
 
 #app = QApplication(sys.argv)
 
+# processing_ioc_uid = EpicsSignal('XF:08IDB-Processing:pv_uid', name='process_ioc_uid')
+processing_ioc_uid = None
+
+
 if not os.environ.get('AZURE_TESTING'):
     from isstools import xlive
 
@@ -28,6 +32,7 @@ if not os.environ.get('AZURE_TESTING'):
                                RE=RE,
                                db=db,
                                db_proc=db_proc,
+                               processing_ioc_uid=processing_ioc_uid,
                                accelerator=nsls_ii,
                                hhm=hhm,
                                hhm_encoder=hhm_encoder,
