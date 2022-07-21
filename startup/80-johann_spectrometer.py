@@ -265,29 +265,42 @@ class DetectorArm(ISSPseudoPositioner):
     x_det = Cpt(PseudoSingle, name='x_det')
     y_det = Cpt(PseudoSingle, name='y_det')
 
-    def __init__(self, *args, **kwargs):
-        self.restore_parking()
+    def __init__(self, *args, config=None, **kwargs):
+        self.restore_parking(config)
         super().__init__(*args, **kwargs)
 
     def set_parking(self):
-        self.x_0 = self.x.position
-        self.th1_0 = self.th1.position
-        self.th2_0 = self.th2.position
-        self.dx = self.L1 * np.cos(np.deg2rad(self.th1_0)) - self.L2
-        self.h = self.L1 * np.sin(np.deg2rad(self.th1_0))
+        self.x0 = self.x.position
+        self.th10 = self.th1.position
+        self.th20 = self.th2.position
 
-    def restore_parking(self):
-        '''
-        Read parking positions from previous records
-        '''
-        self.x_0 = 0 # high limit of this motor should be at 592 mm
-        self.th1_0 = 69
-        self.th2_0 = -69
-        self.dx = self.L1 * np.cos(np.deg2rad(self.th1_0)) - self.L2
-        self.h = self.L1 * np.sin(np.deg2rad(self.th1_0))
+    def restore_parking(self, config):
+        if config is not None:
+            try:
+                self.x0 = config['johann_det_arm_x0']  # high limit of this motor should be at 592 mm (OR 529???)
+                self.th10 = config['johann_det_arm_th10']
+                self.th20 = config['johann_det_arm_th20']
+                return
+            except:
+                pass
+        # some default values that are reasonable
+        self.x0 = 0 # high limit of this motor should be at 592 mm (OR 529???)
+        self.th10 = 69
+        self.th20 = -69
 
-    # def _forward(self, pseudo_pos):
-    #     bragg, x_det, y_det = pseudo_pos.bragg, pseudo_pos.x_det, pseudo_pos.y_det
+    def read_current_config(self):
+        return {'johann_det_arm_x0': self.x0,
+                'johann_det_arm_th10': self.th10,
+                'johann_det_arm_th20': self.th20}
+
+    @property
+    def dx(self):
+        return self.L1 * np.cos(np.deg2rad(self.th10)) - self.L2
+
+    @property
+    def h(self):
+        return self.L1 * np.sin(np.deg2rad(self.th10))
+
 
     def _forward(self, pseudo_dict):
         bragg, x_det, y_det = pseudo_dict['bragg'], pseudo_dict['x_det'], pseudo_dict['y_det']
@@ -296,7 +309,7 @@ class DetectorArm(ISSPseudoPositioner):
         sin_th1 = (self.h - self.L2 * np.sin(phi) - y_det) / self.L1
         th1 = np.arcsin(sin_th1)
         th2 = phi + th1
-        x = self.x_0 - self.dx + self.L1 * np.cos(th1) - self.L2 * np.cos(phi) - x_det
+        x = self.x0 - self.dx + self.L1 * np.cos(th1) - self.L2 * np.cos(phi) - x_det
         return {'x' : x, 'th1' : np.rad2deg(th1), 'th2' : -np.rad2deg(th2)}
 
     # def _inverse(self, real_pos):
@@ -305,7 +318,7 @@ class DetectorArm(ISSPseudoPositioner):
         x, th1, th2 = real_dict['x'], real_dict['th1'], real_dict['th2']
         th2 *= -1
         bragg = (180 - (th2 - th1)) / 2
-        x_det = self.x_0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
+        x_det = self.x0 - self.dx + self.L1 * np.cos(np.deg2rad(th1)) - self.L2 * np.cos(np.deg2rad(th2 - th1)) - x
         y_det = self.h - self.L1 * np.sin(np.deg2rad(th1)) - self.L2 * np.sin(np.deg2rad(th2 - th1))
         return {'bragg' : bragg, 'x_det' : x_det, 'y_det' : y_det}
 
@@ -554,7 +567,9 @@ class JohannEmissionMotor(PseudoPositioner):
         try:
             config = self.load_config(self.json_path)
             self.spectrometer.crystal1.restore_parking(config)
+            self.spectrometer.det_arm.restore_parking(config)
         except FileNotFoundError:
+            print('Could not find Johann spectrometer configuration file. Proceed with caution.')
             config = {}
         self.update_johann_parameters(**config)
 
@@ -572,13 +587,17 @@ class JohannEmissionMotor(PseudoPositioner):
                 'x_src': self.spectrometer.x_src,
                 'y_src' : self.spectrometer.y_src}
         crystal1_config = self.spectrometer.crystal1.read_current_config()
+        det_arm_config = self.spectrometer.det_arm.read_current_config()
 
-        return {**config, **crystal1_config}
+        return {**config, **crystal1_config, **det_arm_config}
 
     def set_main_crystal_parking(self):
         self.spectrometer.crystal1.set_parking()
         self.save_to_settings()
 
+    def set_det_arm_parking(self):
+        self.spectrometer.det_arm.set_parking()
+        self.save_to_settings()
 
     def register_calibration_point(self, energy):
         self.calibration_data['energy_nominal'].append(energy)
