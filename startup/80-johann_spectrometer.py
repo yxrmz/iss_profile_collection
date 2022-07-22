@@ -657,6 +657,16 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
                                           'object': johann_emission.energy,
                                           'group': 'spectrometer'}
 
+
+
+# def move_det_arm_only(bragg):
+#     _, _, x_det, y_det = compute_rowland_circle_geometry(0, 0, 1000, bragg, 0)
+#     # print(johann_emission.spectrometer.det_arm.position)
+#     johann_emission.spectrometer.det_arm.move(bragg=bragg, x_det=x_det, y_det=y_det)
+#
+# move_det_arm_only(82)
+
+
 # ba_set = 75.5
 # row_circle.compute_geometry(ba_set)
 # coords = row_circle.detector_coords
@@ -681,7 +691,201 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
 
 
 
+class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner):
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
 
+    motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
+    motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
+
+    motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
+    motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
+    motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
+
+
+
+    cr_assy_x = Cpt(PseudoSingle, name='cr_x')
+    cr_assy_y = Cpt(PseudoSingle, name='cr_y')
+
+    cr_main_bragg = Cpt(PseudoSingle, name='cr_bragg')
+    cr_main_yaw = Cpt(PseudoSingle, name='cr_bragg')
+
+    det_bragg = Cpt(PseudoSingle, name='det_bragg')
+    det_x = Cpt(PseudoSingle, name='det_x')
+    det_y = Cpt(PseudoSingle, name='det_y')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+    x = Cpt(PseudoSingle, name='x')
+    det_focus = Cpt(PseudoSingle, name='det_focus')
+
+    _real = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
+             'motor_det_x', 'motor_det_th1', 'motor_det_th2']
+    _pseudo = ['cr_assy_x', 'cr_assy_y', 'cr_main_bragg', 'cr_main_yaw', 'det_bragg', 'det_x', 'det_y', 'bragg', 'x', 'det_focus']
+
+    cr_roll_offset = Cpt(SoftPositioner,
+                         init_pos=0)  # software representation of the angular offset on the crystal stage
+
+    det_L1 = 550  # length of the big arm
+    det_L2 = 91  # distance between the second gon and the sensitive surface of the detector
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.operation_mode = 'nominal'
+        self.init_from_settings()
+
+
+    def init_from_settings(self):
+        # try:
+        #     config = self.load_config(self.json_path)
+        self.R = 1000
+        self.x_src = 0
+        self.y_src = 0
+
+        self.motor_cr_assy_x0 = 992.9999570365
+        self.motor_cr_assy_y0 = 7.481774249999999
+        self.motor_cr_main_roll0 = 8.1324
+        self.motor_cr_main_yaw0 = 0.85
+        self.cr_roll_offset.set(17.125)
+
+        self.motor_det_x0 = -10  # high limit of this motor should be at 529 mm
+        self.motor_det_th10 = 69
+        self.motor_det_th20 = -69
+
+
+    def set_det_parking(self):
+        self.motor_det_x0 = self.motor_det_x.position
+        self.motor_det_th10 = self.motor_det_th1.position
+        self.motor_det_th20 = self.motor_det_th2.position
+
+    def set_main_crystal_parking(self):
+        self.motor_cr_assy_x0 = self.motor_cr_assy_x.position
+        self.motor_cr_assy_y0 = self.motor_cr_assy_y.position
+        self.motor_cr_main_roll0 = self.motor_cr_main_roll.position / 1000
+        self.motor_cr_main_yaw0 = self.motor_cr_main_yaw.position / 1000
+
+    @property
+    def det_dx(self):
+        return self.det_L1 * np.cos(np.deg2rad(self.motor_det_th10)) - self.det_L2
+
+    @property
+    def det_h(self):
+        return self.det_L1 * np.sin(np.deg2rad(self.motor_det_th10))
+
+
+    def which_motor_moves(self, new_pos_dict):
+        old_pos_dict = self.pseudo_pos2dict(self.position)
+        for k in old_pos_dict.keys():
+            if not np.isclose(old_pos_dict[k], new_pos_dict[k], atol=1e-3):
+                return k
+
+    def handle_pseudo_input(self, new_pos_dict):
+        moving_motor = self.which_motor_moves(new_pos_dict)
+        if moving_motor == 'cr_main_bragg':
+            cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['cr_main_bragg'], 0)
+            cr_assy_x += self.R
+            print(f'Updating {moving_motor}: old_pos={new_pos_dict["cr_assy_x"]}, new_pos={cr_assy_x}')
+            new_pos_dict["cr_assy_x"] = cr_assy_x
+        return new_pos_dict
+
+    def _forward(self, pseudo_pos_dict):
+
+        print(f'Motor moving: {self.which_motor_moves(pseudo_pos_dict)}')
+        pseudo_pos_dict = self.handle_pseudo_input(pseudo_pos_dict)
+
+        cr_assy_x, cr_assy_y, cr_main_bragg, cr_main_yaw, det_bragg, det_x, det_y, bragg, x, det_focus = \
+            pseudo_pos_dict['cr_assy_x'],\
+            pseudo_pos_dict['cr_assy_y'],\
+            pseudo_pos_dict['cr_main_bragg'],\
+            pseudo_pos_dict['cr_main_yaw'], \
+            pseudo_pos_dict['det_bragg'],\
+            pseudo_pos_dict['det_x'],\
+            pseudo_pos_dict['det_y'], \
+            pseudo_pos_dict['bragg'], \
+            pseudo_pos_dict['x'], \
+            pseudo_pos_dict['det_focus']
+
+
+        motor_cr_assy_x = x - cr_assy_x + self.motor_cr_assy_x0
+        motor_cr_assy_y = cr_assy_y + self.motor_cr_assy_y0
+        motor_cr_main_roll = (cr_main_bragg + self.cr_roll_offset.position + self.motor_cr_main_roll0 - 90) * 1000
+        motor_cr_main_yaw = cr_main_yaw
+
+        _det_bragg_rad = np.deg2rad(det_bragg)
+        _phi = np.pi - 2 * _det_bragg_rad
+        _sin_th1 = (self.det_h - self.det_L2 * np.sin(_phi) - det_y) / self.det_L1
+        motor_det_th1 = np.arcsin(_sin_th1)
+        motor_det_th2 = _phi + motor_det_th1
+        motor_det_x = self.motor_det_x0 - self.det_dx + self.det_L1 * np.cos(motor_det_th1) - self.det_L2 * np.cos(_phi) - det_x + x
+        motor_det_th1 = np.rad2deg(motor_det_th1)
+        motor_det_th2 = -np.rad2deg(motor_det_th2)
+
+        output = {'motor_cr_assy_x'   : motor_cr_assy_x,
+                'motor_cr_assy_y'   : motor_cr_assy_y,
+                'motor_cr_main_roll': motor_cr_main_roll,
+                'motor_cr_main_yaw' : motor_cr_main_yaw,
+                'motor_det_x'  : motor_det_x,
+                'motor_det_th1': motor_det_th1,
+                'motor_det_th2': motor_det_th2}
+        print(output)
+
+        return output
+
+
+    def _inverse(self, real_pos_dict):
+        motor_cr_assy_x, motor_cr_assy_y, motor_cr_main_roll, motor_cr_main_yaw, motor_det_x, motor_det_th1, motor_det_th2 = \
+            real_pos_dict['motor_cr_assy_x'], \
+            real_pos_dict['motor_cr_assy_y'], \
+            real_pos_dict['motor_cr_main_roll'], \
+            real_pos_dict['motor_cr_main_yaw'], \
+            real_pos_dict['motor_det_x'], \
+            real_pos_dict['motor_det_th1'], \
+            real_pos_dict['motor_det_th2']
+
+        cr_main_bragg = 90 + motor_cr_main_roll / 1000 - self.cr_roll_offset.position - self.motor_cr_main_roll0
+        cr_main_yaw = motor_cr_main_yaw
+        cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, cr_main_bragg, 0)
+        cr_assy_x += self.R
+        cr_assy_y = motor_cr_assy_y - self.motor_cr_assy_y0
+        x = cr_assy_x + (motor_cr_assy_x - self.motor_cr_assy_x0)
+
+        motor_det_th2 *= -1
+        det_bragg = (180 - (motor_det_th2 - motor_det_th1)) / 2
+
+        det_x = self.motor_det_x0 - self.det_dx + self.det_L1 * np.cos(np.deg2rad(motor_det_th1)) - self.det_L2 * np.cos(np.deg2rad(motor_det_th2 - motor_det_th1)) - motor_det_x + x
+        det_y = self.det_h - self.det_L1 * np.sin(np.deg2rad(motor_det_th1)) - self.det_L2 * np.sin(np.deg2rad(motor_det_th2 - motor_det_th1))
+
+        _, _, det_x_ref, det_y_ref = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, det_bragg, 0)
+        det_x_ref += x
+        det_focus = np.sqrt((det_x - det_x_ref) ** 2 + (det_y - det_y_ref) ** 2) * np.sign(det_y_ref - det_y)
+
+        bragg = cr_main_bragg
+
+        return {'cr_assy_x' : cr_assy_x,
+                'cr_assy_y' : cr_assy_y,
+                'cr_main_bragg' : cr_main_bragg,
+                'cr_main_yaw' : cr_main_yaw,
+                'det_bragg' : det_bragg,
+                'det_x' : det_x,
+                'det_y' : det_y,
+                'bragg' : bragg,
+                'x' : x,
+                'det_focus' : det_focus}
+
+jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
+
+
+# bla1 = {'motor_cr_assy_x'   : johann_emission.spectrometer.crystal1.x.position,
+#         'motor_cr_assy_y'   : johann_emission.spectrometer.crystal1.y.position,
+#         'motor_cr_main_roll': johann_emission.spectrometer.crystal1.roll.position,
+#         'motor_cr_main_yaw' : johann_emission.spectrometer.crystal1.yaw.position,
+#         'motor_det_x'  : johann_emission.spectrometer.det_arm.x.position,
+#         'motor_det_th1': johann_emission.spectrometer.det_arm.th1.position,
+#         'motor_det_th2': johann_emission.spectrometer.det_arm.th2.position}
+#
+# bla2 = jsp_alt._inverse(bla1)
+#
+# bla3 = jsp_alt._forward(bla2)
 
 
 import h5py
