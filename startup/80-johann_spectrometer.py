@@ -236,7 +236,7 @@ class ISSPseudoPositioner(PseudoPositioner):
     def real_pos2dict(self, real_pos):
         return {k: getattr(real_pos, k) for k in self.real_keys}
 
-    @pseudo_position_argument
+    #@pseudo_position_argument
     def forward(self, pseudo_pos):
         pseudo_dict = self.pseudo_pos2dict(pseudo_pos)
         pseudo_dict = self.correct(pseudo_dict, way='act2nom')
@@ -244,7 +244,7 @@ class ISSPseudoPositioner(PseudoPositioner):
         # real_dict = self._forward(pseudo_pos)
         return self.RealPosition(**real_dict)
 
-    @real_position_argument
+    #@real_position_argument
     def inverse(self, real_pos):
         real_dict = self.real_pos2dict(real_pos)
         pseudo_dict = self._inverse(real_dict)
@@ -637,25 +637,25 @@ class JohannEmissionMotor(PseudoPositioner):
 johann_emission = JohannEmissionMotor(name='johann_emission')
 
 
-motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.spectrometer.bragg.name,
-                                          'description' : 'Johann Bragg Angle',
-                                          'object': johann_emission.spectrometer.bragg,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_det_focus'] =   {'name': johann_emission.spectrometer.det_dR.name,
-                                          'description' : 'Johann Detector Focus',
-                                          'object': johann_emission.spectrometer.det_dR,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_x'] =           {'name': johann_emission.spectrometer.x_sp.name,
-                                          'description' : 'Johann X',
-                                          'object': johann_emission.spectrometer.x_sp,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
-                                          'description' : 'Johann Energy',
-                                          'object': johann_emission.energy,
-                                          'group': 'spectrometer'}
+# motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.spectrometer.bragg.name,
+#                                           'description' : 'Johann Bragg Angle',
+#                                           'object': johann_emission.spectrometer.bragg,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_det_focus'] =   {'name': johann_emission.spectrometer.det_dR.name,
+#                                           'description' : 'Johann Detector Focus',
+#                                           'object': johann_emission.spectrometer.det_dR,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_x'] =           {'name': johann_emission.spectrometer.x_sp.name,
+#                                           'description' : 'Johann X',
+#                                           'object': johann_emission.spectrometer.x_sp,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+#                                           'description' : 'Johann Energy',
+#                                           'object': johann_emission.energy,
+#                                           'group': 'spectrometer'}
 
 
 
@@ -720,7 +720,19 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
     _real = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
              'motor_det_x', 'motor_det_th1', 'motor_det_th2']
-    _pseudo = ['cr_assy_x', 'cr_assy_y', 'cr_main_bragg', 'cr_main_yaw', 'det_bragg', 'det_x', 'det_y', 'bragg', 'x', 'det_focus']
+    _pseudo_precision = {'cr_assy_x' : 5e-3,
+                         'cr_assy_y' : 5e-3,
+                         'cr_main_bragg' : 5e-6,
+                         'cr_main_yaw' : 5e-6,
+                         'det_bragg' : 5e-6,
+                         'det_x' : 5e-3,
+                         'det_y' : 5e-3,
+                         'bragg' : 5e-6,
+                         'x' : 5e-3,
+                         'det_focus' : 1e-2}
+    # _pseudo = ['cr_assy_x', 'cr_assy_y', 'cr_main_bragg', 'cr_main_yaw', 'det_bragg', 'det_x', 'det_y', 'bragg', 'x', 'det_focus']
+    _pseudo = list(_pseudo_precision.keys())
+    # _pseudo_keys = _pseudo
 
     cr_roll_offset = Cpt(SoftPositioner,
                          init_pos=0)  # software representation of the angular offset on the crystal stage
@@ -729,10 +741,11 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     det_L2 = 91  # distance between the second gon and the sensitive surface of the detector
 
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, auto_target=False, **kwargs):
+        super().__init__(*args, auto_target=auto_target, **kwargs)
         self.operation_mode = 'nominal'
         self.init_from_settings()
+        self._print_inverse = False
 
 
     def init_from_settings(self):
@@ -772,26 +785,63 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     def det_h(self):
         return self.det_L1 * np.sin(np.deg2rad(self.motor_det_th10))
 
-
     def which_motor_moves(self, new_pos_dict):
         old_pos_dict = self.pseudo_pos2dict(self.position)
-        for k in old_pos_dict.keys():
-            if not np.isclose(old_pos_dict[k], new_pos_dict[k], atol=1e-3):
-                return k
+        moving_motors = []
+        moving_motors_delta = []
+        # print('###########')
+        # print(f'\t old_pos \t new_pos \t motor_name')
+        for motor_name in old_pos_dict.keys():
+            # print(f'{old_pos_dict[motor_name] : .4f} \t {new_pos_dict[motor_name] : .4f} \t - {motor_name}')
+            if not np.isclose(old_pos_dict[motor_name], new_pos_dict[motor_name], atol=self._pseudo_precision[motor_name]):
+                moving_motors.append(motor_name)
+                moving_motors_delta.append(new_pos_dict[motor_name] - old_pos_dict[motor_name])
+
+        # print('###########')
+
+        if len(moving_motors) == 0:
+            return None
+        elif len(moving_motors) == 1:
+            return moving_motors[0]
+        elif len(moving_motors) > 1:
+            dd = {m : d for m, d in zip(moving_motors, moving_motors_delta)}
+            print_to_gui(f'Info: Multiple Johann spetrometer pseudo motors are being moved. {dd}', tag='Spectrometer')
+            return moving_motors[0]
+
+    def _move_crystal_only(self, new_pos_dict):
+        cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['cr_main_bragg'], 0)
+        cr_assy_x += self.R
+        # print(f'Updating cr_assy_x: old_pos={new_pos_dict["cr_assy_x"]}, new_pos={cr_assy_x}')
+        new_pos_dict['cr_assy_x'] = cr_assy_x
+
+    def _move_det_arm_only(self, new_pos_dict):
+        _, _, det_x, det_y = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['det_bragg'],
+                                                             new_pos_dict['det_focus'])
+        det_x += new_pos_dict['x']
+        # print(f'Updating det_x: old_pos={new_pos_dict["det_x"]}, new_pos={det_x}')
+        new_pos_dict['det_x'] = det_x
+        # print(f'Updating det_y: old_pos={new_pos_dict["det_y"]}, new_pos={det_y}')
+        new_pos_dict['det_y'] = det_y
+
 
     def handle_pseudo_input(self, new_pos_dict):
         moving_motor = self.which_motor_moves(new_pos_dict)
+        # print(f'Motor moving: {moving_motor}')
+
         if moving_motor == 'cr_main_bragg':
-            cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['cr_main_bragg'], 0)
-            cr_assy_x += self.R
-            print(f'Updating {moving_motor}: old_pos={new_pos_dict["cr_assy_x"]}, new_pos={cr_assy_x}')
-            new_pos_dict["cr_assy_x"] = cr_assy_x
-        return new_pos_dict
+            self._move_crystal_only(new_pos_dict)
+
+        elif (moving_motor == 'det_bragg') or (moving_motor == 'det_focus'):
+            self._move_det_arm_only(new_pos_dict)
+
+        elif (moving_motor == 'bragg'):
+            new_pos_dict['cr_main_bragg'] = new_pos_dict['bragg']
+            new_pos_dict['det_bragg'] = new_pos_dict['bragg']
+            self._move_crystal_only(new_pos_dict)
+            self._move_det_arm_only(new_pos_dict)
 
     def _forward(self, pseudo_pos_dict):
-
-        print(f'Motor moving: {self.which_motor_moves(pseudo_pos_dict)}')
-        pseudo_pos_dict = self.handle_pseudo_input(pseudo_pos_dict)
+        self.handle_pseudo_input(pseudo_pos_dict)
 
         cr_assy_x, cr_assy_y, cr_main_bragg, cr_main_yaw, det_bragg, det_x, det_y, bragg, x, det_focus = \
             pseudo_pos_dict['cr_assy_x'],\
@@ -809,7 +859,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         motor_cr_assy_x = x - cr_assy_x + self.motor_cr_assy_x0
         motor_cr_assy_y = cr_assy_y + self.motor_cr_assy_y0
         motor_cr_main_roll = (cr_main_bragg + self.cr_roll_offset.position + self.motor_cr_main_roll0 - 90) * 1000
-        motor_cr_main_yaw = cr_main_yaw
+        motor_cr_main_yaw = cr_main_yaw * 1000
 
         _det_bragg_rad = np.deg2rad(det_bragg)
         _phi = np.pi - 2 * _det_bragg_rad
@@ -821,18 +871,19 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         motor_det_th2 = -np.rad2deg(motor_det_th2)
 
         output = {'motor_cr_assy_x'   : motor_cr_assy_x,
-                'motor_cr_assy_y'   : motor_cr_assy_y,
-                'motor_cr_main_roll': motor_cr_main_roll,
-                'motor_cr_main_yaw' : motor_cr_main_yaw,
-                'motor_det_x'  : motor_det_x,
-                'motor_det_th1': motor_det_th1,
-                'motor_det_th2': motor_det_th2}
-        print(output)
+                  'motor_cr_assy_y'   : motor_cr_assy_y,
+                  'motor_cr_main_roll': motor_cr_main_roll,
+                  'motor_cr_main_yaw' : motor_cr_main_yaw,
+                  'motor_det_x'  : motor_det_x,
+                  'motor_det_th1': motor_det_th1,
+                  'motor_det_th2': motor_det_th2}
+        # print(output)
 
         return output
 
 
     def _inverse(self, real_pos_dict):
+        if self._print_inverse: print('INVERSE INVOKED')
         motor_cr_assy_x, motor_cr_assy_y, motor_cr_main_roll, motor_cr_main_yaw, motor_det_x, motor_det_th1, motor_det_th2 = \
             real_pos_dict['motor_cr_assy_x'], \
             real_pos_dict['motor_cr_assy_y'], \
@@ -843,7 +894,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             real_pos_dict['motor_det_th2']
 
         cr_main_bragg = 90 + motor_cr_main_roll / 1000 - self.cr_roll_offset.position - self.motor_cr_main_roll0
-        cr_main_yaw = motor_cr_main_yaw
+        cr_main_yaw = motor_cr_main_yaw / 1000
         cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, cr_main_bragg, 0)
         cr_assy_x += self.R
         cr_assy_y = motor_cr_assy_y - self.motor_cr_assy_y0
@@ -873,6 +924,42 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                 'det_focus' : det_focus}
 
 jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
+
+
+motor_dictionary['johann_bragg'] = {'name': jsp_alt.bragg.name,
+                                          'description' : 'Johann Bragg Angle',
+                                          'object': jsp_alt.bragg,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_det_focus'] =   {'name': jsp_alt.det_focus.name,
+                                          'description' : 'Johann Detector Focus',
+                                          'object': jsp_alt.det_focus,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_x'] =           {'name': jsp_alt.x.name,
+                                          'description' : 'Johann X',
+                                          'object': jsp_alt.x,
+                                          'group': 'spectrometer'}
+
+# motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+#                                           'description' : 'Johann Energy',
+#                                           'object': johann_emission.energy,
+#                                           'group': 'spectrometer'}
+
+
+# jsp_alt._inverse(jsp_alt._forward(
+# {'cr_assy_x': 37.782006470714464,
+#  'cr_assy_y': 0.0,
+#  'cr_main_bragg': 74.2,
+#  'cr_main_yaw': 850.0,
+#  'det_bragg': 74.5001875,
+#  'det_x': -141.02793654090453,
+#  'det_y': 491.1571514474454,
+#  'bragg': 74.2,
+#  'x': 5.1819617407145415,
+#  'det_focus': 9.999776182655808}
+#
+# ))
 
 
 # bla1 = {'motor_cr_assy_x'   : johann_emission.spectrometer.crystal1.x.position,
