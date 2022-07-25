@@ -179,56 +179,56 @@ class ISSPseudoPositioner(PseudoPositioner):
 
     def __init__(self, *args, special_pseudo='bragg', **kwargs):
         self.pseudo_keys = [k for k, _ in self._get_pseudo_positioners()]
-        self.real_keys = [k for k, _ in self._get_real_positioners()]
-        self.motor_keys = self.pseudo_keys + self.real_keys
+    #     self.real_keys = [k for k, _ in self._get_real_positioners()]
+    #     self.motor_keys = self.pseudo_keys + self.real_keys
         super().__init__(*args, **kwargs)
 
-        self.special_pseudo = special_pseudo
-        self.reset_correction()
-        self.reset_calibration_data()
-        self.apply_correction = True
+        # self.special_pseudo = special_pseudo
+        # self.reset_correction()
+        # self.reset_calibration_data()
+        # self.apply_correction = True
 
-    def reset_correction(self):
-        self.correction_dict = {'act2nom': {k: [0] for k in self.pseudo_keys},
-                                'nom2act': {k: [0] for k in self.pseudo_keys}}
-
-    def reset_calibration_data(self):
-        self.calibration_data = {'actual': {k: [] for k in self.pseudo_keys},
-                                 'nominal': {k: [] for k in self.pseudo_keys}}
-
-    def register_calibration_point(self, special_pseudo_pos):
-        pseudo_dict = self.pseudo_pos2dict(self.position)
-        actual_dict = copy.deepcopy(pseudo_dict)
-        actual_dict[self.special_pseudo] = special_pseudo_pos
-        nominal_dict = self.pseudo_pos2dict(self.inverse(self.forward(**{self.special_pseudo : pseudo_dict[self.special_pseudo]})))
-        for k in self.pseudo_keys:
-            self.calibration_data['actual'][k].append(actual_dict[k])
-            self.calibration_data['nominal'][k].append(nominal_dict[k])
-
-        # real_dict = self.real_pos2dict(self.real_position)
-        # actual_dict = copy.deepcopy(real_dict)
-        # actual_dict[self.special_pseudo] = special_pseudo_pos
-        # nominal_dict = self.pseudo_pos2dict(
-        #     self.inverse(self.forward(**{self.special_pseudo: pseudo_dict[self.special_pseudo]})))
-        # for k in self.pseudo_keys:
-        #     self.calibration_data['actual'][k].append(actual_dict[k])
-        #     self.calibration_data['nominal'][k].append(nominal_dict[k])
-
-    def process_calibration(self, npoly=None):
-        if npoly is None:
-            npoly = len(self.calibration_data['nominal'][self.special_pseudo]) - 1
-        for key in self.pseudo_keys:
-            x_nom = np.array(self.calibration_data['nominal'][key])
-            x_act = np.array(self.calibration_data['actual'][key])
-            self.correction_dict['nom2act'][key] = np.polyfit(x_nom, x_act - x_nom, npoly)
-            self.correction_dict['act2nom'][key] = np.polyfit(x_act, x_nom - x_act, npoly)
-
-    def correct(self, pseudo_dict, way='act2nom'):
-        if self.apply_correction:
-            for k in pseudo_dict.keys():
-                delta = np.polyval(self.correction_dict[way][k], pseudo_dict[k])
-                pseudo_dict[k] += delta
-        return pseudo_dict
+    # def reset_correction(self):
+    #     self.correction_dict = {'act2nom': {k: [0] for k in self.pseudo_keys},
+    #                             'nom2act': {k: [0] for k in self.pseudo_keys}}
+    #
+    # def reset_calibration_data(self):
+    #     self.calibration_data = {'actual': {k: [] for k in self.pseudo_keys},
+    #                              'nominal': {k: [] for k in self.pseudo_keys}}
+    #
+    # def register_calibration_point(self, special_pseudo_pos):
+    #     pseudo_dict = self.pseudo_pos2dict(self.position)
+    #     actual_dict = copy.deepcopy(pseudo_dict)
+    #     actual_dict[self.special_pseudo] = special_pseudo_pos
+    #     nominal_dict = self.pseudo_pos2dict(self.inverse(self.forward(**{self.special_pseudo : pseudo_dict[self.special_pseudo]})))
+    #     for k in self.pseudo_keys:
+    #         self.calibration_data['actual'][k].append(actual_dict[k])
+    #         self.calibration_data['nominal'][k].append(nominal_dict[k])
+    #
+    #     # real_dict = self.real_pos2dict(self.real_position)
+    #     # actual_dict = copy.deepcopy(real_dict)
+    #     # actual_dict[self.special_pseudo] = special_pseudo_pos
+    #     # nominal_dict = self.pseudo_pos2dict(
+    #     #     self.inverse(self.forward(**{self.special_pseudo: pseudo_dict[self.special_pseudo]})))
+    #     # for k in self.pseudo_keys:
+    #     #     self.calibration_data['actual'][k].append(actual_dict[k])
+    #     #     self.calibration_data['nominal'][k].append(nominal_dict[k])
+    #
+    # def process_calibration(self, npoly=None):
+    #     if npoly is None:
+    #         npoly = len(self.calibration_data['nominal'][self.special_pseudo]) - 1
+    #     for key in self.pseudo_keys:
+    #         x_nom = np.array(self.calibration_data['nominal'][key])
+    #         x_act = np.array(self.calibration_data['actual'][key])
+    #         self.correction_dict['nom2act'][key] = np.polyfit(x_nom, x_act - x_nom, npoly)
+    #         self.correction_dict['act2nom'][key] = np.polyfit(x_act, x_nom - x_act, npoly)
+    #
+    # def correct(self, pseudo_dict, way='act2nom'):
+    #     if self.apply_correction:
+    #         for k in pseudo_dict.keys():
+    #             delta = np.polyval(self.correction_dict[way][k], pseudo_dict[k])
+    #             pseudo_dict[k] += delta
+    #     return pseudo_dict
 
     def pseudo_pos2dict(self, pseudo_pos):
         return {k : getattr(pseudo_pos, k) for k in self.pseudo_keys}
@@ -534,6 +534,10 @@ jsp = JohannMultiCrystalSpectrometer(name='jsp')
 #                                           'group': 'spectrometer'}
 
 
+
+
+
+
 from xas.xray import bragg2e, e2bragg
 from xas.fitting import Nominal2ActualConverter
 class JohannEmissionMotor(PseudoPositioner):
@@ -702,8 +706,6 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
     motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
 
-
-
     cr_assy_x = Cpt(PseudoSingle, name='cr_x')
     cr_assy_y = Cpt(PseudoSingle, name='cr_y')
 
@@ -715,6 +717,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     det_y = Cpt(PseudoSingle, name='det_y')
 
     bragg = Cpt(PseudoSingle, name='bragg')
+    bragg_act = Cpt(PseudoSingle, name='bragg_act')
     x = Cpt(PseudoSingle, name='x')
     det_focus = Cpt(PseudoSingle, name='det_focus')
 
@@ -728,6 +731,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                          'det_x' : 5e-3,
                          'det_y' : 5e-3,
                          'bragg' : 5e-6,
+                         'bragg_act' : 5e-6,
                          'x' : 5e-3,
                          'det_focus' : 1e-2}
     # _pseudo = ['cr_assy_x', 'cr_assy_y', 'cr_main_bragg', 'cr_main_yaw', 'det_bragg', 'det_x', 'det_y', 'bragg', 'x', 'det_focus']
@@ -744,9 +748,9 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     def __init__(self, *args, auto_target=False, **kwargs):
         super().__init__(*args, auto_target=auto_target, **kwargs)
         self.operation_mode = 'nominal'
+        self.reset_offset_data()
         self.init_from_settings()
         self._print_inverse = False
-
 
     def init_from_settings(self):
         # try:
@@ -784,6 +788,51 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     @property
     def det_h(self):
         return self.det_L1 * np.sin(np.deg2rad(self.motor_det_th10))
+
+    def reset_offset_data(self):
+        self.offset_data = {'nominal': {k: [] for k in self.pseudo_keys},
+                            'actual': {k: [] for k in self.pseudo_keys}}
+
+    @property
+    def n_offset_points(self):
+        return len(self.offset_data['nominal']['bragg'])
+
+    def register_actual_bragg(self, bragg_act, starting_point=None):
+        pos_act = self.pseudo_pos2dict(self.position)
+        pos_act['bragg'] = bragg_act
+
+        if self.n_offset_points == 0:
+            pos_nom = self.pseudo_pos2dict(self.position)
+        else:
+            pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
+        pos_nom['bragg'] = self.bragg.position
+        self._move_all_components(pos_nom)
+
+        for k in self.pseudo_keys:
+            self.offset_data['nominal'][k].append(pos_nom[k])
+            self.offset_data['actual'][k].append(pos_act[k])
+
+    def get_nominal_motor_pos(self, bragg_min, bragg_max, npt=101):
+        df = []
+        for bragg in np.linspace(bragg_min, bragg_max, npt):
+            cur_pos = self.pseudo_pos2dict(self.position)
+            cur_pos['bragg'] = bragg
+            self.handle_pseudo_input(cur_pos)
+            df.append(cur_pos)
+
+        return pd.DataFrame(df)
+
+    def get_actual_motor_pos(self, bragg_min, bragg_max, npt=101):
+        df = []
+        for bragg in np.linspace(bragg_min, bragg_max, npt):
+            cur_pos = self.pseudo_pos2dict(self.position)
+            cur_pos['bragg_act'] = bragg
+            self.handle_pseudo_input(cur_pos)
+            df.append(cur_pos)
+
+        return pd.DataFrame(df)
+
+    # def plot_nominal_motor_pos(self, bragg_min, bragg_max, npt=101):
 
     def which_motor_moves(self, new_pos_dict):
         old_pos_dict = self.pseudo_pos2dict(self.position)
@@ -823,6 +872,67 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         # print(f'Updating det_y: old_pos={new_pos_dict["det_y"]}, new_pos={det_y}')
         new_pos_dict['det_y'] = det_y
 
+    def _move_all_components(self, new_pos_dict):
+        new_pos_dict['cr_main_bragg'] = new_pos_dict['bragg']
+        new_pos_dict['det_bragg'] = new_pos_dict['bragg']
+        self._move_crystal_only(new_pos_dict)
+        self._move_det_arm_only(new_pos_dict)
+
+    def _move_all_components_with_correction(self, new_pos_dict):
+        if self.n_offset_points == 0:
+            new_pos_dict['bragg'] = new_pos_dict['bragg_act']
+            self._move_all_components(new_pos_dict)
+
+        elif self.n_offset_points == 1:
+            new_pos_dict['bragg'] = self.decorrect_bragg(new_pos_dict['bragg_act'])
+            # new_pos_dict['bragg'] -= (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+            # pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
+            # pos_nom['bragg'] = bragg
+            self._move_all_components(new_pos_dict)
+            # sdfs
+            for k in self.pseudo_keys:
+                if (k != 'bragg') and (k != 'bragg_act'):
+                    new_pos_dict[k] += (self.offset_data['actual'][k][0] - self.offset_data['nominal'][k][0])
+
+        elif self.n_offset_points == 2:
+            new_pos_dict['bragg'] = self.decorrect_bragg(new_pos_dict['bragg_act'])
+            # new_pos_dict['bragg'] -= (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+            # pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
+            # pos_nom['bragg'] = bragg
+            self._move_all_components(new_pos_dict)
+            # sdfs
+            for k in self.pseudo_keys:
+                if (k != 'bragg') and (k != 'bragg_act'):
+                    p = np.polyfit(np.array(jsp_alt.offset_data['actual']['bragg']),
+                                   np.array(jsp_alt.offset_data['actual'][k]) -
+                                   np.array(jsp_alt.offset_data['nominal'][k]), 1)
+                    delta = np.polyval(p, new_pos_dict['bragg_act'])
+
+                    new_pos_dict[k] += delta
+
+    def correct_bragg(self, bragg):
+        if self.n_offset_points == 0:
+            return bragg
+        elif self.n_offset_points == 1:
+            return bragg + (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+        elif self.n_offset_points == 2:
+            p = np.polyfit(np.array(jsp_alt.offset_data['nominal']['bragg']),
+                           np.array(jsp_alt.offset_data['actual']['bragg']) -
+                           np.array(jsp_alt.offset_data['nominal']['bragg']), 1)
+            delta = np.polyval(p, bragg)
+            return bragg + delta
+
+    def decorrect_bragg(self, bragg_act):
+        if self.n_offset_points == 0:
+            return bragg_act
+        elif self.n_offset_points == 1:
+            return bragg_act - (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+        elif self.n_offset_points == 2:
+            p = np.polyfit(np.array(jsp_alt.offset_data['actual']['bragg']),
+                           np.array(jsp_alt.offset_data['actual']['bragg']) -
+                           np.array(jsp_alt.offset_data['nominal']['bragg']), 1)
+            delta = np.polyval(p, bragg_act)
+            return bragg_act - delta
 
     def handle_pseudo_input(self, new_pos_dict):
         moving_motor = self.which_motor_moves(new_pos_dict)
@@ -835,15 +945,16 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             self._move_det_arm_only(new_pos_dict)
 
         elif (moving_motor == 'bragg'):
-            new_pos_dict['cr_main_bragg'] = new_pos_dict['bragg']
-            new_pos_dict['det_bragg'] = new_pos_dict['bragg']
-            self._move_crystal_only(new_pos_dict)
-            self._move_det_arm_only(new_pos_dict)
+            self._move_all_components(new_pos_dict)
+
+        elif (moving_motor == 'bragg_act'):
+            # print('moving_motor is bragg_act')
+            self._move_all_components_with_correction(new_pos_dict)
 
     def _forward(self, pseudo_pos_dict):
         self.handle_pseudo_input(pseudo_pos_dict)
 
-        cr_assy_x, cr_assy_y, cr_main_bragg, cr_main_yaw, det_bragg, det_x, det_y, bragg, x, det_focus = \
+        cr_assy_x, cr_assy_y, cr_main_bragg, cr_main_yaw, det_bragg, det_x, det_y, x = \
             pseudo_pos_dict['cr_assy_x'],\
             pseudo_pos_dict['cr_assy_y'],\
             pseudo_pos_dict['cr_main_bragg'],\
@@ -851,10 +962,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             pseudo_pos_dict['det_bragg'],\
             pseudo_pos_dict['det_x'],\
             pseudo_pos_dict['det_y'], \
-            pseudo_pos_dict['bragg'], \
-            pseudo_pos_dict['x'], \
-            pseudo_pos_dict['det_focus']
-
+            pseudo_pos_dict['x']
 
         motor_cr_assy_x = x - cr_assy_x + self.motor_cr_assy_x0
         motor_cr_assy_y = cr_assy_y + self.motor_cr_assy_y0
@@ -911,6 +1019,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         det_focus = np.sqrt((det_x - det_x_ref) ** 2 + (det_y - det_y_ref) ** 2) * np.sign(det_y_ref - det_y)
 
         bragg = cr_main_bragg
+        bragg_act = self.correct_bragg(bragg)
 
         return {'cr_assy_x' : cr_assy_x,
                 'cr_assy_y' : cr_assy_y,
@@ -920,10 +1029,52 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                 'det_x' : det_x,
                 'det_y' : det_y,
                 'bragg' : bragg,
+                'bragg_act' : bragg_act,
                 'x' : x,
                 'det_focus' : det_focus}
 
+
 jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
+# jsp_alt.register_actual_bragg(74.82)
+# jsp_alt.offset_data = \
+# {'nominal': {'cr_assy_x': [29.6654660811206, 27.267846810444667],
+#   'cr_assy_y': [0.0, 0.0],
+#   'cr_main_bragg': [76.009194, 76.58919399999999],
+#   'cr_main_yaw': [0.849957, 0.849957],
+#   'det_bragg': [76.009194, 76.58919399999999],
+#   'det_x': [-111.55640935716096, -102.77334615511403],
+#   'det_y': [455.26687918909795, 438.9080447066834],
+#   'bragg': [76.009194, 76.58919399999999],
+#   'bragg_act': [76.009194, 76.009194],
+#   'x': [1.882338408620626, 1.882338408620626],
+#   'det_focus': [0.0055589760942588995, 0.0055589760942588995]},
+#  'actual': {'cr_assy_x': [29.6654660811206, 27.267846810444667],
+#   'cr_assy_y': [0.0, 0.0],
+#   'cr_main_bragg': [76.009194, 76.58919399999999],
+#   'cr_main_yaw': [0.849957, 0.849957],
+#   'det_bragg': [74.819796875, 75.4001875],
+#   'det_x': [-130.46653297345836, -122.58459200449965],
+#   'det_y': [487.7966257311867, 471.2751616484047],
+#   'bragg': [74.82, 75.4],
+#   'bragg_act': [76.009194, 75.39999999999999],
+#   'x': [1.882338408620626, 1.882467896444723],
+#   'det_focus': [0.0055589760942588995, 1.7085024780916698]}}
+#
+# jsp_alt._forward(
+# {'cr_assy_x': 27.267846810444667,
+#  'cr_assy_y': 0.0,
+#  'cr_main_bragg': 76.58919399999999,
+#  'cr_main_yaw': 0.849957,
+#  'det_bragg': 75.4001875,
+#  'det_x': -122.58466829849965,
+#  'det_y': 471.2751616484047,
+#  'bragg': 76.58919399999999,
+#  'bragg_act': 75.3,
+#  'x': 1.8824106759446977,
+#  'det_focus': 1.708519174508354}
+# )
+
+
 
 
 motor_dictionary['johann_bragg'] = {'name': jsp_alt.bragg.name,
