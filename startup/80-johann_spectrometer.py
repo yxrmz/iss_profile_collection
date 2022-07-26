@@ -179,8 +179,8 @@ class ISSPseudoPositioner(PseudoPositioner):
 
     def __init__(self, *args, special_pseudo='bragg', **kwargs):
         self.pseudo_keys = [k for k, _ in self._get_pseudo_positioners()]
-    #     self.real_keys = [k for k, _ in self._get_real_positioners()]
-    #     self.motor_keys = self.pseudo_keys + self.real_keys
+        self.real_keys = [k for k, _ in self._get_real_positioners()]
+        self.motor_keys = self.pseudo_keys + self.real_keys
         super().__init__(*args, **kwargs)
 
         # self.special_pseudo = special_pseudo
@@ -236,19 +236,19 @@ class ISSPseudoPositioner(PseudoPositioner):
     def real_pos2dict(self, real_pos):
         return {k: getattr(real_pos, k) for k in self.real_keys}
 
-    #@pseudo_position_argument
+    @pseudo_position_argument
     def forward(self, pseudo_pos):
         pseudo_dict = self.pseudo_pos2dict(pseudo_pos)
-        pseudo_dict = self.correct(pseudo_dict, way='act2nom')
+        # pseudo_dict = self.correct(pseudo_dict, way='act2nom')
         real_dict = self._forward(pseudo_dict)
         # real_dict = self._forward(pseudo_pos)
         return self.RealPosition(**real_dict)
 
-    #@real_position_argument
+    @real_position_argument
     def inverse(self, real_pos):
         real_dict = self.real_pos2dict(real_pos)
         pseudo_dict = self._inverse(real_dict)
-        pseudo_dict = self.correct(pseudo_dict, way='nom2act')
+        # pseudo_dict = self.correct(pseudo_dict, way='nom2act')
         return self.PseudoPosition(**pseudo_dict)
 
 
@@ -540,106 +540,106 @@ jsp = JohannMultiCrystalSpectrometer(name='jsp')
 
 from xas.xray import bragg2e, e2bragg
 from xas.fitting import Nominal2ActualConverter
-class JohannEmissionMotor(PseudoPositioner):
-    spectrometer = Cpt(JohannMultiCrystalSpectrometer, name='bragg')
-    energy = Cpt(PseudoSingle, name='energy')
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
-        self.init_from_settings()
-        self.calibration_data = {'energy_nominal' : [], 'bragg_nominal' : [], 'bragg_actual' : []}
-        self.bragg_calibration = None
-        self.apply_calibration = True
-        self.bragg = self.spectrometer.bragg #alias
-
-    #########
-    def load_config(self, file):
-        with open(file, 'r') as f:
-            config = json.loads(f.read())
-        return config
-
-    def save_config(self, file):
-        config = self.get_config()
-        with open(file, 'w') as f:
-            json.dump(config, f)
-
-    def save_to_settings(self):
-        self.save_config(self.json_path)
-
-    def init_from_settings(self):
-        try:
-            config = self.load_config(self.json_path)
-            self.spectrometer.crystal1.restore_parking(config)
-            self.spectrometer.det_arm.restore_parking(config)
-        except FileNotFoundError:
-            print('Could not find Johann spectrometer configuration file. Proceed with caution.')
-            config = {}
-        self.update_johann_parameters(**config)
-
-    def update_johann_parameters(self, crystal='Si', hkl=(7, 3, 3), R=1000, x_src=0, y_src=0, **kwargs):
-        self.crystal = crystal
-        self.hkl = hkl
-        self.spectrometer.R = R
-        self.spectrometer.x_src = x_src
-        self.spectrometer.y_src = y_src
-
-    def get_config(self):
-        config = {'crystal' : self.crystal,
-                'hkl': self.hkl,
-                'R': self.spectrometer.R,
-                'x_src': self.spectrometer.x_src,
-                'y_src' : self.spectrometer.y_src}
-        crystal1_config = self.spectrometer.crystal1.read_current_config()
-        det_arm_config = self.spectrometer.det_arm.read_current_config()
-
-        return {**config, **crystal1_config, **det_arm_config}
-
-    def set_main_crystal_parking(self):
-        self.spectrometer.crystal1.set_parking()
-        self.save_to_settings()
-
-    def set_det_arm_parking(self):
-        self.spectrometer.det_arm.set_parking()
-        self.save_to_settings()
-
-    def register_calibration_point(self, energy):
-        self.calibration_data['energy_nominal'].append(energy)
-        self.calibration_data['bragg_nominal'].append(e2bragg(energy, self.crystal, self.hkl))
-        self.calibration_data['bragg_actual'].append(self.spectrometer.bragg.position)
-
-    def process_calibration(self, n_poly=2):
-        self.bragg_calibration = Nominal2ActualConverter(self.calibration_data['bragg_nominal'],
-                                                         self.calibration_data['bragg_actual'],
-                                                         n_poly=n_poly)
-
-    def _forward(self, pseudo_pos):
-        energy = pseudo_pos.energy
-        bragg = e2bragg(energy, self.crystal, self.hkl)
-        if (self.bragg_calibration is not None) and (self.apply_calibration):
-            bragg = self.bragg_calibration.nom2act(bragg)
-        det_dR = self.spectrometer.det_dR.position
-        x_sp = self.spectrometer.x_sp.position
-        pos = self.spectrometer.PseudoPosition(bragg=bragg, det_dR=det_dR, x_sp=x_sp)
-        return self.RealPosition(spectrometer=pos)
-
-    def _inverse(self, real_pos):
-        bragg = real_pos.spectrometer.bragg
-        if (self.bragg_calibration is not None) and (self.apply_calibration):
-            bragg = self.bragg_calibration.act2nom(bragg)
-        energy = bragg2e(bragg, self.crystal, self.hkl)
-        return self.PseudoPosition(energy=energy)
-
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        return self._forward(pseudo_pos)
-
-    @real_position_argument
-    def inverse(self, real_pos):
-        return self._inverse(real_pos)
-
-johann_emission = JohannEmissionMotor(name='johann_emission')
-
+# class JohannEmissionMotor(PseudoPositioner):
+#     spectrometer = Cpt(JohannMultiCrystalSpectrometer, name='bragg')
+#     energy = Cpt(PseudoSingle, name='energy')
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
+#         self.init_from_settings()
+#         self.calibration_data = {'energy_nominal' : [], 'bragg_nominal' : [], 'bragg_actual' : []}
+#         self.bragg_calibration = None
+#         self.apply_calibration = True
+#         self.bragg = self.spectrometer.bragg #alias
+#
+#     #########
+#     def load_config(self, file):
+#         with open(file, 'r') as f:
+#             config = json.loads(f.read())
+#         return config
+#
+#     def save_config(self, file):
+#         config = self.get_config()
+#         with open(file, 'w') as f:
+#             json.dump(config, f)
+#
+#     def save_to_settings(self):
+#         self.save_config(self.json_path)
+#
+#     def init_from_settings(self):
+#         try:
+#             config = self.load_config(self.json_path)
+#             self.spectrometer.crystal1.restore_parking(config)
+#             self.spectrometer.det_arm.restore_parking(config)
+#         except FileNotFoundError:
+#             print('Could not find Johann spectrometer configuration file. Proceed with caution.')
+#             config = {}
+#         self.update_johann_parameters(**config)
+#
+#     def update_johann_parameters(self, crystal='Si', hkl=(7, 3, 3), R=1000, x_src=0, y_src=0, **kwargs):
+#         self.crystal = crystal
+#         self.hkl = hkl
+#         self.spectrometer.R = R
+#         self.spectrometer.x_src = x_src
+#         self.spectrometer.y_src = y_src
+#
+#     def get_config(self):
+#         config = {'crystal' : self.crystal,
+#                 'hkl': self.hkl,
+#                 'R': self.spectrometer.R,
+#                 'x_src': self.spectrometer.x_src,
+#                 'y_src' : self.spectrometer.y_src}
+#         crystal1_config = self.spectrometer.crystal1.read_current_config()
+#         det_arm_config = self.spectrometer.det_arm.read_current_config()
+#
+#         return {**config, **crystal1_config, **det_arm_config}
+#
+#     def set_main_crystal_parking(self):
+#         self.spectrometer.crystal1.set_parking()
+#         self.save_to_settings()
+#
+#     def set_det_arm_parking(self):
+#         self.spectrometer.det_arm.set_parking()
+#         self.save_to_settings()
+#
+#     def register_calibration_point(self, energy):
+#         self.calibration_data['energy_nominal'].append(energy)
+#         self.calibration_data['bragg_nominal'].append(e2bragg(energy, self.crystal, self.hkl))
+#         self.calibration_data['bragg_actual'].append(self.spectrometer.bragg.position)
+#
+#     def process_calibration(self, n_poly=2):
+#         self.bragg_calibration = Nominal2ActualConverter(self.calibration_data['bragg_nominal'],
+#                                                          self.calibration_data['bragg_actual'],
+#                                                          n_poly=n_poly)
+#
+#     def _forward(self, pseudo_pos):
+#         energy = pseudo_pos.energy
+#         bragg = e2bragg(energy, self.crystal, self.hkl)
+#         if (self.bragg_calibration is not None) and (self.apply_calibration):
+#             bragg = self.bragg_calibration.nom2act(bragg)
+#         det_dR = self.spectrometer.det_dR.position
+#         x_sp = self.spectrometer.x_sp.position
+#         pos = self.spectrometer.PseudoPosition(bragg=bragg, det_dR=det_dR, x_sp=x_sp)
+#         return self.RealPosition(spectrometer=pos)
+#
+#     def _inverse(self, real_pos):
+#         bragg = real_pos.spectrometer.bragg
+#         if (self.bragg_calibration is not None) and (self.apply_calibration):
+#             bragg = self.bragg_calibration.act2nom(bragg)
+#         energy = bragg2e(bragg, self.crystal, self.hkl)
+#         return self.PseudoPosition(energy=energy)
+#
+#     @pseudo_position_argument
+#     def forward(self, pseudo_pos):
+#         return self._forward(pseudo_pos)
+#
+#     @real_position_argument
+#     def inverse(self, real_pos):
+#         return self._inverse(real_pos)
+#
+# johann_emission = JohannEmissionMotor(name='johann_emission')
+#
 
 # motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.spectrometer.bragg.name,
 #                                           'description' : 'Johann Bragg Angle',
@@ -835,7 +835,11 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     # def plot_nominal_motor_pos(self, bragg_min, bragg_max, npt=101):
 
     def which_motor_moves(self, new_pos_dict):
-        old_pos_dict = self.pseudo_pos2dict(self.position)
+        try:
+            old_pos_dict = self.pseudo_pos2dict(self.position)
+        except Exception as e:
+            print(e)
+            old_pos_dict = self._inverse(self.real_pos2dict(self.real_position))
         moving_motors = []
         moving_motors_delta = []
         # print('###########')
@@ -903,9 +907,9 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             # sdfs
             for k in self.pseudo_keys:
                 if (k != 'bragg') and (k != 'bragg_act'):
-                    p = np.polyfit(np.array(jsp_alt.offset_data['actual']['bragg']),
-                                   np.array(jsp_alt.offset_data['actual'][k]) -
-                                   np.array(jsp_alt.offset_data['nominal'][k]), 1)
+                    p = np.polyfit(np.array(self.offset_data['actual']['bragg']),
+                                   np.array(self.offset_data['actual'][k]) -
+                                   np.array(self.offset_data['nominal'][k]), 1)
                     delta = np.polyval(p, new_pos_dict['bragg_act'])
 
                     new_pos_dict[k] += delta
@@ -916,9 +920,9 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         elif self.n_offset_points == 1:
             return bragg + (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
         elif self.n_offset_points == 2:
-            p = np.polyfit(np.array(jsp_alt.offset_data['nominal']['bragg']),
-                           np.array(jsp_alt.offset_data['actual']['bragg']) -
-                           np.array(jsp_alt.offset_data['nominal']['bragg']), 1)
+            p = np.polyfit(np.array(self.offset_data['nominal']['bragg']),
+                           np.array(self.offset_data['actual']['bragg']) -
+                           np.array(self.offset_data['nominal']['bragg']), 1)
             delta = np.polyval(p, bragg)
             return bragg + delta
 
@@ -928,9 +932,9 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         elif self.n_offset_points == 1:
             return bragg_act - (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
         elif self.n_offset_points == 2:
-            p = np.polyfit(np.array(jsp_alt.offset_data['actual']['bragg']),
-                           np.array(jsp_alt.offset_data['actual']['bragg']) -
-                           np.array(jsp_alt.offset_data['nominal']['bragg']), 1)
+            p = np.polyfit(np.array(self.offset_data['actual']['bragg']),
+                           np.array(self.offset_data['actual']['bragg']) -
+                           np.array(self.offset_data['nominal']['bragg']), 1)
             delta = np.polyval(p, bragg_act)
             return bragg_act - delta
 
@@ -1035,6 +1039,184 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
 
 jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
+
+
+
+
+from xas.xray import bragg2e, e2bragg
+from xas.fitting import Nominal2ActualConverter
+class JohannEmissionMotor(PseudoPositioner):
+    spectrometer = Cpt(JohannMultiCrystalSpectrometerAlt, name='bragg')
+    energy = Cpt(PseudoSingle, name='energy')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
+        self.init_from_settings()
+        # self.calibration_data = {'energy_nominal' : [], 'bragg_nominal' : [], 'bragg_actual' : []}
+        # self.bragg_calibration = None
+        # self.apply_calibration = True
+        self.bragg = self.spectrometer.bragg_act #alias
+
+    #########
+    def load_config(self, file):
+        with open(file, 'r') as f:
+            config = json.loads(f.read())
+        return config
+
+    def save_config(self, file):
+        config = self.get_config()
+        with open(file, 'w') as f:
+            json.dump(config, f)
+
+    def save_to_settings(self):
+        self.save_config(self.json_path)
+
+    def init_from_settings(self):
+        try:
+            config = self.load_config(self.json_path)
+            self.spectrometer.init_from_settings()
+            # self.spectrometer.restore_parking(config)
+            # self.spectrometer.det_arm.restore_parking(config)
+        except FileNotFoundError:
+            print('Could not find Johann spectrometer configuration file. Proceed with caution.')
+            config = {}
+        self.update_johann_parameters(**config)
+
+    def update_johann_parameters(self, crystal='Si', hkl=(7, 3, 3), R=1000, x_src=0, y_src=0, **kwargs):
+        self.crystal = crystal
+        self.hkl = hkl
+        self.spectrometer.R = R
+        self.spectrometer.x_src = x_src
+        self.spectrometer.y_src = y_src
+
+    def get_config(self):
+        config = {'crystal' : self.crystal,
+                'hkl': self.hkl,
+                'R': self.spectrometer.R,
+                'x_src': self.spectrometer.x_src,
+                'y_src' : self.spectrometer.y_src}
+        spectrometer_config = {}
+        # spectrometer_config = self.spectrometer.read_current_config()
+        # det_arm_config = self.spectrometer.det_arm.read_current_config()
+
+        return {**config, **spectrometer_config}
+
+    # def set_main_crystal_parking(self):
+    #     self.spectrometer.crystal1.set_parking()
+    #     self.save_to_settings()
+    #
+    # def set_det_arm_parking(self):
+    #     self.spectrometer.det_arm.set_parking()
+    #     self.save_to_settings()
+
+    # def register_calibration_point(self, energy):
+    #     self.calibration_data['energy_nominal'].append(energy)
+    #     self.calibration_data['bragg_nominal'].append(e2bragg(energy, self.crystal, self.hkl))
+    #     self.calibration_data['bragg_actual'].append(self.spectrometer.bragg.position)
+    #
+    # def process_calibration(self, n_poly=2):
+    #     self.bragg_calibration = Nominal2ActualConverter(self.calibration_data['bragg_nominal'],
+    #                                                      self.calibration_data['bragg_actual'],
+    #                                                      n_poly=n_poly)
+
+    def _forward(self, pseudo_pos):
+        energy = pseudo_pos.energy
+        bragg = e2bragg(energy, self.crystal, self.hkl)
+        # if (self.bragg_calibration is not None) and (self.apply_calibration):
+        #     bragg = self.bragg_calibration.nom2act(bragg)
+        # det_dR = self.spectrometer.det_dR.position
+        # x_sp = self.spectrometer.x_sp.position
+        pos_dict = self.spectrometer.pseudo_pos2dict(self.spectrometer.position)
+        pos_dict['bragg_act'] = bragg
+        pos = self.spectrometer.PseudoPosition(**pos_dict)
+        return self.RealPosition(spectrometer=pos)
+
+    def _inverse(self, real_pos):
+        bragg = real_pos.spectrometer.bragg_act
+        energy = bragg2e(bragg, self.crystal, self.hkl)
+        return self.PseudoPosition(energy=energy)
+
+    # @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        return self._forward(pseudo_pos)
+
+    # @real_position_argument
+    def inverse(self, real_pos):
+        return self._inverse(real_pos)
+
+johann_emission = JohannEmissionMotor(name='johann_emission')
+
+# johann_emission.spectrometer.offset_data = \
+# {'nominal': {'cr_assy_x': [29.6654660811206, 27.267846810444667],
+#   'cr_assy_y': [0.0, 0.0],
+#   'cr_main_bragg': [76.009194, 76.58919399999999],
+#   'cr_main_yaw': [0.849957, 0.849957],
+#   'det_bragg': [76.009194, 76.58919399999999],
+#   'det_x': [-111.55640935716096, -102.77334615511403],
+#   'det_y': [455.26687918909795, 438.9080447066834],
+#   'bragg': [76.009194, 76.58919399999999],
+#   'bragg_act': [76.009194, 76.009194],
+#   'x': [1.882338408620626, 1.882338408620626],
+#   'det_focus': [0.0055589760942588995, 0.0055589760942588995]},
+#  'actual': {'cr_assy_x': [29.6654660811206, 27.267846810444667],
+#   'cr_assy_y': [0.0, 0.0],
+#   'cr_main_bragg': [76.009194, 76.58919399999999],
+#   'cr_main_yaw': [0.849957, 0.849957],
+#   'det_bragg': [74.819796875, 75.4001875],
+#   'det_x': [-130.46653297345836, -122.58459200449965],
+#   'det_y': [487.7966257311867, 471.2751616484047],
+#   'bragg': [74.82, 75.4],
+#   'bragg_act': [76.009194, 75.39999999999999],
+#   'x': [1.882338408620626, 1.882467896444723],
+#   'det_focus': [0.0055589760942588995, 0]}}
+johann_emission.spectrometer.offset_data = \
+{'nominal': {'cr_assy_x': [29.6654660811206],
+  'cr_assy_y': [0.0],
+  'cr_main_bragg': [76.009194],
+  'cr_main_yaw': [0.849957],
+  'det_bragg': [76.009194],
+  'det_x': [-111.55640935716096],
+  'det_y': [455.26687918909795],
+  'bragg': [76.009194],
+  'bragg_act': [76.009194],
+  'x': [1.882338408620626],
+  'det_focus': [0.0055589760942588995]},
+ 'actual': {'cr_assy_x': [29.6654660811206],
+  'cr_assy_y': [0.0],
+  'cr_main_bragg': [76.009194],
+  'cr_main_yaw': [0.849957],
+  'det_bragg': [74.819796875],
+  'det_x': [-130.46653297345836],
+  'det_y': [487.7966257311867],
+  'bragg': [74.82],
+  'bragg_act': [76.009194],
+  'x': [1.882338408620626],
+  'det_focus': [0.0055589760942588995]}}
+
+
+motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.spectrometer.bragg_act.name,
+                                          'description' : 'Johann Bragg Angle',
+                                          'object': johann_emission.spectrometer.bragg_act,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_det_focus'] =   {'name': johann_emission.spectrometer.det_focus.name,
+                                          'description' : 'Johann Detector Focus',
+                                          'object': johann_emission.spectrometer.det_focus,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_x'] =           {'name': johann_emission.spectrometer.x.name,
+                                          'description' : 'Johann X',
+                                          'object': johann_emission.spectrometer.x,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+                                          'description' : 'Johann Energy',
+                                          'object': johann_emission.energy,
+                                          'group': 'spectrometer'}
+
+
+
 # jsp_alt.register_actual_bragg(74.82)
 # jsp_alt.offset_data = \
 # {'nominal': {'cr_assy_x': [29.6654660811206, 27.267846810444667],
@@ -1060,38 +1242,38 @@ jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
 #   'x': [1.882338408620626, 1.882467896444723],
 #   'det_focus': [0.0055589760942588995, 1.7085024780916698]}}
 #
-# jsp_alt._forward(
-# {'cr_assy_x': 27.267846810444667,
-#  'cr_assy_y': 0.0,
-#  'cr_main_bragg': 76.58919399999999,
-#  'cr_main_yaw': 0.849957,
-#  'det_bragg': 75.4001875,
-#  'det_x': -122.58466829849965,
-#  'det_y': 471.2751616484047,
-#  'bragg': 76.58919399999999,
-#  'bragg_act': 75.3,
-#  'x': 1.8824106759446977,
-#  'det_focus': 1.708519174508354}
-# )
+jsp_alt._forward(
+{'cr_assy_x': 27.267846810444667,
+ 'cr_assy_y': 0.0,
+ 'cr_main_bragg': 76.58919399999999,
+ 'cr_main_yaw': 0.849957,
+ 'det_bragg': 75.4001875,
+ 'det_x': -122.58466829849965,
+ 'det_y': 471.2751616484047,
+ 'bragg': 76.58919399999999,
+ 'bragg_act': 75.3,
+ 'x': 1.8824106759446977,
+ 'det_focus': 1.708519174508354}
+)
 
 
 
 
-motor_dictionary['johann_bragg'] = {'name': jsp_alt.bragg.name,
-                                          'description' : 'Johann Bragg Angle',
-                                          'object': jsp_alt.bragg,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_det_focus'] =   {'name': jsp_alt.det_focus.name,
-                                          'description' : 'Johann Detector Focus',
-                                          'object': jsp_alt.det_focus,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_x'] =           {'name': jsp_alt.x.name,
-                                          'description' : 'Johann X',
-                                          'object': jsp_alt.x,
-                                          'group': 'spectrometer'}
-
+# motor_dictionary['johann_bragg'] = {'name': jsp_alt.bragg.name,
+#                                           'description' : 'Johann Bragg Angle',
+#                                           'object': jsp_alt.bragg,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_det_focus'] =   {'name': jsp_alt.det_focus.name,
+#                                           'description' : 'Johann Detector Focus',
+#                                           'object': jsp_alt.det_focus,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_x'] =           {'name': jsp_alt.x.name,
+#                                           'description' : 'Johann X',
+#                                           'object': jsp_alt.x,
+#                                           'group': 'spectrometer'}
+#
 # motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
 #                                           'description' : 'Johann Energy',
 #                                           'object': johann_emission.energy,
