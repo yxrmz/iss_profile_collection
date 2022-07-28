@@ -234,14 +234,22 @@ class ISSPseudoPositioner(PseudoPositioner):
         ret = {k : getattr(pseudo_pos, k) for k in self.pseudo_keys}
         for k in ret.keys():
             if ret[k] is None:
-                ret[k] = 0
+                try:
+                    ret[k] = getattr(self, k).position
+                except:
+                    ttime.sleep(1)
+                    ret[k] = getattr(self, k).position
         return ret
 
     def real_pos2dict(self, real_pos):
         ret = {k: getattr(real_pos, k) for k in self.real_keys}
         for k in ret.keys():
             if ret[k] is None:
-                ret[k] = 0
+                try:
+                    ret[k] = getattr(self, k).position
+                except:
+                    ttime.sleep(1)
+                    ret[k] = getattr(self, k).position
         return ret
 
     @pseudo_position_argument
@@ -356,7 +364,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                       'motor_cr_main_roll0': 8.1324,
                       'motor_cr_main_yaw0' : 0.85,
                       'cr_main_roll_offset': 17.125,
-                      'motor_det_x0': -10,
+                      'motor_det_x0': -10,  # high limit of this motor should be at 529 mm
                       'motor_det_th10': 69,
                       'motor_det_th20': -69}
             self.set_spectrometer_config(config)
@@ -597,7 +605,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             self._move_all_components(new_pos_dict)
 
         elif (moving_motor == 'energy'):
-            new_pos_dict['bragg'] = bragg2e(new_pos_dict['energy'])
+            new_pos_dict['bragg'] = e2bragg(new_pos_dict['energy'], self.crystal, self.hkl)
             self._move_all_components(new_pos_dict)
         #     # print('moving_motor is bragg_act')
         #     self._move_all_components_with_correction(new_pos_dict)
@@ -684,7 +692,29 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                 'energy' : energy}
 
 
-jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
+johann_emission = JohannMultiCrystalSpectrometerAlt(name='johann_emission')
+johann_emission.register_energy(7480)
+
+
+motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.bragg.name,
+                                          'description' : 'Johann Bragg Angle',
+                                          'object': johann_emission.bragg,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_det_focus'] =   {'name': johann_emission.det_focus.name,
+                                          'description' : 'Johann Detector Focus',
+                                          'object': johann_emission.det_focus,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_x'] =           {'name': johann_emission.x.name,
+                                          'description' : 'Johann X',
+                                          'object': johann_emission.x,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+                                          'description' : 'Johann Energy',
+                                          'object': johann_emission.energy,
+                                          'group': 'spectrometer'}
 
 
 
@@ -1241,8 +1271,8 @@ jsp_alt = JohannMultiCrystalSpectrometerAlt(name='jsp_alt')
 
 
 
-from xas.xray import bragg2e, e2bragg
-from xas.fitting import Nominal2ActualConverter
+# from xas.xray import bragg2e, e2bragg
+# from xas.fitting import Nominal2ActualConverter
 # class JohannEmissionMotor(PseudoPositioner):
 #     spectrometer = Cpt(JohannMultiCrystalSpectrometer, name='bragg')
 #     energy = Cpt(PseudoSingle, name='energy')
