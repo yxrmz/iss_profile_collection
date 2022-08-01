@@ -441,51 +441,25 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
     def n_offset_points(self):
         return len(self.offset_data['nominal']['bragg'])
 
-    def register_energy(self, energy):
+    def register_energy(self, energy, energy_limits=None):
         bragg_act = e2bragg(energy, self.crystal, self.hkl)
         bragg = self.bragg.position
         cr_main_roll_offset_value = self.cr_main_roll_offset.position
         self.cr_main_roll_offset.set(cr_main_roll_offset_value + (bragg - bragg_act))
         self.motor_offset_registry.append(self.position_dict)
+        if energy_limits is not None:
+            self.energy._limits = energy_limits
+        self.save_current_spectrometer_config_to_settings()
 
-        # self.energy_registry.append({'energy' : energy})
-
-    def register_actual_bragg(self, bragg_act, starting_point=None):
-        pos_act = self.pseudo_pos2dict(self.position)
-        pos_act['bragg'] = bragg_act
-
-        if self.n_offset_points == 0:
-            pos_nom = self.pseudo_pos2dict(self.position)
-        else:
-            pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
-        pos_nom['bragg'] = self.bragg.position
-        self._move_all_components(pos_nom)
-
-        for k in self.pseudo_keys:
-            self.offset_data['nominal'][k].append(pos_nom[k])
-            self.offset_data['actual'][k].append(pos_act[k])
-
-    def get_nominal_motor_pos(self, bragg_min, bragg_max, npt=101):
-        df = []
-        for bragg in np.linspace(bragg_min, bragg_max, npt):
-            cur_pos = self.pseudo_pos2dict(self.position)
-            cur_pos['bragg'] = bragg
-            self.handle_pseudo_input(cur_pos)
-            df.append(cur_pos)
-
-        return pd.DataFrame(df)
-
-    def get_actual_motor_pos(self, bragg_min, bragg_max, npt=101):
-        df = []
-        for bragg in np.linspace(bragg_min, bragg_max, npt):
-            cur_pos = self.pseudo_pos2dict(self.position)
-            cur_pos['bragg_act'] = bragg
-            self.handle_pseudo_input(cur_pos)
-            df.append(cur_pos)
-
-        return pd.DataFrame(df)
-
-    # def plot_nominal_motor_pos(self, bragg_min, bragg_max, npt=101):
+    def update_motor_pos_for_energy(self, new_pos_dict):
+        if len(self.motor_offset_registry) == 0:
+            pass
+        elif len(self.motor_offset_registry) == 1:
+            new_pos_dict['cr_main_yaw'] = self.motor_offset_registry[0]['cr_main_yaw']
+            new_pos_dict['x'] = self.motor_offset_registry[0]['x']
+            new_pos_dict['det_focus'] = self.motor_offset_registry[0]['det_focus']
+            new_pos_dict['det_bragg'] += self.motor_offset_registry[0]['det_bragg'] - self.motor_offset_registry[0]['bragg']
+            self._move_det_arm_only(new_pos_dict)
 
     def which_motor_moves(self, new_pos_dict):
         try:
@@ -502,9 +476,6 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             if not np.isclose(old_pos_dict[motor_name], new_pos_dict[motor_name], atol=self._pseudo_precision[motor_name]):
                 moving_motors.append(motor_name)
                 moving_motors_delta.append(new_pos_dict[motor_name] - old_pos_dict[motor_name])
-
-        # print('###########')
-
         if len(moving_motors) == 0:
             return None
         elif len(moving_motors) == 1:
@@ -607,6 +578,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         elif (moving_motor == 'energy'):
             new_pos_dict['bragg'] = e2bragg(new_pos_dict['energy'], self.crystal, self.hkl)
             self._move_all_components(new_pos_dict)
+            self.update_motor_pos_for_energy(new_pos_dict)
         #     # print('moving_motor is bragg_act')
         #     self._move_all_components_with_correction(new_pos_dict)
 
@@ -693,7 +665,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
 
 johann_emission = JohannMultiCrystalSpectrometerAlt(name='johann_emission')
-johann_emission.register_energy(7480)
+johann_emission.register_energy(7470)
 
 
 motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.bragg.name,

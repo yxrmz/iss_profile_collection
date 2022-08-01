@@ -370,6 +370,9 @@ apb_ave.ch8.amp = None
 #         #print(f'Returning {self.df}')
 #         return self.df
 
+#resetting APB to default data rate
+_st = apb_stream.divide.set(375)
+
 
 from xas.handlers import APBBinFileHandler
 
