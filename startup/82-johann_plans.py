@@ -9,7 +9,7 @@ def johann_calibration_scan_plan(energies=None, DE=5, dE=0.1):
     for energy in energies:
         yield from bps.mv(hhm.energy, energy)
         # yield from move_emission_energy_plan(energy)
-        yield from bps.mv(johann_spectrometer_motor, energy)
+        yield from bps.mv(johann_emission.energy, energy)
         yield from elastic_scan_plan(DE=DE, dE=dE)
 
 

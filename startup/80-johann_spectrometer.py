@@ -98,12 +98,12 @@ class JohannSpectrometerMotor(PseudoPositioner):
         return [energy]
 
 
-johann_spectrometer_motor = JohannSpectrometerMotor(name='motor_emission')
+# johann_spectrometer_motor = JohannSpectrometerMotor(name='motor_emission')
 
-motor_emission_key = 'motor_emission'
-
-motor_emission_dict = {'name': johann_spectrometer_motor.name, 'description' : 'Emission energy', 'object': johann_spectrometer_motor, 'group': 'spectrometer'}
-motor_dictionary['motor_emission'] = motor_emission_dict
+# motor_emission_key = 'motor_emission'
+#
+# motor_emission_dict = {'name': johann_spectrometer_motor.name, 'description' : 'Emission energy', 'object': johann_spectrometer_motor, 'group': 'spectrometer'}
+# motor_dictionary['motor_emission'] = motor_emission_dict
 
 # class JohannCrystal(Device):
 #     x = Cpt(EpicsMotor, '}X')
@@ -333,7 +333,8 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         self.set_cr_main_roll_offset_from_settings()
         self.operation_mode = 'nominal'
         self.reset_offset_data()
-
+        self._initialized = False
+        self.energy_converter = None
         self._print_inverse = False
 
     def load_config(self, file):
@@ -449,6 +450,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         self.motor_offset_registry.append(self.position_dict)
         if energy_limits is not None:
             self.energy._limits = energy_limits
+        self._initialized = True
         self.save_current_spectrometer_config_to_settings()
 
     def update_motor_pos_for_energy(self, new_pos_dict):
@@ -460,6 +462,9 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             new_pos_dict['det_focus'] = self.motor_offset_registry[0]['det_focus']
             new_pos_dict['det_bragg'] += self.motor_offset_registry[0]['det_bragg'] - self.motor_offset_registry[0]['bragg']
             self._move_det_arm_only(new_pos_dict)
+
+    def append_energy_converter(self, ec):
+        self.energy_converter = ec
 
     def which_motor_moves(self, new_pos_dict):
         try:
@@ -576,6 +581,8 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
             self._move_all_components(new_pos_dict)
 
         elif (moving_motor == 'energy'):
+            if self.energy_converter is not None:
+                new_pos_dict['energy'] = self.energy_converter.act2nom(new_pos_dict['energy'])
             new_pos_dict['bragg'] = e2bragg(new_pos_dict['energy'], self.crystal, self.hkl)
             self._move_all_components(new_pos_dict)
             self.update_motor_pos_for_energy(new_pos_dict)
@@ -650,6 +657,8 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         det_focus = np.sqrt((det_x - det_x_ref) ** 2 + (det_y - det_y_ref) ** 2) * np.sign(det_y_ref - det_y)
         bragg = cr_main_bragg
         energy = bragg2e(bragg, self.crystal, self.hkl)
+        if self.energy_converter is not None:
+            energy = self.energy_converter.nom2act(energy)
 
         return {'cr_assy_x' : cr_assy_x,
                 'cr_assy_y' : cr_assy_y,
@@ -665,7 +674,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
 
 johann_emission = JohannMultiCrystalSpectrometerAlt(name='johann_emission')
-johann_emission.register_energy(7470)
+# johann_emission.register_energy(7470)
 
 
 motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.bragg.name,

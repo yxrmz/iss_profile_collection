@@ -38,7 +38,7 @@ if not os.environ.get('AZURE_TESTING'):
                                hhm_encoder=hhm_encoder,
                                hhm_feedback=hhm_feedback,
                                trajectory_manager=trajectory_manager,
-                               johann_spectrometer_motor=johann_spectrometer_motor,
+                               johann_emission=johann_emission,
                                sdd=xs,
                                pil100k=pil100k,
                                apb=apb_ave,
