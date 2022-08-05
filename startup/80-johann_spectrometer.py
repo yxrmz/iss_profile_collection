@@ -279,6 +279,7 @@ class ISSPseudoPositioner(PseudoPositioner):
 
 from xas.xray import bragg2e, e2bragg
 from xas.fitting import Nominal2ActualConverter
+
 class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner):
     motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
     motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
@@ -328,14 +329,16 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
     def __init__(self, *args, auto_target=False, **kwargs):
         self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
-        self.init_from_settings()
-        super().__init__(*args, auto_target=auto_target, **kwargs)
-        self.set_cr_main_roll_offset_from_settings()
-        self.operation_mode = 'nominal'
         self.reset_offset_data()
         self._initialized = False
         self.energy_converter = None
-        self._print_inverse = False
+        self.init_from_settings()
+        super().__init__(*args, auto_target=auto_target, **kwargs)
+        self.set_cr_main_roll_offset_from_settings()
+
+        # self.operation_mode = 'nominal'
+
+        # self._print_inverse = False
 
     def load_config(self, file):
         with open(file, 'r') as f:
@@ -386,6 +389,13 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         self.motor_det_x0 = config['motor_det_x0']
         self.motor_det_th10 = config['motor_det_th10']
         self.motor_det_th20 = config['motor_det_th20']
+        self.motor_offset_registry = config['motor_offset_registry']
+        if len(self.motor_offset_registry) > 0:
+            self._initialized = True
+
+        if 'ec_x_nom' in config.keys():
+            if (len(config['ec_x_nom']) > 0) and (len(config['ec_x_act']) > 0) and (config['ec_n_poly'] > 0):
+                self.energy_converter = Nominal2ActualConverter(config['ec_x_nom'], config['ec_x_act'], config['ec_n_poly'])
 
     def get_spectrometer_config(self):
         config = {'crystal' : self.crystal,
@@ -400,7 +410,16 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                   'cr_main_roll_offset': self.cr_main_roll_offset.position,
                   'motor_det_x0': self.motor_det_x0,
                   'motor_det_th10': self.motor_det_th10,
-                  'motor_det_th20': self.motor_det_th20}
+                  'motor_det_th20': self.motor_det_th20,
+                  'motor_offset_registry': self.motor_offset_registry,
+                  'ec_x_nom' : [],
+                  'ec_x_act': [],
+                  'ec_n_poly': 0}
+
+        if self.energy_converter is not None:
+            config['ec_x_nom'] = [v for v in self.energy_converter.x_nominal]
+            config['ec_x_act'] = [v for v in self.energy_converter.x_actual]
+            config['ec_n_poly'] = int(self.energy_converter.n_poly)
         return config
 
     def set_cr_main_roll_offset_from_settings(self):
@@ -434,13 +453,13 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
         return self.det_L1 * np.sin(np.deg2rad(self.motor_det_th10))
 
     def reset_offset_data(self):
-        self.offset_data = {'nominal': {k: [] for k in self.pseudo_keys},
-                            'actual': {k: [] for k in self.pseudo_keys}}
+        # self.offset_data = {'nominal': {k: [] for k in self.pseudo_keys},
+        #                     'actual': {k: [] for k in self.pseudo_keys}}
         self.motor_offset_registry = []
 
-    @property
-    def n_offset_points(self):
-        return len(self.offset_data['nominal']['bragg'])
+    # @property
+    # def n_offset_points(self):
+    #     return len(self.offset_data['nominal']['bragg'])
 
     def register_energy(self, energy, energy_limits=None):
         bragg_act = e2bragg(energy, self.crystal, self.hkl)
@@ -629,7 +648,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
 
     def _inverse(self, real_pos_dict):
-        if self._print_inverse: print('INVERSE INVOKED')
+        # if self._print_inverse: print('INVERSE INVOKED')
         motor_cr_assy_x, motor_cr_assy_y, motor_cr_main_roll, motor_cr_main_yaw, motor_det_x, motor_det_th1, motor_det_th2 = \
             real_pos_dict['motor_cr_assy_x'], \
             real_pos_dict['motor_cr_assy_y'], \
@@ -674,6 +693,7 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
 
 johann_emission = JohannMultiCrystalSpectrometerAlt(name='johann_emission')
+johann_emission.energy._limits=(7420, 7520)
 # johann_emission.register_energy(7470)
 
 

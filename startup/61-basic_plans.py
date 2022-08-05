@@ -42,7 +42,7 @@ def move_mono_pitch(value: float = 680):
 
 
 def move_johann_spectrometer_energy(energy=-1):
-    yield from move_motor_plan(motor_attr=johann_spectrometer_motor.name, based_on='object_name', position=energy)
+    yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=energy)
 
 
 

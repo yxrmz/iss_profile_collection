@@ -480,7 +480,10 @@ class ScanManager():
             metadata['scan_group_uid'] = str(uuid.uuid4())
 
         for indx in range(int(repeat)):
-            name_n = '{} {:04d}'.format(name, indx + 1)
+            if type(name) == list:
+                name_n = ['{} {:04d}'.format(n, indx + 1) for n in name]
+            else:
+                name_n = '{} {:04d}'.format(name, indx + 1)
             plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates, metadata=metadata)
             plans.extend(plan_list_for_scan)
             if delay > 0:

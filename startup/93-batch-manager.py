@@ -662,6 +662,7 @@ class BatchManager(PersistentListInteractingWithGUI):
                                     new_plans.extend(self.convert_service_to_plans(sub_element))
                         else:
                             sample_coordinates_list = []
+                            sample_name_for_scan_list = []
                             for sub_element in element['element_list']:
                                 if sub_element['type'] == 'sample':
                                     sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
@@ -669,12 +670,15 @@ class BatchManager(PersistentListInteractingWithGUI):
                                 elif sub_element['type'] == 'service':
                                     new_plans.extend(self.convert_service_to_plans(sub_element))
                                 sample_name_for_scan = f'{sample_name} {scan_name}'
+                                sample_name_for_scan_list.append(sample_name_for_scan)
 
                             print(len(sample_coordinates_list))
                             if len(sample_coordinates_list) == 1:
                                 sample_coordinates_list = sample_coordinates_list[0]
+                            if len(sample_name_for_scan_list) == 1:
+                                sample_name_for_scan_list = sample_name_for_scan_list[0]
 
-                            scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan,
+                            scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan_list,
                                                                               sample_comment,
                                                                               repeat, delay, scan_idx, sample_coordinates=sample_coordinates_list)
                             new_plans.extend(scan_plans)

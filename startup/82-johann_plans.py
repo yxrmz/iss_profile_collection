@@ -24,7 +24,7 @@ def plot_radiation_damage_scan_data(db, uid):
 
 def prepare_johann_scan_plan(detectors, spectrometer_energy):
     ensure_pilatus_is_in_detector_list(detectors)
-    yield from bps.mv(johann_spectrometer_motor.energy, spectrometer_energy)
+    yield from bps.mv(johann_emission.energy, spectrometer_energy)
 
 def prepare_johann_metadata_and_kwargs(**kwargs):
     metadata = kwargs.pop('metadata')
@@ -86,20 +86,26 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from bps.mv(hhm.energy, mono_energy)
     yield from prepare_johann_scan_plan(detectors, emission_energy_list[0])
 
-    yield from general_energy_step_scan(all_detectors, johann_spectrometer_motor.energy, emission_energy_list, emission_time_list, md=md)
+    yield from general_energy_step_scan(all_detectors, johann_emission.energy, emission_energy_list, emission_time_list, md=md)
 
 
 
-def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list):
+def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list, name):
     if type(sample_coordinates) == list:
         assert len(sample_coordinates) == len(emission_energy_list), 'number of positions on the sample must match the number of energy points on emission grid'
     else:
         sample_coordinates = [sample_coordinates] * len(emission_energy_list)
-    return sample_coordinates
+
+    if type(name) == list:
+        assert len(name) == len(emission_energy_list), 'number of positions on the sample must match the number of energy points on emission grid'
+    else:
+        name = [name] * len(emission_energy_list)
+
+    return sample_coordinates, name
 
 
 def get_johann_rixs_md(name, element_line, line, e0_line, metadata):
-    metadata['rixs_file_name'] = create_interp_file_name(name, '.rixs')
+    # metadata['rixs_file_name'] = create_interp_file_name(name, '.rixs')
     metadata['element_line'] = element_line
     metadata['line'] = line
     metadata['e0_line'] = e0_line
@@ -111,17 +117,17 @@ def johann_rixs_plan_bundle(plan_name, name=None, comment=None, detectors=[],
                             emission_energy_list=None, sample_coordinates=None,
                             element='', edge='', e0=None, element_line='', line='', e0_line=None,
                             rixs_kwargs={}, metadata={}):
-    sample_coordinates = deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list)
+    sample_coordinates, names = deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list, name)
     metadata = get_johann_rixs_md(name, element_line, line, e0_line, metadata)
     plans = []
-    for emission_energy, sample_position in zip(emission_energy_list, sample_coordinates):
+    for emission_energy, sample_position, name in zip(emission_energy_list, sample_coordinates, names):
 
         if sample_position is not None:
             plans.append({'plan_name': 'move_sample_stage_plan',
                           'plan_kwargs': {'sample_coordinates': sample_position}})
 
         plans.append({'plan_name': plan_name,
-                      'plan_kwargs': {'name': name,
+                      'plan_kwargs': {'name': f'{name} {emission_energy:0.2f}',
                                       'comment': comment,
                                       'detectors': detectors,
                                       'trajectory_filename': trajectory_filename,
