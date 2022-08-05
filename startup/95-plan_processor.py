@@ -211,10 +211,16 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         else:
             re_args = self.make_re_args(0)
             # self.RE(actuate_photon_shutter_plan('Open'))
-            self.set_plan_status_at_index(0, 'executing')
-            self.perform_pre_scan_routines()
-            self.RE(*re_args)
-            self.plan_list.pop(0)
+            for i in range(15):
+                if self.RE_state == 'idle':
+                    self.set_plan_status_at_index(0, 'executing')
+                    self.perform_pre_scan_routines()
+                    self.RE(*re_args)
+                    self.plan_list.pop(0)
+                    break
+                else:
+                    print_to_gui(f'RE is busy. waiting...', add_timestamp=True, tag='Queue')
+                    ttime.sleep(0.1)
 
     def run(self, unpause=True):
         if unpause:
