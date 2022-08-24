@@ -269,13 +269,16 @@ class SampleManager(PersistentListInteractingWithGUI):
     def sample_name_at_index(self, index):
         return self.sample_at_index(index).name
 
+    def sample_uid_at_index(self, index):
+        return self.sample_at_index(index).uid
+
     def sample_comment_at_index(self, index):
         return self.sample_at_index(index).comment
 
     def sample_coord_str_at_index(self, sample_index, sample_point_index):
         return self.sample_at_index(sample_index).index_coordinate_str(sample_point_index)
 
-    def sample_uid_at_index(self, sample_index, sample_point_index):
+    def sample_point_uid_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_uid(sample_point_index)
 
     def sample_coordinate_dict_at_index(self, sample_index, sample_point_index):
