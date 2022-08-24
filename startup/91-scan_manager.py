@@ -314,12 +314,10 @@ class ScanManager():
             header = ''
         return f'{header}, direction: {direction}'
 
-    def parse_scan_to_plan(self, name, comment, scan_idx, sample_coordinates=None, metadata=None, ):
+    def parse_scan_to_plan(self, name, comment, scan_local, sample_coordinates=None, metadata=None, ):
         if metadata is None:
-            metadata = {}
-        scan_local = self.scan_list_local[scan_idx]
+            metadata = dict()
         scan_uid = scan_local['uid']
-        metadata['monochromator_scan_uid'] = scan_uid
         scan = self.scan_dict[scan_uid]
         return self.parse_scan_to_plan_from_parameters(name,
                                                        comment,
@@ -470,7 +468,7 @@ class ScanManager():
 
         return output
 
-    def generate_plan_list(self, name, comment, repeat, delay, scan_idx, sample_coordinates=None, metadata=None):
+    def generate_plan_list(self, sample_idx, scan_idx, sample_point_index=None, comment='', repeat=1, delay=0.0, metadata=None):
         if metadata is None:
             metadata = dict()
         plans = []
@@ -479,14 +477,29 @@ class ScanManager():
         if 'scan_group_uid' not in metadata:
             metadata['scan_group_uid'] = str(uuid.uuid4())
 
+        sample_name = sample_manager.sample_name_at_index(sample_idx)
+        sample_uid = sample_manager.sample_uid_at_index(sample_idx)
+        metadata['sample_uid'] = sample_uid
+
+        scan_local = self.scan_list_local[scan_idx]
+        scan_uid = scan_local['uid']
+        metadata['monochromator_scan_uid'] = scan_uid
+
+        if sample_point_index is None:
+            sample_point_index_str = ''
+            sample_coordinates = None
+        else:
+            # this should be handled better
+            sample_point_index_str = ''
+            sample_coordinates = None
+
+        name = f'{sample_name}{sample_point_index_str} {scan_local["scan_name"]}'
+
         for indx in range(int(repeat)):
-            if type(name) == list:
-                name_n = ['{} {:04d}'.format(n, indx + 1) for n in name]
-            else:
-                name_n = '{} {:04d}'.format(name, indx + 1)
-            plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_idx, sample_coordinates=sample_coordinates, metadata=metadata)
+            name_n = f'{name} {indx+1:04d}'
+            plan_list_for_scan = self.parse_scan_to_plan(name_n, comment, scan_local, sample_coordinates=sample_coordinates, metadata=metadata)
             plans.extend(plan_list_for_scan)
-            if delay > 0:
+            if delay > 0.0:
                 plans.append({'plan_name': 'sleep', 'plan_kwargs': {'delay': delay}})
         return plans
 
