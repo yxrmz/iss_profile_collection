@@ -48,6 +48,7 @@ if not os.environ.get('AZURE_TESTING'):
                                shutter_dict=shutter_dictionary,
                                motor_dict=motor_dictionary,
                                camera_dict=camera_dictionary,
+                               sample_env_dict=sample_env_dict,
                                # sample_stage=giantxy,
                                sample_stage=sample_stage,
                                tune_elements=tune_elements,
