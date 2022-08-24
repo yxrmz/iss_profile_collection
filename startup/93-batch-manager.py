@@ -10,6 +10,7 @@ class Sample:
         self.comment = comment
         self.max_exposure = max_exposure
         self.add_new_positions_from_coordinates(coordinates)
+        self.uid = str(uuid.uuid4())[:20]
         # self.add_positions(positions)
 
     def validate_coordinates(self, coordinates_dict):
@@ -282,6 +283,10 @@ class SampleManager(PersistentListInteractingWithGUI):
 
     def sample_exposed_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_exposed(sample_point_index)
+
+    @emit_list_update_signal_decorator
+    def add_points_to_sample_at_index(self, index, sample_coordinate_list):
+        self.samples[index].add_new_positions_from_coordinates(sample_coordinate_list)
 
     @emit_list_update_signal_decorator
     def set_as_exposed_with_index_dict(self, index_dict, exposed=True):

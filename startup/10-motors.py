@@ -221,7 +221,7 @@ class SampleStage(Device):
     z = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
     th = Cpt(EpicsMotor, 'XF:08IDB-OP{Gon:Th:1}Mtr')
 
-    def mv(self, pos_dict):
+    def mv(self, pos_dict, wait=True):
         '''
         pos_dict = {'x' : -300,
                       'y' : -60}
@@ -231,7 +231,9 @@ class SampleStage(Device):
         st_list = []
         for axis, pos in pos_dict.items():
             motor = getattr(self, axis)
-            if not motor.moving:
+            # print(f'{motor.user_setpoint.value=}')
+            if (not wait) or (not motor.moving):
+
                 st = motor.move(pos, wait=False)
                 st_list.append(st)
         if len(st_list) > 0:
@@ -239,13 +241,14 @@ class SampleStage(Device):
         else:
             return NullStatus()
 
-    def mvr(self, delta_dict):
+    def mvr(self, delta_dict, wait=True):
         pos_dict = {}
         for axis, delta in delta_dict.items():
             motor = getattr(self, axis)
-            if not motor.moving:
-                pos_dict[axis] = motor.position + delta
-        return self.mv(pos_dict)
+            # if not motor.moving:
+                # pos_dict[axis] = motor.position + delta
+            pos_dict[axis] = motor.user_setpoint.value + delta
+        return self.mv(pos_dict, wait=wait)
 
     def positions(self, *axes, prefix=''):
         if len(axes) == 0:
