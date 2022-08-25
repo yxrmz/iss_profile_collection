@@ -477,7 +477,7 @@ class ScanManager():
 
         # add scan group uid
         if 'scan_group_uid' not in metadata:
-            metadata['scan_group_uid'] = str(uuid.uuid4())
+            metadata['scan_group_uid'] = get_scan_group_uid()
 
         scan_local = self.scan_list_local[scan_idx]
         scan_name = scan_local['scan_name']
@@ -494,7 +494,8 @@ class ScanManager():
 
 scan_manager = ScanManager()
 
-
+def get_scan_group_uid():
+    return str(uuid.uuid4())
 
 
 

@@ -1,4 +1,5 @@
 # from xas.trajectory import trajectory, trajectory_manager
+import pandas as pd
 from bluesky.plan_stubs import mv
 from collections import defaultdict
 
@@ -27,7 +28,12 @@ class Sample:
         self.add_one_position(point)
 
     def add_one_position(self, point):
-        self.position_data = self.position_data.append(point, ignore_index=True)
+        index_list = [int(i) for i in self.position_data.index]
+        if len(index_list) == 0:
+            last_index = -1
+        else:
+            last_index = max(index_list)
+        self.position_data = pd.concat([self.position_data, pd.DataFrame(point, index=[last_index+1])])
 
     def make_point_uid(self):
         return str(uuid.uuid4())[:13]
@@ -64,6 +70,9 @@ class Sample:
     def index_coordinate_str(self, index):
         coord_dict = self.index_coordinate_dict(index)
         return ' '.join([(f"{key}={value : 0.2f}") for key, value in coord_dict.items()])
+
+    def index_position_index(self, index):
+        return int(self.position_data.index[index])
 
     def index_exposed(self, index):
         return bool(self.position_data.iloc[index][['exposed']].item())
@@ -281,6 +290,9 @@ class SampleManager(PersistentListInteractingWithGUI):
     def sample_point_uid_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_uid(sample_point_index)
 
+    def sample_point_index_position_index(self, sample_index, sample_point_index):
+        return self.samples[sample_index].index_position_index(sample_point_index)
+
     def sample_coordinate_dict_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_coordinate_dict(sample_point_index)
 
@@ -429,7 +441,7 @@ class BatchManager(PersistentListInteractingWithGUI):
         elif element_dict['type'] == 'scan':
             required_keys = self.scan_sequence_manager.required_keys
         elif element_dict['type'] == 'sample':
-            required_keys = ['name', 'comment', 'sample_uid', 'sample_coordinates']
+            required_keys = ['name', 'comment', 'sample_name', 'sample_comment', 'sample_uid', 'sample_coordinates']
         elif element_dict['type'] == 'service':
             required_keys = ['plan_name', 'plan_kwargs']
         else:
@@ -462,27 +474,36 @@ class BatchManager(PersistentListInteractingWithGUI):
     #         for point_index in point_index_list:
     #             yield (sample_index, point_index)
 
-    def sample_info_from_index(self, sample_index, sample_point_index):
-        name = f'{self.sample_manager.sample_name_at_index(sample_index)} (pos {(sample_point_index+1):0>3d})'
-        comment = self.sample_manager.sample_comment_at_index(sample_index)
-        uid = self.sample_manager.sample_uid_at_index(sample_index, sample_point_index)
-        coord_dict = self.sample_manager.sample_coordinate_dict_at_index(sample_index, sample_point_index)
-        return name, comment, uid, coord_dict
+    def sample_info_from_index(self, sample_index, sample_point_index, suffix=None):
+        sample_name = self.sample_manager.sample_name_at_index(sample_index)
+        actual_sample_point_index = self.sample_manager.sample_point_index_position_index(sample_index, sample_point_index)
+        sample_point_str = f'(pos {(actual_sample_point_index+1):0>3d})'
+        if suffix is not None:
+            name = f'{sample_name} {suffix} {sample_point_str}'
+        else:
+            name = f'{sample_name} {sample_point_str}'
+        sample_comment = self.sample_manager.sample_comment_at_index(sample_index)
+        sample_uid = self.sample_manager.sample_uid_at_index(sample_index)
+        sample_coordinates = self.sample_manager.sample_coordinate_dict_at_index(sample_index, sample_point_index)
+        return name, sample_name, sample_comment, sample_uid, sample_coordinates
 
     def scan_iterator(self, scan_indexes):
         for scan_index in scan_indexes:
             scan_dict = self.scan_sequence_manager.scan_at_index(scan_index)
             yield {**{'type' : 'scan'}, **scan_dict}
 
-    def sample_iterator(self, sample_index_dict):
+    def sample_iterator(self, sample_index_dict, suffix=None, comment=''):
         for sample_index, point_index_list in sample_index_dict.items():
             for point_index in point_index_list:
-                name, comment, uid, coord_dict = self.sample_info_from_index(sample_index, point_index)
+                name, sample_name, sample_comment, sample_uid, sample_coordinates = self.sample_info_from_index(sample_index, point_index, suffix=suffix)
                 yield {'type' : 'sample',
-                       'name' : name, 'comment' : comment, 'sample_uid' : uid,
-                       'sample_coordinates' : coord_dict}
+                       'name' : name, 'comment' : comment,
+                       'sample_name': sample_name,
+                       'sample_comment' : sample_comment,
+                       'sample_uid' : sample_uid,
+                       'sample_coordinates' : sample_coordinates}
 
-    def sample_point_intertor(self, sample_index_dict):
+    def sample_point_intertor(self, sample_index_dict, suffix=None, comment=''):
         # reshuffle the dictionary
         sample_point_index_dict = defaultdict(lambda : [])
         for sample_index, point_index_list in sample_index_dict.items():
@@ -491,22 +512,25 @@ class BatchManager(PersistentListInteractingWithGUI):
 
         for point_index, sample_index_list in sample_point_index_dict.items():
             for sample_index in sample_index_list:
-                name, comment, uid, coord_dict = self.sample_info_from_index(sample_index, point_index)
+                name, sample_name, sample_comment, sample_uid, sample_coordinates = self.sample_info_from_index(sample_index, point_index, suffix=suffix)
                 yield {'type' : 'sample',
-                       'name' : name, 'comment' : comment, 'sample_uid' : uid,
-                       'sample_coordinates' : coord_dict}
+                       'name' : name, 'comment' : comment,
+                       'sample_name': sample_name,
+                       'sample_comment' : sample_comment,
+                       'sample_uid' : sample_uid,
+                       'sample_coordinates' : sample_coordinates}
 
     @emit_list_update_signal_decorator
     def add_measurement_to_experiment(self, experiment_index, sample_index_dict, scan_indexes,
-                                   priority='scan'):
+                                      priority='scan', suffix=None, comment=''):
         if priority == 'scan':
             element_iterator = self.scan_iterator(scan_indexes)
-            element_list_iterator = self.sample_iterator(sample_index_dict)
+            element_list_iterator = self.sample_iterator(sample_index_dict, suffix=suffix, comment=comment)
         elif priority == 'sample':
-            element_iterator = self.sample_iterator(sample_index_dict)
+            element_iterator = self.sample_iterator(sample_index_dict, suffix=suffix, comment=comment)
             element_list_iterator = self.scan_iterator(scan_indexes)
         elif priority == 'sample_point':
-            element_iterator = self.sample_point_intertor(sample_index_dict)
+            element_iterator = self.sample_point_intertor(sample_index_dict, suffix=suffix, comment=comment)
             element_list_iterator = self.scan_iterator(scan_indexes)
 
         element_list = list(element_list_iterator)
@@ -585,10 +609,14 @@ class BatchManager(PersistentListInteractingWithGUI):
     #         pass
     #     elif
 
-
     def get_sample_data_from_sample_element(self, sample_element):
-        return (sample_element['name'], sample_element['comment'], sample_element['sample_uid'],
-                sample_element['sample_coordinates'])
+        sample_metadata = {'sample_name': sample_element['sample_name'],
+                           'sample_comment': sample_element['sample_comment'],
+                           'sample_uid': sample_element['sample_uid']}
+
+        return (sample_element['name'], sample_element['comment'],
+                sample_element['sample_coordinates'],
+                sample_metadata)
 
     def get_scan_name_from_scan_dict(self, scan_dict):
         if 'name' in scan_dict.keys():
@@ -659,12 +687,12 @@ class BatchManager(PersistentListInteractingWithGUI):
                         if scan_key != 'johann_rixs':
                             for sub_element in element['element_list']:
                                 if sub_element['type'] == 'sample':
-                                    sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
+                                    name, comment, sample_coordinates, sample_metadata  = self.get_data_from_element(sub_element)
                                     sample_plans = [{'plan_name': 'move_sample_stage_plan',
                                                      'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
-                                    sample_name_for_scan = f'{sample_name} {scan_name}'
-                                    scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
-                                                                                     repeat, delay, scan_idx)
+                                    scan_plans = self.scan_manager.generate_plan_list(name, comment,
+                                                                                      repeat, delay, scan_idx,
+                                                                                      metadata=sample_metadata)
                                     new_plans.extend(sample_plans + scan_plans)
                                 elif sub_element['type'] == 'service':
                                     new_plans.extend(self.convert_service_to_plans(sub_element))
@@ -673,12 +701,12 @@ class BatchManager(PersistentListInteractingWithGUI):
                             sample_name_for_scan_list = []
                             for sub_element in element['element_list']:
                                 if sub_element['type'] == 'sample':
-                                    sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(sub_element)
+                                    name, comment, sample_coordinates, sample_metadata = self.get_data_from_element(sub_element)
                                     sample_coordinates_list.append(sample_coordinates)
+                                    sample_name_for_scan_list.append(name)
                                 elif sub_element['type'] == 'service':
                                     new_plans.extend(self.convert_service_to_plans(sub_element))
-                                sample_name_for_scan = f'{sample_name} {scan_name}'
-                                sample_name_for_scan_list.append(sample_name_for_scan)
+
 
                             print(len(sample_coordinates_list))
                             if len(sample_coordinates_list) == 1:
@@ -687,29 +715,31 @@ class BatchManager(PersistentListInteractingWithGUI):
                                 sample_name_for_scan_list = sample_name_for_scan_list[0]
 
                             scan_plans = self.scan_manager.generate_plan_list(sample_name_for_scan_list,
-                                                                              sample_comment,
-                                                                              repeat, delay, scan_idx, sample_coordinates=sample_coordinates_list)
+                                                                              comment,
+                                                                              repeat, delay, scan_idx,
+                                                                              sample_coordinates=sample_coordinates_list,
+                                                                              metadata=sample_metadata)
                             new_plans.extend(scan_plans)
-                            # plans.extend(new_plans)
 
                     elif element['type'] == 'sample':
-                        sample_name, sample_comment, sample_uid, sample_coordinates = self.get_data_from_element(element)
+                        name, comment, sample_coordinates, sample_metadata = self.get_data_from_element(element)
                         new_plans = [{'plan_name': 'move_sample_stage_plan',
                                       'plan_kwargs': {'sample_coordinates': sample_coordinates}}]
                         for sub_element in element['element_list']:
                             if sub_element['type'] == 'scan':
                                 repeat, delay, scan_idx, scan_name, scan_key  = self.get_data_from_element(sub_element)
-                                sample_name_for_scan = f'{sample_name} {scan_name}'
-                                new_plans.extend(self.scan_manager.generate_plan_list(sample_name_for_scan, sample_comment,
+                                # sample_name_for_scan = f'{sample_name} {scan_name}'
+                                new_plans.extend(self.scan_manager.generate_plan_list(name, comment,
                                                                                       repeat, delay, scan_idx,
-                                                                                      sample_coordinates=sample_coordinates))
+                                                                                      sample_coordinates=sample_coordinates,
+                                                                                      metadata=sample_metadata))
 
                             elif sub_element['type'] == 'service':
                                 new_plans.extend(self.convert_service_to_plans(sub_element))
-                            # plans.extend(new_plans)
                     elif element['type'] == 'service':
                         new_plans = self.convert_service_to_plans(element)
-                        # plans.extend(new_plans)
+
+
                     plans.extend(new_plans)
 
         return plans
