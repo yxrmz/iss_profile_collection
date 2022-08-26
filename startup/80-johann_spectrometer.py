@@ -156,24 +156,119 @@ class RowlandCircle:
             plt.axis('square')
 
 
-def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
-    bragg = np.deg2rad(bragg_deg)
+# def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
+#     bragg = np.deg2rad(bragg_deg)
+#
+#     x_cr = -R * np.cos(np.pi / 2 - bragg)
+#     y_cr = 0
+#
+#     x_det = +2 * x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg)
+#     y_det = -2 * x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg)
+#
+#     return (x_cr + x_src), (y_cr + y_src), (x_det + x_src), (y_det + y_src)
+#
+#
+# from scipy.spatial.transform import Rotation
+# from scipy.optimize import fsolve
+# def compute_rotated_rowland_circle_geometry(x_cr_main, y_cr_main, x_det, y_det, bragg_deg, dz, ax=None, ax2=None):
+#     bragg = np.deg2rad(bragg_deg)
+#
+#     _phi = np.linspace(0, 2*np.pi, 361)
+#     _x_o = R/2 * np.cos(_phi) - R/2 * np.sin(bragg)
+#     _y_o = R / 2 * np.sin(_phi) + R / 2 * np.cos(bragg)
+#     _z_o = np.zeros(_phi.size)
+#
+#     # rmat_z = Rotation.from_euler('z', -(90 - bragg_deg), degrees=True).as_matrix()
+#     # _xyz_o_rot1 = rmat_z @ np.vstack((_x_o, _y_o, _z_o))
+#     #
+#     # rmat_y = Rotation.from_euler('y', 10, degrees=True).as_matrix()
+#     # _xyz_o_rot2 = rmat_y @ _xyz_o_rot1
+#     #
+#     # rmat_z2 = Rotation.from_euler('z', +(90 - bragg_deg), degrees=True).as_matrix()
+#     # _xyz_o_rot3 = rmat_z2 @ _xyz_o_rot2
+#
+#     def rotate_xyz(xyz, omega):
+#         rmat = Rotation.from_euler('zyz', [-(90 - bragg_deg), omega, (90 - bragg_deg)], degrees=True).as_matrix()
+#         return rmat @ xyz
+#
+#     def z_cr_rot_from_rotate_xyz(omega):
+#         _, _, z_cr_rot = rotate_xyz(np.array([x_main_cr, y_main_cr, 0]), omega)
+#         return z_cr_rot
+#
+#     def solve_omega_func(omega):
+#         z_cr_rot = z_cr_rot_from_rotate_xyz(omega)
+#         return z_cr_rot - dz
+#
+#     omega0 = fsolve(solve_omega_func, dz / 10)
+#     print(solve_omega_func(omega0))
+#     omega = omega0
+#     _xyz_o_rot = rotate_xyz(np.vstack((_x_o, _y_o, _z_o)), omega)
+#     x_cr_rot, y_cr_rot, z_cr_rot = rotate_xyz(np.array([x_main_cr, y_main_cr, 0]), omega)
+#     x_det_rot, y_det_rot, z_det_rot = rotate_xyz(np.array([x_det, y_det, 0]), omega)
+#     # rmat @
+#
+#     omegas = np.linspace(-90, 90, 181*3)
+#     zzs = np.array([z_cr_rot_from_rotate_xyz(v) for v in omegas])
+#
+#     # x_cr_rot, y_cr_rot, z_cr_rot = rmat @ np.hstack((x_main_cr, y_main_cr, 0))
+#     # x_det_rot, y_det_rot, z_det_rot = rmat @ np.hstack((x_det, y_det, 0))
+#
+#
+#     # ax.scatter(_x_o, _y_o, _z_o, marker='.', color='k')
+#     # ax.scatter(_xyz_o_rot1[0, :], _xyz_o_rot1[1, :], _xyz_o_rot1[2, :], color='k', marker='.')
+#     # ax.scatter(_xyz_o_rot2[0, :], _xyz_o_rot2[1, :], _xyz_o_rot2[2, :], color='k', marker='.')
+#     # ax.scatter(_xyz_o_rot3[0, :], _xyz_o_rot3[1, :], _xyz_o_rot3[2, :], color='k', marker='.')
+#     # ax.scatter(_xyz_o_rot[0, :], _xyz_o_rot[1, :], _xyz_o_rot[2, :], color='g', marker='.')
+#     _s = 50
+#     ax.scatter(0, 0, marker='o', color='k', s=_s)
+#     ax.scatter(x_cr_main, y_cr_main, 0, marker='o', color='b', s=_s)
+#     ax.scatter(x_det, y_det, 0, marker='o', color='r', s=_s)
+#
+#     ax.scatter(x_cr_rot, y_cr_rot, z_cr_rot,  marker='*', color='b', s=_s)
+#     ax.scatter(x_det_rot, y_det_rot, z_det_rot,  marker='*', color='r', s=_s)
+#
+#     ax.set_xlim(-1000, 400)
+#     ax.set_ylim(-600, 800)
+#     ax.set_zlim(-700, 700)
+#
+#
+#     ax2.plot(omegas, zzs)
+#     ax2.plot(omega0, dz, 'r*')
+#
+#     # ax.axis('equal')
+#     # # x_cr = -R * np.cos(np.pi / 2 - bragg)
+#     # # y_cr = 0
+#     # #
+#     # # x_det = +2 * x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg)
+#     # # y_det = -2 * x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg)
+#     # #
+#     # return (x_cr + x_src), (y_cr + y_src), (x_det + x_src), (y_det + y_src)
+#
+# fig = plt.figure(1, clear=True)
+# ax = fig.add_subplot(projection='3d')
+#
+# fig2 = plt.figure(2, clear=True)
+# ax2 = fig2.add_subplot()
+#
+# bragg = 80
+# R = 1000
+# det_dR = 0
+#
+# for bragg in np.linspace(65, 88, 3):
+#     x_main_cr, y_main_cr, x_det, y_det = compute_rowland_circle_geometry(0, 0, R, bragg, det_dR)
+#     compute_rotated_rowland_circle_geometry(x_main_cr, y_main_cr, x_det, y_det, bragg, 139.5, ax=ax, ax2=ax2)
 
-    x_cr = -R * np.cos(np.pi / 2 - bragg)
-    y_cr = 0
-
-    x_det = +2 * x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg)
-    y_det = -2 * x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg)
-
-    return (x_cr + x_src), (y_cr + y_src), (x_det + x_src), (y_det + y_src)
 
 
 
 #
-row_circle = RowlandCircle()
-# row_circle.plot_full_range()
+# row_circle = RowlandCircle()
+# # row_circle.plot_full_range()
 
 # class DetectorArm(Device):
+
+from xas.spectrometer import compute_rowland_circle_geometry, compute_rotated_rowland_circle_geometry
+
 
 class ISSPseudoPositioner(PseudoPositioner):
 
@@ -289,15 +384,25 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
 
     cr_main_roll_offset = Cpt(SoftPositioner, init_pos=0)  # software representation of the angular offset on the crystal stage
 
+    # motor_cr_aux2_x =  Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
     motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
 
-    cr_assy_x = Cpt(PseudoSingle, name='cr_x')
-    cr_assy_y = Cpt(PseudoSingle, name='cr_y')
+    cr_assy_x = Cpt(PseudoSingle, name='cr_assy_x')
+    cr_assy_y = Cpt(PseudoSingle, name='cr_assy_y')
 
-    cr_main_bragg = Cpt(PseudoSingle, name='cr_bragg')
-    cr_main_yaw = Cpt(PseudoSingle, name='cr_bragg')
+    cr_main_bragg = Cpt(PseudoSingle, name='cr_main_bragg')
+    cr_main_yaw = Cpt(PseudoSingle, name='cr_main_yaw')
+
+    # cr_aux2_x = Cpt(PseudoSingle, name='cr_aux2_x')
+    # cr_aux2_y = Cpt(PseudoSingle, name='cr_aux2_y')
+    # cr_aux2_bragg = Cpt(PseudoSingle, name='cr_aux2_bragg')
+    # cr_aux2_yaw = Cpt(PseudoSingle, name='cr_aux2_yaw')
 
     det_bragg = Cpt(PseudoSingle, name='det_bragg')
     det_x = Cpt(PseudoSingle, name='det_x')
@@ -315,6 +420,10 @@ class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner
                          'cr_assy_y' : 5e-3,
                          'cr_main_bragg' : 5e-6,
                          'cr_main_yaw' : 5e-6,
+                         # 'cr_aux2_x': 5e-3,
+                         # 'cr_aux2_y': 5e-3,
+                         # 'cr_aux2_bragg': 5e-6,
+                         # 'cr_aux2_yaw': 5e-6,
                          'det_bragg' : 5e-6,
                          'det_x' : 5e-3,
                          'det_y' : 5e-3,
