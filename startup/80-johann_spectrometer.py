@@ -827,7 +827,83 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
                                           'group': 'spectrometer'}
 
 
+from scipy import interpolate
+class Nominal2ActualConverterWithLinearInterpolation:
 
+    def __init__(self):
+        self.x_nom = []
+        self.x_act = []
+
+    def append_point(self, x_nom, x_act):
+        self.x_nom.append(x_nom)
+        self.x_act.append(x_act)
+
+    @property
+    def npt(self):
+        return len(self.x_nom)
+
+    def nom2act(self, x_nom):
+        if self.npt == 0:
+            return x_nom
+        elif self.npt == 1:
+            return x_nom - (self.x_nom[0] - self.x_act[0])
+        else:
+            f = interpolate.interp1d(self.x_nom, self.x_act, kind='linear', fill_value='extrapolate')
+            return f(x_nom)
+
+    def act2nom(self, x_act):
+        if self.npt == 0:
+            return x_act
+        elif self.npt == 1:
+            return x_act - (self.x_act[0] - self.x_nom[0])
+        else:
+            f = interpolate.interp1d(self.x_act, self.x_nom, kind='linear', fill_value='extrapolate')
+            return f(x_act)
+
+
+#
+
+# bla = Nominal2ActualConverterWithLinearInterpolation()
+# x_nom = np.array([0.0, 1.0])
+# x_act = np.array([0.1, 0.9])
+#
+# xna = list(zip(x_nom, x_act))[:1]
+#
+# for xn, xa in xna:
+#     bla.append_point(xn, xa)
+# # bla.append_point(1, 0.9)
+#
+# x_grid = np.linspace(-1, 3, 101)
+# plt.figure(1, clear=True)
+# plt.plot(x_nom[0], x_act[0], 'ro')
+# plt.plot(x_nom[1], x_act[1], 'mo')
+# plt.plot(x_grid, bla.nom2act(x_grid), '-')
+# plt.plot(x_grid, x_grid, 'k-')
+#
+# plt.axis('equal')
+
+class TestPositioner(ISSPseudoPositioner):
+    x_act = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    x_nom = Cpt(PseudoSingle, name='x_nom')
+
+    _real = ['x_act']
+    _pseudo = ['x_nom']
+
+    def __init__(self, *args, auto_target=False, **kwargs):
+        super().__init__(*args, auto_target=auto_target, **kwargs)
+
+
+    def _forward(self, pseudo_pos_dict):
+        x_nom = pseudo_pos_dict['x_nom']
+        x_act = x_nom
+        return {'x_act' : x_act}
+
+    def _inverse(self, real_pos_dict):
+        x_act = real_pos_dict['x_act']
+        x_nom = x_act
+        return {'x_nom': x_nom}
+
+test_positioner = TestPositioner(name='test_positioner')
 
 # class JohannEmissionMotor(PseudoPositioner):
 #     spectrometer = Cpt(JohannMultiCrystalSpectrometerAlt, name='bragg')
