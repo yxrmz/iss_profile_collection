@@ -114,6 +114,99 @@ class JohannSpectrometerMotor(PseudoPositioner):
 #     def __init__(self, *args, leading=True, **kwargs):
 #         super().__init__(*args, **kwargs)
 #         self.leading = leading
+from xas.spectrometer import compute_rowland_circle_geometry
+
+
+class ISSPseudoPositioner(PseudoPositioner):
+
+    def __init__(self, *args, special_pseudo='bragg', **kwargs):
+        self.pseudo_keys = [k for k, _ in self._get_pseudo_positioners()]
+        self.real_keys = [k for k, _ in self._get_real_positioners()]
+        self.motor_keys = self.pseudo_keys + self.real_keys
+        super().__init__(*args, **kwargs)
+
+    def pseudo_pos2dict(self, pseudo_pos):
+        ret = {k : getattr(pseudo_pos, k) for k in self.pseudo_keys}
+        for k in ret.keys():
+            if ret[k] is None:
+                try:
+                    ret[k] = getattr(self, k).position
+                except:
+                    ttime.sleep(1)
+                    ret[k] = getattr(self, k).position
+        return ret
+
+    def real_pos2dict(self, real_pos):
+        ret = {k: getattr(real_pos, k) for k in self.real_keys}
+        for k in ret.keys():
+            if ret[k] is None:
+                try:
+                    ret[k] = getattr(self, k).position
+                except:
+                    ttime.sleep(1)
+                    ret[k] = getattr(self, k).position
+        return ret
+
+    @pseudo_position_argument
+    def forward(self, pseudo_pos):
+        pseudo_dict = self.pseudo_pos2dict(pseudo_pos)
+        real_dict = self._forward(pseudo_dict)
+        return self.RealPosition(**real_dict)
+
+    @real_position_argument
+    def inverse(self, real_pos):
+        real_dict = self.real_pos2dict(real_pos)
+        pseudo_dict = self._inverse(real_dict)
+        return self.PseudoPosition(**pseudo_dict)
+
+    @property
+    def position_dict(self):
+        return self.pseudo_pos2dict(self.position)
+
+    @property
+    def real_position_dict(self):
+        return self.real_pos2dict(self.real_position)
+
+class Nominal2ActualConverterWithLinearInterpolation:
+
+    def __init__(self):
+        self.x_nom = []
+        self.x_act = []
+
+    def append_point(self, x_nom, x_act):
+        self.x_nom.append(x_nom)
+        self.x_act.append(x_act)
+
+    @property
+    def npt(self):
+        return len(self.x_nom)
+
+    def nom2act(self, x_nom):
+        if self.npt == 0:
+            return x_nom
+        elif self.npt == 1:
+            return x_nom - (self.x_nom[0] - self.x_act[0])
+        else:
+            f = interpolate.interp1d(self.x_nom, self.x_act, kind='linear', fill_value='extrapolate')
+            return f(x_nom)
+
+    def act2nom(self, x_act):
+        if self.npt == 0:
+            return x_act
+        elif self.npt == 1:
+            return x_act - (self.x_act[0] - self.x_nom[0])
+        else:
+            f = interpolate.interp1d(self.x_act, self.x_nom, kind='linear', fill_value='extrapolate')
+            return f(x_act)
+
+
+
+from xas.spectrometer import _compute_rotated_rowland_circle_geometry
+
+_johann_spectrometer_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
+                                   'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
+                                   'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw']
+
 
 class RowlandCircle:
 
@@ -121,39 +214,311 @@ class RowlandCircle:
         self.R = R
         self.x_src = x_src
         self.y_src = y_src
+        self.bragg_min = 59
+        self.bragg_max = 95
 
-    def compute_geometry(self, bragg_deg, det_dR=0):
-        bragg = np.deg2rad(bragg_deg)
+        self.det_L1 = 550  # length of the big arm
+        self.det_L2 = 91  # distance between the second gon and the sensitive surface of the detector
+        self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
 
-        self.y_cr = 0 + self.x_src
-        self.x_cr = -self.R * np.cos(np.pi / 2 - bragg) + self.y_src
+        self.init_from_settings()
 
-        self.x_det = +2 * self.x_cr * np.cos(bragg) * np.cos(bragg) - det_dR * np.cos(np.pi - 2 * bragg) + self.x_src
-        self.y_det = -2 * self.x_cr * np.cos(bragg) * np.sin(bragg) - det_dR * np.sin(np.pi - 2 * bragg) + self.y_src
+        self.converter_nom2act = {'bragg': Nominal2ActualConverterWithLinearInterpolation()}
+        for motor_key in _johann_spectrometer_motor_keys:
+            self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
+
+    def init_from_settings(self):
+        self.config = {'parking': { 'motor_det_x': -10.0,  # high limit of this motor should be at 529 mm
+                                    'motor_det_th1': 0.0,
+                                    'motor_det_th2': 0.0,
+                                    'motor_cr_assy_x': 0.000,
+                                    'motor_cr_assy_y': 5.682,
+                                    'motor_cr_main_roll': -100.0,
+                                    'motor_cr_main_yaw': 560.0,
+                                    'motor_cr_aux2_x': 0,
+                                    'motor_cr_aux2_y': -9420.0,
+                                    'motor_cr_aux2_roll': -330.0,
+                                    'motor_cr_aux2_yaw': -790.0,
+                                    },
+                       'roll_offset' : 3.00,
+                       'det_offsets': { 'motor_det_th1': 69.0,
+                                        'motor_det_th2': -69.0},
+                       'det_focus' : 0.0}
+
+    def set_det_arm_parking(self):
+        pass
+
+    def set_main_crystal_parking(self):
+        pass
+
+    def set_aux2_crystal_parking(self):
+        pass
 
     @property
-    def crystal_coords(self):
-        return (self.x_cr, self.y_cr)
+    def det_dx(self):
+        return self.det_L1 * np.cos(np.deg2rad(self.config['det_offsets']['motor_det_th1'])) - self.det_L2
 
     @property
-    def detector_coords(self):
-        return (self.x_det, self.y_det)
-    #
-    def plot_full_range(self):
+    def det_h(self):
+        return self.det_L1 * np.sin(np.deg2rad(self.config['det_offsets']['motor_det_th1']))
 
-        bragg_deg = np.linspace(65, 89, 101)
-        plt.figure(1)
-        plt.clf()
-        plt.plot(self.x_src, self.y_src, 'ko')
+    @property
+    def current_det_focus(self):
+        return self.config['det_focus']
 
-        for each_bragg_deg in bragg_deg:
-            self.compute_geometry(each_bragg_deg)
-            x_cr, y_cr = self.crystal_coords
-            x_det, y_det = self.detector_coords
+    def set_R(self, value):
+        self.R = value
 
-            plt.plot(x_cr, y_cr, 'bo')
-            plt.plot(x_det, y_det, 'ro')
-            plt.axis('square')
+
+    def _compute_nominal_trajectory(self, npt=1000):
+        braggs = np.linspace(self.bragg_min, self.bragg_max, npt)
+
+        # pseudos
+        det_x = np.zeros(npt)
+        det_y = np.zeros(npt)
+
+        cr_main_x = np.zeros(npt)
+        cr_main_y = np.zeros(npt)
+        cr_main_roll = braggs.copy()
+        cr_main_yaw = np.zeros(npt)
+
+        cr_aux2_x = np.zeros(npt)
+        cr_aux2_y = np.zeros(npt)
+        cr_aux2_roll = np.zeros(npt)
+        cr_aux2_yaw = np.zeros(npt)
+
+        for i, bragg in enumerate(braggs):
+            cr_main_x[i], cr_main_y[i], det_x[i], det_y[i] = \
+                compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, bragg, 0)
+            cr_aux2_x[i], cr_aux2_y[i], cr_aux2_roll[i], cr_aux2_yaw[i] = \
+                _compute_rotated_rowland_circle_geometry(cr_main_x[i], cr_main_y[i], det_x[i], det_y[i], bragg, self.cr_aux2_z)
+
+        # reals
+        # detector
+        motor_det_x, motor_det_th1, motor_det_th2 = self._compute_trajectory_for_detector(braggs, det_x, det_y)
+
+        # main crystal
+        motor_cr_assy_x = -cr_main_x
+        motor_cr_assy_y = cr_main_y
+        motor_cr_main_roll = (cr_main_roll - 90 + self.config['roll_offset']) * 1000
+        motor_cr_main_yaw = cr_main_yaw * 1000
+
+        # aux crystal2
+
+        _cr_aux2_yaw_0 = np.arcsin(self.cr_aux2_z / self.R)
+        _cr_aux2_dx_0 = (-self.R * np.cos(_cr_aux2_yaw_0)) + self.R
+        _cr_aux2_dx = cr_aux2_x - cr_main_x
+        motor_cr_aux2_x = -(_cr_aux2_dx - _cr_aux2_dx_0) * 1000
+        motor_cr_aux2_y = cr_aux2_y * 1000
+        motor_cr_aux2_roll = (cr_aux2_roll - 90 + self.config['roll_offset']) * 1000
+        motor_cr_aux2_yaw = (cr_aux2_yaw - np.rad2deg(_cr_aux2_yaw_0)) * 1000
+
+        return {'bragg' :               braggs,
+                'det_x' :               det_x,
+                'det_y' :               det_y,
+                'cr_main_x' :           cr_main_x,
+                'cr_main_y' :           cr_main_y,
+                'cr_main_roll' :        cr_main_roll,
+                'cr_main_yaw' :         cr_main_yaw,
+                'cr_aux2_x':            cr_aux2_x,
+                'cr_aux2_y':            cr_aux2_y,
+                'cr_aux2_roll':         cr_aux2_roll,
+                'cr_aux2_yaw':          cr_aux2_yaw,
+                'motor_det_x':          motor_det_x,
+                'motor_det_th1':        motor_det_th1,
+                'motor_det_th2':        motor_det_th2,
+                'motor_cr_assy_x' :     motor_cr_assy_x,
+                'motor_cr_assy_y':      motor_cr_assy_y,
+                'motor_cr_main_roll':   motor_cr_main_roll,
+                'motor_cr_main_yaw':    motor_cr_main_yaw,
+                'motor_cr_aux2_x' :     motor_cr_aux2_x,
+                'motor_cr_aux2_y':      motor_cr_aux2_y,
+                'motor_cr_aux2_roll':   motor_cr_aux2_roll,
+                'motor_cr_aux2_yaw':    motor_cr_aux2_yaw}
+
+    def _compute_trajectory_for_detector(self, braggs, det_x, det_y, det_focus=0):
+
+        _det_bragg_rad = np.deg2rad(braggs)
+        det_x = det_x.copy() - det_focus * np.cos(np.pi - 2 * _det_bragg_rad)
+        det_y = det_y.copy() - det_focus * np.sin(np.pi - 2 * _det_bragg_rad)
+
+        _phi = np.pi - 2 * _det_bragg_rad
+        _sin_th1 = (self.det_h - self.det_L2 * np.sin(_phi) - det_y) / self.det_L1
+        motor_det_th1 = np.arcsin(_sin_th1)
+        motor_det_th2 = _phi + motor_det_th1
+        motor_det_x = -self.det_dx + self.det_L1 * np.cos(motor_det_th1) - self.det_L2 * np.cos(_phi) - det_x
+        motor_det_th1 = np.rad2deg(motor_det_th1)
+        motor_det_th2 = -np.rad2deg(motor_det_th2)
+        return motor_det_x, motor_det_th1, motor_det_th2
+
+    def update_nominal_trajectory_for_detector(self, det_focus):
+        if not np.isclose(det_focus, self.current_det_focus, atol=1e-4):
+            self.config['det_focus'] = det_focus
+            motor_det_x, motor_det_th1, motor_det_th2 = self._compute_trajectory_for_detector(self.traj['bragg'],
+                                                                                              self.traj['det_x'],
+                                                                                              self.traj['det_y'],
+                                                                                              det_focus=det_focus)
+            self.traj['motor_det_x'] = motor_det_x
+            self.traj['motor_det_th1'] = motor_det_th1
+            self.traj['motor_det_th2'] = motor_det_th2
+
+
+    def compute_nominal_trajectory(self, npt=1000):
+        self.traj = self._compute_nominal_trajectory(npt=npt)
+
+    def register_bragg(self, bragg_act, motor_pos_dict):
+        pos_nom = {}
+        for motor_key in motor_pos_dict.keys():
+            pos_nom[motor_key] = self.compute_motor_position(motor_key, bragg_act, nom2act=False)
+        pos_act = {**motor_pos_dict}
+        for motor_key in pos_act.keys():
+            self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
+
+    def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
+        bragg = self.traj['bragg']
+        pos = self.compute_motor_position(motor_key, bragg)
+        plt.figure(fignum, clear=True)
+        plt.plot(bragg, pos)
+
+    def _compute_motor_position(self, motor_key, bragg, nom2act=True):
+        pos =  np.interp(bragg, self.traj['bragg'], self.traj[motor_key])
+        if nom2act:
+            pos = self.converter_nom2act[motor_key].nom2act(pos)
+        pos0 = self.config['parking'][motor_key]
+        return (pos + pos0)
+
+    def compute_motor_position(self, motor_keys, bragg, nom2act=True):
+        if type(motor_keys) == str:
+            return self._compute_motor_position(motor_keys, bragg, nom2act=nom2act)
+        else:
+            output = {}
+            for motor_key in motor_keys:
+                output[motor_key] = self._compute_motor_position(motor_key, bragg, nom2act=nom2act)
+            return output
+
+    def compute_bragg_from_motor(self, motor_key, pos, nom2act=True):
+        if nom2act:
+            pos = self.converter_nom2act[motor_key].act2nom(pos)
+        pos0 = self.config['parking'][motor_key]
+        vs = self.traj[motor_key]
+        bs = self.traj['bragg']
+        bragg = np.interp(pos - pos0, vs[bs <= 90],  bs[bs <= 90])
+
+        if bragg > 90:
+            bragg = 180 - bragg
+        return bragg
+
+
+rowland_circle = RowlandCircle()
+rowland_circle.compute_nominal_trajectory()
+rowland_circle.update_nominal_trajectory_for_detector(10)
+# rowland_circle.plot_motor_pos_vs_bragg('motor_det_th1')
+# ___nom = rc.compute_motor_position('motor_cr_assy_x', 85.0, nom2act=False)
+# rc.register_bragg(85.1, {'motor_cr_assy_x' : ___nom})
+#
+# _bragg = np.linspace(65, 90, 101)
+# _x_nom = rc.compute_motor_position('motor_cr_assy_x', _bragg, nom2act=False)
+# _x_act = rc.compute_motor_position('motor_cr_assy_x', _bragg, nom2act=True)
+#
+# plt.figure(1, clear=True)
+# plt.subplot(211)
+# plt.plot(_bragg, _x_nom)
+# plt.plot(_bragg, _x_act)
+#
+# plt.hlines(___nom, 65, 90, colors='k')
+# plt.vlines(85.0, _x_nom.min(), _x_nom.max(), colors='k')
+# plt.vlines(85.1, _x_nom.min(), _x_nom.max(), colors='k')
+#
+# plt.subplot(212)
+# plt.plot(_bragg, _x_act - _x_nom)
+#
+#
+# rc.compute_motor_position('motor_cr_assy_x', 85.0, nom2act=False) - rc.compute_motor_position('motor_cr_assy_x', 85.1, nom2act=False)
+# rc.compute_motor_position('motor_cr_assy_x', 85.2, nom2act=False) - rc.compute_motor_position('motor_cr_assy_x', 85.1, nom2act=False)
+#
+# rc.compute_motor_position('motor_cr_assy_x', 85.0, nom2act=True) - rc.compute_motor_position('motor_cr_assy_x', 85.1, nom2act=True)
+# rc.compute_motor_position('motor_cr_assy_x', 85.1, nom2act=True) - rc.compute_motor_position('motor_cr_assy_x', 85.2, nom2act=True)
+
+
+class JohannPseudoPositioner(ISSPseudoPositioner):
+    def __init__(self, rowland_circle: RowlandCircle, *args, **kwargs):
+        self.rowland_circle = rowland_circle
+        super().__init__(*args, **kwargs)
+
+class JohannDetectorArm(JohannPseudoPositioner):
+    motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
+    motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
+    motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+    det_focus = Cpt(PseudoSingle, name='det_focus')
+
+    _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2']
+    _pseudo = ['bragg', 'det_focus']
+
+    def _forward(self, pseudo_dict):
+        bragg, det_focus = pseudo_dict['bragg'], pseudo_dict['det_focus']
+        self.rowland_circle.update_nominal_trajectory_for_detector(det_focus)
+        return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+
+    def _inverse(self, real_dict):
+        motor_det_th1 = real_dict['motor_det_th1']
+        bragg = self.rowland_circle.compute_bragg_from_motor('motor_det_th1', motor_det_th1)
+        det_focus = self.rowland_circle.current_det_focus
+        return {'bragg': bragg, 'det_focus' : det_focus}
+
+johann_detector_arm = JohannDetectorArm(rowland_circle, name='johann_detector_arm')
+
+
+
+class JohannMainCrystal(JohannPseudoPositioner):
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
+    motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
+    motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+
+    _real = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw']
+    _pseudo = ['bragg']
+
+    def _forward(self, pseudo_dict):
+        bragg = pseudo_dict['bragg']
+        return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+
+    def _inverse(self, real_dict):
+        motor_cr_main_roll = real_dict['motor_cr_main_roll']
+        bragg = self.rowland_circle.compute_bragg_from_motor('motor_cr_main_roll', motor_cr_main_roll)
+        return {'bragg': bragg}
+
+johann_main_crystal = JohannMainCrystal(rowland_circle, name='johann_main_crystal')
+
+
+
+
+class JohannAux2Crystal(JohannPseudoPositioner):
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'Yaw}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+
+    _real = ['motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw']
+    _pseudo = ['bragg']
+
+    def _forward(self, pseudo_dict):
+        bragg = pseudo_dict['bragg']
+        return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+
+    def _inverse(self, real_dict):
+        motor_cr_aux2_roll = real_dict['motor_cr_aux2_roll']
+        bragg = self.rowland_circle.compute_bragg_from_motor('motor_cr_aux2_roll', motor_cr_aux2_roll)
+        return {'bragg': bragg}
+
+johann_aux2_crystal = JohannAux2Crystal(rowland_circle, 'XF:08IDB-OP{HRS:1-Stk:2:', name='johann_aux2_crystal')
+
+
 
 
 # def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
@@ -828,37 +1193,6 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
 
 
 from scipy import interpolate
-class Nominal2ActualConverterWithLinearInterpolation:
-
-    def __init__(self):
-        self.x_nom = []
-        self.x_act = []
-
-    def append_point(self, x_nom, x_act):
-        self.x_nom.append(x_nom)
-        self.x_act.append(x_act)
-
-    @property
-    def npt(self):
-        return len(self.x_nom)
-
-    def nom2act(self, x_nom):
-        if self.npt == 0:
-            return x_nom
-        elif self.npt == 1:
-            return x_nom - (self.x_nom[0] - self.x_act[0])
-        else:
-            f = interpolate.interp1d(self.x_nom, self.x_act, kind='linear', fill_value='extrapolate')
-            return f(x_nom)
-
-    def act2nom(self, x_act):
-        if self.npt == 0:
-            return x_act
-        elif self.npt == 1:
-            return x_act - (self.x_act[0] - self.x_nom[0])
-        else:
-            f = interpolate.interp1d(self.x_act, self.x_nom, kind='linear', fill_value='extrapolate')
-            return f(x_act)
 
 
 #
@@ -882,28 +1216,28 @@ class Nominal2ActualConverterWithLinearInterpolation:
 #
 # plt.axis('equal')
 
-class TestPositioner(ISSPseudoPositioner):
-    x_act = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
-    x_nom = Cpt(PseudoSingle, name='x_nom')
-
-    _real = ['x_act']
-    _pseudo = ['x_nom']
-
-    def __init__(self, *args, auto_target=False, **kwargs):
-        super().__init__(*args, auto_target=auto_target, **kwargs)
-
-
-    def _forward(self, pseudo_pos_dict):
-        x_nom = pseudo_pos_dict['x_nom']
-        x_act = x_nom
-        return {'x_act' : x_act}
-
-    def _inverse(self, real_pos_dict):
-        x_act = real_pos_dict['x_act']
-        x_nom = x_act
-        return {'x_nom': x_nom}
-
-test_positioner = TestPositioner(name='test_positioner')
+# class TestPositioner(ISSPseudoPositioner):
+#     x_act = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+#     x_nom = Cpt(PseudoSingle, name='x_nom')
+#
+#     _real = ['x_act']
+#     _pseudo = ['x_nom']
+#
+#     def __init__(self, *args, auto_target=False, **kwargs):
+#         super().__init__(*args, auto_target=auto_target, **kwargs)
+#
+#
+#     def _forward(self, pseudo_pos_dict):
+#         x_nom = pseudo_pos_dict['x_nom']
+#         x_act = x_nom
+#         return {'x_act' : x_act}
+#
+#     def _inverse(self, real_pos_dict):
+#         x_act = real_pos_dict['x_act']
+#         x_nom = x_act
+#         return {'x_nom': x_nom}
+#
+# test_positioner = TestPositioner(name='test_positioner')
 
 # class JohannEmissionMotor(PseudoPositioner):
 #     spectrometer = Cpt(JohannMultiCrystalSpectrometerAlt, name='bragg')
@@ -1245,32 +1579,33 @@ test_positioner = TestPositioner(name='test_positioner')
 # det_arm = DetectorArm(name='det_arm')
 
 # class MainJohannCrystal(PseudoPositioner):
-# class MainJohannCrystal(ISSPseudoPositioner):
+# class MainCrystal(ISSPseudoPositioner):
 #     x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
 #     y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
 #     roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
 #     yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 #
-#     roll_offset = Cpt(SoftPositioner, init_pos=0.0) # software representation of the angular offset on the crystal stage
+#     roll_offset = 0 # software representation of the angular offset on the crystal stage
 #
 #     x_cr = Cpt(PseudoSingle, name='x_cr')
 #     y_cr = Cpt(PseudoSingle, name='y_cr')
-#     bragg = Cpt(PseudoSingle, name='bragg')
+#     roll_cr = Cpt(PseudoSingle, name='roll_cr')
 #     yaw_cr = Cpt(PseudoSingle, name='yaw_cr')
 #
 #
 #     _real = ['x', 'y', 'roll', 'yaw']
-#     _pseudo = ['x_cr', 'y_cr', 'bragg', 'yaw_cr']
+#     _pseudo = ['x_cr', 'y_cr', 'roll_cr', 'yaw_cr']
 #
 #     def __init__(self, *args, config=None, **kwargs):
 #         self.restore_parking(config)
 #         super().__init__(*args, **kwargs)
-#         self.restore_roll_offset(config)
+#
 #
 #     def set_parking(self):
+#         assert self.roll_offset == 3.0, 'roll_offset must be 3 deg!'
 #         self.x0 = self.x.position
 #         self.y0 = self.y.position
-#         self.roll0 = self.roll.position / 1000
+#         self.roll0 = self.roll_offset - self.roll.position / 1000
 #         self.yaw0 = self.yaw.position / 1000
 #         # self.roll_offset0 = self.roll_offset.position
 #
@@ -1286,48 +1621,225 @@ test_positioner = TestPositioner(name='test_positioner')
 #                 pass
 #         # some default values that are reasonable
 #         self.x0 = 1000.000
-#         self.y0 = 4.438
-#         self.roll0 = 5.750
-#         self.yaw0 = 0.170
+#         self.y0 = 5.682
+#         self.roll0 = 0.1
+#         self.yaw0 = 0.620
+#         self.roll_offset = 3.0
 #
-#     def restore_roll_offset(self, config):
-#         if config is not None:
-#             self.roll_offset.set(config['main_johann_crystal_roll_offset0'])
-#         else:
-#             self.roll_offset.set(0)
 #
 #     def set_roll_offset(self, value):
-#         self.roll_offset.set(value)
+#         self.roll_offset = value
 #
 #     def read_current_config(self):
 #         return {'main_johann_crystal_x0': self.x0,
 #                 'main_johann_crystal_y0': self.y0,
 #                 'main_johann_crystal_roll0': self.roll0,
 #                 'main_johann_crystal_yaw0': self.yaw0,
-#                 'main_johann_crystal_roll_offset0': self.roll_offset.position}
+#                 'main_johann_crystal_roll_offset': self.roll_offset}
 #
 #     # def _forward(self, pseudo_pos):
 #     #     bragg, x_cr, y, yaw = pseudo_pos.bragg, pseudo_pos.x_cr, pseudo_pos.y, pseudo_pos.yaw
 #
 #     def _forward(self, pseudo_dict):
 #         # bragg, x_cr, y, yaw = pseudo_dict['bragg'], pseudo_dict['x_cr'], pseudo_dict['y'], pseudo_dict['yaw']
-#         x_cr, y_cr, bragg, yaw_cr = pseudo_dict['x_cr'], pseudo_dict['y_cr'], pseudo_dict['bragg'], pseudo_dict['yaw_cr']
-#         roll = -(90 - bragg - self.roll_offset.position - self.roll0) * 1000
+#         x_cr, y_cr, roll_cr, yaw_cr = pseudo_dict['x_cr'], pseudo_dict['y_cr'], pseudo_dict['roll_cr'], pseudo_dict['yaw_cr']
+#
 #         x = self.x0 - x_cr
-#         return {'x' : x, 'roll' : roll, 'y' : y_cr, 'yaw' : yaw_cr}
+#         y = y_cr + self.y0
+#         roll = (roll_cr - 90 - self.roll0 + self.roll_offset) * 1000
+#         yaw = (yaw_cr + self.yaw0) * 1000
+#         return {'x' : x, 'y' : y, 'roll' : roll, 'yaw' : yaw}
 #         # return self.RealPosition(x=x, roll=roll, y=y, yaw=yaw)
 #
 #     # def _inverse(self, real_pos):
 #     #     x, roll, y, yaw = real_pos.x, real_pos.roll, real_pos.y, real_pos.yaw
 #
 #     def _inverse(self, real_dict):
-#         x, roll, y, yaw = real_dict['x'], real_dict['roll'], real_dict['y'], real_dict['yaw'],
-#         bragg = 90 + roll / 1000 - self.roll_offset.position - self.roll0
+#         x, y, roll, yaw = real_dict['x'], real_dict['y'], real_dict['roll'], real_dict['yaw']
 #         x_cr = self.x0 - x
-#         return {'x_cr' : x_cr, 'y_cr' : y, 'bragg' : bragg, 'yaw_cr' : yaw}
-#         # return self.PseudoPosition(bragg=bragg, x_cr=x_cr, y=y, yaw=yaw)
+#         y_cr = y - self.y0
+#         roll_cr = 90 + roll / 1000 + self.roll0 - self.roll_offset
+#         yaw_cr = yaw / 1000 - self.yaw0
+#         return {'x_cr' : x_cr, 'y_cr' : y_cr, 'roll_cr' : roll_cr, 'yaw_cr' : yaw_cr}
 #
-
+# _j_cr = MainCrystal(name='j_cr')
+#
+#
+# from xas.spectrometer import compute_rotated_rowland_circle_geometry
+# ###
+#
+# class AuxCrystal(ISSPseudoPositioner):
+#     x = Cpt(EpicsMotor, 'X}Mtr')
+#     y = Cpt(EpicsMotor, 'Y}Mtr')
+#     roll = Cpt(EpicsMotor, 'Roll}Mtr')
+#     yaw = Cpt(EpicsMotor, 'Yaw}Mtr')
+#
+#     roll_offset = 0  # software representation of the angular offset on the crystal stage
+#
+#     x_cr = Cpt(PseudoSingle, name='x_cr')
+#     y_cr = Cpt(PseudoSingle, name='y_cr')
+#     roll_cr = Cpt(PseudoSingle, name='roll_cr')
+#     yaw_cr = Cpt(PseudoSingle, name='yaw_cr')
+#
+#     _real = ['x', 'y', 'roll', 'yaw']
+#     _pseudo = ['x_cr', 'y_cr', 'roll_cr', 'yaw_cr']
+#
+#     def __init__(self, *args, config=None, yaw_offset=8.0189144, x_offset=9.77792999999997, **kwargs):
+#         self.restore_parking(config)
+#         self.yaw_offset = yaw_offset
+#         self.x_offset = x_offset
+#         super().__init__(*args, **kwargs)
+#
+#
+#     def set_parking(self):
+#         self.x0 = self.x.position / 1000
+#         self.y0 = self.y.position / 1000
+#         self.roll0 = self.roll_offset - self.roll.position / 1000
+#         self.yaw0 = self.yaw.position / 1000
+#         # self.roll_offset0 = self.roll_offset.position
+#
+#     def restore_parking(self, config):
+#         # if config is not None:
+#         #     try:
+#         #         self.x0 = config['main_johann_crystal_x0']
+#         #         self.y0 = config['main_johann_crystal_y0']
+#         #         self.roll0 = config['main_johann_crystal_roll0']
+#         #         self.yaw0 = config['main_johann_crystal_yaw0']
+#         #         return
+#         #     except:
+#         #         pass
+#         # some default values that are reasonable
+#         self.x0 = -14.190
+#         self.y0 = -9.425
+#         self.roll0 = 0.3160819
+#         self.yaw0 = -0.8
+#         self.roll_offset = 3.0
+#
+#     def set_roll_offset(self, value):
+#         self.roll_offset = value
+#
+#     # def read_current_config(self):
+#     #     return {'main_johann_crystal_x0': self.x0,
+#     #             'main_johann_crystal_y0': self.y0,
+#     #             'main_johann_crystal_roll0': self.roll0,
+#     #             'main_johann_crystal_yaw0': self.yaw0,
+#     #             'main_johann_crystal_roll_offset': self.roll_offset}
+#
+#     def _forward(self, pseudo_dict):
+#         # bragg, x_cr, y, yaw = pseudo_dict['bragg'], pseudo_dict['x_cr'], pseudo_dict['y'], pseudo_dict['yaw']
+#         x_cr, y_cr, roll_cr, yaw_cr = pseudo_dict['x_cr'], pseudo_dict['y_cr'], pseudo_dict['roll_cr'], pseudo_dict['yaw_cr']
+#
+#         x = (self.x0 - x_cr + self.x_offset) * 1000
+#         y = (y_cr + self.y0) * 1000
+#         roll = (roll_cr - 90 - self.roll0 + self.roll_offset) * 1000
+#         yaw = (yaw_cr + self.yaw0 - self.yaw_offset) * 1000
+#         return {'x' : x, 'y' : y, 'roll' : roll, 'yaw' : yaw}
+#
+#     def _inverse(self, real_dict):
+#         x, y, roll, yaw = real_dict['x'], real_dict['y'], real_dict['roll'], real_dict['yaw']
+#         x_cr = self.x0 - x / 1000 + self.x_offset
+#         y_cr = y / 1000 - self.y0
+#         roll_cr = 90 + roll / 1000 + self.roll0 - self.roll_offset
+#         yaw_cr = yaw / 1000 - self.yaw0 + self.yaw_offset
+#         return {'x_cr' : x_cr, 'y_cr' : y_cr, 'roll_cr' : roll_cr, 'yaw_cr' : yaw_cr}
+#
+# _j_aux_cr = AuxCrystal('XF:08IDB-OP{HRS:1-Stk:2:', name='j_aux_cr')
+#
+#
+#
+# class MainJohannCrystal(ISSPseudoPositioner):
+#     crystal = Cpt(MainCrystal, name='crystal')
+#     bragg = Cpt(PseudoSingle, name='bragg')
+#     x = Cpt(PseudoSingle, name='x')
+#
+#     _real = ['crystal']
+#     _pseudo = ['bragg', 'x']
+#
+#     def __init__(self, *args, R=1000, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.R = R
+#
+#     def register_bragg(self, bragg_reg):
+#         act_pos = self.crystal.pseudo_pos2dict(self._forward({'bragg' : bragg_reg, 'x' : self.x.position})['crystal'])
+#         nom_pos = self.crystal.position_dict
+#         return act_pos, nom_pos
+#
+#     def _forward(self, pseudo_dict):
+#         bragg, x = pseudo_dict['bragg'], pseudo_dict['x']
+#
+#         x_cr, y_cr, _, _ = compute_rowland_circle_geometry(0, 0, self.R, bragg, 0)
+#         x_cr += self.R + x
+#         roll_cr = bragg
+#         yaw_cr = 0
+#
+#         crystal_real_pos = self.crystal.PseudoPosition(x_cr=x_cr,
+#                                                        y_cr=y_cr,
+#                                                        roll_cr=roll_cr,
+#                                                        yaw_cr=yaw_cr)
+#         return {'crystal': crystal_real_pos}
+#
+#     def _inverse(self, _real_dict):
+#         real_dict = self.crystal.pseudo_pos2dict(_real_dict['crystal'])
+#         bragg = real_dict['roll_cr']
+#         x_cr = real_dict['x_cr']
+#         x_cr_ref, _, _, _ = compute_rowland_circle_geometry(0, 0, self.R, bragg, 0)
+#         x_cr_ref += self.R
+#         x =  x_cr - x_cr_ref
+#         return {'bragg' : bragg, 'x' : x}
+#
+# j_cr = MainJohannCrystal(name='j_cr')
+#
+#
+#
+# class AuxJohannCrystal(ISSPseudoPositioner):
+#     crystal = Cpt(AuxCrystal, name='crystal')
+#     bragg = Cpt(PseudoSingle, name='bragg')
+#
+#     _real = ['crystal']
+#     _pseudo = ['bragg']
+#
+#     def __init__(self, *args, R=1000, cr_index=-1, dz=139.5, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.R = R
+#         z = cr_index * dz
+#         x_offset, _, _, yaw_offset = compute_rotated_rowland_circle_geometry(0, 0, 1000, 90, z)
+#         self.crystal.yaw_offset = yaw_offset
+#         self.crystal.x_offset = 1000 - x_offset
+#
+#     def register_bragg(self, bragg_reg):
+#         act_pos = self.crystal.pseudo_pos2dict(self._forward({'bragg' : bragg_reg, 'x' : self.x.position})['crystal'])
+#         nom_pos = self.crystal.position_dict
+#         return act_pos, nom_pos
+#
+#     def _forward(self, pseudo_dict):
+#         bragg = pseudo_dict['bragg']
+#
+#         x_cr_main, y_cr_main, x_det, y_det = compute_rowland_circle_geometry(0, 0, self.R, bragg, 0)
+#         x_cr_rot, y_cr_rot, roll_cr_rot, yaw_cr_rot = compute_rotated_rowland_circle_geometry(0, 0, self.R, bragg, self.z)
+#
+#         x_cr = x_cr_rot - x_cr_main
+#         y_cr = y_cr_rot - y_cr_main
+#         roll_cr = roll_cr_rot
+#         yaw_cr = yaw_cr_rot
+#
+#         crystal_real_pos = self.crystal.PseudoPosition(x_cr=x_cr,
+#                                                        y_cr=y_cr,
+#                                                        roll_cr=roll_cr,
+#                                                        yaw_cr=yaw_cr)
+#         return {'crystal': crystal_real_pos}
+#
+#     def _inverse(self, _real_dict):
+#         real_dict = self.crystal.pseudo_pos2dict(_real_dict['crystal'])
+#         bragg = real_dict['roll_cr']
+#
+#
+#         x_cr = real_dict['x_cr']
+#         x_cr_ref, _, _, _ = compute_rowland_circle_geometry(0, 0, self.R, bragg, 0)
+#         x_cr_ref += self.R
+#         x =  x_cr - x_cr_ref
+#         return {'bragg' : bragg}
+#
+# j_cr = MainJohannCrystal(name='j_cr')
 
     # @pseudo_position_argument
     # def forward(self, pseudo_pos):
@@ -1337,7 +1849,7 @@ test_positioner = TestPositioner(name='test_positioner')
     # def inverse(self, real_pos):
     #     return self._inverse(real_pos)
 
-# j_cr = MainJohannCrystal(name='j_cr')
+#
 
 # j_cr.calibration_data = {'actual':  {'x_cr': [-1.9267746534999333, 0.35132603950000885],
 #                                      'y_cr': [4.4379225, 4.4379225],
