@@ -554,7 +554,7 @@ class JohannDetectorArm(JohannPseudoPositioner):
     def _inverse(self, real_dict):
         motor_det_th1 = real_dict['motor_det_th1']
         bragg = self.rowland_circle.compute_bragg_from_motor('motor_det_th1', motor_det_th1)
-        det_focus = self.rowland_circle.current_det_focus
+        det_focus = self.rowland_circle.det_focus
         return {'bragg': bragg, 'det_focus' : det_focus}
 
 
