@@ -250,7 +250,9 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         super().__init__(*args, **kwargs)
         self.ext_trigger_device = ext_trigger_device
         self._datum_counter = None
+        self._infer_datum_keys()
 
+    def _infer_datum_keys(self):
         self.datum_keys = []
         for i in range(self.hdf5.array_size.height.get()):
             # self.datum_keys.append({"name": f"{self.name}",
@@ -285,6 +287,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         self.ext_trigger_device.prepare_to_fly(traj_duration)
 
     def stage(self):
+        self._infer_datum_keys()
         self._datum_counter = itertools.count()
         self.total_points.put(self.num_points)
         self.hdf5.file_write_mode.put(2)
