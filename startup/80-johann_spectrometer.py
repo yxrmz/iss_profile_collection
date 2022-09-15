@@ -163,6 +163,10 @@ _johann_spectrometer_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th
 class RowlandCircle:
 
     def __init__(self):
+
+        self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config_upd.json'
+        self.energy_converter = None
+
         self.x_src = 0
         self.y_src = 0
         self.bragg_min = 59
@@ -181,8 +185,24 @@ class RowlandCircle:
         self.compute_nominal_trajectory()
         self.update_nominal_trajectory_for_detector(self.det_focus)
 
+    def load_config(self, file):
+        with open(file, 'r') as f:
+            config = json.loads(f.read())
+        return config
+
+    def save_current_spectrometer_config(self, file):
+        with open(file, 'w') as f:
+            json.dump(self.config, f)
+
+    def save_current_spectrometer_config_to_settings(self):
+        self.save_current_spectrometer_config(self.json_path)
+
     def init_from_settings(self):
-        self.config = {'R' : 1000,
+        try:
+            config = self.load_config(self.json_path)
+        except Exception as e:
+            print(f'Spectrometer config could not be loaded from settings. Loading the default configuration.\n\n{e}')
+            config = { 'R' : 1000,
                        'crystal' : 'Si',
                        'hkl' : [6, 2, 0],
                        'parking': { 'motor_det_x': -10.0,  # high limit of this motor should be at 529 mm
@@ -204,7 +224,21 @@ class RowlandCircle:
                        'roll_offset' : 3.00,
                        'det_offsets': { 'motor_det_th1': 69.0,
                                         'motor_det_th2': -69.0},
-                       'det_focus' : 0.0}
+                       'det_focus' : 10.0}
+        self.set_spectrometer_config(config)
+
+    def set_spectrometer_config(self, config):
+        # config needs a validation may be
+        self.config = config
+
+        if 'energy_calibration' in config.keys():
+            config_ec = config['energy_calibration']
+            if (len(config_ec['x_nom']) > 0) and (len(config_ec['x_act']) > 0) and (config_ec['n_poly'] > 0):
+                self.energy_converter = Nominal2ActualConverter(config_ec['x_nom'], config_ec['x_act'], config_ec['n_poly'])
+
+    def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
+        self.config['energy_calibration'] = {'x_nom' : x_nom, 'x_act' : x_act, 'n_poly' : n_poly}
+        self.energy_converter = Nominal2ActualConverter(x_nom, x_act, n_poly=n_poly)
 
     def set_det_arm_parking(self, pos_dict):
         self.config['parking']['motor_det_x'] = pos_dict['motor_det_x']
@@ -268,7 +302,6 @@ class RowlandCircle:
     @hkl.setter
     def hkl(self, value):
         self.config['hkl'] = value
-
 
     def _compute_nominal_trajectory(self, npt=1000):
         braggs = np.linspace(self.bragg_min, self.bragg_max, npt-1)
@@ -420,7 +453,9 @@ class RowlandCircle:
                 output[motor_key] = self._compute_motor_position(motor_key, bragg, nom2act=nom2act)
             return output
 
-    def compute_motor_position_from_energy(self, motor_keys, energy, nom2act=True):
+    def compute_motor_position_from_energy(self, motor_keys, energy, nom2act=True, use_energy_calibration=True):
+        if use_energy_calibration and (self.energy_converter is not None):
+            energy = self.energy_converter.act2nom(energy)
         bragg = e2bragg(energy, self.crystal, self.hkl)
         return self.compute_motor_position(motor_keys, bragg, nom2act=nom2act)
 
@@ -437,9 +472,12 @@ class RowlandCircle:
             bragg = 180 - bragg
         return bragg
 
-    def compute_energy_from_motor(self, motor_key, pos, nom2act=True):
+    def compute_energy_from_motor(self, motor_key, pos, nom2act=True, use_energy_calibration=True):
         bragg = self.compute_bragg_from_motor(motor_key, pos, nom2act=nom2act)
-        return bragg2e(bragg, self.crystal, self.hkl)
+        energy = bragg2e(bragg, self.crystal, self.hkl)
+        if use_energy_calibration and (self.energy_converter is not None):
+            energy = self.energy_converter.nom2act(energy)
+        return energy
 
     def compute_bragg_from_motor_dict(self, motor_pos_dict, nom2act=True):
         output = {}
@@ -740,6 +778,10 @@ class JohannEmission(JohannPseudoPositioner):
 
     def set_aux3_crystal_parking(self):
         self.rowland_circle.set_aux3_crystal_parking(self.real_position_dict)
+
+    def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
+        self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
+
 
 johann_emission = JohannEmission(name='johann_emission')
 
