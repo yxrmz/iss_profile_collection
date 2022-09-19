@@ -249,7 +249,7 @@ class RowlandCircle:
         self.config['parking']['motor_cr_assy_x'] = self.R - pos_dict['motor_cr_assy_x']
         self.config['parking']['motor_cr_assy_y'] = pos_dict['motor_cr_assy_y']
         self.config['parking']['motor_cr_main_roll'] = pos_dict['motor_cr_main_roll'] - 3000
-        self.config['parking']['motor_cr_aux2_yaw'] = pos_dict['motor_cr_aux2_yaw']
+        self.config['parking']['motor_cr_main_yaw'] = pos_dict['motor_cr_main_yaw']
 
     def set_aux2_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_aux2_x'] = pos_dict['motor_cr_aux2_x']
