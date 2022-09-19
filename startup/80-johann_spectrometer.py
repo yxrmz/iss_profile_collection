@@ -125,6 +125,8 @@ class Nominal2ActualConverterWithLinearInterpolation:
         self.x_act = []
 
     def append_point(self, x_nom, x_act):
+        if np.any(np.isclose(x_nom, self.x_nom, atol=1e-4)) or np.any(np.isclose(x_act, self.x_act, atol=1e-4)):
+            return
         self.x_nom.append(x_nom)
         self.x_act.append(x_act)
 
@@ -178,10 +180,6 @@ class RowlandCircle:
 
         self.init_from_settings()
 
-        self.converter_nom2act = {'bragg': Nominal2ActualConverterWithLinearInterpolation()}
-        for motor_key in _johann_spectrometer_motor_keys:
-            self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
-
         self.compute_nominal_trajectory()
         self.update_nominal_trajectory_for_detector(self.det_focus)
 
@@ -224,12 +222,28 @@ class RowlandCircle:
                        'roll_offset' : 3.00,
                        'det_offsets': { 'motor_det_th1': 69.0,
                                         'motor_det_th2': -69.0},
-                       'det_focus' : 10.0}
+                       'det_focus' : 10.0,
+                       'bragg_registration' : {'pos_nom' : {k : [] for k in _johann_spectrometer_motor_keys},
+                                               'pos_act' : {k : [] for k in _johann_spectrometer_motor_keys}},
+                       'energy_calibration' : {'x_nom': [],
+                                               'x_act': [],
+                                               'n_poly': 2},
+                       }
         self.set_spectrometer_config(config)
 
     def set_spectrometer_config(self, config):
         # config needs a validation may be
         self.config = config
+
+        if 'bragg_registration' in config.keys():
+            self.converter_nom2act = {}
+            for motor_key in _johann_spectrometer_motor_keys:
+                _c_nom2act = Nominal2ActualConverterWithLinearInterpolation()
+                pos_nom = config['bragg_registration']['pos_nom'][motor_key]
+                pos_act = config['bragg_registration']['pos_act'][motor_key]
+                for _pos_nom, _pos_act in zip(pos_nom, pos_act):
+                    _c_nom2act.append_point(_pos_nom, _pos_act)
+                self.converter_nom2act[motor_key] = _c_nom2act
 
         if 'energy_calibration' in config.keys():
             config_ec = config['energy_calibration']
@@ -426,6 +440,8 @@ class RowlandCircle:
         pos_act = {**motor_pos_dict}
         for motor_key in pos_act.keys():
             self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
+            self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
+            self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
 
     def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
         bragg = self.traj['bragg']
