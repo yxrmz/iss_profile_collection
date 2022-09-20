@@ -443,6 +443,10 @@ class RowlandCircle:
             self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
             self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
 
+    def register_energy(self, energy_act, motor_pos_dict):
+        bragg_act = self.e2bragg(energy_act)
+        self.register_bragg(bragg_act, motor_pos_dict)
+
     def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
         bragg = self.traj['bragg']
         pos = self.compute_motor_position(motor_key, bragg)
@@ -500,6 +504,11 @@ class RowlandCircle:
         for motor_key, motor_pos in motor_pos_dict.items():
             output[motor_key] = self._compute_motor_position(motor_key, motor_pos, nom2act=nom2act)
 
+    def e2bragg(self, energy):
+        return e2bragg(energy, self.crystal, self.hkl)
+
+    def bragg2e(self, bragg):
+        return bragg2e(bragg, self.crystal, self.hkl)
 
 rowland_circle = RowlandCircle()
 
@@ -688,6 +697,8 @@ class JohannAux3Crystal(JohannPseudoPositioner):
 
 johann_aux3_crystal = JohannAux3Crystal(name='johann_aux3_crystal')
 
+
+
 class JohannSpectrometer(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
@@ -736,6 +747,34 @@ class JohannSpectrometer(JohannPseudoPositioner):
 johann_spectrometer = JohannSpectrometer(name='johann_spectrometer')
 
 
+class JohannSpectrometerX(JohannPseudoPositioner):
+    motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+
+    x = Cpt(PseudoSingle, name='x')
+
+    _real = ['motor_det_x', 'motor_cr_assy_x']
+    _pseudo = ['x']
+
+    aligned = True
+
+    def _forward(self, pseudo_dict):
+        x = pseudo_dict['x']
+        bragg = johann_spectrometer.bragg.position
+        pos_nom = self.rowland_circle.compute_motor_position(self.real_keys, bragg, nom2act=False)
+        pos_act = {}
+        for key in pos_nom.keys():
+            pos_act[key] = pos_nom[key] + x
+        return pos_act
+
+    def _inverse(self, pos_act):
+        bragg = johann_spectrometer.bragg.position
+        pos_nom = self.rowland_circle.compute_motor_position(self.real_keys, bragg, nom2act=False)
+        x = [(pos_act[k] - pos_nom[k]) for k in self.real_keys]
+        self.aligned = np.all(np.isclose(x, x[0], atol=1e-3))
+        return {'x' : np.mean(x)}
+
+johann_spectrometer_x = JohannSpectrometerX(name='johann_spectrometer_x')
 
 class JohannEmission(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
@@ -794,6 +833,9 @@ class JohannEmission(JohannPseudoPositioner):
 
     def set_aux3_crystal_parking(self):
         self.rowland_circle.set_aux3_crystal_parking(self.real_position_dict)
+
+    def register_energy(self, energy):
+        self.rowland_circle.register_energy(energy, self.real_position_dict)
 
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
