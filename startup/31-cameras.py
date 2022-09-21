@@ -66,6 +66,29 @@ class BPM(SingleTrigger, ProsilicaDetector):
                     continue
             break
 
+    def adjust_camera_exposure_time_full_image(self, **kwargs):
+        x = self.roi1.min_xyz.min_x.get()
+        y = self.roi1.min_xyz.min_y.get()
+        dx = self.roi1.size.x.get()
+        dy = self.roi1.size.y.get()
+
+        self.roi1.min_xyz.min_x.put(0)
+        self.roi1.min_xyz.min_y.put(0)
+        self.roi1.size.x.put(self.image.width.get())
+        self.roi1.size.y.put(self.image.height.get())
+
+        self.adjust_camera_exposure_time(**kwargs)
+
+        self.roi1.min_xyz.min_x.put(x)
+        self.roi1.min_xyz.min_y.put(y)
+        self.roi1.size.x.put(dx)
+        self.roi1.size.y.put(dy)
+
+    def get_image_array_data_reshaped(self):
+        h = self.image.height.get()
+        w = self.image.width.get()
+        return np.reshape(self.image.array_data.get(), (h, w))
+
 class FeedbackBPM(BPM):
     ioc_reboot_pv = None
 
@@ -270,6 +293,8 @@ bpm_es.stats1.total.kind = 'hinted'
 camera_sp1.stats1.kind = 'hinted'
 camera_sp1.stats1.total.kind = 'hinted'
 camera_sp1.stats1.net.kind = 'hinted'
+# camera_sp1.image.kind = 'hinted'
+# camera_sp1.image.array_data.kind = 'hinted'
 
 camera_sp1.stats2.kind = 'hinted'
 camera_sp1.stats2.total.kind = 'hinted'
