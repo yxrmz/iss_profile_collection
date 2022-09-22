@@ -254,6 +254,10 @@ class RowlandCircle:
         self.config['energy_calibration'] = {'x_nom' : x_nom.tolist(), 'x_act' : x_act.tolist(), 'n_poly' : n_poly}
         self.energy_converter = Nominal2ActualConverter(x_nom, x_act, n_poly=n_poly)
 
+    def reset_spectrometer_calibration(self):
+        self.config['energy_calibration'] = {'x_nom': [], 'x_act': [], 'n_poly': 2},
+        self.energy_converter = None
+
     def set_det_arm_parking(self, pos_dict):
         self.config['parking']['motor_det_x'] = pos_dict['motor_det_x']
         self.config['det_offsets']['motor_det_th1'] = pos_dict['motor_det_th1']
