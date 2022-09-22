@@ -115,7 +115,7 @@ class JohannSpectrometerMotor(PseudoPositioner):
 #         super().__init__(*args, **kwargs)
 #         self.leading = leading
 from xas.spectrometer import compute_rowland_circle_geometry
-
+from xas.fitting import Nominal2ActualConverter
 
 
 class Nominal2ActualConverterWithLinearInterpolation:
@@ -251,7 +251,7 @@ class RowlandCircle:
                 self.energy_converter = Nominal2ActualConverter(config_ec['x_nom'], config_ec['x_act'], config_ec['n_poly'])
 
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
-        self.config['energy_calibration'] = {'x_nom' : x_nom, 'x_act' : x_act, 'n_poly' : n_poly}
+        self.config['energy_calibration'] = {'x_nom' : x_nom.tolist(), 'x_act' : x_act.tolist(), 'n_poly' : n_poly}
         self.energy_converter = Nominal2ActualConverter(x_nom, x_act, n_poly=n_poly)
 
     def set_det_arm_parking(self, pos_dict):
