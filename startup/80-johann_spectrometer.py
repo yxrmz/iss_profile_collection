@@ -153,7 +153,7 @@ class Nominal2ActualConverterWithLinearInterpolation:
             return f(x_act)
 
 
-
+from xas.xray import bragg2e, e2bragg
 from xas.spectrometer import _compute_rotated_rowland_circle_geometry
 
 _johann_spectrometer_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
@@ -181,7 +181,7 @@ class RowlandCircle:
         self.init_from_settings()
 
         self.compute_nominal_trajectory()
-        self.update_nominal_trajectory_for_detector(self.det_focus)
+        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
 
     def load_config(self, file):
         with open(file, 'r') as f:
@@ -408,8 +408,8 @@ class RowlandCircle:
         motor_det_th2 = -np.rad2deg(motor_det_th2)
         return motor_det_x, motor_det_th1, motor_det_th2
 
-    def update_nominal_trajectory_for_detector(self, det_focus):
-        if not np.isclose(det_focus, self.det_focus, atol=1e-4):
+    def update_nominal_trajectory_for_detector(self, det_focus, force_update=False):
+        if force_update or (not np.isclose(det_focus, self.det_focus, atol=1e-4)):
             self.det_focus = det_focus
             motor_det_x, motor_det_th1, motor_det_th2 = self._compute_trajectory_for_detector(self.traj['bragg'],
                                                                                               self.traj['det_x'],
@@ -446,6 +446,12 @@ class RowlandCircle:
     def register_energy(self, energy_act, motor_pos_dict):
         bragg_act = self.e2bragg(energy_act)
         self.register_bragg(bragg_act, motor_pos_dict)
+
+    def reset_bragg_registration(self):
+        self.config['bragg_registration'] = {'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
+                                             'pos_act': {k: [] for k in _johann_spectrometer_motor_keys}}
+        for motor_key in _johann_spectrometer_motor_keys:
+            self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
 
     def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
         bragg = self.traj['bragg']
@@ -510,7 +516,15 @@ class RowlandCircle:
     def bragg2e(self, bragg):
         return bragg2e(bragg, self.crystal, self.hkl)
 
+    # def append_energy_converter(self, ec):
+    #     self.energy_converter = ec
+
 rowland_circle = RowlandCircle()
+
+# rowland_circle.det_focus =
+# rowland_circle.update_nominal_trajectory_for_detector(-8)
+# johann_det_arm.position_dict
+# johann_main_crystal.position_dict
 
 # rowland_circle.plot_motor_pos_vs_bragg('motor_det_th1')
 # ___nom = rc.compute_motor_position('motor_cr_assy_x', 85.0, nom2act=False)
@@ -709,26 +723,26 @@ class JohannSpectrometer(JohannPseudoPositioner):
     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-
-    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+    # motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+    #
+    # motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    # motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    # motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
-             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',]
+             # 'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+             # 'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['bragg']
 
     aligned = True
-    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll']#, 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
 
     def _forward(self, pseudo_dict):
         bragg = pseudo_dict['bragg']
@@ -786,26 +800,27 @@ class JohannEmission(JohannPseudoPositioner):
     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-
-    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+    # motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+    #
+    # motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    # motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    # motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     energy = Cpt(PseudoSingle, name='energy')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
-             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',]
+             # 'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+             # 'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['energy']
 
     aligned = True
-    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', ]#'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+    _initialized = True
 
     def _forward(self, pseudo_dict):
         energy = pseudo_dict['energy']
@@ -840,8 +855,33 @@ class JohannEmission(JohannPseudoPositioner):
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
 
+    # def append_energy_converter(self, ec):
+    #     self.rowland_circle.append_energy_converter(ec)
+
 
 johann_emission = JohannEmission(name='johann_emission')
+johann_emission.energy._limits=(7435, 7520)
+
+motor_dictionary['johann_bragg_angle'] = {'name': johann_spectrometer.bragg.name,
+                                          'description' : 'Johann Bragg Angle',
+                                          'object': johann_spectrometer.bragg,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_det_focus'] =   {'name': johann_det_arm.det_focus.name,
+                                          'description' : 'Johann Detector Focus',
+                                          'object': johann_det_arm.det_focus,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_x'] =           {'name': johann_spectrometer_x.x.name,
+                                          'description' : 'Johann X',
+                                          'object': johann_spectrometer_x.x,
+                                          'group': 'spectrometer'}
+
+motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+                                          'description' : 'Johann Energy',
+                                          'object': johann_emission.energy,
+                                          'group': 'spectrometer'}
+
 
 # def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
 #     bragg = np.deg2rad(bragg_deg)
@@ -953,568 +993,568 @@ johann_emission = JohannEmission(name='johann_emission')
 # # row_circle.plot_full_range()
 
 # class DetectorArm(Device):
-
-from xas.spectrometer import compute_rowland_circle_geometry, compute_rotated_rowland_circle_geometry
-
-
-class ISSPseudoPositioner(PseudoPositioner):
-
-    def __init__(self, *args, special_pseudo='bragg', **kwargs):
-        self.pseudo_keys = [k for k, _ in self._get_pseudo_positioners()]
-        self.real_keys = [k for k, _ in self._get_real_positioners()]
-        self.motor_keys = self.pseudo_keys + self.real_keys
-        super().__init__(*args, **kwargs)
-
-        # self.special_pseudo = special_pseudo
-        # self.reset_correction()
-        # self.reset_calibration_data()
-        # self.apply_correction = True
-
-    # def reset_correction(self):
-    #     self.correction_dict = {'act2nom': {k: [0] for k in self.pseudo_keys},
-    #                             'nom2act': {k: [0] for k in self.pseudo_keys}}
-    #
-    # def reset_calibration_data(self):
-    #     self.calibration_data = {'actual': {k: [] for k in self.pseudo_keys},
-    #                              'nominal': {k: [] for k in self.pseudo_keys}}
-    #
-    # def register_calibration_point(self, special_pseudo_pos):
-    #     pseudo_dict = self.pseudo_pos2dict(self.position)
-    #     actual_dict = copy.deepcopy(pseudo_dict)
-    #     actual_dict[self.special_pseudo] = special_pseudo_pos
-    #     nominal_dict = self.pseudo_pos2dict(self.inverse(self.forward(**{self.special_pseudo : pseudo_dict[self.special_pseudo]})))
-    #     for k in self.pseudo_keys:
-    #         self.calibration_data['actual'][k].append(actual_dict[k])
-    #         self.calibration_data['nominal'][k].append(nominal_dict[k])
-    #
-    #     # real_dict = self.real_pos2dict(self.real_position)
-    #     # actual_dict = copy.deepcopy(real_dict)
-    #     # actual_dict[self.special_pseudo] = special_pseudo_pos
-    #     # nominal_dict = self.pseudo_pos2dict(
-    #     #     self.inverse(self.forward(**{self.special_pseudo: pseudo_dict[self.special_pseudo]})))
-    #     # for k in self.pseudo_keys:
-    #     #     self.calibration_data['actual'][k].append(actual_dict[k])
-    #     #     self.calibration_data['nominal'][k].append(nominal_dict[k])
-    #
-    # def process_calibration(self, npoly=None):
-    #     if npoly is None:
-    #         npoly = len(self.calibration_data['nominal'][self.special_pseudo]) - 1
-    #     for key in self.pseudo_keys:
-    #         x_nom = np.array(self.calibration_data['nominal'][key])
-    #         x_act = np.array(self.calibration_data['actual'][key])
-    #         self.correction_dict['nom2act'][key] = np.polyfit(x_nom, x_act - x_nom, npoly)
-    #         self.correction_dict['act2nom'][key] = np.polyfit(x_act, x_nom - x_act, npoly)
-    #
-    # def correct(self, pseudo_dict, way='act2nom'):
-    #     if self.apply_correction:
-    #         for k in pseudo_dict.keys():
-    #             delta = np.polyval(self.correction_dict[way][k], pseudo_dict[k])
-    #             pseudo_dict[k] += delta
-    #     return pseudo_dict
-
-    def pseudo_pos2dict(self, pseudo_pos):
-        ret = {k : getattr(pseudo_pos, k) for k in self.pseudo_keys}
-        for k in ret.keys():
-            if ret[k] is None:
-                try:
-                    ret[k] = getattr(self, k).position
-                except:
-                    ttime.sleep(1)
-                    ret[k] = getattr(self, k).position
-        return ret
-
-    def real_pos2dict(self, real_pos):
-        ret = {k: getattr(real_pos, k) for k in self.real_keys}
-        for k in ret.keys():
-            if ret[k] is None:
-                try:
-                    ret[k] = getattr(self, k).position
-                except:
-                    ttime.sleep(1)
-                    ret[k] = getattr(self, k).position
-        return ret
-
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        pseudo_dict = self.pseudo_pos2dict(pseudo_pos)
-        # pseudo_dict = self.correct(pseudo_dict, way='act2nom')
-        real_dict = self._forward(pseudo_dict)
-        # real_dict = self._forward(pseudo_pos)
-        return self.RealPosition(**real_dict)
-
-    @real_position_argument
-    def inverse(self, real_pos):
-        real_dict = self.real_pos2dict(real_pos)
-        pseudo_dict = self._inverse(real_dict)
-        # pseudo_dict = self.correct(pseudo_dict, way='nom2act')
-        return self.PseudoPosition(**pseudo_dict)
-
-
-    @property
-    def position_dict(self):
-        return self.pseudo_pos2dict(self.position)
-
-    @property
-    def real_position_dict(self):
-        return self.real_pos2dict(self.real_position)
-
-
-from xas.xray import bragg2e, e2bragg
-from xas.fitting import Nominal2ActualConverter
-
-class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner):
-    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
-    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
-
-    motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
-    motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
-
-    cr_main_roll_offset = Cpt(SoftPositioner, init_pos=0)  # software representation of the angular offset on the crystal stage
-
-    # motor_cr_aux2_x =  Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-
-    motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
-    motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
-    motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
-
-    cr_assy_x = Cpt(PseudoSingle, name='cr_assy_x')
-    cr_assy_y = Cpt(PseudoSingle, name='cr_assy_y')
-
-    cr_main_bragg = Cpt(PseudoSingle, name='cr_main_bragg')
-    cr_main_yaw = Cpt(PseudoSingle, name='cr_main_yaw')
-
-    # cr_aux2_x = Cpt(PseudoSingle, name='cr_aux2_x')
-    # cr_aux2_y = Cpt(PseudoSingle, name='cr_aux2_y')
-    # cr_aux2_bragg = Cpt(PseudoSingle, name='cr_aux2_bragg')
-    # cr_aux2_yaw = Cpt(PseudoSingle, name='cr_aux2_yaw')
-
-    det_bragg = Cpt(PseudoSingle, name='det_bragg')
-    det_x = Cpt(PseudoSingle, name='det_x')
-    det_y = Cpt(PseudoSingle, name='det_y')
-
-    bragg = Cpt(PseudoSingle, name='bragg')
-    # bragg_act = Cpt(PseudoSingle, name='bragg_act')
-    x = Cpt(PseudoSingle, name='x')
-    det_focus = Cpt(PseudoSingle, name='det_focus')
-    energy = Cpt(PseudoSingle, name='energy')
-
-    _real = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
-             'motor_det_x', 'motor_det_th1', 'motor_det_th2']
-    _pseudo_precision = {'cr_assy_x' : 5e-3,
-                         'cr_assy_y' : 5e-3,
-                         'cr_main_bragg' : 5e-6,
-                         'cr_main_yaw' : 5e-6,
-                         # 'cr_aux2_x': 5e-3,
-                         # 'cr_aux2_y': 5e-3,
-                         # 'cr_aux2_bragg': 5e-6,
-                         # 'cr_aux2_yaw': 5e-6,
-                         'det_bragg' : 5e-6,
-                         'det_x' : 5e-3,
-                         'det_y' : 5e-3,
-                         'bragg' : 5e-6,
-                         'x' : 5e-3,
-                         'det_focus' : 1e-2,
-                         'energy' : 1e-3}
-    _pseudo = list(_pseudo_precision.keys())
-
-    det_L1 = 550  # length of the big arm
-    det_L2 = 91  # distance between the second gon and the sensitive surface of the detector
-
-    def __init__(self, *args, auto_target=False, **kwargs):
-        self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
-        self.reset_offset_data()
-        self._initialized = False
-        self.energy_converter = None
-        self.init_from_settings()
-        super().__init__(*args, auto_target=auto_target, **kwargs)
-        self.set_cr_main_roll_offset_from_settings()
-
-        # self.operation_mode = 'nominal'
-
-        # self._print_inverse = False
-
-    def load_config(self, file):
-        with open(file, 'r') as f:
-            config = json.loads(f.read())
-        return config
-
-    def save_current_spectrometer_config(self, file):
-        config = self.get_spectrometer_config()
-        with open(file, 'w') as f:
-            json.dump(config, f)
-
-    def save_current_spectrometer_config_to_settings(self):
-        self.save_current_spectrometer_config(self.json_path)
-
-    def init_from_settings(self):
-        try:
-            config = self.load_config(self.json_path)
-            self.set_spectrometer_config(config)
-        except Exception as e:
-            config = {'crystal' : 'Si',
-                      'hkl' : (6, 2, 0),
-                      'R': 1000,
-                      'x_src': 0,
-                      'y_src': 0,
-                      'motor_cr_assy_x0': 992.9999570365,
-                      'motor_cr_assy_y0': 7.481774249999999,
-                      'motor_cr_main_roll0': 8.1324,
-                      'motor_cr_main_yaw0' : 0.85,
-                      'cr_main_roll_offset': 17.125,
-                      'motor_det_x0': -10,  # high limit of this motor should be at 529 mm
-                      'motor_det_th10': 69,
-                      'motor_det_th20': -69}
-            self.set_spectrometer_config(config)
-
-    def set_spectrometer_config(self, config):
-        self.crystal = config['crystal']
-        self.hkl = config['hkl']
-        self.R = config['R']
-        self.x_src = config['x_src']
-        self.y_src = config['y_src']
-
-        self.motor_cr_assy_x0 = config['motor_cr_assy_x0']
-        self.motor_cr_assy_y0 = config['motor_cr_assy_y0']
-        self.motor_cr_main_roll0 = config['motor_cr_main_roll0']
-        self.motor_cr_main_yaw0 = config['motor_cr_main_yaw0']
-        self.__cr_main_roll_offset = config['cr_main_roll_offset']
-
-        self.motor_det_x0 = config['motor_det_x0']
-        self.motor_det_th10 = config['motor_det_th10']
-        self.motor_det_th20 = config['motor_det_th20']
-        self.motor_offset_registry = config['motor_offset_registry']
-        if len(self.motor_offset_registry) > 0:
-            self._initialized = True
-
-        if 'ec_x_nom' in config.keys():
-            if (len(config['ec_x_nom']) > 0) and (len(config['ec_x_act']) > 0) and (config['ec_n_poly'] > 0):
-                self.energy_converter = Nominal2ActualConverter(config['ec_x_nom'], config['ec_x_act'], config['ec_n_poly'])
-
-    def get_spectrometer_config(self):
-        config = {'crystal' : self.crystal,
-                  'hkl' : self.hkl,
-                  'R': self.R,
-                  'x_src': self.x_src,
-                  'y_src': self.y_src,
-                  'motor_cr_assy_x0': self.motor_cr_assy_x0,
-                  'motor_cr_assy_y0': self.motor_cr_assy_y0,
-                  'motor_cr_main_roll0': self.motor_cr_main_roll0,
-                  'motor_cr_main_yaw0' : self.motor_cr_main_yaw0,
-                  'cr_main_roll_offset': self.cr_main_roll_offset.position,
-                  'motor_det_x0': self.motor_det_x0,
-                  'motor_det_th10': self.motor_det_th10,
-                  'motor_det_th20': self.motor_det_th20,
-                  'motor_offset_registry': self.motor_offset_registry,
-                  'ec_x_nom' : [],
-                  'ec_x_act': [],
-                  'ec_n_poly': 0}
-
-        if self.energy_converter is not None:
-            config['ec_x_nom'] = [v for v in self.energy_converter.x_nominal]
-            config['ec_x_act'] = [v for v in self.energy_converter.x_actual]
-            config['ec_n_poly'] = int(self.energy_converter.n_poly)
-        return config
-
-    def set_cr_main_roll_offset_from_settings(self):
-        self.cr_main_roll_offset.set(self.__cr_main_roll_offset)
-        # self.__cr_main_roll_offset = None
-
-    def update_johann_parameters(self, crystal='Si', hkl=(7, 3, 3), R=1000, x_src=0, y_src=0):
-        self.crystal = crystal
-        self.hkl = hkl
-        self.R = R
-        self.x_src = x_src
-        self.y_src = y_src
-
-    def set_det_parking(self):
-        self.motor_det_x0 = self.motor_det_x.position
-        self.motor_det_th10 = self.motor_det_th1.position
-        self.motor_det_th20 = self.motor_det_th2.position
-
-    def set_main_crystal_parking(self):
-        self.motor_cr_assy_x0 = self.motor_cr_assy_x.position
-        self.motor_cr_assy_y0 = self.motor_cr_assy_y.position
-        self.motor_cr_main_roll0 = self.motor_cr_main_roll.position / 1000
-        self.motor_cr_main_yaw0 = self.motor_cr_main_yaw.position / 1000
-
-    @property
-    def det_dx(self):
-        return self.det_L1 * np.cos(np.deg2rad(self.motor_det_th10)) - self.det_L2
-
-    @property
-    def det_h(self):
-        return self.det_L1 * np.sin(np.deg2rad(self.motor_det_th10))
-
-    def reset_offset_data(self):
-        # self.offset_data = {'nominal': {k: [] for k in self.pseudo_keys},
-        #                     'actual': {k: [] for k in self.pseudo_keys}}
-        self.motor_offset_registry = []
-
-    # @property
-    # def n_offset_points(self):
-    #     return len(self.offset_data['nominal']['bragg'])
-
-    def register_energy(self, energy, energy_limits=None):
-        bragg_act = e2bragg(energy, self.crystal, self.hkl)
-        bragg = self.bragg.position
-        cr_main_roll_offset_value = self.cr_main_roll_offset.position
-        self.cr_main_roll_offset.set(cr_main_roll_offset_value + (bragg - bragg_act))
-        self.motor_offset_registry.append(self.position_dict)
-        if energy_limits is not None:
-            self.energy._limits = energy_limits
-        self._initialized = True
-        self.save_current_spectrometer_config_to_settings()
-
-    def update_motor_pos_for_energy(self, new_pos_dict):
-        if len(self.motor_offset_registry) == 0:
-            pass
-        elif len(self.motor_offset_registry) == 1:
-            new_pos_dict['cr_main_yaw'] = self.motor_offset_registry[0]['cr_main_yaw']
-            new_pos_dict['x'] = self.motor_offset_registry[0]['x']
-            new_pos_dict['det_focus'] = self.motor_offset_registry[0]['det_focus']
-            new_pos_dict['det_bragg'] += self.motor_offset_registry[0]['det_bragg'] - self.motor_offset_registry[0]['bragg']
-            self._move_det_arm_only(new_pos_dict)
-
-    def append_energy_converter(self, ec):
-        self.energy_converter = ec
-
-    def which_motor_moves(self, new_pos_dict):
-        try:
-            old_pos_dict = self.pseudo_pos2dict(self.position)
-        except Exception as e:
-            print(e)
-            old_pos_dict = self._inverse(self.real_pos2dict(self.real_position))
-        moving_motors = []
-        moving_motors_delta = []
-        # print('###########')
-        # print(f'\t old_pos \t new_pos \t motor_name')
-        for motor_name in old_pos_dict.keys():
-            # print(f'{old_pos_dict[motor_name] : .4f} \t {new_pos_dict[motor_name] : .4f} \t - {motor_name}')
-            if not np.isclose(old_pos_dict[motor_name], new_pos_dict[motor_name], atol=self._pseudo_precision[motor_name]):
-                moving_motors.append(motor_name)
-                moving_motors_delta.append(new_pos_dict[motor_name] - old_pos_dict[motor_name])
-        if len(moving_motors) == 0:
-            return None
-        elif len(moving_motors) == 1:
-            return moving_motors[0]
-        elif len(moving_motors) > 1:
-            dd = {m : d for m, d in zip(moving_motors, moving_motors_delta)}
-            print_to_gui(f'Info: Multiple Johann spetrometer pseudo motors are being moved. {dd}', tag='Spectrometer')
-            return moving_motors[0]
-
-    def _move_crystal_only(self, new_pos_dict):
-        cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['cr_main_bragg'], 0)
-        cr_assy_x += self.R
-        # print(f'Updating cr_assy_x: old_pos={new_pos_dict["cr_assy_x"]}, new_pos={cr_assy_x}')
-        new_pos_dict['cr_assy_x'] = cr_assy_x
-
-    def _move_det_arm_only(self, new_pos_dict):
-        _, _, det_x, det_y = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['det_bragg'],
-                                                             new_pos_dict['det_focus'])
-        det_x += new_pos_dict['x']
-        # print(f'Updating det_x: old_pos={new_pos_dict["det_x"]}, new_pos={det_x}')
-        new_pos_dict['det_x'] = det_x
-        # print(f'Updating det_y: old_pos={new_pos_dict["det_y"]}, new_pos={det_y}')
-        new_pos_dict['det_y'] = det_y
-
-    def _move_all_components(self, new_pos_dict):
-        new_pos_dict['cr_main_bragg'] = new_pos_dict['bragg']
-        new_pos_dict['det_bragg'] = new_pos_dict['bragg']
-        self._move_crystal_only(new_pos_dict)
-        self._move_det_arm_only(new_pos_dict)
-
-    # def _move_all_components_with_correction(self, new_pos_dict):
-    #     if self.n_offset_points == 0:
-    #         new_pos_dict['bragg'] = new_pos_dict['bragg_act']
-    #         self._move_all_components(new_pos_dict)
-    #
-    #     elif self.n_offset_points == 1:
-    #         new_pos_dict['bragg'] = self.decorrect_bragg(new_pos_dict['bragg_act'])
-    #         # new_pos_dict['bragg'] -= (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
-    #         # pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
-    #         # pos_nom['bragg'] = bragg
-    #         self._move_all_components(new_pos_dict)
-    #         # sdfs
-    #         for k in self.pseudo_keys:
-    #             if (k != 'bragg') and (k != 'bragg_act'):
-    #                 new_pos_dict[k] += (self.offset_data['actual'][k][0] - self.offset_data['nominal'][k][0])
-    #
-    #     elif self.n_offset_points == 2:
-    #         new_pos_dict['bragg'] = self.decorrect_bragg(new_pos_dict['bragg_act'])
-    #         # new_pos_dict['bragg'] -= (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
-    #         # pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
-    #         # pos_nom['bragg'] = bragg
-    #         self._move_all_components(new_pos_dict)
-    #         # sdfs
-    #         for k in self.pseudo_keys:
-    #             if (k != 'bragg') and (k != 'bragg_act'):
-    #                 p = np.polyfit(np.array(self.offset_data['actual']['bragg']),
-    #                                np.array(self.offset_data['actual'][k]) -
-    #                                np.array(self.offset_data['nominal'][k]), 1)
-    #                 delta = np.polyval(p, new_pos_dict['bragg_act'])
-    #
-    #                 new_pos_dict[k] += delta
-    #
-    # def correct_bragg(self, bragg):
-    #     if self.n_offset_points == 0:
-    #         return bragg
-    #     elif self.n_offset_points == 1:
-    #         return bragg + (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
-    #     elif self.n_offset_points == 2:
-    #         p = np.polyfit(np.array(self.offset_data['nominal']['bragg']),
-    #                        np.array(self.offset_data['actual']['bragg']) -
-    #                        np.array(self.offset_data['nominal']['bragg']), 1)
-    #         delta = np.polyval(p, bragg)
-    #         return bragg + delta
-    #
-    # def decorrect_bragg(self, bragg_act):
-    #     if self.n_offset_points == 0:
-    #         return bragg_act
-    #     elif self.n_offset_points == 1:
-    #         return bragg_act - (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
-    #     elif self.n_offset_points == 2:
-    #         p = np.polyfit(np.array(self.offset_data['actual']['bragg']),
-    #                        np.array(self.offset_data['actual']['bragg']) -
-    #                        np.array(self.offset_data['nominal']['bragg']), 1)
-    #         delta = np.polyval(p, bragg_act)
-    #         return bragg_act - delta
-
-    def handle_pseudo_input(self, new_pos_dict):
-        moving_motor = self.which_motor_moves(new_pos_dict)
-        # print(f'Motor moving: {moving_motor}')
-
-        if moving_motor == 'cr_main_bragg':
-            self._move_crystal_only(new_pos_dict)
-
-        elif (moving_motor == 'det_bragg') or (moving_motor == 'det_focus'):
-            self._move_det_arm_only(new_pos_dict)
-
-        elif (moving_motor == 'bragg'):
-            self._move_all_components(new_pos_dict)
-
-        elif (moving_motor == 'energy'):
-            if self.energy_converter is not None:
-                new_pos_dict['energy'] = self.energy_converter.act2nom(new_pos_dict['energy'])
-            new_pos_dict['bragg'] = e2bragg(new_pos_dict['energy'], self.crystal, self.hkl)
-            self._move_all_components(new_pos_dict)
-            self.update_motor_pos_for_energy(new_pos_dict)
-        #     # print('moving_motor is bragg_act')
-        #     self._move_all_components_with_correction(new_pos_dict)
-
-    def _forward(self, pseudo_pos_dict):
-        self.handle_pseudo_input(pseudo_pos_dict)
-        cr_assy_x, cr_assy_y, cr_main_bragg, cr_main_yaw = pseudo_pos_dict['cr_assy_x'],\
-                                                           pseudo_pos_dict['cr_assy_y'],\
-                                                           pseudo_pos_dict['cr_main_bragg'],\
-                                                           pseudo_pos_dict['cr_main_yaw']
-
-        det_bragg, det_x, det_y = pseudo_pos_dict['det_bragg'],\
-                                  pseudo_pos_dict['det_x'],\
-                                  pseudo_pos_dict['det_y']
-
-        x = pseudo_pos_dict['x']
-
-        motor_cr_assy_x = x - cr_assy_x + self.motor_cr_assy_x0
-        motor_cr_assy_y = cr_assy_y + self.motor_cr_assy_y0
-        motor_cr_main_roll = (cr_main_bragg + self.cr_main_roll_offset.position + self.motor_cr_main_roll0 - 90) * 1000
-        motor_cr_main_yaw = cr_main_yaw * 1000
-
-        _det_bragg_rad = np.deg2rad(det_bragg)
-        _phi = np.pi - 2 * _det_bragg_rad
-        _sin_th1 = (self.det_h - self.det_L2 * np.sin(_phi) - det_y) / self.det_L1
-        motor_det_th1 = np.arcsin(_sin_th1)
-        motor_det_th2 = _phi + motor_det_th1
-        motor_det_x = self.motor_det_x0 - self.det_dx + self.det_L1 * np.cos(motor_det_th1) - self.det_L2 * np.cos(_phi) - det_x + x
-        motor_det_th1 = np.rad2deg(motor_det_th1)
-        motor_det_th2 = -np.rad2deg(motor_det_th2)
-
-        output = {'motor_cr_assy_x'   : motor_cr_assy_x,
-                  'motor_cr_assy_y'   : motor_cr_assy_y,
-                  'motor_cr_main_roll': motor_cr_main_roll,
-                  'motor_cr_main_yaw' : motor_cr_main_yaw,
-                  'motor_det_x'  : motor_det_x,
-                  'motor_det_th1': motor_det_th1,
-                  'motor_det_th2': motor_det_th2}
-        # print(output)
-
-        return output
-
-
-    def _inverse(self, real_pos_dict):
-        # if self._print_inverse: print('INVERSE INVOKED')
-        motor_cr_assy_x, motor_cr_assy_y, motor_cr_main_roll, motor_cr_main_yaw, motor_det_x, motor_det_th1, motor_det_th2 = \
-            real_pos_dict['motor_cr_assy_x'], \
-            real_pos_dict['motor_cr_assy_y'], \
-            real_pos_dict['motor_cr_main_roll'], \
-            real_pos_dict['motor_cr_main_yaw'], \
-            real_pos_dict['motor_det_x'], \
-            real_pos_dict['motor_det_th1'], \
-            real_pos_dict['motor_det_th2']
-
-        cr_main_bragg = 90 + motor_cr_main_roll / 1000 - self.cr_main_roll_offset.position - self.motor_cr_main_roll0
-        cr_main_yaw = motor_cr_main_yaw / 1000
-        cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, cr_main_bragg, 0)
-        cr_assy_x += self.R
-        cr_assy_y = motor_cr_assy_y - self.motor_cr_assy_y0
-        x = cr_assy_x + (motor_cr_assy_x - self.motor_cr_assy_x0)
-
-        motor_det_th2 *= -1
-        det_bragg = (180 - (motor_det_th2 - motor_det_th1)) / 2
-
-        det_x = self.motor_det_x0 - self.det_dx + self.det_L1 * np.cos(np.deg2rad(motor_det_th1)) - self.det_L2 * np.cos(np.deg2rad(motor_det_th2 - motor_det_th1)) - motor_det_x + x
-        det_y = self.det_h - self.det_L1 * np.sin(np.deg2rad(motor_det_th1)) - self.det_L2 * np.sin(np.deg2rad(motor_det_th2 - motor_det_th1))
-
-        _, _, det_x_ref, det_y_ref = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, det_bragg, 0)
-        det_x_ref += x
-        det_focus = np.sqrt((det_x - det_x_ref) ** 2 + (det_y - det_y_ref) ** 2) * np.sign(det_y_ref - det_y)
-        bragg = cr_main_bragg
-        energy = bragg2e(bragg, self.crystal, self.hkl)
-        if self.energy_converter is not None:
-            energy = self.energy_converter.nom2act(energy)
-
-        return {'cr_assy_x' : cr_assy_x,
-                'cr_assy_y' : cr_assy_y,
-                'cr_main_bragg' : cr_main_bragg,
-                'cr_main_yaw' : cr_main_yaw,
-                'det_bragg' : det_bragg,
-                'det_x' : det_x,
-                'det_y' : det_y,
-                'bragg' : bragg,
-                'x' : x,
-                'det_focus' : det_focus,
-                'energy' : energy}
-
-
-johann_emission = JohannMultiCrystalSpectrometerAlt(name='johann_emission')
-johann_emission.energy._limits=(7420, 7520)
+###################
+# from xas.spectrometer import compute_rowland_circle_geometry, compute_rotated_rowland_circle_geometry
+#
+#
+# class ISSPseudoPositioner(PseudoPositioner):
+#
+#     def __init__(self, *args, special_pseudo='bragg', **kwargs):
+#         self.pseudo_keys = [k for k, _ in self._get_pseudo_positioners()]
+#         self.real_keys = [k for k, _ in self._get_real_positioners()]
+#         self.motor_keys = self.pseudo_keys + self.real_keys
+#         super().__init__(*args, **kwargs)
+#
+#         # self.special_pseudo = special_pseudo
+#         # self.reset_correction()
+#         # self.reset_calibration_data()
+#         # self.apply_correction = True
+#
+#     # def reset_correction(self):
+#     #     self.correction_dict = {'act2nom': {k: [0] for k in self.pseudo_keys},
+#     #                             'nom2act': {k: [0] for k in self.pseudo_keys}}
+#     #
+#     # def reset_calibration_data(self):
+#     #     self.calibration_data = {'actual': {k: [] for k in self.pseudo_keys},
+#     #                              'nominal': {k: [] for k in self.pseudo_keys}}
+#     #
+#     # def register_calibration_point(self, special_pseudo_pos):
+#     #     pseudo_dict = self.pseudo_pos2dict(self.position)
+#     #     actual_dict = copy.deepcopy(pseudo_dict)
+#     #     actual_dict[self.special_pseudo] = special_pseudo_pos
+#     #     nominal_dict = self.pseudo_pos2dict(self.inverse(self.forward(**{self.special_pseudo : pseudo_dict[self.special_pseudo]})))
+#     #     for k in self.pseudo_keys:
+#     #         self.calibration_data['actual'][k].append(actual_dict[k])
+#     #         self.calibration_data['nominal'][k].append(nominal_dict[k])
+#     #
+#     #     # real_dict = self.real_pos2dict(self.real_position)
+#     #     # actual_dict = copy.deepcopy(real_dict)
+#     #     # actual_dict[self.special_pseudo] = special_pseudo_pos
+#     #     # nominal_dict = self.pseudo_pos2dict(
+#     #     #     self.inverse(self.forward(**{self.special_pseudo: pseudo_dict[self.special_pseudo]})))
+#     #     # for k in self.pseudo_keys:
+#     #     #     self.calibration_data['actual'][k].append(actual_dict[k])
+#     #     #     self.calibration_data['nominal'][k].append(nominal_dict[k])
+#     #
+#     # def process_calibration(self, npoly=None):
+#     #     if npoly is None:
+#     #         npoly = len(self.calibration_data['nominal'][self.special_pseudo]) - 1
+#     #     for key in self.pseudo_keys:
+#     #         x_nom = np.array(self.calibration_data['nominal'][key])
+#     #         x_act = np.array(self.calibration_data['actual'][key])
+#     #         self.correction_dict['nom2act'][key] = np.polyfit(x_nom, x_act - x_nom, npoly)
+#     #         self.correction_dict['act2nom'][key] = np.polyfit(x_act, x_nom - x_act, npoly)
+#     #
+#     # def correct(self, pseudo_dict, way='act2nom'):
+#     #     if self.apply_correction:
+#     #         for k in pseudo_dict.keys():
+#     #             delta = np.polyval(self.correction_dict[way][k], pseudo_dict[k])
+#     #             pseudo_dict[k] += delta
+#     #     return pseudo_dict
+#
+#     def pseudo_pos2dict(self, pseudo_pos):
+#         ret = {k : getattr(pseudo_pos, k) for k in self.pseudo_keys}
+#         for k in ret.keys():
+#             if ret[k] is None:
+#                 try:
+#                     ret[k] = getattr(self, k).position
+#                 except:
+#                     ttime.sleep(1)
+#                     ret[k] = getattr(self, k).position
+#         return ret
+#
+#     def real_pos2dict(self, real_pos):
+#         ret = {k: getattr(real_pos, k) for k in self.real_keys}
+#         for k in ret.keys():
+#             if ret[k] is None:
+#                 try:
+#                     ret[k] = getattr(self, k).position
+#                 except:
+#                     ttime.sleep(1)
+#                     ret[k] = getattr(self, k).position
+#         return ret
+#
+#     @pseudo_position_argument
+#     def forward(self, pseudo_pos):
+#         pseudo_dict = self.pseudo_pos2dict(pseudo_pos)
+#         # pseudo_dict = self.correct(pseudo_dict, way='act2nom')
+#         real_dict = self._forward(pseudo_dict)
+#         # real_dict = self._forward(pseudo_pos)
+#         return self.RealPosition(**real_dict)
+#
+#     @real_position_argument
+#     def inverse(self, real_pos):
+#         real_dict = self.real_pos2dict(real_pos)
+#         pseudo_dict = self._inverse(real_dict)
+#         # pseudo_dict = self.correct(pseudo_dict, way='nom2act')
+#         return self.PseudoPosition(**pseudo_dict)
+#
+#
+#     @property
+#     def position_dict(self):
+#         return self.pseudo_pos2dict(self.position)
+#
+#     @property
+#     def real_position_dict(self):
+#         return self.real_pos2dict(self.real_position)
+#
+#
+# from xas.xray import bragg2e, e2bragg
+# from xas.fitting import Nominal2ActualConverter
+#
+# class JohannMultiCrystalSpectrometerAlt(ISSPseudoPositioner): #(PseudoPositioner):
+#     motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+#     motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
+#
+#     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
+#     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
+#
+#     cr_main_roll_offset = Cpt(SoftPositioner, init_pos=0)  # software representation of the angular offset on the crystal stage
+#
+#     # motor_cr_aux2_x =  Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+#     # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+#     # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+#     # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+#
+#     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
+#     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
+#     motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
+#
+#     cr_assy_x = Cpt(PseudoSingle, name='cr_assy_x')
+#     cr_assy_y = Cpt(PseudoSingle, name='cr_assy_y')
+#
+#     cr_main_bragg = Cpt(PseudoSingle, name='cr_main_bragg')
+#     cr_main_yaw = Cpt(PseudoSingle, name='cr_main_yaw')
+#
+#     # cr_aux2_x = Cpt(PseudoSingle, name='cr_aux2_x')
+#     # cr_aux2_y = Cpt(PseudoSingle, name='cr_aux2_y')
+#     # cr_aux2_bragg = Cpt(PseudoSingle, name='cr_aux2_bragg')
+#     # cr_aux2_yaw = Cpt(PseudoSingle, name='cr_aux2_yaw')
+#
+#     det_bragg = Cpt(PseudoSingle, name='det_bragg')
+#     det_x = Cpt(PseudoSingle, name='det_x')
+#     det_y = Cpt(PseudoSingle, name='det_y')
+#
+#     bragg = Cpt(PseudoSingle, name='bragg')
+#     # bragg_act = Cpt(PseudoSingle, name='bragg_act')
+#     x = Cpt(PseudoSingle, name='x')
+#     det_focus = Cpt(PseudoSingle, name='det_focus')
+#     energy = Cpt(PseudoSingle, name='energy')
+#
+#     _real = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
+#              'motor_det_x', 'motor_det_th1', 'motor_det_th2']
+#     _pseudo_precision = {'cr_assy_x' : 5e-3,
+#                          'cr_assy_y' : 5e-3,
+#                          'cr_main_bragg' : 5e-6,
+#                          'cr_main_yaw' : 5e-6,
+#                          # 'cr_aux2_x': 5e-3,
+#                          # 'cr_aux2_y': 5e-3,
+#                          # 'cr_aux2_bragg': 5e-6,
+#                          # 'cr_aux2_yaw': 5e-6,
+#                          'det_bragg' : 5e-6,
+#                          'det_x' : 5e-3,
+#                          'det_y' : 5e-3,
+#                          'bragg' : 5e-6,
+#                          'x' : 5e-3,
+#                          'det_focus' : 1e-2,
+#                          'energy' : 1e-3}
+#     _pseudo = list(_pseudo_precision.keys())
+#
+#     det_L1 = 550  # length of the big arm
+#     det_L2 = 91  # distance between the second gon and the sensitive surface of the detector
+#
+#     def __init__(self, *args, auto_target=False, **kwargs):
+#         self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config.json'
+#         self.reset_offset_data()
+#         self._initialized = False
+#         self.energy_converter = None
+#         self.init_from_settings()
+#         super().__init__(*args, auto_target=auto_target, **kwargs)
+#         self.set_cr_main_roll_offset_from_settings()
+#
+#         # self.operation_mode = 'nominal'
+#
+#         # self._print_inverse = False
+#
+#     def load_config(self, file):
+#         with open(file, 'r') as f:
+#             config = json.loads(f.read())
+#         return config
+#
+#     def save_current_spectrometer_config(self, file):
+#         config = self.get_spectrometer_config()
+#         with open(file, 'w') as f:
+#             json.dump(config, f)
+#
+#     def save_current_spectrometer_config_to_settings(self):
+#         self.save_current_spectrometer_config(self.json_path)
+#
+#     def init_from_settings(self):
+#         try:
+#             config = self.load_config(self.json_path)
+#             self.set_spectrometer_config(config)
+#         except Exception as e:
+#             config = {'crystal' : 'Si',
+#                       'hkl' : (6, 2, 0),
+#                       'R': 1000,
+#                       'x_src': 0,
+#                       'y_src': 0,
+#                       'motor_cr_assy_x0': 992.9999570365,
+#                       'motor_cr_assy_y0': 7.481774249999999,
+#                       'motor_cr_main_roll0': 8.1324,
+#                       'motor_cr_main_yaw0' : 0.85,
+#                       'cr_main_roll_offset': 17.125,
+#                       'motor_det_x0': -10,  # high limit of this motor should be at 529 mm
+#                       'motor_det_th10': 69,
+#                       'motor_det_th20': -69}
+#             self.set_spectrometer_config(config)
+#
+#     def set_spectrometer_config(self, config):
+#         self.crystal = config['crystal']
+#         self.hkl = config['hkl']
+#         self.R = config['R']
+#         self.x_src = config['x_src']
+#         self.y_src = config['y_src']
+#
+#         self.motor_cr_assy_x0 = config['motor_cr_assy_x0']
+#         self.motor_cr_assy_y0 = config['motor_cr_assy_y0']
+#         self.motor_cr_main_roll0 = config['motor_cr_main_roll0']
+#         self.motor_cr_main_yaw0 = config['motor_cr_main_yaw0']
+#         self.__cr_main_roll_offset = config['cr_main_roll_offset']
+#
+#         self.motor_det_x0 = config['motor_det_x0']
+#         self.motor_det_th10 = config['motor_det_th10']
+#         self.motor_det_th20 = config['motor_det_th20']
+#         self.motor_offset_registry = config['motor_offset_registry']
+#         if len(self.motor_offset_registry) > 0:
+#             self._initialized = True
+#
+#         if 'ec_x_nom' in config.keys():
+#             if (len(config['ec_x_nom']) > 0) and (len(config['ec_x_act']) > 0) and (config['ec_n_poly'] > 0):
+#                 self.energy_converter = Nominal2ActualConverter(config['ec_x_nom'], config['ec_x_act'], config['ec_n_poly'])
+#
+#     def get_spectrometer_config(self):
+#         config = {'crystal' : self.crystal,
+#                   'hkl' : self.hkl,
+#                   'R': self.R,
+#                   'x_src': self.x_src,
+#                   'y_src': self.y_src,
+#                   'motor_cr_assy_x0': self.motor_cr_assy_x0,
+#                   'motor_cr_assy_y0': self.motor_cr_assy_y0,
+#                   'motor_cr_main_roll0': self.motor_cr_main_roll0,
+#                   'motor_cr_main_yaw0' : self.motor_cr_main_yaw0,
+#                   'cr_main_roll_offset': self.cr_main_roll_offset.position,
+#                   'motor_det_x0': self.motor_det_x0,
+#                   'motor_det_th10': self.motor_det_th10,
+#                   'motor_det_th20': self.motor_det_th20,
+#                   'motor_offset_registry': self.motor_offset_registry,
+#                   'ec_x_nom' : [],
+#                   'ec_x_act': [],
+#                   'ec_n_poly': 0}
+#
+#         if self.energy_converter is not None:
+#             config['ec_x_nom'] = [v for v in self.energy_converter.x_nominal]
+#             config['ec_x_act'] = [v for v in self.energy_converter.x_actual]
+#             config['ec_n_poly'] = int(self.energy_converter.n_poly)
+#         return config
+#
+#     def set_cr_main_roll_offset_from_settings(self):
+#         self.cr_main_roll_offset.set(self.__cr_main_roll_offset)
+#         # self.__cr_main_roll_offset = None
+#
+#     def update_johann_parameters(self, crystal='Si', hkl=(7, 3, 3), R=1000, x_src=0, y_src=0):
+#         self.crystal = crystal
+#         self.hkl = hkl
+#         self.R = R
+#         self.x_src = x_src
+#         self.y_src = y_src
+#
+#     def set_det_parking(self):
+#         self.motor_det_x0 = self.motor_det_x.position
+#         self.motor_det_th10 = self.motor_det_th1.position
+#         self.motor_det_th20 = self.motor_det_th2.position
+#
+#     def set_main_crystal_parking(self):
+#         self.motor_cr_assy_x0 = self.motor_cr_assy_x.position
+#         self.motor_cr_assy_y0 = self.motor_cr_assy_y.position
+#         self.motor_cr_main_roll0 = self.motor_cr_main_roll.position / 1000
+#         self.motor_cr_main_yaw0 = self.motor_cr_main_yaw.position / 1000
+#
+#     @property
+#     def det_dx(self):
+#         return self.det_L1 * np.cos(np.deg2rad(self.motor_det_th10)) - self.det_L2
+#
+#     @property
+#     def det_h(self):
+#         return self.det_L1 * np.sin(np.deg2rad(self.motor_det_th10))
+#
+#     def reset_offset_data(self):
+#         # self.offset_data = {'nominal': {k: [] for k in self.pseudo_keys},
+#         #                     'actual': {k: [] for k in self.pseudo_keys}}
+#         self.motor_offset_registry = []
+#
+#     # @property
+#     # def n_offset_points(self):
+#     #     return len(self.offset_data['nominal']['bragg'])
+#
+#     def register_energy(self, energy, energy_limits=None):
+#         bragg_act = e2bragg(energy, self.crystal, self.hkl)
+#         bragg = self.bragg.position
+#         cr_main_roll_offset_value = self.cr_main_roll_offset.position
+#         self.cr_main_roll_offset.set(cr_main_roll_offset_value + (bragg - bragg_act))
+#         self.motor_offset_registry.append(self.position_dict)
+#         if energy_limits is not None:
+#             self.energy._limits = energy_limits
+#         self._initialized = True
+#         self.save_current_spectrometer_config_to_settings()
+#
+#     def update_motor_pos_for_energy(self, new_pos_dict):
+#         if len(self.motor_offset_registry) == 0:
+#             pass
+#         elif len(self.motor_offset_registry) == 1:
+#             new_pos_dict['cr_main_yaw'] = self.motor_offset_registry[0]['cr_main_yaw']
+#             new_pos_dict['x'] = self.motor_offset_registry[0]['x']
+#             new_pos_dict['det_focus'] = self.motor_offset_registry[0]['det_focus']
+#             new_pos_dict['det_bragg'] += self.motor_offset_registry[0]['det_bragg'] - self.motor_offset_registry[0]['bragg']
+#             self._move_det_arm_only(new_pos_dict)
+#
+#     def append_energy_converter(self, ec):
+#         self.energy_converter = ec
+#
+#     def which_motor_moves(self, new_pos_dict):
+#         try:
+#             old_pos_dict = self.pseudo_pos2dict(self.position)
+#         except Exception as e:
+#             print(e)
+#             old_pos_dict = self._inverse(self.real_pos2dict(self.real_position))
+#         moving_motors = []
+#         moving_motors_delta = []
+#         # print('###########')
+#         # print(f'\t old_pos \t new_pos \t motor_name')
+#         for motor_name in old_pos_dict.keys():
+#             # print(f'{old_pos_dict[motor_name] : .4f} \t {new_pos_dict[motor_name] : .4f} \t - {motor_name}')
+#             if not np.isclose(old_pos_dict[motor_name], new_pos_dict[motor_name], atol=self._pseudo_precision[motor_name]):
+#                 moving_motors.append(motor_name)
+#                 moving_motors_delta.append(new_pos_dict[motor_name] - old_pos_dict[motor_name])
+#         if len(moving_motors) == 0:
+#             return None
+#         elif len(moving_motors) == 1:
+#             return moving_motors[0]
+#         elif len(moving_motors) > 1:
+#             dd = {m : d for m, d in zip(moving_motors, moving_motors_delta)}
+#             print_to_gui(f'Info: Multiple Johann spetrometer pseudo motors are being moved. {dd}', tag='Spectrometer')
+#             return moving_motors[0]
+#
+#     def _move_crystal_only(self, new_pos_dict):
+#         cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['cr_main_bragg'], 0)
+#         cr_assy_x += self.R
+#         # print(f'Updating cr_assy_x: old_pos={new_pos_dict["cr_assy_x"]}, new_pos={cr_assy_x}')
+#         new_pos_dict['cr_assy_x'] = cr_assy_x
+#
+#     def _move_det_arm_only(self, new_pos_dict):
+#         _, _, det_x, det_y = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, new_pos_dict['det_bragg'],
+#                                                              new_pos_dict['det_focus'])
+#         det_x += new_pos_dict['x']
+#         # print(f'Updating det_x: old_pos={new_pos_dict["det_x"]}, new_pos={det_x}')
+#         new_pos_dict['det_x'] = det_x
+#         # print(f'Updating det_y: old_pos={new_pos_dict["det_y"]}, new_pos={det_y}')
+#         new_pos_dict['det_y'] = det_y
+#
+#     def _move_all_components(self, new_pos_dict):
+#         new_pos_dict['cr_main_bragg'] = new_pos_dict['bragg']
+#         new_pos_dict['det_bragg'] = new_pos_dict['bragg']
+#         self._move_crystal_only(new_pos_dict)
+#         self._move_det_arm_only(new_pos_dict)
+#
+#     # def _move_all_components_with_correction(self, new_pos_dict):
+#     #     if self.n_offset_points == 0:
+#     #         new_pos_dict['bragg'] = new_pos_dict['bragg_act']
+#     #         self._move_all_components(new_pos_dict)
+#     #
+#     #     elif self.n_offset_points == 1:
+#     #         new_pos_dict['bragg'] = self.decorrect_bragg(new_pos_dict['bragg_act'])
+#     #         # new_pos_dict['bragg'] -= (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+#     #         # pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
+#     #         # pos_nom['bragg'] = bragg
+#     #         self._move_all_components(new_pos_dict)
+#     #         # sdfs
+#     #         for k in self.pseudo_keys:
+#     #             if (k != 'bragg') and (k != 'bragg_act'):
+#     #                 new_pos_dict[k] += (self.offset_data['actual'][k][0] - self.offset_data['nominal'][k][0])
+#     #
+#     #     elif self.n_offset_points == 2:
+#     #         new_pos_dict['bragg'] = self.decorrect_bragg(new_pos_dict['bragg_act'])
+#     #         # new_pos_dict['bragg'] -= (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+#     #         # pos_nom = {k: self.offset_data['nominal'][k][0] for k in self.pseudo_keys}
+#     #         # pos_nom['bragg'] = bragg
+#     #         self._move_all_components(new_pos_dict)
+#     #         # sdfs
+#     #         for k in self.pseudo_keys:
+#     #             if (k != 'bragg') and (k != 'bragg_act'):
+#     #                 p = np.polyfit(np.array(self.offset_data['actual']['bragg']),
+#     #                                np.array(self.offset_data['actual'][k]) -
+#     #                                np.array(self.offset_data['nominal'][k]), 1)
+#     #                 delta = np.polyval(p, new_pos_dict['bragg_act'])
+#     #
+#     #                 new_pos_dict[k] += delta
+#     #
+#     # def correct_bragg(self, bragg):
+#     #     if self.n_offset_points == 0:
+#     #         return bragg
+#     #     elif self.n_offset_points == 1:
+#     #         return bragg + (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+#     #     elif self.n_offset_points == 2:
+#     #         p = np.polyfit(np.array(self.offset_data['nominal']['bragg']),
+#     #                        np.array(self.offset_data['actual']['bragg']) -
+#     #                        np.array(self.offset_data['nominal']['bragg']), 1)
+#     #         delta = np.polyval(p, bragg)
+#     #         return bragg + delta
+#     #
+#     # def decorrect_bragg(self, bragg_act):
+#     #     if self.n_offset_points == 0:
+#     #         return bragg_act
+#     #     elif self.n_offset_points == 1:
+#     #         return bragg_act - (self.offset_data['actual']['bragg'][0] - self.offset_data['nominal']['bragg'][0])
+#     #     elif self.n_offset_points == 2:
+#     #         p = np.polyfit(np.array(self.offset_data['actual']['bragg']),
+#     #                        np.array(self.offset_data['actual']['bragg']) -
+#     #                        np.array(self.offset_data['nominal']['bragg']), 1)
+#     #         delta = np.polyval(p, bragg_act)
+#     #         return bragg_act - delta
+#
+#     def handle_pseudo_input(self, new_pos_dict):
+#         moving_motor = self.which_motor_moves(new_pos_dict)
+#         # print(f'Motor moving: {moving_motor}')
+#
+#         if moving_motor == 'cr_main_bragg':
+#             self._move_crystal_only(new_pos_dict)
+#
+#         elif (moving_motor == 'det_bragg') or (moving_motor == 'det_focus'):
+#             self._move_det_arm_only(new_pos_dict)
+#
+#         elif (moving_motor == 'bragg'):
+#             self._move_all_components(new_pos_dict)
+#
+#         elif (moving_motor == 'energy'):
+#             if self.energy_converter is not None:
+#                 new_pos_dict['energy'] = self.energy_converter.act2nom(new_pos_dict['energy'])
+#             new_pos_dict['bragg'] = e2bragg(new_pos_dict['energy'], self.crystal, self.hkl)
+#             self._move_all_components(new_pos_dict)
+#             self.update_motor_pos_for_energy(new_pos_dict)
+#         #     # print('moving_motor is bragg_act')
+#         #     self._move_all_components_with_correction(new_pos_dict)
+#
+#     def _forward(self, pseudo_pos_dict):
+#         self.handle_pseudo_input(pseudo_pos_dict)
+#         cr_assy_x, cr_assy_y, cr_main_bragg, cr_main_yaw = pseudo_pos_dict['cr_assy_x'],\
+#                                                            pseudo_pos_dict['cr_assy_y'],\
+#                                                            pseudo_pos_dict['cr_main_bragg'],\
+#                                                            pseudo_pos_dict['cr_main_yaw']
+#
+#         det_bragg, det_x, det_y = pseudo_pos_dict['det_bragg'],\
+#                                   pseudo_pos_dict['det_x'],\
+#                                   pseudo_pos_dict['det_y']
+#
+#         x = pseudo_pos_dict['x']
+#
+#         motor_cr_assy_x = x - cr_assy_x + self.motor_cr_assy_x0
+#         motor_cr_assy_y = cr_assy_y + self.motor_cr_assy_y0
+#         motor_cr_main_roll = (cr_main_bragg + self.cr_main_roll_offset.position + self.motor_cr_main_roll0 - 90) * 1000
+#         motor_cr_main_yaw = cr_main_yaw * 1000
+#
+#         _det_bragg_rad = np.deg2rad(det_bragg)
+#         _phi = np.pi - 2 * _det_bragg_rad
+#         _sin_th1 = (self.det_h - self.det_L2 * np.sin(_phi) - det_y) / self.det_L1
+#         motor_det_th1 = np.arcsin(_sin_th1)
+#         motor_det_th2 = _phi + motor_det_th1
+#         motor_det_x = self.motor_det_x0 - self.det_dx + self.det_L1 * np.cos(motor_det_th1) - self.det_L2 * np.cos(_phi) - det_x + x
+#         motor_det_th1 = np.rad2deg(motor_det_th1)
+#         motor_det_th2 = -np.rad2deg(motor_det_th2)
+#
+#         output = {'motor_cr_assy_x'   : motor_cr_assy_x,
+#                   'motor_cr_assy_y'   : motor_cr_assy_y,
+#                   'motor_cr_main_roll': motor_cr_main_roll,
+#                   'motor_cr_main_yaw' : motor_cr_main_yaw,
+#                   'motor_det_x'  : motor_det_x,
+#                   'motor_det_th1': motor_det_th1,
+#                   'motor_det_th2': motor_det_th2}
+#         # print(output)
+#
+#         return output
+#
+#
+#     def _inverse(self, real_pos_dict):
+#         # if self._print_inverse: print('INVERSE INVOKED')
+#         motor_cr_assy_x, motor_cr_assy_y, motor_cr_main_roll, motor_cr_main_yaw, motor_det_x, motor_det_th1, motor_det_th2 = \
+#             real_pos_dict['motor_cr_assy_x'], \
+#             real_pos_dict['motor_cr_assy_y'], \
+#             real_pos_dict['motor_cr_main_roll'], \
+#             real_pos_dict['motor_cr_main_yaw'], \
+#             real_pos_dict['motor_det_x'], \
+#             real_pos_dict['motor_det_th1'], \
+#             real_pos_dict['motor_det_th2']
+#
+#         cr_main_bragg = 90 + motor_cr_main_roll / 1000 - self.cr_main_roll_offset.position - self.motor_cr_main_roll0
+#         cr_main_yaw = motor_cr_main_yaw / 1000
+#         cr_assy_x, _, _, _ = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, cr_main_bragg, 0)
+#         cr_assy_x += self.R
+#         cr_assy_y = motor_cr_assy_y - self.motor_cr_assy_y0
+#         x = cr_assy_x + (motor_cr_assy_x - self.motor_cr_assy_x0)
+#
+#         motor_det_th2 *= -1
+#         det_bragg = (180 - (motor_det_th2 - motor_det_th1)) / 2
+#
+#         det_x = self.motor_det_x0 - self.det_dx + self.det_L1 * np.cos(np.deg2rad(motor_det_th1)) - self.det_L2 * np.cos(np.deg2rad(motor_det_th2 - motor_det_th1)) - motor_det_x + x
+#         det_y = self.det_h - self.det_L1 * np.sin(np.deg2rad(motor_det_th1)) - self.det_L2 * np.sin(np.deg2rad(motor_det_th2 - motor_det_th1))
+#
+#         _, _, det_x_ref, det_y_ref = compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, det_bragg, 0)
+#         det_x_ref += x
+#         det_focus = np.sqrt((det_x - det_x_ref) ** 2 + (det_y - det_y_ref) ** 2) * np.sign(det_y_ref - det_y)
+#         bragg = cr_main_bragg
+#         energy = bragg2e(bragg, self.crystal, self.hkl)
+#         if self.energy_converter is not None:
+#             energy = self.energy_converter.nom2act(energy)
+#
+#         return {'cr_assy_x' : cr_assy_x,
+#                 'cr_assy_y' : cr_assy_y,
+#                 'cr_main_bragg' : cr_main_bragg,
+#                 'cr_main_yaw' : cr_main_yaw,
+#                 'det_bragg' : det_bragg,
+#                 'det_x' : det_x,
+#                 'det_y' : det_y,
+#                 'bragg' : bragg,
+#                 'x' : x,
+#                 'det_focus' : det_focus,
+#                 'energy' : energy}
+#
+#
+# johann_emission = JohannMultiCrystalSpectrometerAlt(name='johann_emission')
+# johann_emission.energy._limits=(7420, 7520)
 # johann_emission.register_energy(7470)
 
 
-motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.bragg.name,
-                                          'description' : 'Johann Bragg Angle',
-                                          'object': johann_emission.bragg,
-                                          'group': 'spectrometer'}
+# motor_dictionary['johann_bragg_angle'] = {'name': johann_emission.bragg.name,
+#                                           'description' : 'Johann Bragg Angle',
+#                                           'object': johann_emission.bragg,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_det_focus'] =   {'name': johann_emission.det_focus.name,
+#                                           'description' : 'Johann Detector Focus',
+#                                           'object': johann_emission.det_focus,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_x'] =           {'name': johann_emission.x.name,
+#                                           'description' : 'Johann X',
+#                                           'object': johann_emission.x,
+#                                           'group': 'spectrometer'}
+#
+# motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
+#                                           'description' : 'Johann Energy',
+#                                           'object': johann_emission.energy,
+#                                           'group': 'spectrometer'}
+##############################
 
-motor_dictionary['johann_det_focus'] =   {'name': johann_emission.det_focus.name,
-                                          'description' : 'Johann Detector Focus',
-                                          'object': johann_emission.det_focus,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_x'] =           {'name': johann_emission.x.name,
-                                          'description' : 'Johann X',
-                                          'object': johann_emission.x,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
-                                          'description' : 'Johann Energy',
-                                          'object': johann_emission.energy,
-                                          'group': 'spectrometer'}
-
-
-from scipy import interpolate
+# from scipy import interpolate
 
 
 #
