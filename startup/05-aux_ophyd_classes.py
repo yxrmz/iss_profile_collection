@@ -168,4 +168,31 @@ def ramp_plan_with_multiple_monitors(go_plan, monitor_list, inner_plan_func,
     yield from monitor_during_wrapper(ramp_plan, mon_rest)
 
 
+from ophyd.utils import AlarmSeverity
+
+class EpicsMotorThatCannotReachTheTargetProperly(EpicsMotor):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tolerated_alarm =  AlarmSeverity.MAJOR
+
+
+    def set(self, new_position, atol=5e-3, max_tries=500, **kwargs):
+        for i in range(max_tries):
+            # print(i)
+            st = super().set(new_position, **kwargs)
+            st.wait()
+            if np.isclose(self.position, new_position, atol=atol):
+                return st
+        print('Achieved the maximum motion attempts; exiting')
+        return st
+
+
+
+# sample_stage_z = EpicsMotorThatCannotReachTheTargetProperly('XF:08IDB-OP{Misc-Ax:2}Mtr', name='sample_stage_z')
+# sample_stage_z.tolerated_alarm =  AlarmSeverity.MAJOR
+#
+# RE(bps.mv(sample_stage_z, -3.5, wait=True))
+
+
 
