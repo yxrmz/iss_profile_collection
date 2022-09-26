@@ -864,7 +864,7 @@ class JohannEmission(JohannPseudoPositioner):
 
 
 johann_emission = JohannEmission(name='johann_emission')
-johann_emission.energy._limits=(7435, 7520)
+johann_emission.energy._limits=(9390, 9490)
 
 motor_dictionary['johann_bragg_angle'] = {'name': johann_spectrometer.bragg.name,
                                           'description' : 'Johann Bragg Angle',
@@ -886,6 +886,10 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
                                           'object': johann_emission.energy,
                                           'group': 'spectrometer'}
 
+
+# rowland_circle.config['roll_offset'] = 12.00916586506561# - (82.20916586506561 - 81.70)
+# rowland_circle.compute_nominal_trajectory()
+# rowland_circle.update_nominal_trajectory_for_detector(-7.992103369546962, force_update=True)
 
 # def compute_rowland_circle_geometry(x_src, y_src, R, bragg_deg, det_dR):
 #     bragg = np.deg2rad(bragg_deg)
