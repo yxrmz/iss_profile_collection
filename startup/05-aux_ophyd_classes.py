@@ -180,10 +180,11 @@ class EpicsMotorThatCannotReachTheTargetProperly(EpicsMotor):
     def set(self, new_position, atol=5e-3, max_tries=500, **kwargs):
         for i in range(max_tries):
             # print(i)
-            st = super().set(new_position, **kwargs)
+            st = super().move(new_position, **kwargs)
             st.wait()
             if np.isclose(self.position, new_position, atol=atol):
                 return st
+            del st
         print('Achieved the maximum motion attempts; exiting')
         return st
 

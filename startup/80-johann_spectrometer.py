@@ -864,7 +864,7 @@ class JohannEmission(JohannPseudoPositioner):
 
 
 johann_emission = JohannEmission(name='johann_emission')
-johann_emission.energy._limits=(9390, 9490)
+# johann_emission.energy._limits=(9390, 9490)
 
 motor_dictionary['johann_bragg_angle'] = {'name': johann_spectrometer.bragg.name,
                                           'description' : 'Johann Bragg Angle',
