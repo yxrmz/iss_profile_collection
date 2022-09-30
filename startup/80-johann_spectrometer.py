@@ -117,7 +117,7 @@ class JohannSpectrometerMotor(PseudoPositioner):
 from xas.spectrometer import compute_rowland_circle_geometry
 from xas.fitting import Nominal2ActualConverter
 
-
+from scipy import interpolate
 class Nominal2ActualConverterWithLinearInterpolation:
 
     def __init__(self):
@@ -727,26 +727,26 @@ class JohannSpectrometer(JohannPseudoPositioner):
     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    # motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-    #
-    # motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    # motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    # motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
+    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',]
-             # 'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             # 'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',#]
+             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['bragg']
 
     aligned = True
-    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll']#, 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
 
     def _forward(self, pseudo_dict):
         bragg = pseudo_dict['bragg']
@@ -804,26 +804,26 @@ class JohannEmission(JohannPseudoPositioner):
     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    # motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-    #
-    # motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    # motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    # motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
+    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     energy = Cpt(PseudoSingle, name='energy')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',]
-             # 'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             # 'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',#]
+             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['energy']
 
     aligned = True
-    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', ]#'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
     _initialized = True
 
     def _forward(self, pseudo_dict):
@@ -866,6 +866,37 @@ class JohannEmission(JohannPseudoPositioner):
 johann_emission = JohannEmission(name='johann_emission')
 # johann_emission.energy._limits=(9390, 9490)
 
+
+motor_dictionary['johann_cr_main_roll'] =    {'name': johann_main_crystal.motor_cr_main_roll.name,
+                                              'description' : 'Johann Crystal 1 Roll',
+                                              'object': johann_main_crystal.motor_cr_main_roll,
+                                              'group': 'spectrometer'}
+
+motor_dictionary['johann_cr_main_yaw'] =    {'name': johann_main_crystal.motor_cr_main_yaw.name,
+                                              'description' : 'Johann Crystal 1 Yaw',
+                                              'object': johann_main_crystal.motor_cr_main_yaw,
+                                              'group': 'spectrometer'}
+
+motor_dictionary['johann_cr_aux2_roll'] =    {'name': johann_aux2_crystal.motor_cr_aux2_roll.name,
+                                              'description' : 'Johann Crystal 2 roll',
+                                              'object': johann_aux2_crystal.motor_cr_aux2_roll,
+                                              'group': 'spectrometer'}
+
+motor_dictionary['johann_cr_aux2_yaw'] =    {'name': johann_aux2_crystal.motor_cr_aux2_yaw.name,
+                                              'description' : 'Johann Crystal 2 Yaw',
+                                              'object': johann_aux2_crystal.motor_cr_aux2_yaw,
+                                              'group': 'spectrometer'}
+
+motor_dictionary['johann_cr_aux3_roll'] =    {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,
+                                              'description' : 'Johann Crystal 3 roll',
+                                              'object': johann_aux3_crystal.motor_cr_aux3_roll,
+                                              'group': 'spectrometer'}
+
+motor_dictionary['johann_cr_aux3_yaw'] =    {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,
+                                              'description' : 'Johann Crystal 3 Yaw',
+                                              'object': johann_aux3_crystal.motor_cr_aux3_yaw,
+                                              'group': 'spectrometer'}
+
 motor_dictionary['johann_bragg_angle'] = {'name': johann_spectrometer.bragg.name,
                                           'description' : 'Johann Bragg Angle',
                                           'object': johann_spectrometer.bragg,
@@ -886,6 +917,25 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
                                           'object': johann_emission.energy,
                                           'group': 'spectrometer'}
 
+
+# rowland_circle.config['parking']['motor_cr_assy_y'] = 7.682
+# johann_spectrometer_x.move(x=-10)
+#
+#
+# johann_spectrometer_x.move(x=10)
+
+# rowland_circle.config['parking']['motor_cr_main_roll'] = -20
+# johann_main_crystal.move(bragg=81.73)
+#
+# rowland_circle.config['parking']['motor_cr_aux2_x'] = -10000
+# rowland_circle.config['parking']['motor_cr_aux2_yaw'] = 7150
+# rowland_circle.config['parking']['motor_cr_aux2_roll'] = 450
+# johann_aux2_crystal.move(bragg=81.73)
+#
+# rowland_circle.config['parking']['motor_cr_aux3_x'] = -8000
+# rowland_circle.config['parking']['motor_cr_aux3_yaw'] = -6750
+# rowland_circle.config['parking']['motor_cr_aux3_roll'] = 1000
+# johann_aux3_crystal.move(bragg=81.73)
 
 # rowland_circle.config['roll_offset'] = 12.00916586506561# - (82.20916586506561 - 81.70)
 # rowland_circle.compute_nominal_trajectory()
@@ -1562,7 +1612,7 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
 #                                           'group': 'spectrometer'}
 ##############################
 
-# from scipy import interpolate
+#
 
 
 #
