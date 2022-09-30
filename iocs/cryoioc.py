@@ -48,7 +48,7 @@ class CryoIOC(PVGroup):
                     st = cryocooler_valve.set('Close')
                     st.wait()
 
-                elif (cryocooler_bath_level_value <= cryocooler_bath_level_lo) and (cryocooler_valve.status.get() == 'Close'):
+                elif (cryocooler_bath_level_value <= cryocooler_bath_level_lo) and (cryocooler_valve.status.get() == 'Not Open'):
                     print('REACHED THE LOWER THRESHOLD. OPENING THE VALVE.')
                     st = cryocooler_valve.set('Open')
                     st.wait()
