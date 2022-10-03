@@ -465,14 +465,15 @@ class RowlandCircle:
 
     def _compute_motor_position(self, motor_key, bragg, nom2act=True):
         pos =  np.interp(bragg, self.traj['bragg'], self.traj[motor_key])
-        if nom2act:
-            # pos = self.converter_nom2act[motor_key].nom2act(pos)
-            pos = self._convert_motor_pos_nom2act(motor_key, pos)
         if motor_key in self.config['parking'].keys():
             pos0 = self.config['parking'][motor_key]
         else:
             pos0 = 0
-        return (pos + pos0)
+        pos += pos0
+        if nom2act:
+            # pos = self.converter_nom2act[motor_key].nom2act(pos)
+            pos = self._convert_motor_pos_nom2act(motor_key, pos)
+        return pos
 
     def compute_motor_position(self, motor_keys, bragg, nom2act=True):
         if type(motor_keys) == str:
