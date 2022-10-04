@@ -1,6 +1,6 @@
 from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
                    EpicsSignal, EpicsSignalRO, Kind, set_and_wait,
-                   PseudoPositioner, PseudoSingle, SoftPositioner)
+                   PseudoPositioner, PseudoSingle, SoftPositioner, Signal, SignalRO)
 from ophyd.sim import NullStatus
 
 from ophyd.pseudopos import (pseudo_position_argument,
