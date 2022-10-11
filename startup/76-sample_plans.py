@@ -12,9 +12,11 @@ def move_rel_sample_stage_plan(sample_coordinates : dict = {}):
         yield from bps.mvr(motor, shift)
 
 
-OUTPUT = {'camera_sp1' : None, 'camera_sp2' : None}
+# OUTPUT = {'camera_sp1' : None, 'camera_sp2' : None}
 
-def calibrate_sample_cameras_plan(cameras=[camera_sp1, camera_sp2], dx=5, dy=5, target_max_counts=150):
+
+from xas.image_analysis import find_points_moving_with_stage
+def calibrate_sample_cameras_plan(cameras=[camera_sp1, camera_sp2], dx=5, dy=5, target_max_counts=150, npoly=1):
     dxs = [+dx/2, -dx/2, -dx/2, +dx/2]
     dys = [-dy/2, -dy/2, +dy/2, +dy/2]
     x0 = sample_stage.x.position
@@ -42,8 +44,12 @@ def calibrate_sample_cameras_plan(cameras=[camera_sp1, camera_sp2], dx=5, dy=5, 
         camera.exp_time.put(exp_time)
 
     ncams = len(cameras)
-    OUTPUT['camera_sp1'] = cam_images[0::ncams]
-    OUTPUT['camera_sp2'] = cam_images[1::ncams]
+    for i, camera in enumerate(cameras):
+        calibration_data_dict = find_points_moving_with_stage(dxs, dys, cam_images[i::ncams])
+        calibration_data_dict['npoly'] = npoly
+        camera.set_calibration(calibration_data_dict)
+
+
 
 
 

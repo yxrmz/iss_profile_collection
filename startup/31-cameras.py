@@ -27,6 +27,7 @@ class BPM(SingleTrigger, ProsilicaDetector):
         self.stage_sigs['cam.image_mode'] = 'Single'
         self.polarity = 'pos'
         self.image_height = self.image.height.get()
+        self.image_width = self.image.width.get()
         self.frame_rate = self.cam.ps_frame_rate
         # self._inserting = None
         # self._retracting = None
@@ -74,8 +75,8 @@ class BPM(SingleTrigger, ProsilicaDetector):
 
         self.roi1.min_xyz.min_x.put(0)
         self.roi1.min_xyz.min_y.put(0)
-        self.roi1.size.x.put(self.image.width.get())
-        self.roi1.size.y.put(self.image.height.get())
+        self.roi1.size.x.put(self.image_width)
+        self.roi1.size.y.put(self.image_height)
 
         self.adjust_camera_exposure_time(**kwargs)
 
@@ -85,9 +86,16 @@ class BPM(SingleTrigger, ProsilicaDetector):
         self.roi1.size.y.put(dy)
 
     def get_image_array_data_reshaped(self):
-        h = self.image.height.get()
-        w = self.image.width.get()
-        return np.reshape(self.image.array_data.get(), (h, w))
+        return np.reshape(self.image.array_data.get(), (self.image_height, self.image_width))
+
+    # @property
+    # def image_height(self):
+    #     return self.image.height.get()
+
+    # @property
+    # def image_width(self):
+    #     return self.image.width.get()
+
 
 class FeedbackBPM(BPM):
     ioc_reboot_pv = None
@@ -116,6 +124,140 @@ class FeedbackBPM(BPM):
     def image_centroid_x(self):
         return self.stats1.centroid.x.get()
 
+
+from xas.image_analysis import CameraCalibration, CameraCalibrationFF
+class SamplePositionerBPM(BPM):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.settings_file = f'{ROOT_PATH_SHARED}/settings/json/{self.name}_settings.json'
+        self.load_settings()
+        self.calibration_file = f'{ROOT_PATH_SHARED}/settings/json/{self.name}_calibration.json'
+        self.load_calibration()
+
+        self.grid_lines = None
+
+    def load_settings(self):
+        try:
+            with open(self.settings_file) as fp:
+                settings_dict = json.load(fp)
+                self.beam_pos_x = settings_dict['beam_pos_x']
+                self.beam_pos_y = settings_dict['beam_pos_y']
+        except Exception as e:
+            print(f'Settings for {self.name} could not be loaded. Reason: {e}')
+            self.beam_pos_x = None
+            self.beam_pos_y = None
+
+    def set_beam_coordinates(self, beam_pos_x, beam_pos_y):
+        self.beam_pos_x = beam_pos_x
+        self.beam_pos_y = beam_pos_y
+        self.save_settings({'beam_pos_x': beam_pos_x,
+                            'beam_pos_y': beam_pos_y})
+
+    def save_settings(self, settings_dict):
+        with open(self.settings_file, 'w') as f:
+            json.dump(settings_dict, f)
+
+    def load_calibration(self):
+        try:
+            with open(self.calibration_file) as fp:
+                calibration_data_dict = json.load(fp)
+            self.calibration = CameraCalibrationFF(calibration_data_dict['pix_xy1'],
+                                                 calibration_data_dict['pix_xy2'],
+                                                 calibration_data_dict['stage_xy'],
+                                                 npoly=calibration_data_dict['npoly'])
+        except Exception as e:
+            print(f'Calibration for {self.name} could not be loaded. Reason: {e}')
+            self.calibration=None
+
+    def set_calibration(self, calibration_data_dict):
+        self.calibration = CameraCalibrationFF(calibration_data_dict['pix_xy1'],
+                                             calibration_data_dict['pix_xy2'],
+                                             calibration_data_dict['stage_xy'],
+                                             npoly=calibration_data_dict['npoly'])
+        self.save_calibration_to_settings(calibration_data_dict)
+
+    def save_calibration_to_settings(self, calibration_data_dict):
+        _dict = {**calibration_data_dict}
+        for k, v in _dict.items():
+            if type(v) == np.ndarray:
+                _dict[k] = v.tolist()
+        with open(self.calibration_file, 'w') as f:
+            json.dump(_dict, f )
+
+    # def update_calibration_npoly(self, npoly):
+    #     self.calibration.update_npoly(n_poly)
+
+    # def calibration_data_dict
+
+
+    @property
+    def calibration_info(self):
+        if self.calibration is not None:
+            return f'{self.name}: {self.calibration.info}'
+        return ''
+
+    def compute_calibration_grid_lines(self, nlines=8, stage_step=-5):
+        self.grid_lines = self.calibration.compute_grid_lines(  nlines=nlines,
+                                                                xmax=self.image_width,
+                                                                ymax=self.image_height,
+                                                                stage_step=stage_step)
+
+    def compute_stage_motion_to_beam(self, x, y):
+        return self.calibration.compute_stage_motion((x, y),
+                                                     (self.beam_pos_x, self.beam_pos_y))
+
+
+
+
+    #
+    # _x = np.linspace(0, camera.image_width, nlines)
+    # _y = np.ones(_x.size) * 0
+    # _xy = np.array([_x, _y]).T
+    # _stage_step = np.array([[0, -stage_step]] * nlines)
+    #
+    # # plt.figure(1, clear=True)
+    # for i in range(10):
+    # # while np.all(_xy[:, 1] < camera.image_height):
+    #     xy.append(_xy/ camera.image_width * 600)
+    #     # plt.plot(_xy[:, 0], _xy[:, 1], '.-')
+    #     _xy = camera.calibration.compute_new_pixel(_xy, _stage_step)
+    #
+    # grid_lines = [v for v in zip(*xy)]
+    #
+    # xy = []
+    # _x = np.ones(_x.size) * 0
+    # _y = np.linspace(0, camera.image_height, nlines)
+    # _xy = np.array([_x, _y]).T
+    # _stage_step = np.array([[-stage_step, 0]] * nlines)
+    # for i in range(20):
+    # # while np.all(_xy[:, 1] < camera.image_height):
+    #     xy.append(_xy/ camera.image_width * 600)
+    #     # plt.plot(_xy[:, 0], _xy[:, 1], '.-')
+    #     _xy = camera.calibration.compute_new_pixel(_xy, _stage_step)
+    #
+    # grid_lines.extend([v for v in zip(*xy)])
+    #
+    # return grid_lines
+    # print(xy)
+    # print(x, y)
+    # sdgds
+
+    # __xy = np.vstack(xy)
+
+
+# camera_sp1.grid_lines = compute_calibration_grid_lines(camera_sp1, stage_step=10)
+# #
+
+#
+# camera_sp1.grid_lines = []
+
+camera_sp1 = SamplePositionerBPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
+# camera_sp1.calibration.update_npoly(1)
+
+camera_sp2 = SamplePositionerBPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+# camera_sp2.calibration.update_npoly(1)
+# camera_sp2.grid_lines = compute_calibration_grid_lines(camera_sp2, stage_step=10)
 
 class CAMERA(SingleTrigger, ProsilicaDetector):
     image = Cpt(ImagePlugin, 'image1:')
@@ -242,9 +384,11 @@ bpm_es.append_ioc_reboot_pv(bpm_es_ioc_reset)
 
 # camera_sp3 = BPM('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
 
-camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
+# camera_sp1 = BPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 # camera_sp2 = CAMERA('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
-camera_sp2 = BPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+# camera_sp2 = BPM('XF:08IDB-BI{BPM:SP-2}', name='camera_sp2')
+
+
 
 camera_sp3 = BPM('XF:08IDB-BI{BPM:SP-3}', name='camera_sp3')
 
