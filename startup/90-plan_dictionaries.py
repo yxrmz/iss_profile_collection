@@ -33,6 +33,7 @@ service_plan_funcs = {
         'quick_pitch_optimization' : quick_pitch_optimization,
         # 'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
         'move_mono_energy' : move_mono_energy,
+        'calibrate_sample_cameras_plan' : calibrate_sample_cameras_plan,
         # 'move_mono_pitch' : move_mono_pitch,
         }
 
