@@ -204,7 +204,8 @@ class SamplePositionerBPM(BPM):
                                                                 stage_step=stage_step)
 
     def compute_stage_motion_to_beam(self, x, y):
-        return self.calibration.compute_stage_motion((x, y),
+        xy = np.vstack((x, y)).T
+        return self.calibration.compute_stage_motion( xy,
                                                      (self.beam_pos_x, self.beam_pos_y))
 
 
