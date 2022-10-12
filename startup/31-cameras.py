@@ -205,8 +205,12 @@ class SamplePositionerBPM(BPM):
 
     def compute_stage_motion_to_beam(self, x, y):
         xy = np.vstack((x, y)).T
-        return self.calibration.compute_stage_motion( xy,
-                                                     (self.beam_pos_x, self.beam_pos_y))
+        return self.calibration.compute_stage_motion( xy, (self.beam_pos_x, self.beam_pos_y))
+
+    def compute_point_from_stage(self, stage_x, stage_y):
+        stage_xy = np.vstack([stage_x, stage_y]).T
+        xy = np.array([[self.beam_pos_x, self.beam_pos_y]] * stage_x.size)
+        return self.calibration.compute_new_pixel(xy, stage_xy)
 
 
 
