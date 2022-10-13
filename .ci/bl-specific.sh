@@ -12,8 +12,8 @@ cp -v $HOME/.config/databroker/iss.yml $HOME/.config/databroker/iss-local.yml
 
 # Create non-standard directories:
 sudo mkdir -v -p /nsls2/xf08id/metadata/
-
 sudo chmod -Rv go+rw /nsls2/xf08id/
 
-# touch /nsls2/xf08id/...
+sudo mkdir -v -p /nsls2/data/
+sudo chmod -Rv go+rw /nsls2/data/
 
