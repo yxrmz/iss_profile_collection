@@ -13,3 +13,9 @@ jobs:
   - template: 2022-2.4-py39-tiled.yml@templates
     parameters:
       beamline_acronym: ISS
+  - template: 2022-3.1-py39.yml@templates
+    parameters:
+      beamline_acronym: ISS
+  - template: 2022-3.1-py39-tiled.yml@templates
+    parameters:
+      beamline_acronym: ISS
