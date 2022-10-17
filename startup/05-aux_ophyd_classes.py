@@ -190,6 +190,58 @@ class EpicsMotorThatCannotReachTheTargetProperly(EpicsMotor):
 
 
 
+
+
+from collections import defaultdict
+import json
+class ObjectWithSettings:
+
+    def __init__(self, *args, json_path='', default_config=None, defaultdict_use=False, defaultdict_value=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.json_path = json_path
+
+        if default_config is None:
+            if default_config is None:
+                if defaultdict_use:
+                    def _factory():
+                        return defaultdict_value
+                    default_config = defaultdict(_factory)
+                else:
+                    default_config = {}
+
+        self.config = self.init_config_from_settings(default_config)
+
+    def init_config_from_settings(self, default_config):
+        try:
+            return self.load_config_from_settings()
+        except Exception:
+            if default_config is None:
+                return {}
+            return default_config
+
+    def save_config(self, config, file):
+        with open(file, 'w') as f:
+            json.dump(config, f)
+
+    def save_current_config(self, file):
+        config = self.read_current_config()
+        self.save_config(config, file)
+
+    def save_current_config_to_settings(self):
+        self.save_current_config(self.json_path)
+
+    def load_config(self, file):
+        with open(file, 'r') as f:
+            config = json.loads(f.read())
+        return config
+
+    def load_config_from_settings(self):
+        return self.load_config(self.json_path)
+
+    def read_current_config(self):
+        return self.config
+
+
 # sample_stage_z = EpicsMotorThatCannotReachTheTargetProperly('XF:08IDB-OP{Misc-Ax:2}Mtr', name='sample_stage_z')
 # sample_stage_z.tolerated_alarm =  AlarmSeverity.MAJOR
 #

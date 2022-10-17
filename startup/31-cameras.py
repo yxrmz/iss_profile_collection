@@ -125,56 +125,49 @@ class FeedbackBPM(BPM):
         return self.stats1.centroid.x.get()
 
 
-from xas.image_analysis import CameraCalibration, CameraCalibrationFF
-class SamplePositionerBPM(BPM):
+from xas.image_analysis import CameraCalibrationFF
+class SamplePositionerBPM(BPM, ObjectWithSettings):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.settings_file = f'{ROOT_PATH_SHARED}/settings/json/{self.name}_settings.json'
-        self.load_settings()
+        BPM.__init__(self, *args, **kwargs)
+        ObjectWithSettings.__init__(self, json_path=f'{ROOT_PATH_SHARED}/settings/json/{self.name}_settings.json', defaultdict_use=True)
+        self._read_beam_pos_from_settings()
+
         self.calibration_file = f'{ROOT_PATH_SHARED}/settings/json/{self.name}_calibration.json'
         self.load_calibration()
 
         self.grid_lines = None
 
-    def load_settings(self):
-        try:
-            with open(self.settings_file) as fp:
-                settings_dict = json.load(fp)
-                self.beam_pos_x = settings_dict['beam_pos_x']
-                self.beam_pos_y = settings_dict['beam_pos_y']
-        except Exception as e:
-            print(f'Settings for {self.name} could not be loaded. Reason: {e}')
-            self.beam_pos_x = None
-            self.beam_pos_y = None
+    def _read_beam_pos_from_settings(self):
+        self.beam_pos_x = self.config['beam_pos_x']
+        self.beam_pos_y = self.config['beam_pos_y']
+
+    def read_current_config(self):
+        return {'beam_pos_x': self.beam_pos_x,
+                'beam_pos_y': self.beam_pos_y}
 
     def set_beam_coordinates(self, beam_pos_x, beam_pos_y):
         self.beam_pos_x = beam_pos_x
         self.beam_pos_y = beam_pos_y
-        self.save_settings({'beam_pos_x': beam_pos_x,
-                            'beam_pos_y': beam_pos_y})
-
-    def save_settings(self, settings_dict):
-        with open(self.settings_file, 'w') as f:
-            json.dump(settings_dict, f)
+        self.save_current_config_to_settings()
 
     def load_calibration(self):
         try:
             with open(self.calibration_file) as fp:
                 calibration_data_dict = json.load(fp)
             self.calibration = CameraCalibrationFF(calibration_data_dict['pix_xy1'],
-                                                 calibration_data_dict['pix_xy2'],
-                                                 calibration_data_dict['stage_xy'],
-                                                 npoly=calibration_data_dict['npoly'])
+                                                   calibration_data_dict['pix_xy2'],
+                                                   calibration_data_dict['stage_xy'],
+                                                   npoly=calibration_data_dict['npoly'])
         except Exception as e:
             print(f'Calibration for {self.name} could not be loaded. Reason: {e}')
-            self.calibration=None
+            self.calibration = None
 
     def set_calibration(self, calibration_data_dict):
         self.calibration = CameraCalibrationFF(calibration_data_dict['pix_xy1'],
-                                             calibration_data_dict['pix_xy2'],
-                                             calibration_data_dict['stage_xy'],
-                                             npoly=calibration_data_dict['npoly'])
+                                               calibration_data_dict['pix_xy2'],
+                                               calibration_data_dict['stage_xy'],
+                                               npoly=calibration_data_dict['npoly'])
         self.save_calibration_to_settings(calibration_data_dict)
 
     def save_calibration_to_settings(self, calibration_data_dict):
@@ -185,11 +178,13 @@ class SamplePositionerBPM(BPM):
         with open(self.calibration_file, 'w') as f:
             json.dump(_dict, f )
 
-    # def update_calibration_npoly(self, npoly):
-    #     self.calibration.update_npoly(n_poly)
+    def update_calibration_npoly(self, npoly):
+        self.calibration.update_npoly(npoly)
+        self.save_calibration_to_settings(self.calibration_data_dict)
 
-    # def calibration_data_dict
-
+    @property
+    def calibration_data_dict(self):
+        return self.calibration.calibration_data_dict
 
     @property
     def calibration_info(self):
@@ -212,50 +207,6 @@ class SamplePositionerBPM(BPM):
         xy = np.array([[self.beam_pos_x, self.beam_pos_y]] * stage_x.size)
         return self.calibration.compute_new_pixel(xy, stage_xy)
 
-
-
-
-    #
-    # _x = np.linspace(0, camera.image_width, nlines)
-    # _y = np.ones(_x.size) * 0
-    # _xy = np.array([_x, _y]).T
-    # _stage_step = np.array([[0, -stage_step]] * nlines)
-    #
-    # # plt.figure(1, clear=True)
-    # for i in range(10):
-    # # while np.all(_xy[:, 1] < camera.image_height):
-    #     xy.append(_xy/ camera.image_width * 600)
-    #     # plt.plot(_xy[:, 0], _xy[:, 1], '.-')
-    #     _xy = camera.calibration.compute_new_pixel(_xy, _stage_step)
-    #
-    # grid_lines = [v for v in zip(*xy)]
-    #
-    # xy = []
-    # _x = np.ones(_x.size) * 0
-    # _y = np.linspace(0, camera.image_height, nlines)
-    # _xy = np.array([_x, _y]).T
-    # _stage_step = np.array([[-stage_step, 0]] * nlines)
-    # for i in range(20):
-    # # while np.all(_xy[:, 1] < camera.image_height):
-    #     xy.append(_xy/ camera.image_width * 600)
-    #     # plt.plot(_xy[:, 0], _xy[:, 1], '.-')
-    #     _xy = camera.calibration.compute_new_pixel(_xy, _stage_step)
-    #
-    # grid_lines.extend([v for v in zip(*xy)])
-    #
-    # return grid_lines
-    # print(xy)
-    # print(x, y)
-    # sdgds
-
-    # __xy = np.vstack(xy)
-
-
-# camera_sp1.grid_lines = compute_calibration_grid_lines(camera_sp1, stage_step=10)
-# #
-
-#
-# camera_sp1.grid_lines = []
 
 camera_sp1 = SamplePositionerBPM('XF:08IDB-BI{BPM:SP-1}', name='camera_sp1')
 # camera_sp1.calibration.update_npoly(1)
