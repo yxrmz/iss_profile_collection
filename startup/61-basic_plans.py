@@ -24,7 +24,7 @@ def set_bpm_es_exposure_time(value : float = 0.2):
 def set_hhm_feedback_plan(state=0, update_center=False):
     if update_center:
         hhm_feedback.update_center()
-        yield from sleep_plan(delay=0.3)
+        yield from sleep_plan(delay=0.5)
     yield from bps.mv(hhm.fb_status, state)
 
 def move_motor_plan(motor_attr='', based_on='description', position=None):
@@ -90,15 +90,13 @@ def move_mono_energy(energy : float=-1, with_feedback : bool=True, step : float=
 
 def quick_pitch_optimization(pitch_range=1, pitch_speed=0.2, n_tries=3):
     yield from set_hhm_feedback_plan(0)
-
+    yield from bps.sleep(0.2)
 
     for i in range(n_tries):
         current_pitch_value = hhm.pitch.position
         print_to_gui(f'Starting attempt #{i + 1}', tag='Pitch Scan')
-
         yield from bps.mvr(hhm.pitch, -pitch_range / 2)
         yield from bps.sleep(0.2)
-
         @return_NullStatus_decorator
         def _move_pitch_plan():
             yield from bps.mvr(hhm.pitch, pitch_range)
