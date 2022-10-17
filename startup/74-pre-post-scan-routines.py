@@ -342,7 +342,7 @@ def scan_beam_center(camera=camera_sp1, emin=6000, emax=12000, nsteps=10, roll_r
             # yield from bps.mv(hhm.energy, energy)
             yield from move_mono_energy(energy, step=500, beampos_tol=10)
             camera.adjust_camera_exposure_time()
-            yield from bps.trigger_and_read([hhm.energy, hhm.roll, camera_sp1.stats1.centroid])
+            yield from bps.trigger_and_read([hhm.energy, hhm.roll, camera.stats1.centroid, bpm_es.stats4.centroid])
 
     yield from bps.close_run()
 
@@ -351,17 +351,36 @@ def scan_beam_center(camera=camera_sp1, emin=6000, emax=12000, nsteps=10, roll_r
 
 
 def plot_beam_center_scan(db, uid):
-    t = db[-1].table()
+    t = db[uid].table()
 
     plt.figure(1, clear=True)
 
-    unique_rolls = np.unique(t.hhm_roll_user_setpoint.values)
-    for unique_roll in unique_rolls:
-        mask = t.hhm_roll_user_setpoint == unique_roll
-        plt.plot(t.hhm_energy[mask], t.camera_sp1_stats1_centroid_x[mask], label=str(unique_roll))
+    roll = np.unique(t.hhm_roll_user_setpoint.values)
+    energy = np.unique(t.hhm_energy_user_setpoint.values)
+    x_cam_sp1 = np.zeros((energy.size, roll.size))
+    x_bpm_es = np.zeros((energy.size, roll.size))
 
-    plt.legend()
+    for i, _roll in enumerate(roll):
+        mask = t.hhm_roll_user_setpoint == _roll
+        x_cam_sp1[:, i] = t.camera_sp1_stats1_centroid_x[mask].values
+        x_bpm_es[:, i] = t.bpm_es_stats4_centroid_x[mask].values
 
+
+    plt.subplot(221)
+    for i in range(roll.size):
+        plt.plot(energy, x_cam_sp1[:, i])
+        plt.text(energy[-1]+500, x_cam_sp1[-1, i], f'{roll[i]:0.3f}')
+
+    plt.subplot(222)
+    for i in range(roll.size):
+        plt.plot(energy, x_bpm_es[:, i])
+        plt.text(energy[-1] + 500, x_bpm_es[-1, i], f'{roll[i]:0.3f}')
+
+    plt.subplot(223)
+    plt.plot(roll, np.ptp(x_cam_sp1, axis=0))
+
+    plt.subplot(224)
+    plt.plot(roll, np.ptp(x_bpm_es, axis=0))
 
 # plot_beam_center_scan(db, -1)
 
