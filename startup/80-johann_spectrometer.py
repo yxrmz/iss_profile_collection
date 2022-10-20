@@ -156,6 +156,9 @@ class Nominal2ActualConverterWithLinearInterpolation:
 from xas.xray import bragg2e, e2bragg
 from xas.spectrometer import _compute_rotated_rowland_circle_geometry
 
+_BIG_DETECTOR_ARM_LENGTH = 550 # length of the big arm
+_SMALL_DETECTOR_ARM_LENGTH = 91 # distance between the second gon and the sensitive surface of the detector
+
 _johann_spectrometer_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
                                    'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
                                    'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
@@ -174,8 +177,8 @@ class RowlandCircle:
         self.bragg_min = 59
         self.bragg_max = 95
 
-        self.det_L1 = 550  # length of the big arm
-        self.det_L2 = 91  # distance between the second gon and the sensitive surface of the detector
+        self.det_L1 = _BIG_DETECTOR_ARM_LENGTH
+        self.det_L2 = _SMALL_DETECTOR_ARM_LENGTH
         self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
 
         self.init_from_settings()
