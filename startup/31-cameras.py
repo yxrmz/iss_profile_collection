@@ -54,7 +54,8 @@ class BPM(SingleTrigger, ProsilicaDetector):
                                     min_exp_time_thresh=0.00002):
         stats = getattr(self, f'stats{roi_index}')
         while True:
-            current_maximum = stats.max_value.get()
+            # current_maximum = stats.max_value.get()
+            current_maximum = np.percentile(self.image.array_data.get(), 95)
             current_exp_time = self.exp_time.get()
             delta = np.abs(current_maximum - target_max_counts)
             ratio = target_max_counts / current_maximum

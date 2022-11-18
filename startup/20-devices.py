@@ -13,9 +13,9 @@ class MFC(Device):
 
 
 gas_he = MFC('XF:08IDB-OP{IC}FLW:He', name='gas_he')
-gas_he.flow.tolerance = 0.01
+gas_he.flow.tolerance = 0.05
 gas_n2 = MFC('XF:08IDB-OP{IC}FLW:N2', name='gas_n2')
-gas_n2.flow.tolerance = 0.01
+gas_n2.flow.tolerance = 0.05
 
 
 

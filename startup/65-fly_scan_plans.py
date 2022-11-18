@@ -42,7 +42,7 @@ class FlyerHHM(Device):
         for det in self.dets:
             if hasattr(det, 'prepare_to_fly'):
                 det.prepare_to_fly(scan_duration)
-            print_to_gui(f'start staging {det.name} ...', add_timestamp=True, tag='Flyer', ntabs=1)
+            print_to_gui(f'{det.name} staging starting', add_timestamp=True, tag='Flyer')
             staged_list += det.stage()
         # print_to_gui(f'{ttime.ctime()} Staging done')
         print_to_gui(f'Fly scan staging complete', add_timestamp=True, tag='Flyer')
