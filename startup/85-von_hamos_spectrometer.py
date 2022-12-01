@@ -10,7 +10,9 @@ _default_von_hamos_config = {'crystal': 'Si',
                              'det_offsets': {'motor_det_th1':  69.0,
                                              'motor_det_th2': -69.0},
 
-                             'energy_calibration': {},}
+                             'energy_calibration_uid': '',}
+
+_short_von_hamos_config_keys = ['crystal', 'hkl', 'R', 'energy_calibration_uid']
 
 class VonHamosGeometry(ObjectWithSettings):
 
@@ -52,6 +54,22 @@ class VonHamosGeometry(ObjectWithSettings):
     def R(self, value):
         self.config['R'] = value
 
+    @property
+    def energy_calibration_uid(self):
+        return self.config['energy_calibration_uid']
+
+    @energy_calibration_uid.setter
+    def energy_calibration_uid(self, value):
+        self.config['energy_calibration_uid'] = value
+
+    @property
+    def short_config(self):
+        cur_config = self.config
+        output = {}
+        for k in _short_von_hamos_config_keys:
+            output[k] = cur_config[k]
+        return output
+
     def compute_geometry_for_bragg(self, bragg_deg):
         bragg = np.deg2rad(bragg_deg)
         cr_x = self.R
@@ -70,12 +88,13 @@ class VonHamosGeometry(ObjectWithSettings):
         bragg = self.e2bragg(energy)
         return self.compute_geometry_for_bragg(bragg)
 
-    def set_spectrometer_calibration(self):
-        pass
+    def set_spectrometer_calibration(self, uid):
+        self.energy_calibration_uid = uid
+        self.save_current_config_to_settings()
 
     def reset_spectrometer_calibration(self):
-        pass
-
+        self.energy_calibration_uid = ''
+        self.save_current_config_to_settings()
 
 von_hamos_geometry = VonHamosGeometry()
 

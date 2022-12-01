@@ -384,7 +384,8 @@ class ScanManager():
             plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
-                           'e0': scan_parameters['e0']}
+                           'e0': scan_parameters['e0'],
+                           'scan_for_calibration_purpose': aux_parameters['scan_for_calibration_purpose']}
 
         elif scan_key == 'constant_e_johann':
             plan_name = 'collect_n_exposures_johann_plan'

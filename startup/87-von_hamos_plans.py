@@ -1,33 +1,60 @@
 
+def get_vh_metadata(plan_kwargs, scan_for_calibration_purpose=False, create_rixs_filename=False):
+    metadata = plan_kwargs.pop('metadata')
+    vh_metadata = {'spectrometer': 'von_hamos',
+                   'spectrometer_config': von_hamos_geometry.short_config,
+                   'scan_for_calibration_purpose': scan_for_calibration_purpose}
+
+    if create_rixs_filename:
+        name = plan_kwargs['name']
+        rixs_file_name = create_interp_file_name(name, '.rixs')
+        vh_metadata['rixs_file_name'] = rixs_file_name
+
+    return {**vh_metadata, **metadata}
+
+def _update_vh_spectrometer_calibration():
+    calibration_uid = db[-1].uid
+    von_hamos_geometry.set_spectrometer_calibration(calibration_uid)
+
 def collect_von_hamos_xes_plan(**kwargs):
     ensure_pilatus_is_in_detector_list(kwargs['detectors'])
-    vh_metadata = {'spectrometer': 'von_hamos'}
-    metadata = kwargs.pop('metadata')
-    metadata = {**vh_metadata, **metadata}
+    metadata = get_vh_metadata(kwargs)
     yield from collect_n_exposures_plan(**kwargs, metadata=metadata)
 
 def step_scan_von_hamos_plan(**kwargs):
     ensure_pilatus_is_in_detector_list(kwargs['detectors'])
-    name = kwargs['name']
-    rixs_file_name = create_interp_file_name(name, '.rixs')
-    vh_metadata = {'spectrometer': 'von_hamos',
-                   'rixs_file_name' : rixs_file_name}
-    metadata = kwargs.pop('metadata')
-    metadata = {**vh_metadata, **metadata}
+
+    scan_for_calibration_purpose = kwargs.pop('scan_for_calibration_purpose')
+    metadata = get_vh_metadata(kwargs,
+                               scan_for_calibration_purpose=scan_for_calibration_purpose,
+                               create_rixs_filename=True)
     yield from step_scan_plan(**kwargs, metadata=metadata)
+
+    if scan_for_calibration_purpose:
+        _update_vh_spectrometer_calibration()
 
 
 def fly_scan_von_hamos_plan(**kwargs):
     ensure_pilatus_is_in_detector_list(kwargs['detectors'])
-    name = kwargs['name']
-    rixs_file_name = create_interp_file_name(name, '.rixs')
-    vh_metadata = {'spectrometer': 'von_hamos',
-                   'rixs_file_name': rixs_file_name}
-    metadata = kwargs.pop('metadata')
-    metadata = {**vh_metadata, **metadata}
+
+    scan_for_calibration_purpose = kwargs.pop('scan_for_calibration_purpose')
+    metadata = get_vh_metadata(kwargs,
+                               scan_for_calibration_purpose=scan_for_calibration_purpose,
+                               create_rixs_filename=True)
     yield from fly_scan_plan(**kwargs, metadata=metadata)
 
+    if scan_for_calibration_purpose:
+        _update_vh_spectrometer_calibration()
 
+# def test_plan():
+#     yield from bps.null()
+#     _update_vh_spectrometer_calibration()
+#
+# RE(test_plan())
+
+# print(f'BEFORE: {BLA=}')
+# RE(test_plan())
+# print(f'AFTER: {BLA=}')
 
 # def calibration_scan_w_pilatus(name: str, comment: str, n_cycles: int = 1, delay: float = 0,
 #                                energy_down: bool = True,
