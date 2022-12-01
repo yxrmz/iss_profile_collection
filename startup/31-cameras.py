@@ -51,11 +51,11 @@ class BPM(SingleTrigger, ProsilicaDetector):
     def adjust_camera_exposure_time(self, roi_index=1,
                                     target_max_counts=80, atol=10,
                                     max_exp_time_thresh=1,
-                                    min_exp_time_thresh=0.00002):
+                                    min_exp_time_thresh=0.00002, percentile=95):
         stats = getattr(self, f'stats{roi_index}')
         while True:
             # current_maximum = stats.max_value.get()
-            current_maximum = np.percentile(self.image.array_data.get(), 95)
+            current_maximum = np.percentile(self.image.array_data.get(), percentile)
             current_exp_time = self.exp_time.get()
             delta = np.abs(current_maximum - target_max_counts)
             ratio = target_max_counts / current_maximum

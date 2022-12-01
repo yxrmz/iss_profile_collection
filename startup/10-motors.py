@@ -218,8 +218,8 @@ gonio_meter = GonioMeter('XF:08IDB-OP{Gon:Th', name='gonio_meter')
 class SampleStage(Device):
     x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Sample-Ax:X}Mtr')
     y = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Sample-Ax:Y}Mtr')
-    # z = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
-    z = Cpt(EpicsMotorThatCannotReachTheTargetProperly, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
+    z = Cpt(EpicsMotor, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
+    # z = Cpt(EpicsMotorThatCannotReachTheTargetProperly, 'XF:08IDB-OP{Misc-Ax:2}Mtr')
     th = Cpt(EpicsMotor, 'XF:08IDB-OP{Gon:Th:1}Mtr')
 
     def mv(self, pos_dict, wait=True):
