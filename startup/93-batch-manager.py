@@ -249,12 +249,7 @@ class SampleManager(PersistentListInteractingWithGUI):
         for sample_index, point_index_list in index_dict.items():
             sample = self.samples[sample_index]
             point_index_set = set(point_index_list)
-            if sample.number_of_points == len(point_index_set):
-                sample_idx_to_delete.append(sample_index)
-                # self.delete_sample_at_index(sample_index, emit_signal=False)
-            else:
-                sample.remove_positions(list(point_index_set))
-
+            sample.remove_positions(list(point_index_set))
         if len(sample_idx_to_delete) > 0:
             self.delete_multiple_samples(sample_idx_to_delete, emit_signal=False)
 
