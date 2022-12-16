@@ -9,6 +9,8 @@ if 'ws1' in machine_name:
     local_hostname = 'ws01'
 elif 'ws2' in machine_name:
     local_hostname = 'ws02'
+elif 'ws3' in machine_name:
+    local_hostname = 'ws03'
 else:
     raise ValueError('This machine does not support local feedback')
 

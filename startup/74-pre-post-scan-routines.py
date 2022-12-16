@@ -128,8 +128,8 @@ def general_set_gains_plan(*args):
         print_to_gui('set amplifier gain for {}: {}, {}'.format(ic_amp.name, val, hs))
 
 
-def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, iff_gain: int = 5,
-              ir_gain: int = 5, hs: bool = False):
+def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, ir_gain: int = 5, iff_gain: int = 5,
+               hs: bool = False):
     i0_gain = int(i0_gain)
     it_gain = int(it_gain)
     iff_gain = int(iff_gain)
