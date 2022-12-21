@@ -14,13 +14,14 @@ def step_scan_action_factory(energy_steps, time_steps):
         # yield from set_exposure_time_plan(detectors, time_step)
         for det in detectors:
             if det.name == 'apb_ave':
-                # samples = 250*(np.ceil(time_step*1005/250)) #hn I forget what that does... let's look into the new PB OPI
-                samples = np.ceil(time_step * apb_ave_acquire_rate )
-                det.sample_len.put(samples, wait=True)
-                det.wf_len.put(samples, wait=True)
-                yield from bps.null()
-                # yield from bps.abs_set(det.sample_len, samples, wait=True)
-                # yield from bps.abs_set(det.wf_len, samples, wait=True)
+                # samples = 250 * (np.ceil(time_step*1005/250)) # sample length can only be changed in steps of 250
+                samples = 250 * (np.round(time_step * 1005 / 250))  # sample length can only be changed in steps of 250
+                # samples = np.ceil(time_step * apb_ave_acquire_rate ) # this is under investigation, but it seems that this can cause problems since the step is not enforced to be 250, hence the "yield from bps.abs_set(det.sample_len, samples, wait=True)" executed below can hang
+                # det.sample_len.put(samples, wait=True)
+                # det.wf_len.put(samples, wait=True)
+                # yield from bps.null()
+                yield from bps.abs_set(det.sample_len, samples, wait=True)
+                yield from bps.abs_set(det.wf_len, samples, wait=True)
             elif det.name == 'pil100k':
                 yield from bps.mv(det.cam.acquire_time, time_step)
             elif det.name == 'xs':
