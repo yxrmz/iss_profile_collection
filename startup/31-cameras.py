@@ -1,4 +1,5 @@
 class BPM(SingleTrigger, ProsilicaDetector):
+    polarity = 'pos'
     image = Cpt(ImagePlugin, 'image1:')
     stats1 = Cpt(StatsPluginV33, 'Stats1:')
     stats2 = Cpt(StatsPluginV33, 'Stats2:')
@@ -9,6 +10,7 @@ class BPM(SingleTrigger, ProsilicaDetector):
     roi2 = Cpt(ROIPlugin, 'ROI2:')
     roi3 = Cpt(ROIPlugin, 'ROI3:')
     roi4 = Cpt(ROIPlugin, 'ROI4:')
+
     counts = Cpt(EpicsSignal, 'Pos:Counts')
     exp_time = Cpt(EpicsSignal, 'cam1:AcquireTime_RBV', write_pv='cam1:AcquireTime')
     image_mode = Cpt(EpicsSignal,'cam1:ImageMode')
@@ -29,6 +31,10 @@ class BPM(SingleTrigger, ProsilicaDetector):
         self.image_height = self.image.height.get()
         self.image_width = self.image.width.get()
         self.frame_rate = self.cam.ps_frame_rate
+        self.stats1.total.polarity = 'pos'
+        self.stats2.total.polarity = 'pos'
+        self.stats3.total.polarity = 'pos'
+        self.stats4.total.polarity = 'pos'
         # self._inserting = None
         # self._retracting = None
 
@@ -97,6 +103,12 @@ class BPM(SingleTrigger, ProsilicaDetector):
     # def image_width(self):
     #     return self.image.width.get()
 
+
+
+bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
+bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
+bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
+bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
 
 class FeedbackBPM(BPM):
     ioc_reboot_pv = None
@@ -330,10 +342,7 @@ class FoilCAMERA(CAMERA):
         raise Exception(msg)
 
 
-bpm_fm = BPM('XF:08IDA-BI{BPM:FM}', name='bpm_fm')
-bpm_cm = BPM('XF:08IDA-BI{BPM:CM}', name='bpm_cm')
-bpm_bt1 = BPM('XF:08IDA-BI{BPM:1-BT}', name='bpm_bt1')
-bpm_bt2 = BPM('XF:08IDA-BI{BPM:2-BT}', name='bpm_bt2')
+
 
 bpm_es = FeedbackBPM('XF:08IDB-BI{BPM:ES}', name='bpm_es')
 bpm_es_ioc_reset = EpicsSignal('XF:08IDB-CT{IOC:BPM:ES}:SysReset', name='bpm_es_ioc_reset')

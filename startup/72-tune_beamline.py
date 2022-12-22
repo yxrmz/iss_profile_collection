@@ -112,54 +112,6 @@ tune_elements_ext =  [{'motor': hhm.pitch.name,
                    'fb_enable': True},
                 ]
 
-# def tune_beamline_plan(extended_tuning : bool = False, enable_fb_in_the_end : bool = True):
-#
-#     if extended_tuning:
-#         tune_elements_list = tune_elements_ext
-#     else:
-#         tune_elements_list = tune_elements
-#
-#     stdout = sys.stdout
-#     print_to_gui(f'[Beamline tuning] Starting...',stdout=stdout)
-#     yield from bps.mv(hhm.fb_status, 0)
-#     print('bla')
-#
-#     # yield from bps.mv(bpm_fm, 'insert')
-#
-#     for element in tune_elements_list:
-#         detector = detector_dictionary[element['detector']]['device']
-#
-#         if 'fb_enable' in element.keys():
-#             if element['fb_enable']:
-#                 hhm_feedback.update_center()
-#                 hhm.fb_status.put(1)
-#
-#
-#         if detector == bpm_fm:
-#             yield from bps.mv(bpm_fm, 'insert')
-#         else:
-#             yield from bps.mv(bpm_fm, 'retract')
-#
-#
-#         motor = motor_dictionary[element['motor']]['object']
-#         yield from tuning_scan(motor, detector,
-#                               element['range'],
-#                               element['step'],
-#                               retries=element['retries'],
-#                               stdout=stdout
-#                               )
-#         # turn camera into continuous mode
-#         if hasattr(detector, 'image_mode'):
-#             yield from bps.mv(getattr(detector, 'image_mode'), 2)
-#             yield from bps.mv(getattr(detector, 'acquire'), 1)
-#
-#     # yield from bps.mv(bpm_fm, 'retract')
-#     if enable_fb_in_the_end:
-#         hhm_feedback.update_center()
-#         # yield from update_hhm_fb_center(truncate_data=truncate_data)
-#         hhm.fb_status.put(1)
-#     print('[Beamline tuning] Beamline tuning complete')
-
 
 def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_end : bool = True, do_liveplot=False):
 
@@ -253,4 +205,7 @@ def optimize_beamline_plan_bundle(energy: int = -1, extended_tuning: bool = Fals
         plans.append({'plan_name': 'print_message_plan',
                       'plan_kwargs': {'msg': 'Beamline is already prepared for {energy} eV', 'tag': 'Beamline tuning'}})
     return plans
+
+
+
 

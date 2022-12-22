@@ -18,14 +18,14 @@ class AnalogPizzaBox(Device):
 
     polarity = 'neg'
 
-    ch1 = Cpt(EpicsSignal, 'SA:Ch1:mV-I')
-    ch2 = Cpt(EpicsSignal, 'SA:Ch2:mV-I')
-    ch3 = Cpt(EpicsSignal, 'SA:Ch3:mV-I')
-    ch4 = Cpt(EpicsSignal, 'SA:Ch4:mV-I')
-    ch5 = Cpt(EpicsSignal, 'SA:Ch5:mV-I')
-    ch6 = Cpt(EpicsSignal, 'SA:Ch6:mV-I')
-    ch7 = Cpt(EpicsSignal, 'SA:Ch7:mV-I')
-    ch8 = Cpt(EpicsSignal, 'SA:Ch8:mV-I')
+    ch1 = Cpt(EpicsSignal, 'SA:Ch1:mV-I', kind=Kind.hinted)
+    ch2 = Cpt(EpicsSignal, 'SA:Ch2:mV-I', kind=Kind.hinted)
+    ch3 = Cpt(EpicsSignal, 'SA:Ch3:mV-I', kind=Kind.hinted)
+    ch4 = Cpt(EpicsSignal, 'SA:Ch4:mV-I', kind=Kind.hinted)
+    ch5 = Cpt(EpicsSignal, 'SA:Ch5:mV-I', kind=Kind.hinted)
+    ch6 = Cpt(EpicsSignal, 'SA:Ch6:mV-I', kind=Kind.hinted)
+    ch7 = Cpt(EpicsSignal, 'SA:Ch7:mV-I', kind=Kind.hinted)
+    ch8 = Cpt(EpicsSignal, 'SA:Ch8:mV-I', kind=Kind.hinted)
 
 
     ch1_offset = Cpt(EpicsSignal, 'Ch1:User:Offset-SP', kind=Kind.config)

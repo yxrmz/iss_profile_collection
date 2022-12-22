@@ -92,6 +92,52 @@ def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tr
                 yield from bps.mv(motor, motor_pos)
                 break
 
+def ramp_motor_scan(motor=None, detectors=None, range=0,  sleep = 0.2, velocity = None):
+    if velocity is not None:
+        old_motor_velocity = motor.velocity.get()
+        yield from bps.mv(motor.velocity, velocity)
+    yield from bps.mvr(motor, -range / 2)
+    yield from bps.sleep(sleep)
+    @return_NullStatus_decorator
+    def _move_plan():
+        yield from bps.mvr(motor, range)
+        yield from bps.sleep(sleep)
+    ramp_plan = ramp_plan_with_multiple_monitors(_move_plan(), [motor] + detectors, bps.null)
+    yield from ramp_plan
+    if velocity is not None:
+        yield from bps.mv(motor.velocity, old_motor_velocity)
+
+
+
+def quick_tuning_scan(motor=None, detector=None, scan_range=None, velocity=None, n_tries = 3, liveplot_kwargs={}):
+    # sys.stdout = kwargs.pop('stdout', sys.stdout)
+    print_to_gui(f'Quick scanning motor {motor}', tag='Tune Beamline')
+    for jj in range(n_tries):
+        motor_init_position = motor.position
+        min_limit = motor_init_position - scan_range / 2
+        max_limit = motor_init_position + scan_range / 2
+        min_threshold = min_limit + scan_range / 10
+        max_threshold = max_limit - scan_range / 10
+        plan = ramp_motor_scan(motor, [detector], scan_range, velocity=velocity )
+        (yield from plan)
+        # hdr = db[-1]
+        motor_pos = find_optimum_motor_pos(db, -1, motor=motor.name, channel=detector.name, polarity=detector.polarity)
+        if motor_pos < min_threshold:
+            yield from bps.mv(motor,min_limit)
+            print_to_gui('Optimal position is below the minimum in range')
+            if jj+1 < n_tries:
+                print_to_gui(f' Starting {jj+2} try')
+        elif max_threshold < motor_pos:
+            print_to_gui('Optimal position is above the maximum in range')
+            if jj+1 < n_tries:
+                print_to_gui(f' Starting {jj+2} try')
+            yield from bps.mv(motor, max_limit)
+        else:
+            print_to_gui('The motor position was optimized')
+            yield from bps.mv(motor, motor_pos)
+            break
+
+
 
 def prepare_detectors_for_exposure_plan(detectors, n_exposures=1):
     for det in detectors:

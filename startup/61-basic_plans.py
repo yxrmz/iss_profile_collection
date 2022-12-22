@@ -87,6 +87,23 @@ def move_mono_energy(energy : float=-1, with_feedback : bool=True, step : float=
     yield from move_mono_energy_with_fb(energy=energy, step=step, delay=delay, beampos_tol=beampos_tol)
 
 
+# 12-22-2022 Two-duck coding session
+
+# def ramp_motor_scan(motor, range, detectors: list, sleep = 0.2, velocity = None):
+#     if velocity is not None:
+#         old_motor_velocity = motor.velocity.get()
+#         yield from bps.mv(motor.velocity, velocity)
+#     yield from bps.mvr(motor, -range / 2)
+#     yield from bps.sleep(sleep)
+#     @return_NullStatus_decorator
+#     def _move_pitch_plan():
+#         yield from bps.mvr(motor, range)
+#         yield from bps.sleep(sleep)
+#     ramp_plan = ramp_plan_with_multiple_monitors(_move_pitch_plan(), [motor] + detectors, bps.null)
+#     yield from ramp_plan
+#     if velocity is not None:
+#         yield from bps.mv(motor.velocity, old_motor_velocity)
+
 
 def quick_pitch_optimization(pitch_range=1, pitch_speed=0.2, n_tries=3):
     yield from set_hhm_feedback_plan(0)
@@ -186,9 +203,14 @@ def process_monitor_scan(db, uid):
 
     return pd.DataFrame(df)
 
-def find_optimum_pitch_pos(db, uid, motor='hhm_pitch', channel='apb_ch1'):
+def find_optimum_motor_pos(db, uid, motor='hhm_pitch', channel='apb_ch1', polarity='neg'):
     df = process_monitor_scan(db, uid)
-    idx = df[channel].idxmin()
+    if polarity == 'neg':
+        idx = df[channel].idxmin()
+    elif polarity == 'pos':
+        idx = df[channel].idxmax()
+    else:
+        raise ValueError
     return df[motor][idx]
 
 

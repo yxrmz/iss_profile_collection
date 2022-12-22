@@ -11,6 +11,16 @@ class Electrometer(Device):
     ch7 = Cpt(EpicsSignal, 'SA:G:mV-I')
     ch8 = Cpt(EpicsSignal, 'SA:H:mV-I')
 
+    ch1_range = Cpt(EpicsSignal, 'ADC:Range:A-SP')
+    ch2_range = Cpt(EpicsSignal, 'ADC:Range:D-SP')
+    ch3_range = Cpt(EpicsSignal, 'ADC:Range:C-SP')
+    ch4_range = Cpt(EpicsSignal, 'ADC:Range:D-SP')
+    ch5_range = Cpt(EpicsSignal, 'ADC:Range:E-SP')
+    ch6_range = Cpt(EpicsSignal, 'ADC:Range:F-SP')
+    ch7_range = Cpt(EpicsSignal, 'ADC:Range:G-SP')
+    ch8_range = Cpt(EpicsSignal, 'ADC:Range:H-SP')
+
+
     # ch1_offset = Cpt(EpicsSignal, 'Ch1:User:Offset-SP', kind=Kind.config)
     # ch2_offset = Cpt(EpicsSignal, 'Ch2:User:Offset-SP', kind=Kind.config)
     # ch3_offset = Cpt(EpicsSignal, 'Ch3:User:Offset-SP', kind=Kind.config)
@@ -36,6 +46,8 @@ class Electrometer(Device):
 
     filename_bin = Cpt(EpicsSignal, 'FA:Stream:Bin:File-SP')
     filebin_status = Cpt(EpicsSignal, 'FA:Stream:Bin:File:Status-I')
+
+    trig_source = Cpt(EpicsSignal, 'Machine:Clk-SP')
 
 em = Electrometer('xf08id-em1:', name = 'em')
 
@@ -128,7 +140,7 @@ class ElectrometerStream(ElectrometerAverage):
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
 
-        status = self.trig_source.set(1)
+        status = self.trig_source.set(0)
         status.wait()
         return super().stage()
 
@@ -222,11 +234,14 @@ class ElectrometerStream(ElectrometerAverage):
         self.num_points = int(round(acq_num_points, ndigits=-3))
 
 
+
+
+
     # def set_stream_points(self):
     #     trajectory_manager.current_trajectory_duration
 
 
-# apb_stream = AnalogPizzaBoxStream(prefix="XF:08IDB-CT{PBA:1}:", name="apb_stream")
+em_stream = ElectrometerStream(prefix="xf08id-em1:", name="apb_stream")
 
 
 
