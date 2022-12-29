@@ -315,7 +315,7 @@ def set_reference_foil(element:str = 'Mn'):
         #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
 
 ###########################
-# Akhil Tayal added new code
+# Akhil Tayal added new code for placing correct foil
 
 elements_dictonary = {'Sc': {'K': '4492', 'L-I': '498.0', 'L-2': '403.6', 'L-3': '398.7'},
                       'Ti': {'K': '4966', 'L-I': '560.9', 'L-2': '460.2', 'L-3': '453.8'},
@@ -387,7 +387,8 @@ elements_dictonary = {'Sc': {'K': '4492', 'L-I': '498.0', 'L-2': '403.6', 'L-3':
                       'Ra': {'K': '103922', 'L-I': '19237', 'L-2': '18484', 'L-3': '15444'},
                       'Ac': {'K': '106755', 'L-I': '19840', 'L-2': '19083', 'L-3': '15871'},
                       'Th': {'K': '109651', 'L-I': '20472', 'L-2': '19693', 'L-3': '16300'},
-                      'Pa': {'K': '112601', 'L-I': '21105', 'L-2': '20314', 'L-3': '16733'}}
+                      'Pa': {'K': '112601', 'L-I': '21105', 'L-2': '20314', 'L-3': '16733'},
+                      'U': {'K': '115606', 'L-I':  '21757', 'L-2': '20948', 'L-3': '17166'},}
 
 ISS_foils= {'Sc': {'K': '4492', 'L-I': '498.0', 'L-2': '403.6', 'L-3': '398.7'},
             'Ti': {'K': '4966', 'L-I': '560.9', 'L-2': '460.2', 'L-3': '453.8'},
@@ -419,31 +420,71 @@ ISS_foils= {'Sc': {'K': '4492', 'L-I': '498.0', 'L-2': '403.6', 'L-3': '398.7'},
             'Pb': {'K': '88005', 'L-I': '15861', 'L-2': '15200', 'L-3': '13035'},
             }
 
+
+
+# Code to sort the all the edges in ascending order and place in a dictonary
+# formate element_edge_itsvalue_sorted["Ir-L-3"] = 11215
 element_edge_itsvalue = {}
 for element in elements_dictonary.keys():
     for edge in elements_dictonary[element].keys():
         element_edge_itsvalue[element+"-"+edge] = float(elements_dictonary[element][edge])
 element_edge_itsvalue_sorted = dict(sorted(element_edge_itsvalue.items(), key=lambda item: item[1]))
 
+
+# Code to sort the all the edges that can be measured at ISS using available reference foils in ascending order and place in a dictonary
+# formate element_edge_itsvalue_sorted["Ir-L-3"] = 11215
 ISS_element_edge_itsvalue = {}
 for element in ISS_foils.keys():
     for edge in ISS_foils[element].keys():
         ISS_element_edge_itsvalue[element+"-"+edge] = float(elements_dictonary[element][edge])
 ISS_element_edge_itsvalue_sorted = dict(sorted(ISS_element_edge_itsvalue.items(), key=lambda item: item[1]))
 
+# the dictonary of all the edges that can be measured at ISS using available reference foils
 ISS_foils_edges = dict([(key, value) for key,value in ISS_element_edge_itsvalue_sorted.items() if value>4500 and value<30000])
+
+import pandas as pd
 
 l3_edge = ["L3", "l3", "LIII", "L-III", "l-III", "L-3", "l-3"]
 l2_edge = ["L2", "l2", "LII", "L-II", "l-II",  "L-2", "l-2"]
 l1_edge = ["L1", "l1", "LI", "L-I", "l-I",  "L-1", "l-1"]
 k_edge = ['k', "K"]
 
+
+# creating pandas data frame for elements that can be measured at ISS between 4500eV to 32000eV
+elements = []
+edges = []
+edge_value = []
+for element in elements_dictonary:
+    for edge in elements_dictonary[element]:
+        edges.append(edge)
+        elements.append(element)
+        edge_value.append(float(elements_dictonary[element][edge]))
+
+dat = pd.DataFrame([elements,edges,edge_value]).T.sort_values(2)
+elements_sort = dat.loc[(dat[2]>4500) & (dat[2]<32000)]
+
+
+# creating pandas data frame for elements that can be measured using available reference foils at ISS between 4500eV to 32000eV
+elements = []
+edges = []
+edge_value = []
+for element in ISS_foils:
+    for edge in ISS_foils[element]:
+        edges.append(edge)
+        elements.append(element)
+        edge_value.append(float(ISS_foils[element][edge]))
+
+dat = pd.DataFrame([elements,edges,edge_value]).T.sort_values(2)
+iss_sort = dat.loc[(dat[2]>4500) & (dat[2]<32000)]
+
+# possible combination for writing various edges
+l3_edge = ["L3", "l3", "LIII", "L-III", "l-III", "L-3", "l-3"]
+l2_edge = ["L2", "l2", "LII", "L-II", "l-II",  "L-2", "l-2"]
+l1_edge = ["L1", "l1", "LI", "L-I", "l-I",  "L-1", "l-1"]
+k_edge = ['k', "K"]
+
+#Function to find the correct reference foil corresponding to desired edge
 def find_correct_foil(element='Cu', edge="K"):
-    """
-    The function place the correct foil according to the element and Edge user wants to measure
-    ----------
-    Example: ind_correct_foil(element = "Os", edge="L-3")
-    """
 
     if edge in l3_edge:
         edge = "L-3"
@@ -454,17 +495,46 @@ def find_correct_foil(element='Cu', edge="K"):
     elif edge in k_edge:
         edge = "K"
 
-    foils_options = dict([(key, value) for key,value in ISS_foils_edges.items() if element_edge_itsvalue_sorted[element+"-"+edge]>value-200 and element_edge_itsvalue_sorted[element+"-"+edge]<value+1000])
-    foils_options = [(key, value) for key, value in foils_options.items()]
 
-    if len(foils_options)==1:
-        print(foils_options[0][0].split('-')[0])
-    elif len(foils_options)==0:
-        print("No foil available going to empty foil")
-    else:
-        print(foils_options[1][0].split('-')[0])
+    # Finding foils options for corresponding element and edge
+    foils_options = iss_sort.loc[(iss_sort[2] > float(elements_dictonary[element][edge]) - 200)
+                                 & (iss_sort[2] < float(elements_dictonary[element][edge]) + 1000)]
+    print(foils_options)
 
-    element = foils_options[1][0].split('-')[0]
+
+    # if no element is found going to empty holder
+    if len(foils_options[0]) == 0:
+
+        print("going to empty holder")
+        element = None
+
+    # Among the foils_options first select the foil with corresponding element and edge
+    indx = foils_options.index[(foils_options[0].str.contains(element)) & (foils_options[1].str.contains(edge))]
+
+    # second if above condition doesnot match than search for foil whose K edge is near to the element of interest
+    indx_k = foils_options.index[(foils_options[1].str.contains('K'))]
+
+    # third if above condition doesnot match than search for foil whose L3 edge is near to the element of interest
+    indx_l3 = foils_options.index[(foils_options[1].str.contains('L-3'))]
+
+    # fourth if above condition doesnot match than search for foil whose L2 edge is near to the element of interest
+    indx_l2 = foils_options.index[(foils_options[1].str.contains('L-2'))]
+
+    # fifth if above condition doesnot match than search for foil whose L1 edge is near to the element of interest
+    indx_l1 = foils_options.index[(foils_options[1].str.contains('L-I'))]
+
+    if len(indx) == 1:
+        element = str(foils_options[0][indx[0]])
+    elif len(indx_k) >= 1:
+        element = str(foils_options[0][indx_k[0]])
+    elif len(indx_l3) >= 1:
+        element = str(foils_options[0][indx_l3[0]])
+    elif len(indx_l2) >= 1:
+        element = str(foils_options[0][indx_l2[0]])
+    elif len(indx_l1) >= 1:
+        element = foils_options[0][indx_l1[0]]
+
+    print("Putting ", element, "foil in the reference channel")
 
     with open(f'{ROOT_PATH_SHARED}/settings/json/foil_wheel.json') as fp:
         reference_foils = json.load(fp)
@@ -472,19 +542,19 @@ def find_correct_foil(element='Cu', edge="K"):
 
 
     if element is None:
+        print('Not Found')
         yield from mv(foil_wheel.wheel1, 0)
         yield from mv(foil_wheel.wheel2, 0)
     else:
         if element in elems:
+            print('Found')
             indx = elems.index(element)
             yield from mv(foil_wheel.wheel2, reference_foils[indx]['fw2'])
             yield from mv(foil_wheel.wheel1, reference_foils[indx]['fw1'])
         else:
+            pass
             yield from mv(foil_wheel.wheel1, 0)
             yield from mv(foil_wheel.wheel2, 0)
-
-
-# find_correct_foil2(element='Eu', edge='L1')
 
 
 ###########################
