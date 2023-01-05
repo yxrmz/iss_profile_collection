@@ -21,10 +21,10 @@ class Accelerator(Device):
             string = 'Beam has dumped'
         elif value == 4:
             string = 'Maintenance'
-        elif value == 5:
-            string = 'Shutdown'
         elif value == 6:
-            string = 'Unscheduled ops'
+            string = 'Shutdown'
+        # elif value == 6:
+        #     string = 'Unscheduled ops'
         elif value == 8:
             string = 'Decay mode'
         else:
