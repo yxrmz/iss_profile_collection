@@ -329,8 +329,8 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         if self.auto_foil_set:
             plan_info = self.plan_list[idx]['plan_info']
             plan_kwargs = plan_info['plan_kwargs']
-            if ('element' in plan_kwargs) and (plan_kwargs['element'] != ''):
-                self.RE(set_reference_foil(plan_kwargs['element']))
+            if ('element' in plan_kwargs) and (plan_kwargs['element'] != '') and ('edge' in plan_kwargs) and (plan_kwargs['edge'] != '') :
+                self.RE(set_reference_foil(plan_kwargs['element'],plan_kwargs['edge'] ))
 
 plan_processor = PlanProcessor()
 

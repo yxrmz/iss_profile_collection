@@ -9,33 +9,9 @@ from xas.ft_analysis import data_ft
 
 from xas.energy_calibration import find_correct_foil
 
-# def sleep(delay : int=1, **kwargs):
-#     sys.stdout = kwargs.pop('stdout', sys.stdout)
-#     print_to_gui(f'Pausing for {delay} seconds....',sys.stdout)
-#     yield from (bps.sleep(int(delay)))
-#     print_to_gui(f'Resuming', sys.stdout)
 
 class CannotActuateShutter(Exception):
     pass
-
-
-# def get_offsets(time:int = 2, *args, **kwargs):
-#     sys.stdout = kwargs.pop('stdout', sys.stdout)
-#
-#     try:
-#         yield from bps.mv(shutter_ph_2b, 'Close')
-#     except FailedStatus:
-#         raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
-#     detectors = [apb_ave]
-#     uid = (yield from get_offsets_plan(detectors, time))
-#
-#     try:
-#         yield from bps.mv(shutter_ph_2b, 'Open')
-#     except FailedStatus:
-#         print('Error: Photon shutter failed to open')
-#
-#     return uid
-
 
 def actuate_photon_shutter_plan(state):
     try:
@@ -290,7 +266,7 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
 
 
 
-def set_reference_foil(element:str = 'Mn'):
+def set_reference_foil(element:str = 'Mn', edge:str = 'K' ):
     # Adding reference foil element list
     with open(f'{ROOT_PATH_SHARED}/settings/json/foil_wheel.json') as fp:
         reference_foils = json.load(fp)
@@ -306,16 +282,20 @@ def set_reference_foil(element:str = 'Mn'):
             yield from mv(foil_wheel.wheel2, reference_foils[indx]['fw2'])
             yield from mv(foil_wheel.wheel1, reference_foils[indx]['fw1'])
         else:
-            yield from mv(foil_wheel.wheel1, 0)
-            yield from mv(foil_wheel.wheel2, 0)
+            new_element, edge, energy = find_correct_foil(element=element, edge=edge)
+            if new_element in elems:
+                indx = elems.index(new_element)
+                yield from mv(foil_wheel.wheel2, reference_foils[indx]['fw2'])
+                yield from mv(foil_wheel.wheel1, reference_foils[indx]['fw1'])
+            else:
+                yield from mv(foil_wheel.wheel1, 0)
+                yield from mv(foil_wheel.wheel2, 0)
 
         #yield from mv(foil_wheel.wheel2, reference[element]['foilwheel2'])
         #yield from mv(foil_wheel.wheel1, reference[element]['foilwheel1'])
 
 
-def set_correct_reference_foil(element, edge):
-    element = find_correct_foil(element, edge)
-    yield from set_reference_foil(element)
+
 
 
 def set_attenuator(thickness:int  = 0, **kwargs):
