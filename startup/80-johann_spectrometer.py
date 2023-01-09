@@ -10,92 +10,92 @@ from ophyd.pseudopos import (pseudo_position_argument,
                              real_position_argument)
 
 
-def move_crystal_plan(x, y):
-    yield from bps.mv(auxxy.x, x)
-    yield from bps.mv(auxxy.y, y)
+# def move_crystal_plan(x, y):
+#     yield from bps.mv(auxxy.x, x)
+#     yield from bps.mv(auxxy.y, y)
 
 
 
-class JohannSpectrometerMotor(PseudoPositioner):
-    energy = Cpt(PseudoSingle, name='emission_energy')
-    motor_crystal_x = auxxy.x
-    motor_crystal_y = auxxy.y
-    motor_detector_y = huber_stage.z
-    _real = ['motor_crystal_x',
-             'motor_crystal_y',
-             'motor_detector_y']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.energy0 = None
-        self.cr_x0 = None
-        self.cr_x0=None
-        self.cr_y0=None
-        self.det_y0=None
-        self.spectrometer_root_path = f"{ROOT_PATH}/{USER_PATH}"
-        self._initialized = False
-
-
-    def define_motor_coordinates(self, energy0, R, kind, hkl,
-                                  cr_x0=None, cr_y0=None, det_y0=None,
-                 energy_limits=None):
-
-        self.energy0 = energy0
-        if cr_x0 is None:
-            self.cr_x0 = self.motor_crystal_x.user_readback.get()
-        else:
-            self.cr_x0 = cr_x0
-        if cr_y0 is None:
-            self.cr_y0 = self.motor_crystal_y.user_readback.get()
-        else:
-            self.cr_y0 = cr_y0
-        if det_y0 is None:
-            self.det_y0 = self.motor_detector_y.user_readback.get()
-        else:
-            self.det_y0 = det_y0
-        self.crystal = Crystal(R, 50, hkl, kind)
-        self.crystal.place_E(energy0)
-        self.cr_x0_nom = copy.copy(self.crystal.x)
-        self.cry_0_nom = copy.copy(self.crystal.y)
-        self.det_y0_nom = copy.copy(self.crystal.d_y)
-
-        if energy_limits is not None:
-            condition = ((type(energy_limits) == tuple) and (len(energy_limits)==2))
-            assert condition, 'Invalid limits for emission energy motor'
-            self.energy._limits = energy_limits
-        self.energy_converter = None
-        self._initialized = True
-
-    def append_energy_converter(self, ec):
-        self.energy_converter = ec
-
-    @pseudo_position_argument
-    def forward(self, energy_input_object):
-        energy = energy_input_object.energy
-        if self.energy_converter is not None:
-            energy = self.energy_converter.act2nom(energy)
-        self.crystal.place_E(energy)
-        dcr_x = self.crystal.x - self.cr_x0_nom
-        dcr_y = self.crystal.y - self.cry_0_nom
-        ddet_y = self.crystal.d_y - self.det_y0_nom
-
-        position_detector_y = self.det_y0 - ddet_y
-        position_crystal_y = self.cr_y0 + dcr_y
-        position_crystal_x = self.cr_x0 - dcr_x
-
-        return self.RealPosition(motor_detector_y = position_detector_y,
-                                 motor_crystal_y = position_crystal_y,
-                                 motor_crystal_x = position_crystal_x)
-
-    @real_position_argument
-    def inverse(self, real_pos):
-        x = self.cr_x0 + self.cr_x0_nom  - real_pos.motor_crystal_x
-        y = self.cry_0_nom - self.cr_y0 + real_pos.motor_crystal_y
-        d_y = self.det_y0 + self.det_y0_nom - real_pos.motor_detector_y
-        energy = self.crystal.compute_energy_from_positions(x, y, d_y)
-        if self.energy_converter is not None:
-            energy = self.energy_converter.nom2act(energy)
-        return [energy]
+# class JohannSpectrometerMotor(PseudoPositioner):
+#     energy = Cpt(PseudoSingle, name='emission_energy')
+#     motor_crystal_x = auxxy.x
+#     motor_crystal_y = auxxy.y
+#     motor_detector_y = huber_stage.z
+#     _real = ['motor_crystal_x',
+#              'motor_crystal_y',
+#              'motor_detector_y']
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.energy0 = None
+#         self.cr_x0 = None
+#         self.cr_x0=None
+#         self.cr_y0=None
+#         self.det_y0=None
+#         self.spectrometer_root_path = f"{ROOT_PATH}/{USER_PATH}"
+#         self._initialized = False
+#
+#
+#     def define_motor_coordinates(self, energy0, R, kind, hkl,
+#                                   cr_x0=None, cr_y0=None, det_y0=None,
+#                  energy_limits=None):
+#
+#         self.energy0 = energy0
+#         if cr_x0 is None:
+#             self.cr_x0 = self.motor_crystal_x.user_readback.get()
+#         else:
+#             self.cr_x0 = cr_x0
+#         if cr_y0 is None:
+#             self.cr_y0 = self.motor_crystal_y.user_readback.get()
+#         else:
+#             self.cr_y0 = cr_y0
+#         if det_y0 is None:
+#             self.det_y0 = self.motor_detector_y.user_readback.get()
+#         else:
+#             self.det_y0 = det_y0
+#         self.crystal = Crystal(R, 50, hkl, kind)
+#         self.crystal.place_E(energy0)
+#         self.cr_x0_nom = copy.copy(self.crystal.x)
+#         self.cry_0_nom = copy.copy(self.crystal.y)
+#         self.det_y0_nom = copy.copy(self.crystal.d_y)
+#
+#         if energy_limits is not None:
+#             condition = ((type(energy_limits) == tuple) and (len(energy_limits)==2))
+#             assert condition, 'Invalid limits for emission energy motor'
+#             self.energy._limits = energy_limits
+#         self.energy_converter = None
+#         self._initialized = True
+#
+#     def append_energy_converter(self, ec):
+#         self.energy_converter = ec
+#
+#     @pseudo_position_argument
+#     def forward(self, energy_input_object):
+#         energy = energy_input_object.energy
+#         if self.energy_converter is not None:
+#             energy = self.energy_converter.act2nom(energy)
+#         self.crystal.place_E(energy)
+#         dcr_x = self.crystal.x - self.cr_x0_nom
+#         dcr_y = self.crystal.y - self.cry_0_nom
+#         ddet_y = self.crystal.d_y - self.det_y0_nom
+#
+#         position_detector_y = self.det_y0 - ddet_y
+#         position_crystal_y = self.cr_y0 + dcr_y
+#         position_crystal_x = self.cr_x0 - dcr_x
+#
+#         return self.RealPosition(motor_detector_y = position_detector_y,
+#                                  motor_crystal_y = position_crystal_y,
+#                                  motor_crystal_x = position_crystal_x)
+#
+#     @real_position_argument
+#     def inverse(self, real_pos):
+#         x = self.cr_x0 + self.cr_x0_nom  - real_pos.motor_crystal_x
+#         y = self.cry_0_nom - self.cr_y0 + real_pos.motor_crystal_y
+#         d_y = self.det_y0 + self.det_y0_nom - real_pos.motor_detector_y
+#         energy = self.crystal.compute_energy_from_positions(x, y, d_y)
+#         if self.energy_converter is not None:
+#             energy = self.energy_converter.nom2act(energy)
+#         return [energy]
 
 
 # johann_spectrometer_motor = JohannSpectrometerMotor(name='motor_emission')
@@ -154,7 +154,7 @@ class Nominal2ActualConverterWithLinearInterpolation:
 
 
 from xas.xray import bragg2e, e2bragg
-from xas.spectrometer import _compute_rotated_rowland_circle_geometry
+from xas.spectrometer import compute_rowland_circle_geometry, _compute_rotated_rowland_circle_geometry
 
 _BIG_DETECTOR_ARM_LENGTH = 550 # length of the big arm
 _SMALL_DETECTOR_ARM_LENGTH = 91 # distance between the second gon and the sensitive surface of the detector
@@ -269,19 +269,19 @@ class RowlandCircle:
     def set_main_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_assy_x'] = pos_dict['motor_cr_assy_x'] - self.R
         self.config['parking']['motor_cr_assy_y'] = pos_dict['motor_cr_assy_y']
-        self.config['parking']['motor_cr_main_roll'] = pos_dict['motor_cr_main_roll'] - 3000
+        self.config['parking']['motor_cr_main_roll'] = pos_dict['motor_cr_main_roll'] - 2500
         self.config['parking']['motor_cr_main_yaw'] = pos_dict['motor_cr_main_yaw']
 
     def set_aux2_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_aux2_x'] = pos_dict['motor_cr_aux2_x']
         self.config['parking']['motor_cr_aux2_y'] = pos_dict['motor_cr_aux2_y']
-        self.config['parking']['motor_cr_aux2_roll'] = pos_dict['motor_cr_aux2_roll'] - 3000
+        self.config['parking']['motor_cr_aux2_roll'] = pos_dict['motor_cr_aux2_roll'] - 2500
         self.config['parking']['motor_cr_aux2_yaw'] = pos_dict['motor_cr_aux2_yaw']
 
     def set_aux3_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_aux3_x'] = pos_dict['motor_cr_aux3_x']
         self.config['parking']['motor_cr_aux3_y'] = pos_dict['motor_cr_aux3_y']
-        self.config['parking']['motor_cr_aux3_roll'] = pos_dict['motor_cr_aux3_roll'] - 3000
+        self.config['parking']['motor_cr_aux3_roll'] = pos_dict['motor_cr_aux3_roll'] - 2500
         self.config['parking']['motor_cr_aux3_yaw'] = pos_dict['motor_cr_aux3_yaw']
 
     @property
@@ -780,20 +780,33 @@ class JohannSpectrometerX(JohannPseudoPositioner):
 
     aligned = True
 
+    def _compute_pos_nom(self):
+        # instead of real keys we use hard-coded keys for the motors !
+        bragg_det_arm = johann_det_arm.bragg.position
+        pos_nom_det_arm = self.rowland_circle.compute_motor_position(['motor_det_x'], bragg_det_arm, nom2act=True)
+
+        bragg_cr_main = johann_main_crystal.bragg.position
+        pos_nom_cr_main = self.rowland_circle.compute_motor_position(['motor_cr_assy_x'], bragg_cr_main, nom2act=True)
+
+        return {**pos_nom_det_arm, **pos_nom_cr_main}
+
+
     def _forward(self, pseudo_dict):
         x = pseudo_dict['x']
-        bragg = johann_spectrometer.bragg.position
-        pos_nom = self.rowland_circle.compute_motor_position(self.real_keys, bragg, nom2act=False)
+        # bragg = johann_spectrometer.bragg.position
+        # pos_nom = self.rowland_circle.compute_motor_position(self.real_keys, bragg, nom2act=False)
+        pos_nom = self._compute_pos_nom()
         pos_act = {}
         for key in pos_nom.keys():
             pos_act[key] = pos_nom[key] + x
         return pos_act
 
     def _inverse(self, pos_act):
-        bragg = johann_spectrometer.bragg.position
-        pos_nom = self.rowland_circle.compute_motor_position(self.real_keys, bragg, nom2act=False)
+        # bragg = johann_spectrometer.bragg.position
+        # pos_nom = self.rowland_circle.compute_motor_position(self.real_keys, bragg, nom2act=False)
+        pos_nom = self._compute_pos_nom()
         x = [(pos_act[k] - pos_nom[k]) for k in self.real_keys]
-        self.aligned = np.all(np.isclose(x, x[0], atol=1e-3))
+        self.aligned = np.all(np.isclose(x, x[0], atol=5e-3))
         return {'x' : np.mean(x)}
 
 johann_spectrometer_x = JohannSpectrometerX(name='johann_spectrometer_x')
