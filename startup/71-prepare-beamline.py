@@ -178,19 +178,23 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_hhm_y=T
         print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter')
         print('moving')
         # close shutter before moving the filter
-        try:
-            yield from bps.mv(shutter_fe_2b, 'Close')
-        except FailedStatus:
-            raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
+        reopen_shutter = False
+        if shutter_fe_2b.status.get() != 'Not Open':
+            reopen_shutter = True
+            try:
+                yield from bps.mv(shutter_fe_2b, 'Close')
+            except FailedStatus:
+                raise CannotActuateShutter(f'Error: Photon shutter failed to close.')
 
         yield from bps.mv(filter_box_setter, energy_range['Filterbox'])
         print_to_gui('[Prepare Beamline] Filter set')
         print_to_gui('[Prepare Beamline] Closing frontend shutter before selecting filter')
 
-        try:
-            yield from bps.mv(shutter_fe_2b, 'Open')
-        except FailedStatus:
-            print_to_gui(f'Error: Photon shutter failed to open.')
+        if reopen_shutter:
+            try:
+                yield from bps.mv(shutter_fe_2b, 'Open')
+            except FailedStatus:
+                print_to_gui(f'Error: Photon shutter failed to open.')
 
     if move_hhm_y:
         print_to_gui('[Prepare Beamline] Moving vertical position of the second monochromator crystal')

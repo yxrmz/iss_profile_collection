@@ -35,7 +35,7 @@ def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_st
     print_to_gui('[General Scan] Done!')
 
 
-def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tries = 3):
+def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tries = 3, liveplot_kwargs=None):
     # sys.stdout = kwargs.pop('stdout', sys.stdout)
     print_to_gui(f'Scanning motor {motor}', tag='Tune Beamline')
 
