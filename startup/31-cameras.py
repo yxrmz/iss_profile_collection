@@ -69,7 +69,7 @@ class BPM(SingleTrigger, ProsilicaDetector):
 
             if new_exp_time != current_exp_time:
                 if delta > atol:
-                    set_and_wait(self.exp_time, new_exp_time)
+                    self.exp_time.set(new_exp_time).wait()
                     ttime.sleep(np.max((0.5, new_exp_time)))
                     continue
             break

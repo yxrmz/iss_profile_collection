@@ -1,5 +1,5 @@
 from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
-                   EpicsSignal, EpicsSignalRO, Kind, set_and_wait,
+                   EpicsSignal, EpicsSignalRO, Kind,
                    PseudoPositioner, PseudoSingle, SoftPositioner, Signal, SignalRO)
 from ophyd.sim import NullStatus
 

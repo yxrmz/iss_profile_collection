@@ -37,21 +37,13 @@ class AnalogPizzaBoxTrigger(Device):
     def prepare_to_fly(self, traj_duration):
         self.num_points = int(self.freq.get() * (traj_duration + 1))
 
-    # def poke_streaming_destination(self):
-    #     self.max_counts.put(1)
-    #     set_and_wait(self.stream, 1)
-    #     set_and_wait(self.acquire, 2)
-    #     ttime.sleep(0.5)
-    #     set_and_wait(self.acquire, 0)
-    #     set_and_wait(self.stream, 0)
-
     # Step-scan interface
     def stage(self):
         staged_list = super().stage()
 
         file_uid = new_uid()
         self.fn = f'{ROOT_PATH}/{RAW_PATH}/apb/{dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")}/{file_uid}.bin'
-        set_and_wait(self.filename, self.fn)
+        self.filename.set(self.fn).wait()
         # self.poke_streaming_destination()
         self._resource_uid = new_uid()
         resource = {'spec': 'APB_TRIGGER', #self.name.upper(),
@@ -62,20 +54,20 @@ class AnalogPizzaBoxTrigger(Device):
                     'uid': self._resource_uid}
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
-        set_and_wait(self.max_counts, self.num_points)
-        set_and_wait(self.stream, 1)
+        self.max_counts.set(self.num_points).wait()
+        self.stream.set(1).wait()
         return staged_list
 
     def unstage(self):
         self._datum_counter = None
-        set_and_wait(self.stream, 0)
+        self.stream.set(0).wait()
         return super().unstage()
 
     def kickoff(self):
         return self.acquire.set(2)
 
     def complete(self):
-        set_and_wait(self.acquire, 0)
+        self.acquire.set(0).wait()
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
         datum = {'resource': self._resource_uid,

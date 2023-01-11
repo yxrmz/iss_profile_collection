@@ -146,7 +146,6 @@ class ElectrometerStream(ElectrometerAverage):
 
 
     def kickoff(self):
-        # set_and_wait(self.stream, 1)
         return self.stream.set(1)
 
 
@@ -179,7 +178,7 @@ class ElectrometerStream(ElectrometerAverage):
     def complete(self, *args, **kwargs):
         # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         print_to_gui(f'{self.name} complete starting', add_timestamp=True)
-        set_and_wait(self.stream, 0)
+        self.stream.set(0).wait()
         def callback_saving(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 return True
