@@ -11,7 +11,6 @@ from ophyd import Component as Cpt, Device, EpicsSignal, Kind
 from ophyd.sim import NullStatus
 from ophyd.status import SubscriptionStatus
 from bluesky.utils import new_uid
-from ophyd import set_and_wait
 
 
 class AnalogPizzaBox(Device):
@@ -189,12 +188,8 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         status.wait()
         return super().stage()
 
-
     def kickoff(self):
-        # set_and_wait(self.stream, 1)
         return self.stream.set(1)
-
-
 
     def trigger(self):
         def callback(value, old_value, **kwargs):
@@ -215,16 +210,13 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         return super().unstage(*args, **kwargs)
         # self.stream.set(0)
 
-
     # # Fly-able interface
 
     # Not sure if we need it here or in FlyerAPB (see 63-...)
-
-
     def complete(self, *args, **kwargs):
         # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         print_to_gui(f'{self.name} complete starting', add_timestamp=True)
-        set_and_wait(self.stream, 0)
+        self.stream.set(0).wait()
         def callback_saving(value, old_value, **kwargs):
             if int(round(old_value)) == 1 and int(round(value)) == 0:
                 return True

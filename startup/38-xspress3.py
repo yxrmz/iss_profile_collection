@@ -13,7 +13,7 @@ from ophyd.areadetector.filestore_mixins import (FileStoreIterativeWrite,
 from ophyd import Signal, EpicsSignal, EpicsSignalRO
 from ophyd.status import SubscriptionStatus
 from ophyd.sim import NullStatus  # TODO: remove after complete/collect are defined
-from ophyd import Component as Cpt, set_and_wait
+from ophyd import Component as Cpt
 from ophyd.status import SubscriptionStatus, DeviceStatus
 
 from pathlib import PurePath
@@ -46,7 +46,7 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
         Also modified the stage sigs.
         """
         print_to_gui("warming up the hdf5 plugin...")
-        set_and_wait(self.enable, 1)
+        self.enable.set(1).wait()
         sigs = OrderedDict([(self.parent.settings.array_callbacks, 1),
                             (self.parent.settings.trigger_mode, 'Internal'),
                             # just in case the acquisition time is set very long...
@@ -61,13 +61,13 @@ class Xspress3FileStoreFlyable(Xspress3FileStore):
 
         for sig, val in sigs.items():
             ttime.sleep(0.1)  # abundance of caution
-            set_and_wait(sig, val)
+            sig.set(val).wait()
 
         ttime.sleep(2)  # wait for acquisition
 
         for sig, val in reversed(list(original_vals.items())):
             ttime.sleep(0.1)
-            set_and_wait(sig, val)
+            sig.set(val).wait()
         print_to_gui("done")
 
     # def unstage(self):
@@ -168,12 +168,11 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     def test_exposure(self, acq_time=1, num_images=1):
         _old_acquire_time = self.settings.acquire_time.value
         _old_num_images = self.settings.num_images.value
-        set_and_wait(self.settings.acquire_time, acq_time)
-        set_and_wait(self.settings.num_images, num_images)
+        self.settings.acquire_time.set(acq_time).wait()
+        self.settings.num_images.set(num_images).wait()
         self._acquisition_signal.put(1, wait=True)
-        set_and_wait(self.settings.acquire_time, _old_acquire_time)
-        set_and_wait(self.settings.num_images, _old_num_images)
-
+        self.settings.acquire_time.set(_old_acquire_time).wait()
+        self.settings.num_images.set(_old_num_images).wait()
 
     def set_channels_for_hdf5(self, channels=(1, 2, 3, 4)):
         """
@@ -306,7 +305,7 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
 
     def kickoff(self):
-        set_and_wait(self.settings.acquire, 1)
+        self.settings.acquire.set(1).wait()
         return self.ext_trigger_device.kickoff()
 
     def complete(self):

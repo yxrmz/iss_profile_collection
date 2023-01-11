@@ -1,6 +1,6 @@
 from ophyd import (Component as Cpt, Device,
                    EpicsSignal, ROIPlugin, OverlayPlugin,
-                   Signal, HDF5Plugin, set_and_wait)
+                   Signal, HDF5Plugin)
 from ophyd.areadetector.plugins import ROIStatPlugin_V34, ROIStatNPlugin_V22
 
 from ophyd.areadetector.filestore_mixins import FileStoreTIFFIterativeWrite, FileStoreHDF5IterativeWrite
@@ -274,7 +274,7 @@ class PilatusStreamHDF5(PilatusHDF5):
         return unstaged_list
 
     def kickoff(self):
-        set_and_wait(self.cam.acquire, 1)
+        self.cam.acquire.set(1).wait()
         return self.ext_trigger_device.kickoff()
 
     def complete(self):

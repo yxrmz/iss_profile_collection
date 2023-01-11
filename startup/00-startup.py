@@ -122,13 +122,16 @@ RE.md = PersistentDict(runengine_metadata_dir) # PersistentDict will create the 
 
 
 # Patch to fix Tom's terrible deeds
-import matplotlib.backends.backend_qt
-from matplotlib._pylab_helpers import Gcf
+# import matplotlib.backends.backend_qt
 from matplotlib.backends.backend_qt import _create_qApp
 
 _create_qApp()
-qApp = matplotlib.backends.backend_qt.qApp
+# qApp = matplotlib.backends.backend_qt.qApp
 
+# /nsls2/data/iss/shared/config/bluesky/profile_collection/startup/00-startup.py:130:
+# MatplotlibDeprecationWarning: The qApp attribute was deprecated in Matplotlib 3.6 and will be removed two minor
+# releases later. Use QtWidgets.QApplication.instance() instead.
+#   qApp = matplotlib.backends.backend_qt.qApp
 
 RE.is_aborted = False
 

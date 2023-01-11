@@ -208,9 +208,9 @@ class FlyerPilatus_:
         self.shutter = shutter
 
     def kickoff(self, traj_duration=None, *args, **kwargs):
-        # set_and_wait(self.det.trig_source, 1)
+        # self.det.trig_source.set(1).wait()
         # TODO: handle it on the plan level
-        # set_and_wait(self.motor, 'prepare')
+        # self.motor.set('prepare').wait()
 
         def callback(value, old_value, **kwargs):
 
