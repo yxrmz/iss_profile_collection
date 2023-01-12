@@ -258,7 +258,7 @@ class RowlandCircle:
         self.energy_converter = Nominal2ActualConverter(x_nom, x_act, n_poly=n_poly)
 
     def reset_spectrometer_calibration(self):
-        self.config['energy_calibration'] = {'x_nom': [], 'x_act': [], 'n_poly': 2},
+        self.config['energy_calibration'] = {'x_nom': [], 'x_act': [], 'n_poly': 2}
         self.energy_converter = None
 
     def set_det_arm_parking(self, pos_dict):
@@ -266,11 +266,27 @@ class RowlandCircle:
         self.config['det_offsets']['motor_det_th1'] = pos_dict['motor_det_th1']
         self.config['det_offsets']['motor_det_th2'] = pos_dict['motor_det_th2']
 
+    def det_arm_parking(self):
+        return (self.config['parking']['motor_det_x'],
+                self.config['det_offsets']['motor_det_th1'],
+                self.config['det_offsets']['motor_det_th2'])
+
     def set_main_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_assy_x'] = pos_dict['motor_cr_assy_x'] - self.R
         self.config['parking']['motor_cr_assy_y'] = pos_dict['motor_cr_assy_y']
         self.config['parking']['motor_cr_main_roll'] = pos_dict['motor_cr_main_roll'] - 2500
         self.config['parking']['motor_cr_main_yaw'] = pos_dict['motor_cr_main_yaw']
+
+    def main_crystal_parking(self, human_readable=True):
+        x, y, roll, yaw = (self.config['parking']['motor_cr_assy_x'],
+                           self.config['parking']['motor_cr_assy_y'],
+                           self.config['parking']['motor_cr_main_roll'],
+                           self.config['parking']['motor_cr_main_yaw'])
+        if human_readable:
+            x = x + self.R
+            roll = (roll + 2500) / 1000
+            yaw = yaw / 1000
+        return x, y, roll, yaw
 
     def set_aux2_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_aux2_x'] = pos_dict['motor_cr_aux2_x']
@@ -278,11 +294,35 @@ class RowlandCircle:
         self.config['parking']['motor_cr_aux2_roll'] = pos_dict['motor_cr_aux2_roll'] - 2500
         self.config['parking']['motor_cr_aux2_yaw'] = pos_dict['motor_cr_aux2_yaw']
 
+    def aux2_crystal_parking(self, human_readable=True):
+        x, y, roll, yaw = (self.config['parking']['motor_cr_aux2_x'],
+                           self.config['parking']['motor_cr_aux2_y'],
+                           self.config['parking']['motor_cr_aux2_roll'],
+                           self.config['parking']['motor_cr_aux2_yaw'])
+        if human_readable:
+            x /= 1000
+            y /= 1000
+            roll = (roll + 2500) / 1000
+            yaw /= 1000
+        return x, y, roll, yaw
+
     def set_aux3_crystal_parking(self, pos_dict):
         self.config['parking']['motor_cr_aux3_x'] = pos_dict['motor_cr_aux3_x']
         self.config['parking']['motor_cr_aux3_y'] = pos_dict['motor_cr_aux3_y']
         self.config['parking']['motor_cr_aux3_roll'] = pos_dict['motor_cr_aux3_roll'] - 2500
         self.config['parking']['motor_cr_aux3_yaw'] = pos_dict['motor_cr_aux3_yaw']
+
+    def aux3_crystal_parking(self, human_readable=True):
+        x, y, roll, yaw = (self.config['parking']['motor_cr_aux3_x'],
+                           self.config['parking']['motor_cr_aux3_y'],
+                           self.config['parking']['motor_cr_aux3_roll'],
+                           self.config['parking']['motor_cr_aux3_yaw'])
+        if human_readable:
+            x /= 1000
+            y /= 1000
+            roll = (roll + 2500) / 1000
+            yaw /= 1000
+        return x, y, roll, yaw
 
     @property
     def det_dx(self):
@@ -861,14 +901,26 @@ class JohannEmission(JohannPseudoPositioner):
     def set_det_arm_parking(self):
         self.rowland_circle.set_det_arm_parking(self.real_position_dict)
 
+    def read_det_arm_parking(self):
+        return self.rowland_circle.det_arm_parking()
+
     def set_main_crystal_parking(self):
         self.rowland_circle.set_main_crystal_parking(self.real_position_dict)
+
+    def read_main_crystal_parking(self):
+        return self.rowland_circle.main_crystal_parking(human_readable=True)
 
     def set_aux2_crystal_parking(self):
         self.rowland_circle.set_aux2_crystal_parking(self.real_position_dict)
 
+    def read_aux2_crystal_parking(self):
+        return self.rowland_circle.aux2_crystal_parking(human_readable=True)
+
     def set_aux3_crystal_parking(self):
         self.rowland_circle.set_aux3_crystal_parking(self.real_position_dict)
+
+    def read_aux3_crystal_parking(self):
+        return self.rowland_circle.aux3_crystal_parking(human_readable=True)
 
     def register_energy(self, energy):
         self.rowland_circle.register_energy(energy, self.real_position_dict)
