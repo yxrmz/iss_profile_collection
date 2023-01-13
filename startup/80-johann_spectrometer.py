@@ -851,6 +851,26 @@ class JohannSpectrometerX(JohannPseudoPositioner):
 
 johann_spectrometer_x = JohannSpectrometerX(name='johann_spectrometer_x')
 
+class JohannCrystalHoming(Device):
+    cr_main_roll_home = Cpt(EpicsSignal, '1:Roll}Mtr.HOMF')
+    cr_main_yaw_home = Cpt(EpicsSignal, '1:Yaw}Mtr.HOMF')
+
+    cr_aux2_roll_home = Cpt(EpicsSignal, '2:Yaw}Mtr.HOMF')
+    cr_aux2_yaw_home = Cpt(EpicsSignal, '2:Yaw}Mtr.HOMF')
+    cr_aux2_x_home = Cpt(EpicsSignal, '2:X}Mtr.HOMF')
+    cr_aux2_y_home = Cpt(EpicsSignal, '2:Y}Mtr.HOMF')
+
+    cr_aux3_roll_home = Cpt(EpicsSignal, '3:Yaw}Mtr.HOMF')
+    cr_aux3_yaw_home = Cpt(EpicsSignal, '3:Yaw}Mtr.HOMF')
+    cr_aux3_x_home = Cpt(EpicsSignal, '3:X}Mtr.HOMF')
+    cr_aux3_y_home = Cpt(EpicsSignal, '3:Y}Mtr.HOMF')
+
+    def home_all_axes(self):
+        for component in self.component_names:
+            cpt = getattr(self, component)
+            cpt.put(1)
+
+
 class JohannEmission(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
@@ -872,6 +892,8 @@ class JohannEmission(JohannPseudoPositioner):
     # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     energy = Cpt(PseudoSingle, name='energy')
+
+    piezo_homing = Cpt(JohannCrystalHoming, 'XF:08IDB-OP{HRS:1-Stk:')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
              'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',]
@@ -931,6 +953,8 @@ class JohannEmission(JohannPseudoPositioner):
     # def append_energy_converter(self, ec):
     #     self.rowland_circle.append_energy_converter(ec)
 
+    def home_crystal_piezos(self):
+        self.piezo_homing.home_all_axes()
 
 johann_emission = JohannEmission(name='johann_emission')
 # johann_emission.energy._limits=(9390, 9490)
@@ -986,6 +1010,14 @@ motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
                                           'object': johann_emission.energy,
                                           'group': 'spectrometer'}
 
+
+
+
+# johann_crystal_homing = JohannCrystalHoming('XF:08IDB-OP{HRS:1-Stk:', name='johann_crystal_homing')
+# johann_crystal_homing.home_all_axes()
+
+# bla = EpicsSignal('XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr.HOMF', name='bla')
+# bla.put(1)
 
 # rowland_circle.config['parking']['motor_cr_assy_y'] = 7.682
 # johann_spectrometer_x.move(x=-10)
