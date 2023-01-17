@@ -159,10 +159,15 @@ from xas.spectrometer import compute_rowland_circle_geometry, _compute_rotated_r
 _BIG_DETECTOR_ARM_LENGTH = 550 # length of the big arm
 _SMALL_DETECTOR_ARM_LENGTH = 91 # distance between the second gon and the sensitive surface of the detector
 
-_johann_spectrometer_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-                                   'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',
-                                   'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-                                   'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+_johann_det_arm_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2']
+_johann_cr_main_motor_keys = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw']
+_johann_cr_aux2_motor_keys = ['motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw']
+_johann_cr_aux3_motor_keys = ['motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+
+_johann_spectrometer_motor_keys = (_johann_det_arm_motor_keys +
+                                   _johann_cr_main_motor_keys +
+                                   _johann_cr_aux2_motor_keys +
+                                   _johann_cr_aux3_motor_keys)
 
 
 class RowlandCircle:
@@ -265,6 +270,7 @@ class RowlandCircle:
         self.config['parking']['motor_det_x'] = pos_dict['motor_det_x']
         self.config['det_offsets']['motor_det_th1'] = pos_dict['motor_det_th1']
         self.config['det_offsets']['motor_det_th2'] = pos_dict['motor_det_th2']
+        self.save_current_spectrometer_config_to_settings()
 
     def det_arm_parking(self):
         return (self.config['parking']['motor_det_x'],
@@ -276,6 +282,7 @@ class RowlandCircle:
         self.config['parking']['motor_cr_assy_y'] = pos_dict['motor_cr_assy_y']
         self.config['parking']['motor_cr_main_roll'] = pos_dict['motor_cr_main_roll'] - 2500
         self.config['parking']['motor_cr_main_yaw'] = pos_dict['motor_cr_main_yaw']
+        self.save_current_spectrometer_config_to_settings()
 
     def main_crystal_parking(self, human_readable=True):
         x, y, roll, yaw = (self.config['parking']['motor_cr_assy_x'],
@@ -293,6 +300,7 @@ class RowlandCircle:
         self.config['parking']['motor_cr_aux2_y'] = pos_dict['motor_cr_aux2_y']
         self.config['parking']['motor_cr_aux2_roll'] = pos_dict['motor_cr_aux2_roll'] - 2500
         self.config['parking']['motor_cr_aux2_yaw'] = pos_dict['motor_cr_aux2_yaw']
+        self.save_current_spectrometer_config_to_settings()
 
     def aux2_crystal_parking(self, human_readable=True):
         x, y, roll, yaw = (self.config['parking']['motor_cr_aux2_x'],
@@ -311,6 +319,7 @@ class RowlandCircle:
         self.config['parking']['motor_cr_aux3_y'] = pos_dict['motor_cr_aux3_y']
         self.config['parking']['motor_cr_aux3_roll'] = pos_dict['motor_cr_aux3_roll'] - 2500
         self.config['parking']['motor_cr_aux3_yaw'] = pos_dict['motor_cr_aux3_yaw']
+        self.save_current_spectrometer_config_to_settings()
 
     def aux3_crystal_parking(self, human_readable=True):
         x, y, roll, yaw = (self.config['parking']['motor_cr_aux3_x'],
@@ -363,6 +372,17 @@ class RowlandCircle:
     @hkl.setter
     def hkl(self, value):
         self.config['hkl'] = value
+
+    @property
+    def roll_offset(self):
+        return self.config['roll_offset']
+
+    @roll_offset.setter
+    def roll_offset(self, value):
+        self.config['roll_offset'] = value
+        self.compute_nominal_trajectory()
+        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.save_current_spectrometer_config_to_settings()
 
     def _compute_nominal_trajectory(self, npt=1000):
         braggs = np.linspace(self.bragg_min, self.bragg_max, npt-1)
@@ -771,30 +791,82 @@ class JohannSpectrometer(JohannPseudoPositioner):
     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    # motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-    #
-    # motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    # motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    # motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
+    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw']
-             # 'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             # 'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw', #]
+             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['bragg']
 
     aligned = True
-    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll']#, 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+    # motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
+
+    enabled_crystals = {'main' : True, 'aux2': True, 'aux3': True}
+
+    def enable_crystal(self, crystal_key, enable):
+        self.enabled_crystals[crystal_key] = enable
+
+    @property
+    def motor_to_bragg_keys(self):
+        keys = ['motor_det_th1']
+        if self.enabled_crystals['main']: keys.append('motor_cr_main_roll')
+        if self.enabled_crystals['aux2']: keys.append('motor_cr_aux2_roll')
+        if self.enabled_crystals['aux3']: keys.append('motor_cr_aux3_roll')
+        return keys
+
+
+    # def enable_crystal(self, crystal_key, enable):
+    #     if crystal_key == 'main':
+    #         _motor_keys = _johann_cr_main_motor_keys
+    #         _motor_to_bragg_key = 'motor_cr_main_roll'
+    #     elif crystal_key == 'aux2':
+    #         _motor_keys = _johann_cr_aux2_motor_keys
+    #         _motor_to_bragg_key = 'motor_cr_aux2_roll'
+    #     elif crystal_key == 'aux3':
+    #         _motor_keys = _johann_cr_aux3_motor_keys
+    #         _motor_to_bragg_key = 'motor_cr_aux3_roll'
+    #     if enable:
+    #         new_keys = [k for k in _motor_keys if k not in self.real_keys]
+    #         self.real_keys += new_keys
+    #         if _motor_to_bragg_key not in self.motor_to_bragg_keys:
+    #             self.motor_to_bragg_keys.append(_motor_to_bragg_key)
+    #     else:
+    #         new_real_keys = [k for k in self.real_keys if k not in _motor_keys]
+    #         self.real_keys = new_real_keys
+    #         if _motor_to_bragg_key in self.motor_to_bragg_keys:
+    #             self.motor_to_bragg_keys = [k for k in self.motor_to_bragg_keys if k != _motor_to_bragg_key]
+
 
     def _forward(self, pseudo_dict):
         bragg = pseudo_dict['bragg']
-        return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+        new_real_position = self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+        for crystal_key, enabled in self.enabled_crystals.items():
+            if not enabled:
+                if crystal_key == 'main':
+                    _motor_keys = _johann_cr_main_motor_keys
+                    # _motor_to_bragg_key = 'motor_cr_main_roll'
+                elif crystal_key == 'aux2':
+                    _motor_keys = _johann_cr_aux2_motor_keys
+                    # _motor_to_bragg_key = 'motor_cr_aux2_roll'
+                elif crystal_key == 'aux3':
+                    _motor_keys = _johann_cr_aux3_motor_keys
+                else:
+                    raise ValueError('this crystal key is not implemented yet')
+                    # _motor_to_bragg_key = 'motor_cr_aux3_roll'
+                for k in _motor_keys:
+                    new_real_position[k] = getattr(self, k).position
+        return new_real_position
 
     def _inverse(self, real_dict):
         braggs = []
@@ -881,24 +953,24 @@ class JohannEmission(JohannPseudoPositioner):
     motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
     motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
 
-    # motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    # motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    # motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    # motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-    #
-    # motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    # motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    # motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    # motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
+    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     energy = Cpt(PseudoSingle, name='energy')
 
     piezo_homing = Cpt(JohannCrystalHoming, 'XF:08IDB-OP{HRS:1-Stk:')
 
     _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',]
-             # 'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             # 'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',#,]
+             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['energy']
 
     aligned = True
