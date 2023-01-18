@@ -24,6 +24,7 @@ service_plan_funcs = {
         'set_attenuator': set_attenuator,
         'prepare_beamline_plan': prepare_beamline_plan,
         'tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : tune_beamline_plan_bundle},
+        'quick_tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : quick_tune_beamline_plan_bundle},
         'optimize_beamline_plan_bundle': {'kind' : 'bundle', 'func' : optimize_beamline_plan_bundle},
         # 'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
         'johann_calibration_scan_plan' : johann_calibration_scan_plan,
@@ -41,6 +42,7 @@ service_plan_funcs = {
 aux_plan_funcs = {
         'general_scan': general_scan,
         'tuning_scan': tuning_scan,
+        'quick_tuning_scan': quick_tuning_scan,
         'bender_scan_plan_bundle' : {'kind' : 'bundle', 'func' : bender_scan_plan_bundle},
         'single_bender_scan_bundle' : {'kind' : 'bundle', 'func' : single_bender_scan_bundle},
         'print_message_plan' : print_message_plan,

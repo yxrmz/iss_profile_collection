@@ -176,6 +176,93 @@ def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_e
     return plans
 
 
+quick_tune_elements =  [
+    {  'motor': hhm.pitch.name,
+       'detector': 'Focusing mirror BPM',
+       'channel': 'bpm_fm_stats1_total',
+       'range': 10,
+       'velocity': 1,
+       'n_tries': 10,
+       'comment': 'rough monochromator pitch tune'},
+      {'motor': hhm.pitch.name,
+       'detector': 'Focusing mirror BPM',
+       'channel': 'bpm_fm_stats1_total',
+       'range': 1,
+       'velocity': 1,
+       'n_tries': 3,
+       'comment': 'fine monochromator pitch tune'},
+      {'motor': hhrm.y.name, #'motor': [hhrm.y.name, i0_y.pos.name],
+       'detector': 'I0 ion Chamber instantaneous',
+       'channel': 'apb_ch1',
+       'range': 1,
+       'velocity': 0.1,
+       'n_tries': 3,
+       'comment': 'Harmonic rejection mirror tune'},
+      {'motor': hhm.pitch.name,
+       'detector': 'I0 ion Chamber instantaneous',
+       'channel': 'apb_ch1',
+       'range': 0.3,
+       'velocity': 1,
+       'n_tries': 3,
+       'comment': 'fine monochromator pitch tune'},
+    ]
+
+
+def quick_tune_beamline_plan_bundle(enable_fb_in_the_end : bool = True, plan_gui_services=None):
+
+
+    tune_elements_list = quick_tune_elements
+
+    plans = [{'plan_name': 'print_message_plan',
+              'plan_kwargs': {'msg': 'Starting...', 'tag': 'Beamline tuning'}}]
+
+    plans.append({'plan_name' : 'set_hhm_feedback_plan',
+                   'plan_kwargs' : {'state' : 0}})
+
+    if detector_dictionary[tune_elements_list[0]['detector']]['device'] != bpm_fm:
+        if bpm_fm.inserted.get():
+            plans.append({'plan_name': 'move_bpm_fm_plan',
+                          'plan_kwargs': {'action': 'retract'}})
+
+    for i, element in enumerate(tune_elements_list):
+        detector_device = detector_dictionary[tune_elements_list[0]['detector']]['device']
+        if detector_device == bpm_fm:
+            if bpm_fm.retracted.get():
+                plans.append({'plan_name': 'move_bpm_fm_plan',
+                              'plan_kwargs': {'action': 'insert'}})
+
+        if 'fb_enable' in element.keys():
+            if element['fb_enable']:
+                plans.append({'plan_name' : 'set_hhm_feedback_plan',
+                              'plan_kwargs' : {'state' : 1, 'update_center' : True}})
+
+        plans.append({'plan_name' : 'quick_tuning_scan',
+                     'plan_kwargs' : {'motor' : element['motor'],
+                                      'detector' : element['detector'],
+                                      'channel': element['channel'],
+                                      'scan_range' : element['range'],
+                                      'velocity' : element['velocity'],
+                                      'n_tries' : element['n_tries']},
+                      'plan_gui_services' : plan_gui_services})
+
+        if detector_device == bpm_fm:
+            if ((i + 1) < len(tune_elements_list)) and (detector_dictionary[tune_elements_list[i+1]['detector']]['device'] != bpm_fm):
+                plans.append({'plan_name': 'move_bpm_fm_plan',
+                              'plan_kwargs': {'action': 'retract'}})
+                plans.append({'plan_name': 'put_bpm_fm_to_continuous_mode',
+                              'plan_kwargs': {}})
+
+    if enable_fb_in_the_end:
+        plans.append({'plan_name': 'set_hhm_feedback_plan',
+                      'plan_kwargs': {'state': 1, 'update_center' : True}})
+
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {'msg': 'Beamline tuning complete', 'tag' : 'Beamline tuning'}})
+
+    return plans
+
+
+
 #
 # def optimize_beamline_plan(energy: int = -1, extended_tuning: bool = False, force_prepare = False, enable_fb_in_the_end=True):
 #     old_energy = hhm.energy.position

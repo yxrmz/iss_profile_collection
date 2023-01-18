@@ -203,7 +203,7 @@ def process_monitor_scan(db, uid):
 
     return pd.DataFrame(df)
 
-def find_optimum_motor_pos(db, uid, motor='hhm_pitch', channel='apb_ch1', polarity='neg'):
+def find_optimum_motor_pos(db, uid, motor='hhm_pitch', channel='apb_ch1', polarity='neg', plot_func=None):
     df = process_monitor_scan(db, uid)
     if polarity == 'neg':
         idx = df[channel].idxmin()
@@ -211,7 +211,14 @@ def find_optimum_motor_pos(db, uid, motor='hhm_pitch', channel='apb_ch1', polari
         idx = df[channel].idxmax()
     else:
         raise ValueError
-    return df[motor][idx]
+
+    optimum_value = df[motor][idx]
+
+    if plot_func is not None:
+        plot_func(df[motor].values, df[channel].values, optimum_value,
+                  positions_axis_label=motor, values_axis_label=channel)
+
+    return optimum_value
 
 
 # plt.figure(1, clear=True)

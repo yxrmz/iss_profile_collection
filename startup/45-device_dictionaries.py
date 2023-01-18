@@ -59,6 +59,20 @@ def get_detector_device_list(key_list, flying=True):
         dets.append(device)
     return dets
 
+def _get_object_component_based_on_full_name(obj, full_component_name):
+    for _, signal in obj.get_instantiated_signals():
+        if signal.name == full_component_name:
+            return signal
+# _get_object_component_based_on_full_name(bpm_fm, 'bpm_fm_stats1_total')
+
+def get_detector_channel(detector_key, channel_key):
+    det = get_detector_device_list([detector_key], flying=False)[0]
+    channels = []
+    # for key, det in zip(key_list, dets):
+        # channel = getattr(det, detector_dictionary[key]['channels'][0])
+    channel = _get_object_component_based_on_full_name(det, channel_key)
+    return channel
+
 
 class KeyDetectorNotIncluded(Exception):
     pass
