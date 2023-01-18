@@ -180,29 +180,29 @@ quick_tune_elements =  [
     {  'motor': hhm.pitch.name,
        'detector': 'Focusing mirror BPM',
        'channel': 'bpm_fm_stats1_total',
-       'range': 10,
-       'velocity': 1,
+       'range': 5,
+       'velocity': 0.2,
        'n_tries': 10,
        'comment': 'rough monochromator pitch tune'},
       {'motor': hhm.pitch.name,
        'detector': 'Focusing mirror BPM',
        'channel': 'bpm_fm_stats1_total',
        'range': 1,
-       'velocity': 1,
+       'velocity': 0.1,
        'n_tries': 3,
        'comment': 'fine monochromator pitch tune'},
       {'motor': hhrm.y.name, #'motor': [hhrm.y.name, i0_y.pos.name],
        'detector': 'I0 ion Chamber instantaneous',
        'channel': 'apb_ch1',
        'range': 1,
-       'velocity': 0.1,
+       'velocity': 0.07,
        'n_tries': 3,
        'comment': 'Harmonic rejection mirror tune'},
       {'motor': hhm.pitch.name,
        'detector': 'I0 ion Chamber instantaneous',
        'channel': 'apb_ch1',
        'range': 0.3,
-       'velocity': 1,
+       'velocity': 0.03,
        'n_tries': 3,
        'comment': 'fine monochromator pitch tune'},
     ]
@@ -225,7 +225,7 @@ def quick_tune_beamline_plan_bundle(enable_fb_in_the_end : bool = True, plan_gui
                           'plan_kwargs': {'action': 'retract'}})
 
     for i, element in enumerate(tune_elements_list):
-        detector_device = detector_dictionary[tune_elements_list[0]['detector']]['device']
+        detector_device = detector_dictionary[tune_elements_list[i]['detector']]['device']
         if detector_device == bpm_fm:
             if bpm_fm.retracted.get():
                 plans.append({'plan_name': 'move_bpm_fm_plan',

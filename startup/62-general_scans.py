@@ -93,11 +93,11 @@ def tuning_scan(motor=None, detector=None, scan_range=None, scan_step=None, n_tr
                 break
 
 def ramp_motor_scan(motor=None, detector_channels=None, range=0,  sleep = 0.2, velocity = None):
+    yield from bps.mvr(motor, -range / 2)
+    yield from bps.sleep(sleep)
     if velocity is not None:
         old_motor_velocity = motor.velocity.get()
         yield from bps.mv(motor.velocity, velocity)
-    yield from bps.mvr(motor, -range / 2)
-    yield from bps.sleep(sleep)
     @return_NullStatus_decorator
     def _move_plan():
         yield from bps.mvr(motor, range)
