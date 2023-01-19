@@ -366,4 +366,49 @@ def plot_beam_center_scan(db, uid):
     plt.subplot(224)
     plt.plot(roll, np.ptp(x_bpm_es, axis=0))
 
+# def quick_pitch_optimization(pitch_range=1, pitch_speed=0.2, n_tries=3):
+#     yield from set_hhm_feedback_plan(0)
+#     yield from bps.sleep(0.2)
+#
+#     for i in range(n_tries):
+#         current_pitch_value = hhm.pitch.position
+#         print_to_gui(f'Starting attempt #{i + 1}', tag='Pitch Scan')
+#         yield from bps.mvr(hhm.pitch, -pitch_range / 2)
+#         yield from bps.sleep(0.2)
+#         @return_NullStatus_decorator
+#         def _move_pitch_plan():
+#             yield from bps.mvr(hhm.pitch, pitch_range)
+#             yield from bps.sleep(0.2)
+#
+#         yield from bps.mv(hhm.pitch.velocity, pitch_speed)
+#         ramp_plan = ramp_plan_with_multiple_monitors(_move_pitch_plan(), [hhm.pitch, apb.ch1], bps.null)
+#         yield from ramp_plan
+#         yield from bps.mv(hhm.pitch.velocity, 60)
+#         new_pitch_pos = find_optimum_pitch_pos(db, -1)
+#         print_to_gui(f'New pitch position: {new_pitch_pos}', tag='Pitch Scan')
+#         yield from bps.mv(hhm.pitch, new_pitch_pos, wait=True)
+#
+#         min_threshold = current_pitch_value - pitch_range / 2 + pitch_range / 10
+#         max_threshold = current_pitch_value + pitch_range / 2 - pitch_range / 10
+#
+#         # print(f'PITCH RESULTS:\ncurrent_pitch_value={current_pitch_value}\nmin_threshold={min_threshold}\nnew_pitch_pos={new_pitch_pos}\nmax_threshold={max_threshold}')
+#
+#         if (new_pitch_pos > min_threshold) and (new_pitch_pos < max_threshold):
+#             break
+#         else:
+#             if (i+1) > n_tries:
+#                 print_to_gui(f'Exceeded number of attempts. Adjust pitch manually.', tag='Pitch Scan')
+#
+#     yield from set_hhm_feedback_plan(1, update_center=True)
+
+def quick_pitch_optimization(scan_range=1, velocity=0.2, n_tries=3):
+    yield from set_hhm_feedback_plan(0)
+    yield from bps.sleep(0.2)
+
+    yield from quick_tuning_scan(motor=hhm.pitch.name, detector='I0 ion Chamber instantaneous', channel='apb_ch1',
+                                 scan_range=scan_range, velocity=velocity, n_tries=n_tries)
+
+    yield from set_hhm_feedback_plan(1, update_center=True)
+
+
 # plot_beam_center_scan(db, -1)

@@ -136,7 +136,7 @@ def quick_tuning_scan(motor=None, detector=None, channel=None, scan_range=None, 
                 print_to_gui(f' Starting {jj+2} try')
             yield from bps.mv(motor_device, max_limit)
         else:
-            print_to_gui('The motor position was optimized')
+            print_to_gui(f'The {motor} position was optimized: position={motor_pos:.3f}')
             yield from bps.mv(motor_device, motor_pos)
             break
 
