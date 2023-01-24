@@ -149,6 +149,7 @@ class Bender(Device):
     load_cell = EpicsSignalRO('XF:08IDA-OP{Mir:CM-Ax:Bender}W-I', name='bender_loading')
 # TODO: change the name of the class/object to BenderCM2/bender_cm2
 bender = Bender('XF:08IDA-OP{Mir:CM-Bender', name='bender')
+# fm_bender = Bender('XF:08IDA-OP{Mir:CM-Bender', name='bender')
 
 class BenderFM(Device):
     pos = Cpt(EpicsMotor, '}Mtr')
@@ -267,6 +268,7 @@ class SampleStage(Device):
 sample_stage = SampleStage(name='sample_stage')
 # samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy')
 # giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
+
 
 
 

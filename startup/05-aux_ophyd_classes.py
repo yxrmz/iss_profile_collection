@@ -7,7 +7,7 @@ from ophyd.pseudopos import (pseudo_position_argument,
                              real_position_argument)
 
 from bluesky.preprocessors import monitor_during_wrapper
-
+from ophyd import (PseudoPositioner, PseudoSingle)
 
 class StuckingEpicsMotor(EpicsMotor):
 

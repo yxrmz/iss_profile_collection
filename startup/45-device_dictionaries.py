@@ -17,6 +17,7 @@ detector_dictionary =   {
                     'It ion Chamber instantaneous': {'device': apb, 'channels': ['apb_ch2']},
                     'Ir ion Chamber instantaneous': {'device': apb, 'channels': ['apb_ch3']},
                     'PIPS detector instantaneous': {'device': apb, 'channels': ['apb_ch4']},
+                    'Collimating mirror BPM': {'device': bpm_cm, 'channels': ['bpm_cm_stats1_total', 'bpm_cm_stats2_total']},
                     'Focusing mirror BPM': {'device': bpm_fm, 'channels': ['bpm_fm_stats1_total', 'bpm_fm_stats2_total']},
                     'Endstation BPM': {'device': bpm_es, 'channels': ['bpm_es_stats1_total','bpm_es_stats2_total']},
                     'Camera SP1': {'device': camera_sp1, 'channels': ['camera_sp1_stats1_total', 'camera_sp1_stats1_net', 'camera_sp1_stats2_total', 'camera_sp1_stats2_net']},
@@ -84,7 +85,11 @@ def ensure_pilatus_is_in_detector_list(detectors):
 
 
 motor_dictionary = {
-    'cm1_x':                    {'name' : cm1.x.name,               'description': 'A Collimating mirror X',                  'object': cm1.x},
+    'cm1_pitch':                {'name' : cm1.pitch.name,           'description': 'A CM1 Pitch',                           'object': cm1.pitch},
+    'cm1_y':                    {'name' : cm1.y.name,               'description': 'A CM1 Y',                               'object': cm1.y},
+    'cm1_x':                    {'name' : cm1.x.name,               'description': 'A CM1 X',                               'object': cm1.x},
+    'cm2_pitch':                {'name' : cm2.pitch.name,           'description': 'A CM2 Pitch',                           'object': cm2.pitch},
+    'cm2_y':                    {'name' : cm2.y.name,               'description': 'A CM2 Y',                               'object': cm2.y},
     'bender':                   {'name' : bender.name,              'description': 'A CM2 bender',                          'object': bender.pos,           'group': 'spectrometer'},
     'hhm_theta':                {'name': hhm.theta.name,            'description': 'A Monochromator Theta',                 'object': hhm.theta},
     'hhm_energy':               {'name': hhm.energy.name,           'description': 'A Monochromator Energy',                'object': hhm.energy,           'group': 'spectrometer','user':True},
@@ -93,6 +98,8 @@ motor_dictionary = {
     'hhm_pitch':                {'name': hhm.pitch.name,            'description': 'A Monochromator Pitch',                 'object': hhm.pitch,            'user': True},
     'hhm_roll':                 {'name': hhm.roll.name,             'description': 'A Monochromator Roll',                  'object': hhm.roll, },
     'fm_pitch':                 {'name': fm.pitch.name,             'description': 'A Focusing Mirror Pitch',               'object': fm.pitch},
+    'fm_y':                     {'name': fm.y.name,                 'description': 'A Focusing Mirror Y',                   'object': fm.y},
+    'bender_fm':                {'name': bender_fm.name,            'description': 'A Focusing Mirror bender',              'object': bender_fm.pos},
     'hhrm_mir_pitch':           {'name': hhrm.mir_pitch.name,       'description': 'B1 HHR Mirror Pitch',                   'object': hhrm.mir_pitch},
     'hhrm_table_pitch':         {'name': hhrm.table_pitch.name,     'description': 'B1 HHR Mirror Table Pitch',             'object': hhrm.table_pitch},
     'hhrm_y':                   {'name': hhrm.y.name,               'description': 'B1 HHR Mirror Table Height',            'object': hhrm.y,               'user': True},
