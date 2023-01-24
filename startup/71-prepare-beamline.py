@@ -50,7 +50,7 @@ bl_prepare_energy_ranges = [
             'ES BPM exposure': 0.05
         },
         {
-            'energy_start': 6000,
+            'energy_start': 5700,
             'energy_end': 10000,
             'He_flow': 5,
             'N2_flow': 3,

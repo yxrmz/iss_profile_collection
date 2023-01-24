@@ -24,12 +24,13 @@ gas_n2.flow.tolerance = 0.05
 class DeviceWithNegativeReadBack(Device):
     read_pv = Cpt(EpicsSignal, 'V-Sense')
     write_pv =  Cpt(EpicsSignal, 'V-Set')
+    switch_pv = Cpt(EpicsSignal, 'Switch')
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
         self._moving = None
 
 
-    def set(self,value):
+    def set(self, value, switch=False):
 
         def callback(*args,**kwargs):
             if self._moving and  abs(abs(self.read_pv.get())-abs(self.write_pv.get())) < 2:
@@ -41,7 +42,10 @@ class DeviceWithNegativeReadBack(Device):
 
         status = SubscriptionStatus(self.read_pv, callback)
 
-        self.write_pv.set(value)
+        if switch:
+            self.switch_pv.set(value)
+        else:
+            self.write_pv.set(value)
 
         return status
 

@@ -147,3 +147,33 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_servi
     return plans
 
 
+def check_hhm_roll_plan(threshold=0.05):
+    read_back = hhm.roll.user_readback.get()
+    # read_back = -336
+    set_point = hhm.roll.user_setpoint.get()
+
+    if abs(read_back - set_point) > threshold:
+        print_to_gui("hhm roll drifted from the setpoint. Correcting.", tag='Beamline', add_timestamp=True)
+        yield from bps.mv(hhm.roll, set_point, wait=True)
+
+
+def check_ic_voltages(threshold=10):
+    # energy = hhm.energy.position
+    # energy_range = [e_range for e_range in bl_prepare_energy_ranges if
+    #                 e_range['energy_end'] > energy >= e_range['energy_start']][0]
+    # ic_setpoint = energy_range['IC_voltage']
+    hv_setters = [wps1.hv302, wps1.hv303, wps1.hv305]
+    hv_names = ['I0', 'It', 'Ir']
+    for hv_setter, hv_name in zip(hv_setters, hv_names):
+        # ic_readback = abs(hv_setter.get().read_pv)
+        ic_on = hv_setter.switch_pv.get()
+
+        if not ic_on:
+            print_to_gui(f"{hv_name} ion chamber high voltage is OFF. Turning it ON.",
+                         tag='Beamline', add_timestamp=True)
+            yield from bps.mv(hv_setter, 1, switch=True)
+
+        # if abs(ic_readback - ic_setpoint) < threshold:
+        #     print_to_gui(f"{hv_name} ion chamber high voltage was set to safe value. Correcting to desired value.", tag='Beamline', add_timestamp=True)
+        #     yield from bps.mv(hv_setter, ic_setpoint)
+

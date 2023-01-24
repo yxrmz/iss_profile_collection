@@ -16,8 +16,9 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         # self.plan_list = []
         self.status = 'idle'
 
-        self.check_valves = False
-        self.check_shutters = False
+        # self.check_valves = False
+        # self.check_shutters = False
+        self.beamline_readiness = False
         self.auto_foil_set = False
 
     def get_logger(self):
@@ -322,10 +323,11 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         self.liveplot_funcs = liveplot_funcs
 
     def perform_pre_scan_routines(self, idx=0):
-        if self.check_valves: # this also checks FE shutter
+        self.RE(check_hhm_roll_plan())
+        if self.beamline_readiness: # this also checks FE shutter
             self.RE(check_gate_valves_plan())
-        if self.check_shutters:
             self.RE(check_photon_shutter_plan())
+            self.RE(check_ic_voltages())
         if self.auto_foil_set:
             plan_info = self.plan_list[idx]['plan_info']
             plan_kwargs = plan_info['plan_kwargs']
