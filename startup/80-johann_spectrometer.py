@@ -160,11 +160,13 @@ _BIG_DETECTOR_ARM_LENGTH = 550 # length of the big arm
 _SMALL_DETECTOR_ARM_LENGTH = 91 # distance between the second gon and the sensitive surface of the detector
 
 _johann_det_arm_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2']
-_johann_cr_main_motor_keys = ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw']
+_johann_cr_assy_motor_keys = ['motor_cr_assy_x', 'motor_cr_assy_y']
+_johann_cr_main_motor_keys = ['motor_cr_main_roll', 'motor_cr_main_yaw']
 _johann_cr_aux2_motor_keys = ['motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw']
 _johann_cr_aux3_motor_keys = ['motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
 
 _johann_spectrometer_motor_keys = (_johann_det_arm_motor_keys +
+                                   _johann_cr_assy_motor_keys +
                                    _johann_cr_main_motor_keys +
                                    _johann_cr_aux2_motor_keys +
                                    _johann_cr_aux3_motor_keys)
@@ -208,9 +210,11 @@ class RowlandCircle:
             config = self.load_config(self.json_path)
         except Exception as e:
             print(f'Spectrometer config could not be loaded from settings. Loading the default configuration.\n\n{e}')
-            config = { 'R' : 1000,
+            config = { 'initialized': True,
+                       'R' : 1000,
                        'crystal' : 'Si',
                        'hkl' : [6, 2, 0],
+                       'enabled_crystals': {'main': True, 'aux2': True, 'aux3': True},
                        'parking': { 'motor_det_x': -10.0,  # high limit of this motor should be at 529 mm
                                     'motor_det_th1': 0.0,
                                     'motor_det_th2': 0.0,
@@ -382,6 +386,23 @@ class RowlandCircle:
         self.config['roll_offset'] = value
         self.compute_nominal_trajectory()
         self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.save_current_spectrometer_config_to_settings()
+
+    @property
+    def enabled_crystals(self):
+        return self.config['enabled_crystals']
+
+    def enable_crystal(self, crystal_key, enable):
+        self.enabled_crystals[crystal_key] = enable
+        self.save_current_spectrometer_config_to_settings()
+
+    @property
+    def initialized(self):
+        return self.config['initialized']
+
+    @initialized.setter
+    def initialized(self, value):
+        self.config['initialized'] = value
         self.save_current_spectrometer_config_to_settings()
 
     def _compute_nominal_trajectory(self, npt=1000):
@@ -780,107 +801,6 @@ class JohannAux3Crystal(JohannPseudoPositioner):
 johann_aux3_crystal = JohannAux3Crystal(name='johann_aux3_crystal')
 
 
-
-class JohannSpectrometer(JohannPseudoPositioner):
-    motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
-    motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
-    motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
-
-    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
-    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
-    motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
-    motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
-
-    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
-    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
-    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
-    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
-
-    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
-    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
-    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
-    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
-
-    bragg = Cpt(PseudoSingle, name='bragg')
-
-    _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw', #]
-             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
-    _pseudo = ['bragg']
-
-    aligned = True
-    # motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', 'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
-
-    enabled_crystals = {'main' : True, 'aux2': True, 'aux3': True}
-
-    def enable_crystal(self, crystal_key, enable):
-        self.enabled_crystals[crystal_key] = enable
-
-    @property
-    def motor_to_bragg_keys(self):
-        keys = ['motor_det_th1']
-        if self.enabled_crystals['main']: keys.append('motor_cr_main_roll')
-        if self.enabled_crystals['aux2']: keys.append('motor_cr_aux2_roll')
-        if self.enabled_crystals['aux3']: keys.append('motor_cr_aux3_roll')
-        return keys
-
-
-    # def enable_crystal(self, crystal_key, enable):
-    #     if crystal_key == 'main':
-    #         _motor_keys = _johann_cr_main_motor_keys
-    #         _motor_to_bragg_key = 'motor_cr_main_roll'
-    #     elif crystal_key == 'aux2':
-    #         _motor_keys = _johann_cr_aux2_motor_keys
-    #         _motor_to_bragg_key = 'motor_cr_aux2_roll'
-    #     elif crystal_key == 'aux3':
-    #         _motor_keys = _johann_cr_aux3_motor_keys
-    #         _motor_to_bragg_key = 'motor_cr_aux3_roll'
-    #     if enable:
-    #         new_keys = [k for k in _motor_keys if k not in self.real_keys]
-    #         self.real_keys += new_keys
-    #         if _motor_to_bragg_key not in self.motor_to_bragg_keys:
-    #             self.motor_to_bragg_keys.append(_motor_to_bragg_key)
-    #     else:
-    #         new_real_keys = [k for k in self.real_keys if k not in _motor_keys]
-    #         self.real_keys = new_real_keys
-    #         if _motor_to_bragg_key in self.motor_to_bragg_keys:
-    #             self.motor_to_bragg_keys = [k for k in self.motor_to_bragg_keys if k != _motor_to_bragg_key]
-
-
-    def _forward(self, pseudo_dict):
-        bragg = pseudo_dict['bragg']
-        new_real_position = self.rowland_circle.compute_motor_position(self.real_keys, bragg)
-        for crystal_key, enabled in self.enabled_crystals.items():
-            if not enabled:
-                if crystal_key == 'main':
-                    _motor_keys = _johann_cr_main_motor_keys
-                    # _motor_to_bragg_key = 'motor_cr_main_roll'
-                elif crystal_key == 'aux2':
-                    _motor_keys = _johann_cr_aux2_motor_keys
-                    # _motor_to_bragg_key = 'motor_cr_aux2_roll'
-                elif crystal_key == 'aux3':
-                    _motor_keys = _johann_cr_aux3_motor_keys
-                else:
-                    raise ValueError('this crystal key is not implemented yet')
-                    # _motor_to_bragg_key = 'motor_cr_aux3_roll'
-                for k in _motor_keys:
-                    new_real_position[k] = getattr(self, k).position
-        return new_real_position
-
-    def _inverse(self, real_dict):
-        braggs = []
-        for key in self.motor_to_bragg_keys:
-            pos = real_dict[key]
-            bragg = self.rowland_circle.compute_bragg_from_motor(key, pos)
-            braggs.append(bragg)
-
-        self.aligned = np.all(np.isclose(braggs, braggs[0], atol=1e-3))
-        return {'bragg': np.mean(braggs)}
-
-johann_spectrometer = JohannSpectrometer(name='johann_spectrometer')
-
-
 class JohannSpectrometerX(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
@@ -923,6 +843,7 @@ class JohannSpectrometerX(JohannPseudoPositioner):
 
 johann_spectrometer_x = JohannSpectrometerX(name='johann_spectrometer_x')
 
+
 class JohannCrystalHoming(Device):
     cr_main_roll_home = Cpt(EpicsSignal, '1:Roll}Mtr.HOMF')
     cr_main_yaw_home = Cpt(EpicsSignal, '1:Yaw}Mtr.HOMF')
@@ -943,7 +864,98 @@ class JohannCrystalHoming(Device):
             cpt.put(1)
 
 
-class JohannEmission(JohannPseudoPositioner):
+class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
+    _real = _johann_spectrometer_motor_keys
+        # ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
+        #      'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',  # ]
+        #      'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
+        #      'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+
+    aligned = True
+    piezo_homing = Cpt(JohannCrystalHoming, 'XF:08IDB-OP{HRS:1-Stk:')
+
+    def __init__(self, *args, **kwargs):
+        self.enabled_crystals = self.rowland_circle.enabled_crystals
+        self.initialized = self.rowland_circle.initialized
+        super().__init__(*args, **kwargs)
+
+    def enable_crystal(self, crystal_key, enable):
+        self.rowland_circle.enable_crystal(crystal_key, enable)
+
+    @property
+    def motor_to_bragg_keys(self):
+        keys = ['motor_det_th1']
+        if self.enabled_crystals['main']: keys.append('motor_cr_main_roll')
+        if self.enabled_crystals['aux2']: keys.append('motor_cr_aux2_roll')
+        if self.enabled_crystals['aux3']: keys.append('motor_cr_aux3_roll')
+        return keys
+
+    def _compute_new_real_positions_for_enabled_crystals(self, bragg):
+        new_real_position = self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+        for crystal_key, enabled in self.enabled_crystals.items():
+            if not enabled: # then find keys that must be static during the motion of enabled crystals
+                if crystal_key == 'main':
+                    _motor_keys = _johann_cr_main_motor_keys
+                elif crystal_key == 'aux2':
+                    _motor_keys = _johann_cr_aux2_motor_keys
+                elif crystal_key == 'aux3':
+                    _motor_keys = _johann_cr_aux3_motor_keys
+                else:
+                    raise ValueError('this crystal key is not implemented yet')
+                for k in _motor_keys:
+                    new_real_position[k] = getattr(self, k).position
+        return new_real_position
+
+    def _compute_braggs_from_motors(self, real_dict):
+        braggs = []
+        for key in self.motor_to_bragg_keys:
+            pos = real_dict[key]
+            bragg = self.rowland_circle.compute_bragg_from_motor(key, pos)
+            braggs.append(bragg)
+
+        self.aligned = np.all(np.isclose(braggs, braggs[0], atol=1e-3))
+        return braggs
+
+    def home_crystal_piezos(self):
+        self.piezo_homing.home_all_axes()
+
+
+class JohannSpectrometer(JohannMultiCrystalPseudoPositioner):
+    motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
+    motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
+    motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
+
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
+    motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
+    motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
+
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
+    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+
+    _pseudo = ['bragg']
+
+    def _forward(self, pseudo_dict):
+        bragg = pseudo_dict['bragg']
+        new_real_positions = self._compute_new_real_positions_for_enabled_crystals(bragg)
+        return new_real_positions
+
+    def _inverse(self, real_dict):
+        braggs = self._compute_braggs_from_motors(real_dict)
+        return {'bragg': np.mean(braggs)}
+
+johann_spectrometer = JohannSpectrometer(name='johann_spectrometer')
+
+class JohannEmission(JohannMultiCrystalPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
     motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
@@ -964,32 +976,20 @@ class JohannEmission(JohannPseudoPositioner):
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
     energy = Cpt(PseudoSingle, name='energy')
-
-    piezo_homing = Cpt(JohannCrystalHoming, 'XF:08IDB-OP{HRS:1-Stk:')
-
-    _real = ['motor_det_x', 'motor_det_th1', 'motor_det_th2',
-             'motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_roll', 'motor_cr_main_yaw',#,]
-             'motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw',
-             'motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
     _pseudo = ['energy']
 
-    aligned = True
-    motor_to_bragg_keys = ['motor_det_th1', 'motor_cr_main_roll', ]#'motor_cr_aux2_roll', 'motor_cr_aux3_roll']
-    _initialized = True
 
     def _forward(self, pseudo_dict):
         energy = pseudo_dict['energy']
-        return self.rowland_circle.compute_motor_position_from_energy(self.real_keys, energy)
+        bragg = self.rowland_circle.e2bragg(energy)
+        new_real_positions = self._compute_new_real_positions_for_enabled_crystals(bragg)
+        return new_real_positions
 
     def _inverse(self, real_dict):
-        energies = []
-        for key in self.motor_to_bragg_keys:
-            pos = real_dict[key]
-            energy = self.rowland_circle.compute_energy_from_motor(key, pos)
-            energies.append(energy)
-
-        self.aligned = np.all(np.isclose(energies, energies[0], atol=1e-3))
-        return {'energy': np.mean(energies)}
+        braggs = self._compute_braggs_from_motors(real_dict)
+        bragg = np.mean(braggs)
+        energy = self.rowland_circle.bragg2e(bragg)
+        return {'energy': np.mean(energy)}
 
     # ops functions
     def set_det_arm_parking(self):
@@ -1022,13 +1022,10 @@ class JohannEmission(JohannPseudoPositioner):
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
 
-    # def append_energy_converter(self, ec):
-    #     self.rowland_circle.append_energy_converter(ec)
-
-    def home_crystal_piezos(self):
-        self.piezo_homing.home_all_axes()
 
 johann_emission = JohannEmission(name='johann_emission')
+
+
 # johann_emission.energy._limits=(9390, 9490)
 
 
