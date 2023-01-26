@@ -95,6 +95,21 @@ from event_model import compose_datum_page, schema_validators, DocumentNames, sc
 # resource, datum_ids, datum_kwarg_list)
 
 
+_xs_calibration_data = {'Cu' : {'true': 8039, 'ch1': 8160, 'ch2': 7980, 'ch3': 8120, 'ch4': 7880},
+                        'Pd': {'true': 21124, 'ch1': 21430, 'ch2': 20990, 'ch3': 21340, 'ch4': 20730}}
+def _convert_xs_energy_nom2act(energy, ch_index):
+    ch = f'ch{ch_index}'
+    ks = [0, (_xs_calibration_data['Cu'][ch] / _xs_calibration_data['Cu']['true']), (_xs_calibration_data['Pd'][ch] / _xs_calibration_data['Pd']['true'])]
+    es = [0, _xs_calibration_data['Cu']['true'], _xs_calibration_data['Pd']['true']]
+    k = np.interp(energy, es, ks)
+    return energy * k
+
+def _compute_window_for_xs_roi_energy(energy):
+    es = [_xs_calibration_data['Cu']['true'], _xs_calibration_data['Pd']['true']]
+    ws = [500, 1000]
+    w = np.interp(energy, es, ws)
+    return w
+# _convert_xs_energy_nom2act(8039, 1)
 
 class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
     roi_data = Cpt(PluginBase, 'ROIDATA:')
@@ -238,7 +253,30 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
             for roi_n in roi_names:
                 getattr(channel.rois, roi_n).value_sum.kind = 'omitted'
 
-    # def
+    def set_limits_for_roi(self, energy_nom, roi, window='auto'):
+
+        for ch_index, channel in self.channels.items():
+            if window == 'auto':
+                w = _compute_window_for_xs_roi_energy(energy_nom)
+            else:
+                w = int(window)
+            energy = _convert_xs_energy_nom2act(energy_nom, ch_index)
+            ev_low_new = int(energy - w / 2)
+            ev_high_new = int(energy + w / 2)
+
+            roi_obj = getattr(channel.rois, roi)
+            if ev_high_new < roi_obj.ev_low.get():
+                roi_obj.ev_low.put(ev_low_new)
+                roi_obj.ev_high.put(ev_high_new)
+            else:
+                roi_obj.ev_high.put(ev_high_new)
+                roi_obj.ev_low.put(ev_low_new)
+
+    def ensure_roi4_covering_total_mca(self, emin=600, emax=40960):
+        for ch_index, channel in self.channels.items():
+            channel.rois.roi04.ev_high.put(emax)
+            channel.rois.roi04.ev_low.put(emin)
+
 
 # def compose_bulk_datum_xs(*, resource_uid, counter, datum_kwargs, validate=True):
 #     # print_message_now(datum_kwargs)
