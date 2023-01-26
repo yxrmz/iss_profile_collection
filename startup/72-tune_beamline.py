@@ -242,7 +242,8 @@ def quick_tune_beamline_plan_bundle(enable_fb_in_the_end : bool = True, plan_gui
                                       'channel': element['channel'],
                                       'scan_range' : element['range'],
                                       'velocity' : element['velocity'],
-                                      'n_tries' : element['n_tries']},
+                                      'n_tries' : element['n_tries'],
+                                      'liveplot_kwargs': {}},
                       'plan_gui_services' : plan_gui_services})
 
         if detector_device == bpm_fm:

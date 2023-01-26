@@ -109,7 +109,7 @@ def ramp_motor_scan(motor=None, detector_channels=None, range=0,  sleep = 0.2, v
 
 
 
-def quick_tuning_scan(motor=None, detector=None, channel=None, scan_range=None, velocity=None, n_tries = 3, plot_func=None):
+def quick_tuning_scan(motor=None, detector=None, channel=None, scan_range=None, velocity=None, n_tries = 3, plot_func=None, liveplot_kwargs=None):
     motor_device = get_motor_device(motor, based_on='object_name')
     detector_device = get_detector_device_list([detector], flying=False)[0]
     detector_channel = get_detector_channel(detector, channel)

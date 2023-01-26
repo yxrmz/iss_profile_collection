@@ -87,7 +87,7 @@ def bender_scan_plan_bundle(element, edge, error_message_func=None):
     return plans
 
 
-def obtain_hhm_calibration_plan(dE=25, is_final=False, plot_func=None, error_message_func=None):
+def obtain_hhm_calibration_plan(dE=25, is_final=False, plot_func=None, error_message_func=None, liveplot_kwargs=None):
     energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
 
     print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
@@ -133,12 +133,12 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_servi
         plans.append({'plan_name': 'fly_scan_plan',
                       'plan_kwargs': {**scan_kwargs}})
         plans.append({'plan_name': 'obtain_hhm_calibration_plan',
-                      'plan_kwargs': {'dE' : dE, 'is_final' : False},
+                      'plan_kwargs': {'dE' : dE, 'is_final' : False, 'liveplot_kwargs': {}},
                      'plan_gui_services': plan_gui_services})
         plans.append({'plan_name': 'fly_scan_plan',
                       'plan_kwargs': {**scan_kwargs}})
         plans.append({'plan_name': 'obtain_hhm_calibration_plan',
-                      'plan_kwargs': {'dE' : dE, 'is_final' : True},
+                      'plan_kwargs': {'dE' : dE, 'is_final' : True, 'liveplot_kwargs': {}},
                       'plan_gui_services': plan_gui_services})
     else:
         if run_simple_scan:

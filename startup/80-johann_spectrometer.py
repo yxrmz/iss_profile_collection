@@ -874,9 +874,16 @@ class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
     aligned = True
     piezo_homing = Cpt(JohannCrystalHoming, 'XF:08IDB-OP{HRS:1-Stk:')
 
+    @property
+    def initialized(self):
+        return self.rowland_circle.initialized
+
+    @initialized.setter
+    def initialized(self, value):
+        self.rowland_circle.initialized = value
+
     def __init__(self, *args, **kwargs):
         self.enabled_crystals = self.rowland_circle.enabled_crystals
-        self.initialized = self.rowland_circle.initialized
         super().__init__(*args, **kwargs)
 
     def enable_crystal(self, crystal_key, enable):
