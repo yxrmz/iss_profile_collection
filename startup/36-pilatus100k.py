@@ -131,6 +131,9 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         self.stats4.kind = 'hinted'
         self.stats4.total.kind = 'hinted'
 
+    def read_exposure_time(self):
+        return self.cam.acquire_period.get()
+
     def set_exposure_time(self, exp_t):
         self.cam.acquire_time.put(exp_t - self.readout)
         self.cam.acquire_period.put(exp_t)

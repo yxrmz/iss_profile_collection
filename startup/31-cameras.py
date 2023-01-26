@@ -54,6 +54,12 @@ class BPM(SingleTrigger, ProsilicaDetector):
             self.retract.set('Retract')
             return status
 
+    def read_exposure_time(self):
+        return self.exp_time.get()
+
+    def set_exposure_time(self, new_exp_time):
+        self.exp_time.set(new_exp_time).wait()
+
     def adjust_camera_exposure_time(self, roi_index=1,
                                     target_max_counts=80, atol=10,
                                     max_exp_time_thresh=1,
@@ -69,7 +75,8 @@ class BPM(SingleTrigger, ProsilicaDetector):
 
             if new_exp_time != current_exp_time:
                 if delta > atol:
-                    self.exp_time.set(new_exp_time).wait()
+                    # self.exp_time.set(new_exp_time).wait()
+                    self.set_exposure_time(new_exp_time)
                     ttime.sleep(np.max((0.5, new_exp_time)))
                     continue
             break

@@ -165,13 +165,22 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
         self._abs_trigger_count += 1
         return self._status
 
+    def set_exposure_time(self, new_exp_time):
+        self.settings.acquire_time.set(new_exp_time).wait()
+
+    def read_exposure_time(self):
+        return self.settings.acquire_time.get()
+
     def test_exposure(self, acq_time=1, num_images=1):
         _old_acquire_time = self.settings.acquire_time.value
         _old_num_images = self.settings.num_images.value
-        self.settings.acquire_time.set(acq_time).wait()
+        # self.settings.acquire_time.set(acq_time).wait()
+        self.set_exposure_time(acq_time)
         self.settings.num_images.set(num_images).wait()
+        self.settings.erase.put(1)
         self._acquisition_signal.put(1, wait=True)
-        self.settings.acquire_time.set(_old_acquire_time).wait()
+        # self.settings.acquire_time.set(_old_acquire_time).wait()
+        self.set_exposure_time(_old_acquire_time)
         self.settings.num_images.set(_old_num_images).wait()
 
     def set_channels_for_hdf5(self, channels=(1, 2, 3, 4)):
@@ -229,6 +238,7 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
             for roi_n in roi_names:
                 getattr(channel.rois, roi_n).value_sum.kind = 'omitted'
 
+    # def
 
 # def compose_bulk_datum_xs(*, resource_uid, counter, datum_kwargs, validate=True):
 #     # print_message_now(datum_kwargs)

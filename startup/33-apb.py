@@ -78,6 +78,12 @@ class AnalogPizzaBox(Device):
         super().__init__(*args, **kwargs)
         self._IP = '10.66.59.42'
 
+    def read_exposure_time(self):
+        pass
+
+    def set_exposure_time(self, value):
+        pass
+
 
 apb = AnalogPizzaBox(prefix="XF:08IDB-CT{PBA:1}:", name="apb")
 apb.wait_for_connection(timeout=10)
@@ -134,17 +140,17 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
         yield from bps.abs_set(self.sample_len, self.saved_status['sample_len'])
         yield from bps.abs_set(self.wf_len, self.saved_status['wf_len'])
 
-    # def read(self, *args, **kwargs):
-    #     start_read = ttime.time()
-    #     output = super().read(*args, **kwargs)
-    #     print(f'{self.name} took {ttime.time() - start_read} to read')
-    #     return output
+    def read_exposure_time(self):
+        data_rate = self.data_rate.get()
+        sample_len = apb_ave.sample_len.get()
+        return np.round((data_rate * sample_len / 1000), 3)
 
-# def trigger(self, *args, **kwargs):
-#     start_trigger = ttime.time()
-#     status = super().trigger(*args, **kwargs)
-#     print(f'{self.name} took {ttime.time() - start_trigger} to trigger')
-#     return status
+    def set_exposure_time(self, new_exp_time):
+        data_rate = self.data_rate.get()
+        sample_len = 250 * (np.round(new_exp_time * data_rate * 1000 / 250))
+        self.sample_len.set(sample_len).wait()
+        self.wf_len.set(sample_len).wait()
+
 
 
 apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")
