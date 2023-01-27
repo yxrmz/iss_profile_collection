@@ -62,7 +62,7 @@ class Sample:
 
     @property
     def number_of_unexposed_points(self):
-        return (self.number_of_points - sum(self.position_data['exposed']))
+        return int(self.number_of_points - sum(self.position_data['exposed']))
 
     def index_coordinate_dict(self, index):
         return self.position_data.iloc[index][['x', 'y', 'z', 'th']].to_dict()
@@ -247,9 +247,12 @@ class SampleManager(PersistentListInteractingWithGUI):
     def delete_samples_with_index_dict(self, index_dict):
         sample_idx_to_delete = []
         for sample_index, point_index_list in index_dict.items():
-            sample = self.samples[sample_index]
-            point_index_set = set(point_index_list)
-            sample.remove_positions(list(point_index_set))
+            if len(point_index_list) > 0:
+                sample = self.samples[sample_index]
+                point_index_set = set(point_index_list)
+                sample.remove_positions(list(point_index_set))
+            else:
+                sample_idx_to_delete.append(sample_index)
         if len(sample_idx_to_delete) > 0:
             self.delete_multiple_samples(sample_idx_to_delete, emit_signal=False)
 
