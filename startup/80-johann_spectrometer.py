@@ -171,6 +171,7 @@ _johann_spectrometer_motor_keys = (_johann_det_arm_motor_keys +
                                    _johann_cr_aux2_motor_keys +
                                    _johann_cr_aux3_motor_keys)
 
+_allowed_roll_offsets = [2.5, 11.5, 20.5]
 
 class RowlandCircle:
 
@@ -183,6 +184,8 @@ class RowlandCircle:
         self.y_src = 0
         self.bragg_min = 59
         self.bragg_max = 95
+
+        self.allowed_roll_offsets = _allowed_roll_offsets
 
         self.det_L1 = _BIG_DETECTOR_ARM_LENGTH
         self.det_L2 = _SMALL_DETECTOR_ARM_LENGTH
@@ -359,6 +362,7 @@ class RowlandCircle:
 
     @R.setter
     def R(self, value):
+        self.config['parking']['motor_cr_assy_x'] += (self.config['R'] - value)
         self.config['R'] = value
 
     @property
@@ -383,6 +387,7 @@ class RowlandCircle:
 
     @roll_offset.setter
     def roll_offset(self, value):
+        assert value in self.allowed_roll_offsets, f'roll_offset value must be equal to one of {self.allowed_roll_offsets}'
         self.config['roll_offset'] = value
         self.compute_nominal_trajectory()
         self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
@@ -605,10 +610,25 @@ class RowlandCircle:
     def bragg2e(self, bragg):
         return bragg2e(bragg, self.crystal, self.hkl)
 
+    def suggest_roll_offset(self, bragg_target, roll_range=5):
+        offsets = np.array(self.allowed_roll_offsets)
+        offset_braggs = 90 - offsets
+        options = np.isclose(bragg_target, offset_braggs, atol=roll_range)
+        return offsets[options][0]
+
     # def append_energy_converter(self, ec):
     #     self.energy_converter = ec
 
 rowland_circle = RowlandCircle()
+
+# def suggest_roll_offsets(bragg_target, roll_range=5):
+
+# bragg_target = 85
+# allowed_roll_offsets = [2.5, 11.5, 20.5]
+# offsets = np.array(allowed_roll_offsets)
+# offset_braggs = 90 - offsets
+#
+# print(offsets[options][0])
 
 # rowland_circle.det_focus =
 # rowland_circle.update_nominal_trajectory_for_detector(-8)
@@ -1028,6 +1048,29 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
+
+    def set_crystal(self, value):
+        self.rowland_circle.crystal = value
+
+    def set_hkl(self, value):
+        self.rowland_circle.hkl = value
+
+    def set_R(self, value):
+        self.rowland_circle.R = value
+
+    def bragg2e(self, bragg):
+        return self.rowland_circle.bragg2e(bragg)
+
+    def e2bragg(self, energy):
+        return self.rowland_circle.e2bragg(energy)
+
+    @property
+    def allowed_roll_offsets(self):
+        return self.rowland_circle.allowed_roll_offsets
+
+    def suggest_roll_offset(self, target_bragg):
+        return self.rowland_circle.suggest_roll_offset(target_bragg)
+
 
 
 johann_emission = JohannEmission(name='johann_emission')
