@@ -1058,11 +1058,8 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def set_R(self, value):
         self.rowland_circle.R = value
 
-    def bragg2e(self, bragg):
-        return self.rowland_circle.bragg2e(bragg)
-
-    def e2bragg(self, energy):
-        return self.rowland_circle.e2bragg(energy)
+    def set_roll_offset(self, value):
+        self.rowland_circle.roll_offset = value
 
     @property
     def allowed_roll_offsets(self):
@@ -1070,6 +1067,13 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def suggest_roll_offset(self, target_bragg):
         return self.rowland_circle.suggest_roll_offset(target_bragg)
+
+    def bragg2e(self, bragg):
+        return self.rowland_circle.bragg2e(bragg)
+
+    def e2bragg(self, energy):
+        return self.rowland_circle.e2bragg(energy)
+
 
 
 
