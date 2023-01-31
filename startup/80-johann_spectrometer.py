@@ -22,7 +22,7 @@ from ophyd.pseudopos import (pseudo_position_argument,
 #     motor_crystal_y = auxxy.y
 #     motor_detector_y = huber_stage.z
 #     _real = ['motor_crystal_x',
-#              'motor_crystal_y',
+#              'motor_crystal_y',F
 #              'motor_detector_y']
 #
 #     def __init__(self, *args, **kwargs):
@@ -153,7 +153,7 @@ class Nominal2ActualConverterWithLinearInterpolation:
             return f(x_act)
 
 
-from xas.xray import bragg2e, e2bragg
+from xas.xray import bragg2e, e2bragg, crystal_reflectivity
 from xas.spectrometer import compute_rowland_circle_geometry, _compute_rotated_rowland_circle_geometry
 
 _BIG_DETECTOR_ARM_LENGTH = 550 # length of the big arm
@@ -609,6 +609,10 @@ class RowlandCircle:
 
     def bragg2e(self, bragg):
         return bragg2e(bragg, self.crystal, self.hkl)
+
+    def e2reflectivity(self, energy):
+        bragg = self.e2bragg(energy)
+        return crystal_reflectivity(self.crystal, self.hkl, bragg, energy)
 
     def suggest_roll_offset(self, bragg_target, roll_range=5):
         offsets = np.array(self.allowed_roll_offsets)
@@ -1073,6 +1077,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def e2bragg(self, energy):
         return self.rowland_circle.e2bragg(energy)
+
+    def e2reflectivity(self, energy):
+        return self.rowland_circle.e2reflectivity(energy)
 
 
 
