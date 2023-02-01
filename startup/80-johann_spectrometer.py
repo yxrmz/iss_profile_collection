@@ -1090,55 +1090,36 @@ johann_emission = JohannEmission(name='johann_emission')
 # johann_emission.energy._limits=(9390, 9490)
 
 
-motor_dictionary['johann_cr_main_roll'] =    {'name': johann_main_crystal.motor_cr_main_roll.name,
-                                              'description' : 'Johann Crystal 1 Roll',
-                                              'object': johann_main_crystal.motor_cr_main_roll,
-                                              'group': 'spectrometer'}
+_johann_motor_dictionary = {
+'auxxy_x':                  {'name': auxxy.x.name,                                     'description': 'Johann Crystal Assy X',        'object': auxxy.x,                                  'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
+'auxxy_y':                  {'name': auxxy.y.name,                                     'description': 'Johann Detector X',            'object': auxxy.y,                                  'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
+'johann_cr_main_roll':      {'name': johann_main_crystal.motor_cr_main_roll.name,      'description': 'Johann Main Crystal Roll',     'object': johann_main_crystal.motor_cr_main_roll,   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+'johann_cr_main_yaw':       {'name': johann_main_crystal.motor_cr_main_yaw.name,       'description': 'Johann Main Crystal Yaw',      'object': johann_main_crystal.motor_cr_main_yaw,    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+'johann_cr_aux2_roll':      {'name': johann_aux2_crystal.motor_cr_aux2_roll.name,      'description': 'Johann Aux2 Crystal Roll',     'object': johann_aux2_crystal.motor_cr_aux2_roll,   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+'johann_cr_aux2_yaw':       {'name': johann_aux2_crystal.motor_cr_aux2_yaw.name,       'description': 'Johann Aux2 Crystal Yaw',      'object': johann_aux2_crystal.motor_cr_aux2_yaw,    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+'johann_cr_aux2_x':         {'name': johann_aux2_crystal.motor_cr_aux2_x.name,         'description': 'Johann Aux2 Crystal X',        'object': johann_aux2_crystal.motor_cr_aux2_x,      'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
+'johann_cr_aux2_y':         {'name': johann_aux2_crystal.motor_cr_aux2_y.name,         'description': 'Johann Aux2 Crystal Y',        'object': johann_aux2_crystal.motor_cr_aux2_y,      'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
+'johann_cr_aux3_roll':      {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,      'description': 'Johann Aux3 Crystal roll',     'object': johann_aux3_crystal.motor_cr_aux3_roll,   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+'johann_cr_aux3_yaw':       {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,       'description': 'Johann Aux3 Crystal Yaw',      'object': johann_aux3_crystal.motor_cr_aux3_yaw,    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+'johann_cr_aux3_x':         {'name': johann_aux3_crystal.motor_cr_aux3_x.name,         'description': 'Johann Aux3 Crystal X',        'object': johann_aux3_crystal.motor_cr_aux3_x,      'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
+'johann_cr_aux3_y':         {'name': johann_aux3_crystal.motor_cr_aux3_y.name,         'description': 'Johann Aux3 Crystal Y',        'object': johann_aux3_crystal.motor_cr_aux3_y,      'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
+'johann_cr_main_bragg':     {'name': johann_main_crystal.bragg.name,                   'description': 'Johann Main Crystal Bragg',    'object': johann_main_crystal.bragg,                'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+'johann_cr_aux2_bragg':     {'name': johann_aux2_crystal.bragg.name,                   'description': 'Johann Aux2 Crystal Bragg',    'object': johann_aux2_crystal.bragg,                'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+'johann_cr_aux3_bragg':     {'name': johann_aux3_crystal.bragg.name,                   'description': 'Johann Aux3 Crystal Bragg',    'object': johann_aux3_crystal.bragg,                'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+'johann_det_focus':         {'name': johann_det_arm.det_focus.name,                    'description': 'Johann Detector Focus',        'object': johann_det_arm.det_focus,                 'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 5},
+'johann_x':                 {'name': johann_spectrometer_x.x.name,                     'description': 'Johann Spectrometer X',        'object': johann_spectrometer_x.x,                  'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
+'johann_bragg_angle':       {'name': johann_spectrometer.bragg.name,                   'description': 'Johann Global Bragg Angle',    'object': johann_spectrometer.bragg,                'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 0.05},
+'johann_energy':            {'name': johann_emission.energy.name,                      'description': 'Johann Emission Energy',       'object': johann_emission.energy,                   'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
+}
 
-motor_dictionary['johann_cr_main_yaw'] =     {'name': johann_main_crystal.motor_cr_main_yaw.name,
-                                              'description' : 'Johann Crystal 1 Yaw',
-                                              'object': johann_main_crystal.motor_cr_main_yaw,
-                                              'group': 'spectrometer'}
 
-motor_dictionary['johann_cr_aux2_roll'] =    {'name': johann_aux2_crystal.motor_cr_aux2_roll.name,
-                                              'description' : 'Johann Crystal 2 roll',
-                                              'object': johann_aux2_crystal.motor_cr_aux2_roll,
-                                              'group': 'spectrometer'}
 
-motor_dictionary['johann_cr_aux2_yaw'] =     {'name': johann_aux2_crystal.motor_cr_aux2_yaw.name,
-                                              'description' : 'Johann Crystal 2 Yaw',
-                                              'object': johann_aux2_crystal.motor_cr_aux2_yaw,
-                                              'group': 'spectrometer'}
+motor_dictionary = {**motor_dictionary, **_johann_motor_dictionary}
 
-motor_dictionary['johann_cr_aux3_roll'] =    {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,
-                                              'description' : 'Johann Crystal 3 roll',
-                                              'object': johann_aux3_crystal.motor_cr_aux3_roll,
-                                              'group': 'spectrometer'}
 
-motor_dictionary['johann_cr_aux3_yaw'] =     {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,
-                                              'description' : 'Johann Crystal 3 Yaw',
-                                              'object': johann_aux3_crystal.motor_cr_aux3_yaw,
-                                              'group': 'spectrometer'}
 
-motor_dictionary['johann_bragg_angle'] = {'name': johann_spectrometer.bragg.name,
-                                          'description' : 'Johann Bragg Angle',
-                                          'object': johann_spectrometer.bragg,
-                                          'group': 'spectrometer'}
 
-motor_dictionary['johann_det_focus'] =   {'name': johann_det_arm.det_focus.name,
-                                          'description' : 'Johann Detector Focus',
-                                          'object': johann_det_arm.det_focus,
-                                          'group': 'spectrometer'}
 
-motor_dictionary['johann_x'] =           {'name': johann_spectrometer_x.x.name,
-                                          'description' : 'Johann X',
-                                          'object': johann_spectrometer_x.x,
-                                          'group': 'spectrometer'}
-
-motor_dictionary['johann_energy'] =      {'name': johann_emission.energy.name,
-                                          'description' : 'Johann Energy',
-                                          'object': johann_emission.energy,
-                                          'group': 'spectrometer'}
 
 
 
