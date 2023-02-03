@@ -31,6 +31,7 @@ service_plan_funcs = {
         'random_xy_step' : move_sample_by_random_xy_step,
         'move_motor_plan' : move_motor_plan,
         'calibrate_mono_energy_plan_bundle' : {'kind' : 'bundle', 'func' : calibrate_mono_energy_plan_bundle},
+        'johann_resolution_scan_plan_bundle' : {'kind' : 'bundle', 'func' : johann_resolution_scan_plan_bundle},
         'quick_pitch_optimization' : quick_pitch_optimization,
         # 'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
         'move_mono_energy' : move_mono_energy,

@@ -149,5 +149,21 @@ def step_scan_johann_rixs_plan_bundle(**kwargs):
 
 
 
+def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.0, plan_gui_services=None, question_message_func=None, ):
+    plans = []
+    trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, e_width, e_velocity)
 
 
+    name = f'Resolution scan {e_cen}'
+    scan_kwargs = {'name': name, 'comment': '',
+                   'trajectory_filename': trajectory_filename,
+                   'detectors': [],
+                   'element': '', 'e0': e_cen, 'edge': ''}
+
+    plans.append({'plan_name': 'fly_scan_plan',
+                  'plan_kwargs': {**scan_kwargs}})
+    # plans.append({'plan_name': 'obtain_hhm_calibration_plan',
+    #               'plan_kwargs': {'dE' : dE, 'is_final' : False, 'liveplot_kwargs': {}},
+    #              'plan_gui_services': plan_gui_services})
+
+    return plans
