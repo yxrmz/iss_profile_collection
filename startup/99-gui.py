@@ -31,7 +31,6 @@ if not os.environ.get('AZURE_TESTING'):
                                plan_processor=plan_processor,
                                RE=RE,
                                db=db,
-                               db_proc=db_proc,
                                processing_ioc_uid=processing_ioc_uid,
                                accelerator=nsls_ii,
                                hhm=hhm,
