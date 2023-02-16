@@ -87,7 +87,7 @@ class ShutterMotor(Device):
 
         if motor.connected:
             self.output = motor.pos
-            self.open_pos = 0.01
+            self.open_pos = 0.00
             self.open_range = 1
             self.closed_pos = 1.1
             # self.update_state(self.current_pos)
