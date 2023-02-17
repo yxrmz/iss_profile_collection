@@ -535,6 +535,7 @@ class RowlandCircle:
             self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
             self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
             self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
+        self.save_current_spectrometer_config_to_settings()
 
     def register_energy(self, energy_act, motor_pos_dict):
         bragg_act = self.e2bragg(energy_act)
@@ -1053,6 +1054,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
 
+    def set_energy_limits(self, e_lo, e_hi):
+        self.energy._limits = (e_lo, e_hi)
+
     def set_crystal(self, value):
         self.rowland_circle.crystal = value
 
@@ -1087,7 +1091,7 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 johann_emission = JohannEmission(name='johann_emission')
 
 
-# johann_emission.energy._limits=(9390, 9490)
+johann_emission.energy._limits=(7624, 7731)
 
 
 _johann_motor_dictionary = {

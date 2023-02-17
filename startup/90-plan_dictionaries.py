@@ -32,6 +32,7 @@ service_plan_funcs = {
         'move_motor_plan' : move_motor_plan,
         'calibrate_mono_energy_plan_bundle' : {'kind' : 'bundle', 'func' : calibrate_mono_energy_plan_bundle},
         'johann_resolution_scan_plan_bundle' : {'kind' : 'bundle', 'func' : johann_resolution_scan_plan_bundle},
+        'obtain_spectrometer_resolution_plan' : obtain_spectrometer_resolution_plan,
         'quick_pitch_optimization' : quick_pitch_optimization,
         # 'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
         'move_mono_energy' : move_mono_energy,

@@ -147,9 +147,21 @@ def step_scan_johann_rixs_plan_bundle(**kwargs):
     return johann_rixs_plan_bundle('step_scan_johann_herfd_plan', **kwargs)
 
 
+from xas.spectrometer import analyze_elastic_fly_scan
+
+def obtain_spectrometer_resolution_plan(rois=None, plot_func=None, liveplot_kwargs=None, attempts=5, sleep=5):
+    for i in range(attempts):
+        try:
+            print_to_gui(f'Analyzing resolution scan: attempt {i+1}', tag='Spectrometer', add_timestamp=True)
+            analyze_elastic_fly_scan(db, -1, rois=rois, plot_func=plot_func)
+            yield from bps.null()
+            break
+        except Exception as e:
+            yield from bps.sleep(sleep)
 
 
-def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.0, plan_gui_services=None, question_message_func=None, ):
+
+def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.0, rois=None, plan_gui_services=None, liveplot_kwargs=None, ):
     plans = []
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, e_width, e_velocity)
 
@@ -157,13 +169,13 @@ def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.
     name = f'Resolution scan {e_cen}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
-                   'detectors': [],
+                   'detectors': ['Pilatus 100k'],
                    'element': '', 'e0': e_cen, 'edge': ''}
 
     plans.append({'plan_name': 'fly_scan_plan',
                   'plan_kwargs': {**scan_kwargs}})
-    # plans.append({'plan_name': 'obtain_hhm_calibration_plan',
-    #               'plan_kwargs': {'dE' : dE, 'is_final' : False, 'liveplot_kwargs': {}},
-    #              'plan_gui_services': plan_gui_services})
+    plans.append({'plan_name': 'obtain_spectrometer_resolution_plan',
+                  'plan_kwargs': {'rois' : rois, 'liveplot_kwargs': liveplot_kwargs},
+                  'plan_gui_services': plan_gui_services})
 
     return plans
