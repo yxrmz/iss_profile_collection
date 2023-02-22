@@ -29,7 +29,7 @@ def set_hhm_feedback_plan(state=0, update_center=False):
 
 def move_motor_plan(motor_attr='', based_on='description', position=None):
     motor_device = get_motor_device(motor_attr, based_on=based_on)
-    yield from bps.mv(motor_device, position)
+    yield from bps.mv(motor_device, position, wait=True)
 
 # def move_mono_energy(energy : float = -1):
 #     yield from move_motor_plan(motor_attr=hhm.energy.name, based_on='object_name', position=energy)
@@ -42,8 +42,19 @@ def move_mono_pitch(value: float = 680):
 
 
 def move_johann_spectrometer_energy(energy=-1):
-    yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=energy)
+    current_energy = johann_emission.energy.position
+    energy = float(energy)
+    energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)) + 2)[1:]
+    for _energy in energy_arr:
+        print_to_gui(f'Moving spectrometer to {_energy}')
+        yield from move_motor_plan(motor_attr=johann_emission.name, based_on='object_name', position=float(_energy))
 
+
+# current_energy = 6492.001
+# energy = 6493
+# energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)) + 2)[1:]
+# for _energy in energy_arr:
+#     print(_energy)
 
 
 def _bpm_es_exposure(energy):

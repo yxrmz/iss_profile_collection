@@ -24,7 +24,8 @@ def plot_radiation_damage_scan_data(db, uid):
 
 def prepare_johann_scan_plan(detectors, spectrometer_energy):
     ensure_pilatus_is_in_detector_list(detectors)
-    yield from bps.mv(johann_emission.energy, spectrometer_energy)
+    yield from move_johann_spectrometer_energy(spectrometer_energy)
+    # yield from bps.mv(johann_emission, spectrometer_energy)
 
 def prepare_johann_metadata_and_kwargs(**kwargs):
     metadata = kwargs.pop('metadata')
@@ -86,7 +87,7 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from bps.mv(hhm.energy, mono_energy)
     yield from prepare_johann_scan_plan(detectors, emission_energy_list[0])
 
-    yield from general_energy_step_scan(all_detectors, johann_emission.energy, emission_energy_list, emission_time_list, md=md)
+    yield from general_energy_step_scan(all_detectors, johann_emission, emission_energy_list, emission_time_list, md=md)
 
 
 

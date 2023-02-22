@@ -1085,13 +1085,25 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def e2reflectivity(self, energy):
         return self.rowland_circle.e2reflectivity(energy)
 
-
-
+    # def move(self, position, step_size=0.5, **kwargs):
+    #     old_position = self.energy.position
+    #     n_steps = int(np.abs(position - old_position) / step_size + 1)
+    #     _positions = np.linspace(old_position, position, n_steps)[1:]
+    #     if _positions.size == 0:
+    #         ret = NullStatus()
+    #     else:
+    #         for _pos in _positions:
+    #             print_to_gui(f'Spectrometer moving to {_pos}')
+    #             ret = super().move(_pos, **kwargs)
+    #     return ret
+    #
+    # def set(self, *args, wait=True, **kwargs):
+    #     return super().set(*args, wait=wait, **kwargs)
 
 johann_emission = JohannEmission(name='johann_emission')
 
 
-johann_emission.energy._limits=(7624, 7731)
+johann_emission.energy._limits=(6469.9, 6542)
 
 
 _johann_motor_dictionary = {
@@ -1113,7 +1125,7 @@ _johann_motor_dictionary = {
 'johann_det_focus':         {'name': johann_det_arm.det_focus.name,                    'description': 'Johann Detector Focus',        'object': johann_det_arm.det_focus,                 'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 5},
 'johann_x':                 {'name': johann_spectrometer_x.x.name,                     'description': 'Johann Spectrometer X',        'object': johann_spectrometer_x.x,                  'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
 'johann_bragg_angle':       {'name': johann_spectrometer.bragg.name,                   'description': 'Johann Global Bragg Angle',    'object': johann_spectrometer.bragg,                'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 0.05},
-'johann_energy':            {'name': johann_emission.energy.name,                      'description': 'Johann Emission Energy',       'object': johann_emission.energy,                   'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
+'johann_energy':            {'name': johann_emission.name,                             'description': 'Johann Emission Energy',       'object': johann_emission,                          'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
 }
 
 
@@ -1122,10 +1134,14 @@ motor_dictionary = {**motor_dictionary, **_johann_motor_dictionary}
 
 
 
-
-
-
-
+# df = []
+#
+# for _energy in np.linspace(6470, 6540, 101):
+#     pos_dict = copy.deepcopy(johann_emission._forward({'energy': _energy}))
+#     pos_dict['energy'] = _energy
+#     df.append(pos_dict)
+#
+# df = pd.DataFrame(df)
 
 
 # johann_crystal_homing = JohannCrystalHoming('XF:08IDB-OP{HRS:1-Stk:', name='johann_crystal_homing')
