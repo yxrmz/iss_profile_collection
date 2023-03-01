@@ -1103,7 +1103,7 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 johann_emission = JohannEmission(name='johann_emission')
 
 
-johann_emission.energy._limits=(6469.9, 6542)
+# johann_emission.energy._limits=(6469.9, 6542)
 
 
 _johann_motor_dictionary = {
@@ -1125,7 +1125,7 @@ _johann_motor_dictionary = {
 'johann_det_focus':         {'name': johann_det_arm.det_focus.name,                    'description': 'Johann Detector Focus',        'object': johann_det_arm.det_focus,                 'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 5},
 'johann_x':                 {'name': johann_spectrometer_x.x.name,                     'description': 'Johann Spectrometer X',        'object': johann_spectrometer_x.x,                  'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
 'johann_bragg_angle':       {'name': johann_spectrometer.bragg.name,                   'description': 'Johann Global Bragg Angle',    'object': johann_spectrometer.bragg,                'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 0.05},
-'johann_energy':            {'name': johann_emission.name,                             'description': 'Johann Emission Energy',       'object': johann_emission,                          'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
+'johann_energy':            {'name': johann_emission.energy.name,                      'description': 'Johann Emission Energy',       'object': johann_emission.energy,                   'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
 }
 
 

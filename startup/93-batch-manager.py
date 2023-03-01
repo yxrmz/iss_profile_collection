@@ -409,6 +409,10 @@ scan_sequence_manager = BatchScanManager()
 #     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
 #         super().__init__(json_file_path)
 #         self.local_file_default_path = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
+
 
 class BatchManager(PersistentListInteractingWithGUI):
 
@@ -533,8 +537,23 @@ class BatchManager(PersistentListInteractingWithGUI):
 
         element_list = list(element_list_iterator)
         for element_dict in element_iterator:
-            measurement = {**element_dict, **{'element_list': element_list}}
-            self.add_element_to_experiment(experiment_index, measurement)
+
+            # special treatment of rixs scans - A BANDAID
+            if ((priority == 'scan') and
+                (element_dict['scan_local_dict']['aux_parameters']['scan_key'] == 'johann_rixs')):
+                n_eff = len(element_dict['scan_local_dict']['aux_parameters']['spectrometer']['scan_parameters']['energy_grid'])
+                chunked_element_list = list(chunker(element_list, n_eff))
+                repeats = element_dict['repeat']
+                chunked_element_list = chunked_element_list[:repeats]
+                element_dict_one_repeat = copy.deepcopy(element_dict)
+                element_dict_one_repeat['repeat'] = 1
+                element_dict_one_repeat['name'] = element_dict_one_repeat['name'].replace(f' x{repeats} ', ' x1 ')
+                for _element_list in chunked_element_list:
+                    measurement = {**element_dict_one_repeat, **{'element_list': _element_list}}
+                    self.add_element_to_experiment(experiment_index, measurement)
+            else:
+                measurement = {**element_dict, **{'element_list': element_list}}
+                self.add_element_to_experiment(experiment_index, measurement)
 
     @emit_list_update_signal_decorator
     def add_service_to_element_list(self, index_tuple, service_dict):
