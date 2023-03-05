@@ -99,14 +99,16 @@ _xs_calibration_data = {'Cu' : {'true': 8039, 'ch1': 8160, 'ch2': 7980, 'ch3': 8
                         'Pd': {'true': 21124, 'ch1': 21430, 'ch2': 20990, 'ch3': 21340, 'ch4': 20730}}
 def _convert_xs_energy_nom2act(energy, ch_index):
     ch = f'ch{ch_index}'
-    e_acts = [0, _xs_calibration_data['Cu'][ch], _xs_calibration_data['Pd'][ch]]
-    e_noms = [0, _xs_calibration_data['Cu']['true'], _xs_calibration_data['Pd']['true']]
+    e_acts = [0, _xs_calibration_data['Cu'][ch], _xs_calibration_data['Pd'][ch], _xs_calibration_data['Pd'][ch] * 2]
+    e_noms = [0, _xs_calibration_data['Cu']['true'], _xs_calibration_data['Pd']['true'], _xs_calibration_data['Pd']['true'] * 2]
     return np.interp(energy, e_noms, e_acts)
 
 def _compute_window_for_xs_roi_energy(energy):
     es = [_xs_calibration_data['Cu']['true'], _xs_calibration_data['Pd']['true']]
     ws = [500, 1000]
-    w = np.interp(energy, es, ws)
+    p = np.polyfit(es, ws, 1)
+    w = np.polyval(p, energy)
+    # w = np.interp(energy, es, ws)
     return w
 # _convert_xs_energy_nom2act(8039, 1)
 
