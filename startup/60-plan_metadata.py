@@ -1,5 +1,5 @@
 from xas.file_io import validate_file_exists
-from xas.metadata import metadata_dict
+from xas.metadata import metadata_dict, ghs_selected_gas_key_match
 
 def populate_standard_metadata_dict(obj_dict=None):
     if obj_dict is None:
@@ -94,9 +94,10 @@ def get_general_md():
         else:
             md[f'ch{indx+1}_amp_gain'] = 0
 
-    sample_metadata = get_standard_metadata()
+    for ghs_gas_key, ghs_gas_match in ghs_selected_gas_key_match.items():
+        md[ghs_gas_key] = ghs_gas_match[md[ghs_gas_key]]
 
-    return {**md, **sample_metadata}
+    return md
 
 
 
