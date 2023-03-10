@@ -1,9 +1,11 @@
 
 
-from ophyd.status import SubscriptionStatus, DeviceStatus
+
 from ophyd import utils as ophyd_utils
 from xas import xray
 
+# _EpicsMotor = EpicsMotor
+# _EpicsMotor = EpicsMotorWithTweaking
 
 class Mirror(Device):
     pitch = Cpt(EpicsMotor, '-Ax:P}Mtr')

@@ -2,6 +2,7 @@ from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
                    EpicsSignal, EpicsSignalRO, Kind,
                    PseudoPositioner, PseudoSingle, SoftPositioner, Signal, SignalRO)
 from ophyd.sim import NullStatus
+from ophyd.status import SubscriptionStatus, DeviceStatus
 
 from ophyd.pseudopos import (pseudo_position_argument,
                              real_position_argument)
@@ -246,6 +247,45 @@ class ObjectWithSettings:
 # sample_stage_z.tolerated_alarm =  AlarmSeverity.MAJOR
 #
 # RE(bps.mv(sample_stage_z, -3.5, wait=True))
+
+
+# class EpicsSignalForTweaking(EpicsSignal):
+#     motor_is_moving = None
+#
+#     def append_motor_is_moving(self, motor_is_moving):
+#         self.motor_is_moving = motor_is_moving
+#
+#     def set(self, *args, **kwargs):
+#         if self.motor_is_moving is None:
+#             return super().set(*args, **kwargs)
+#         else:
+#             def callback(value, old_value, **kwargs):
+#                 if int(round(old_value)) == 1 and int(round(value)) == 0:
+#                     return True
+#                 else:
+#                     return False
+#             moving_status = SubscriptionStatus(self.motor_is_moving, callback)
+#             super().put(*args, **kwargs)
+#             # tweak_status = super().set(*args, **kwargs)
+#             # tweak_status.set_finished()
+#             return moving_status
+
+# class EpicsMotorWithTweaking(EpicsMotor):
+#     twv = Cpt(EpicsSignal, '.TWV', kind='omitted')
+#     twr = Cpt(EpicsSignalForTweaking, '.TWR', kind='omitted')
+#     twf = Cpt(EpicsSignalForTweaking, '.TWF', kind='omitted')
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.twr.append_motor_is_moving(self.motor_is_moving)
+#         self.twf.append_motor_is_moving(self.motor_is_moving)
+
+class EpicsMotorWithTweaking(EpicsMotor):
+    # set does not work in this class; use put!
+    twv = Cpt(EpicsSignal, '.TWV', kind='omitted')
+    twr = Cpt(EpicsSignal, '.TWR', kind='omitted')
+    twf = Cpt(EpicsSignal, '.TWF', kind='omitted')
+
 
 
 
