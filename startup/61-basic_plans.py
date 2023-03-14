@@ -41,13 +41,7 @@ def move_mono_pitch(value: float = 680):
 
 
 
-def move_johann_spectrometer_energy(energy=-1):
-    current_energy = johann_emission.energy.position
-    energy = float(energy)
-    energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)) + 2)[1:]
-    for _energy in energy_arr:
-        print_to_gui(f'Moving spectrometer to {_energy}')
-        yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=float(_energy))
+
 
 
 # current_energy = 6492.001

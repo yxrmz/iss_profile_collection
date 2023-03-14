@@ -21,6 +21,15 @@ def plot_radiation_damage_scan_data(db, uid):
 
 
 
+def move_johann_spectrometer_energy(energy=-1):
+    current_energy = johann_emission.energy.position
+    energy = float(energy)
+    energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)/5) + 2)[1:]
+    for _energy in energy_arr:
+        print_to_gui(f'Moving spectrometer to {_energy}')
+        yield from bps.mv(johann_emission, _energy, wait=True)
+        # yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=float(_energy))
+
 
 def prepare_johann_scan_plan(detectors, spectrometer_energy):
     ensure_pilatus_is_in_detector_list(detectors)
@@ -162,12 +171,12 @@ def obtain_spectrometer_resolution_plan(rois=None, plot_func=None, liveplot_kwar
 
 
 
-def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.0, rois=None, plan_gui_services=None, liveplot_kwargs=None, ):
+def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.0, rois=None, motor_info='', plan_gui_services=None, liveplot_kwargs=None, ):
     plans = []
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, e_width, e_velocity)
 
 
-    name = f'Resolution scan {e_cen}'
+    name = f'Resolution scan {e_cen} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
                    'detectors': ['Pilatus 100k'],

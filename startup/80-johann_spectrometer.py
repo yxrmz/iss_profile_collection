@@ -1128,8 +1128,6 @@ _johann_motor_dictionary = {
 'johann_energy':            {'name': johann_emission.energy.name,                      'description': 'Johann Emission Energy',       'object': johann_emission.energy,                   'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
 }
 
-
-
 motor_dictionary = {**motor_dictionary, **_johann_motor_dictionary}
 
 

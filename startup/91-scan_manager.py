@@ -254,15 +254,13 @@ class ScanManager():
 
 
     def quick_linear_scan_dict(self, e_cen, e_width, e_velocity):
-        preedge_start = -e_width
-        XANES_start = -e_width * 0.5
-        XANES_end = e_width * 0.5
-        EXAFS_end = e2k(e_width * 0.2, 0)
-        type = 'standard'
-        _duration = e_width / e_velocity
-        preedge_duration = _duration / 2
-        edge_duration = _duration
-        postedge_duration = _duration / 2
+        preedge_start = -e_width * 0.5
+        XANES_start = -e_width * 0.25
+        XANES_end = e_width * 0.25
+        EXAFS_end = e2k(e_width * 0.5, 0)
+
+        type = 'sine'
+        duration = np.pi * e_width / (2 * e_velocity)
 
         return {'scan_type': 'fly scan',
                 'scan_parameters': {'element': 'NA',
@@ -273,16 +271,39 @@ class ScanManager():
                                     'XANES_end': XANES_end,
                                     'EXAFS_end': EXAFS_end,
                                     'type': type,
-                                    'preedge_duration': preedge_duration,
-                                    'edge_duration': edge_duration,
-                                    'postedge_duration': postedge_duration,
-                                    'preedge_flex': 0.5,
-                                    'postedge_flex': 0.5,
+                                    'duration': duration,
                                     'pad': 0.5,
                                     'repeat': 1,
                                     'single_direction': True,
                                     'revert': True,
                                     'filename': ''}}
+
+
+        # type = 'standard'
+        # _duration = e_width / e_velocity
+        # preedge_duration = _duration / 2
+        # edge_duration = _duration
+        # postedge_duration = _duration / 2
+        #
+        # return {'scan_type': 'fly scan',
+        #         'scan_parameters': {'element': 'NA',
+        #                             'edge': 'NA',
+        #                             'e0': e_cen,
+        #                             'preedge_start': preedge_start,
+        #                             'XANES_start': XANES_start,
+        #                             'XANES_end': XANES_end,
+        #                             'EXAFS_end': EXAFS_end,
+        #                             'type': type,
+        #                             'preedge_duration': preedge_duration,
+        #                             'edge_duration': edge_duration,
+        #                             'postedge_duration': postedge_duration,
+        #                             'preedge_flex': 0.5,
+        #                             'postedge_flex': 0.5,
+        #                             'pad': 0.5,
+        #                             'repeat': 1,
+        #                             'single_direction': True,
+        #                             'revert': True,
+        #                             'filename': ''}}
 
     def quick_linear_trajectory_filename(self, e_cen, e_width, e_velocity):
         quick_linear_scan_dict = self.quick_linear_scan_dict(e_cen, e_width, e_velocity)
