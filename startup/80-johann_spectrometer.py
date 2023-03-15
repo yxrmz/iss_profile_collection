@@ -1051,6 +1051,15 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def register_energy(self, energy):
         self.rowland_circle.register_energy(energy, self.real_position_dict)
 
+    def reset_config(self):
+        self.rowland_circle.reset_bragg_registration()
+        self.rowland_circle.reset_spectrometer_calibration()
+
+    def put_detector_to_safe_position(self):
+        self.motor_det_x.move(335)
+        self.motor_det_th1.move(0)
+        self.motor_det_th2.move(0)
+
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.rowland_circle.set_spectrometer_calibration(x_nom, x_act, n_poly=n_poly)
 
