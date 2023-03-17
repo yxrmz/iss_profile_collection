@@ -161,7 +161,16 @@ class VonHamosDetectorArm(VonHamosPseudoPositioner):
                 'det_x' :       det_x,
                 'det_y' :       det_y}
 
-# von_hamos_det_arm = VonHamosDetectorArm(name='von_hamos_det_arm')
+
+
+von_hamos_det_arm = VonHamosDetectorArm(name='von_hamos_det_arm')
+
+
+_von_hamos_det_arm_dict = {'motor_det_x':   {'name': von_hamos_det_arm.motor_det_x.name,   'description': 'Detector x',   'object': von_hamos_det_arm.motor_det_x,   'group': 'spectrometer'},
+                           'motor_det_th1': {'name': von_hamos_det_arm.motor_det_th1.name, 'description': 'Detector th1', 'object': von_hamos_det_arm.motor_det_th1, 'group': 'spectrometer'},
+                           'motor_det_th2': {'name': von_hamos_det_arm.motor_det_th2.name, 'description': 'Detector th2', 'object': von_hamos_det_arm.motor_det_th2, 'group': 'spectrometer'}}
+
+motor_dictionary.update(_von_hamos_det_arm_dict)
 #
 #
 # von_hamos_det_arm._forward({'det_pitch' : 76.82020215599975,

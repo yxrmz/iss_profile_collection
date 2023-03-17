@@ -134,6 +134,8 @@ attenuator_motor = Usermotor('XF:08IDB-OP{Misc-Ax:4', name='attenuator_motor')
 det2_stage_x = Usermotor('XF:08IDB-OP{DetStage:2-Ax:X', name='det2_stage_x')
 det2_stage_y = Usermotor('XF:08IDB-OP{DetStage:2-Ax:Y', name='det2_stage_y')
 
+
+
 usermotor2.wait_for_connection()
 usermotor3.wait_for_connection()
 

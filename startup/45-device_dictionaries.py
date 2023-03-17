@@ -134,6 +134,9 @@ motor_dictionary = {
     'six_axes_stage_pitch':     {'name': six_axes_stage.pitch.name, 'description': 'PCL Six Axes Stage Pitch',              'object': six_axes_stage.pitch, 'group': 'spectrometer'},
     'six_axes_stage_yaw':       {'name': six_axes_stage.yaw.name,   'description': 'PCL Six Axes Stage Yaw',                'object': six_axes_stage.yaw,   'group': 'spectrometer'},
     'six_axes_stage_roll':      {'name': six_axes_stage.roll.name,  'description': 'PCL Six Axes Stage Roll',               'object': six_axes_stage.roll,  'group': 'spectrometer'},
+    # 'motor_det_x':              {'name': von_hamos_det_arm.motor_det_x.name,  'description': 'Detector x',                  'object': von_hamos_det_arm.motor_det_x,  'group': 'spectrometer'},
+    # 'motor_det_th1':            {'name': von_hamos_det_arm.motor_det_th1.name,  'description': 'Detector th1',              'object': von_hamos_det_arm.motor_det_th1,  'group': 'spectrometer'},
+    # 'motor_det_th2':            {'name': von_hamos_det_arm.motor_det_th2.name,  'description': 'Detector th2',              'object': von_hamos_det_arm.motor_det_th2,  'group': 'spectrometer'},
 }
 
 def get_motor_device(motor_attr, based_on='description'):
