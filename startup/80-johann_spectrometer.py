@@ -1112,7 +1112,7 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 johann_emission = JohannEmission(name='johann_emission')
 
 
-# johann_emission.energy._limits=(6469.9, 6542)
+# johann_emission.energy._limits=(8004, 8068)
 
 
 _johann_motor_dictionary = {

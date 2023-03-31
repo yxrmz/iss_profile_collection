@@ -86,7 +86,8 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
                               element='', line='', e0=None,
                               metadata={}):
 
-    default_detectors = [apb_ave, hhm_encoder]
+    # default_detectors = [apb_ave, hhm_encoder]
+    default_detectors = []
     aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
     detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}

@@ -1,7 +1,7 @@
 from ophyd import (Component as Cpt, Device,
                    EpicsSignal, ROIPlugin, OverlayPlugin,
                    Signal, HDF5Plugin)
-from ophyd.areadetector.plugins import ROIStatPlugin_V34, ROIStatNPlugin_V22
+from ophyd.areadetector.plugins import ROIStatPlugin_V34,  ImagePlugin_V33
 
 from ophyd.areadetector.filestore_mixins import FileStoreTIFFIterativeWrite, FileStoreHDF5IterativeWrite
 from ophyd.areadetector.cam import PilatusDetectorCam
@@ -14,6 +14,7 @@ from nslsii.ad33 import SingleTriggerV33
 from ophyd.areadetector.base import DDC_SignalWithRBV, DDC_EpicsSignalRO
 import itertools
 from collections import deque, OrderedDict
+from ophyd.areadetector.plugins import ImagePlugin_V33
 
 
 class PilatusDetectorCamV33(PilatusDetectorCam):
@@ -39,6 +40,7 @@ class PilatusDetectorCamV33(PilatusDetectorCam):
     file_name = Cpt(SignalWithRBV, 'FileName', string=True)
     file_template = Cpt(SignalWithRBV, 'FileName', string=True)
     file_number = Cpt(SignalWithRBV, 'FileNumber')
+    set_energy = Cpt(SignalWithRBV, 'Energy')
 
 
 class PilatusDetectorCam(PilatusDetector):
@@ -108,6 +110,7 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
     stats2 = Cpt(StatsPluginV33, 'Stats2:', read_attrs=['total'])
     stats3 = Cpt(StatsPluginV33, 'Stats3:', read_attrs=['total'])
     stats4 = Cpt(StatsPluginV33, 'Stats4:', read_attrs=['total'])
+    image = Cpt(ImagePlugin_V33, 'image1:')
 
     roistat = Cpt(ISSROIStatPlugin, 'ROIStat1:')
     # roistat = Cpt(ROIStatPlugin_V34, 'ROIStat1:')

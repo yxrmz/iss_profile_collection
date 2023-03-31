@@ -30,9 +30,9 @@ def step_scan_action_factory(energy_steps, time_steps):
         yield from bps.mv(motor, step)
         devices = [*detectors, motor]
         start = ttime.time()
-        yield from shutter.open_plan(printing=False)
+        # yield from shutter.open_plan(printing=False)
         yield from bps.trigger_and_read(devices=devices)
-        yield from shutter.close_plan(printing=False)
+        # yield from shutter.close_plan(printing=False)
         print_to_gui(f'Total exposure time for this point is {ttime.time() - start} s')
 
     return per_step_action
