@@ -63,6 +63,11 @@ class FlyerHHM(Device):
 
         print_to_gui(f'Detector kickoff starting...', add_timestamp=True, tag='Flyer')
         self.shutter.open(time_opening=True)
+        # priority_det = self.dets[0]
+        # priority_det_kickoff_status = priority_det.kickoff()
+        # priority_det_kickoff_status.wait()
+        # ttime.sleep(1)
+        # det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets[1:]])
         det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
         det_kickoff_status.wait()
 
@@ -80,6 +85,11 @@ class FlyerHHM(Device):
         print_to_gui(f'Detector complete starting...', add_timestamp=True, tag='Flyer')
         det_complete_status = combine_status_list([det.complete() for det in self.dets])
         det_complete_status.wait()
+        # det_complete_status = combine_status_list([det.complete() for det in self.dets[1:]])
+        # det_complete_status.wait()
+        # ttime.sleep(1)
+        # priority_det_complete_status = priority_det.complete()
+        # priority_det_complete_status.wait()
         self.hhm.complete()
         self.shutter.close()
 
