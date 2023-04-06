@@ -1,4 +1,5 @@
-from ophyd import (EpicsMotor, Device, Kind, Component as Cpt,
+from ophyd import EpicsMotor as _EpicsMotor
+from ophyd import (Device, Kind, Component as Cpt,
                    EpicsSignal, EpicsSignalRO, Kind,
                    PseudoPositioner, PseudoSingle, SoftPositioner, Signal, SignalRO)
 from ophyd.sim import NullStatus
@@ -9,6 +10,16 @@ from ophyd.pseudopos import (pseudo_position_argument,
 
 from bluesky.preprocessors import monitor_during_wrapper
 from ophyd import (PseudoPositioner, PseudoSingle)
+
+
+class EpicsMotorWithTweaking(_EpicsMotor):
+    # set does not work in this class; use put!
+    twv = Cpt(EpicsSignal, '.TWV', kind='omitted')
+    twr = Cpt(EpicsSignal, '.TWR', kind='omitted')
+    twf = Cpt(EpicsSignal, '.TWF', kind='omitted')
+
+# EpicsMotor = _EpicsMotor
+EpicsMotor = EpicsMotorWithTweaking
 
 class StuckingEpicsMotor(EpicsMotor):
 
@@ -279,12 +290,6 @@ class ObjectWithSettings:
 #         super().__init__(*args, **kwargs)
 #         self.twr.append_motor_is_moving(self.motor_is_moving)
 #         self.twf.append_motor_is_moving(self.motor_is_moving)
-
-class EpicsMotorWithTweaking(EpicsMotor):
-    # set does not work in this class; use put!
-    twv = Cpt(EpicsSignal, '.TWV', kind='omitted')
-    twr = Cpt(EpicsSignal, '.TWR', kind='omitted')
-    twf = Cpt(EpicsSignal, '.TWF', kind='omitted')
 
 
 
