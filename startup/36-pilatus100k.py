@@ -165,6 +165,13 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         self.enforce_roi_match_between_plugins()
         return super().stage()
 
+    def get_roi_coords(self, roi_num):
+        x = getattr(self, f'roi{roi_num}').min_xyz.min_x.get()
+        y = getattr(self, f'roi{roi_num}').min_xyz.min_y.get()
+        dx = getattr(self, f'roi{roi_num}').size.x.get()
+        dy = getattr(self, f'roi{roi_num}').size.y.get()
+        return x, y, dx, dy
+
     @property
     def roi_metadata(self):
         md = {}
