@@ -8,8 +8,10 @@ class PlanProcessor(PersistentListInteractingWithGUI):
     status_update_signal = None
     add_plans_question_box=None
 
-    def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/plan_processor_test.json'):
+    def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/plan_processor.json'):
         super().__init__(json_file_path, boot_fresh=True)
+        self.settings_path = f'{ROOT_PATH_SHARED}/settings/json/plan_processor_settings.json'
+
         self.logger = self.get_logger()
         self.RE = RE
         self.scan_manager = scan_manager
@@ -18,8 +20,8 @@ class PlanProcessor(PersistentListInteractingWithGUI):
 
         # self.check_valves = False
         # self.check_shutters = False
-        self.beamline_readiness = False
-        self.auto_foil_set = False
+        self.load_settings()
+
 
     def get_logger(self):
         # Setup beamline specifics:
@@ -37,6 +39,36 @@ class PlanProcessor(PersistentListInteractingWithGUI):
             debug_file.setFormatter(formatter)
             logger.addHandler(debug_file)
         return logger
+
+    def load_settings(self):
+        try:
+            with open(self.settings_path, 'r') as f:
+                self.settings_dict = json.loads(f.read())
+        except FileNotFoundError:
+            self.settings_dict = {'beamline_readiness': False,
+                                  'auto_foil_set': False}
+
+    def save_settings(self):
+        with open(self.settings_path, 'w') as f:
+            json.dump(self.settings_dict, f)
+
+    @property
+    def beamline_readiness(self):
+        return self.settings_dict['beamline_readiness']
+
+    @property
+    def auto_foil_set(self):
+        return self.settings_dict['auto_foil_set']
+
+    @beamline_readiness.setter
+    def beamline_readiness(self, value):
+        self.settings_dict['beamline_readiness'] = value
+        self.save_settings()
+
+    @auto_foil_set.setter
+    def auto_foil_set(self, value):
+        self.settings_dict['auto_foil_set'] = value
+        self.save_settings()
 
     #class specific property
     @property
