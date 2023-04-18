@@ -34,7 +34,15 @@ def single_bender_scan_bundle(bender_position=None, **kwargs):
     if bender_position is None:
         bender_position = np.round(bender.pos.position, 2)
     name = f"Bender scan at {kwargs['element']}-{kwargs['edge']} edge - {loading} N - {bender_position} um"
-    plan_kwargs = {**{'name' : name, 'comment' : 'Bender scan'}, **kwargs}
+    plan_kwargs = {**{'name' : name, 'comment' : 'Bender scan',
+                      'metadata': {'sample_name': 'foil',
+                                   'sample_uid': 'foil',
+                                   'sample_condition': f'loading={loading}, position={bender_position}',
+                                   'cm2_bender_loading': loading,
+                                   'cm2_bender_position': bender_position,
+                                   'scan_type': 'xas',
+                                   'scan_name': f'{kwargs["element"]}-{kwargs["edge"]} bender scan'}},
+                   **kwargs}
     plans = [{'plan_name' : 'fly_scan_plan',
               'plan_kwargs' : plan_kwargs}]
     return plans
@@ -126,7 +134,9 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_servi
         scan_kwargs = {'name': name, 'comment': '',
                        'trajectory_filename': trajectory_filename,
                        'detectors': [],
-                       'element': element, 'e0': xraydb.xray_edge(element, edge).energy, 'edge': edge}
+                       'element': element, 'e0': xraydb.xray_edge(element, edge).energy, 'edge': edge,
+                       'metadata': {'sample_name': 'foil', 'sample_uid': 'foil', 'sample_condition': 'calibration scan',
+                                    'scan_type': 'xas', 'scan_name': f'{element}-{edge} calibration scan'}}
 
 
     if run_calibration:
