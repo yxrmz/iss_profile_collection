@@ -443,7 +443,7 @@ class BatchManager(PersistentListInteractingWithGUI):
         elif element_dict['type'] == 'scan':
             required_keys = self.scan_sequence_manager.required_keys
         elif element_dict['type'] == 'sample':
-            required_keys = ['name', 'comment', 'sample_name', 'sample_comment', 'sample_uid', 'sample_coordinates']
+            required_keys = ['name', 'comment', 'sample_name', 'sample_comment', 'sample_condition', 'sample_uid', 'sample_coordinates']
         elif element_dict['type'] == 'service':
             required_keys = ['plan_name', 'plan_kwargs']
         else:
@@ -476,12 +476,12 @@ class BatchManager(PersistentListInteractingWithGUI):
     #         for point_index in point_index_list:
     #             yield (sample_index, point_index)
 
-    def sample_info_from_index(self, sample_index, sample_point_index, suffix=None):
+    def sample_info_from_index(self, sample_index, sample_point_index, sample_condition=None):
         sample_name = self.sample_manager.sample_name_at_index(sample_index)
         actual_sample_point_index = self.sample_manager.sample_point_index_position_index(sample_index, sample_point_index)
         sample_point_str = f'(pos {(actual_sample_point_index+1):0>3d})'
-        if suffix is not None:
-            name = f'{sample_name} {suffix} {sample_point_str}'
+        if sample_condition is not None:
+            name = f'{sample_name} {sample_condition} {sample_point_str}'
         else:
             name = f'{sample_name} {sample_point_str}'
         sample_comment = self.sample_manager.sample_comment_at_index(sample_index)
@@ -494,18 +494,19 @@ class BatchManager(PersistentListInteractingWithGUI):
             scan_dict = self.scan_sequence_manager.scan_at_index(scan_index)
             yield {**{'type' : 'scan'}, **scan_dict}
 
-    def sample_iterator(self, sample_index_dict, suffix=None, comment=''):
+    def sample_iterator(self, sample_index_dict, sample_condition=None, comment=''):
         for sample_index, point_index_list in sample_index_dict.items():
             for point_index in point_index_list:
-                name, sample_name, sample_comment, sample_uid, sample_coordinates = self.sample_info_from_index(sample_index, point_index, suffix=suffix)
+                name, sample_name, sample_comment, sample_uid, sample_coordinates = self.sample_info_from_index(sample_index, point_index, sample_condition=sample_condition)
                 yield {'type' : 'sample',
                        'name' : name, 'comment' : comment,
                        'sample_name': sample_name,
                        'sample_comment' : sample_comment,
+                       'sample_condition': sample_condition,
                        'sample_uid' : sample_uid,
                        'sample_coordinates' : sample_coordinates}
 
-    def sample_point_intertor(self, sample_index_dict, suffix=None, comment=''):
+    def sample_point_intertor(self, sample_index_dict, sample_condition=None, comment=''):
         # reshuffle the dictionary
         sample_point_index_dict = defaultdict(lambda : [])
         for sample_index, point_index_list in sample_index_dict.items():
@@ -514,25 +515,26 @@ class BatchManager(PersistentListInteractingWithGUI):
 
         for point_index, sample_index_list in sample_point_index_dict.items():
             for sample_index in sample_index_list:
-                name, sample_name, sample_comment, sample_uid, sample_coordinates = self.sample_info_from_index(sample_index, point_index, suffix=suffix)
+                name, sample_name, sample_comment, sample_uid, sample_coordinates = self.sample_info_from_index(sample_index, point_index, sample_condition=sample_condition)
                 yield {'type' : 'sample',
                        'name' : name, 'comment' : comment,
                        'sample_name': sample_name,
                        'sample_comment' : sample_comment,
+                       'sample_condition': sample_condition,
                        'sample_uid' : sample_uid,
                        'sample_coordinates' : sample_coordinates}
 
     @emit_list_update_signal_decorator
     def add_measurement_to_experiment(self, experiment_index, sample_index_dict, scan_indexes,
-                                      priority='scan', suffix=None, comment=''):
+                                      priority='scan', sample_condition=None, comment=''):
         if priority == 'scan':
             element_iterator = self.scan_iterator(scan_indexes)
-            element_list_iterator = self.sample_iterator(sample_index_dict, suffix=suffix, comment=comment)
+            element_list_iterator = self.sample_iterator(sample_index_dict, sample_condition=sample_condition, comment=comment)
         elif priority == 'sample':
-            element_iterator = self.sample_iterator(sample_index_dict, suffix=suffix, comment=comment)
+            element_iterator = self.sample_iterator(sample_index_dict, sample_condition=sample_condition, comment=comment)
             element_list_iterator = self.scan_iterator(scan_indexes)
         elif priority == 'sample_point':
-            element_iterator = self.sample_point_intertor(sample_index_dict, suffix=suffix, comment=comment)
+            element_iterator = self.sample_point_intertor(sample_index_dict, sample_condition=sample_condition, comment=comment)
             element_list_iterator = self.scan_iterator(scan_indexes)
 
         element_list = list(element_list_iterator)
@@ -629,6 +631,7 @@ class BatchManager(PersistentListInteractingWithGUI):
     def get_sample_data_from_sample_element(self, sample_element):
         sample_metadata = {'sample_name': sample_element['sample_name'],
                            'sample_comment': sample_element['sample_comment'],
+                           'sample_condition': sample_element['sample_condition'],
                            'sample_uid': sample_element['sample_uid']}
 
         return (sample_element['name'], sample_element['comment'],
