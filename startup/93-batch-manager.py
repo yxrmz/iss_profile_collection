@@ -117,7 +117,7 @@ class PersistentListInteractingWithGUI:
 
     @property
     def local_file_default_path(self):
-        return f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
+        return f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/"
 
     def init_from_settings(self, boot_fresh=False):
         if not boot_fresh:
@@ -408,7 +408,7 @@ scan_sequence_manager = BatchScanManager()
 # class ScanSequenceManager(PersistentListInteractingWithGUI):
 #     def __init__(self, json_file_path = '/nsls2/xf08id/settings/json/scan_sequence_manager.json'):
 #         super().__init__(json_file_path)
-#         self.local_file_default_path = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/"
+#         self.local_file_default_path = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/"
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 

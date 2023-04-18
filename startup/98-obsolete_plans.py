@@ -28,7 +28,7 @@ def optimize_sample_plan(*args, **kwargs):
     # uid = (yield from spiral_plan)
     #
     conc = kwargs['concentration']
-    # image_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/{sample_name}_raster_scan.png"
+    # image_path = f"{ROOT_PATH}/{USER_FILEPATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/{sample_name}_raster_scan.png"
     # print('analyzing spiral scan data and saving the image for the reference')
     # x, y = analyze_spiral_scan(db, uid, conc, None, image_path)
     x, y = analyze_spiral_scan(db, 'bbd9f23f-011e-40eb-b798-eb2a2ad5cfa8', conc, None, None)
@@ -1094,7 +1094,7 @@ record(ao,"$(P)Ch4:User:Offset-SP"){
     else:
         uid, = RE(step_list_plan([xia1, i0, it, iff, ir], hhm.theta, positions_grid, name))
 
-    path = '/GPFS/xf08id/User Data/{}.{}.{}/'.format(db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['PROPOSAL'])
+    path = '/GPFS/xf08id/User Data/{}.{}.{}/'.format(db[uid]['start']['year'], db[uid]['start']['cycle'], db[uid]['start']['proposal'])
     filename = parse_xia_step_scan(uid, name, path)
 
     ax.cla()
@@ -1190,7 +1190,7 @@ def write_html_log(uuid, figure, log_path='/GPFS/xf08id/User Data/'):
 
     year = db[uuid]['start']['year']
     cycle = db[uuid]['start']['cycle']
-    proposal = db[uuid]['start']['PROPOSAL']
+    proposal = db[uuid]['start']['proposal']
 
     # Create dirs if they are not there
     if log_path[-1] != '/':

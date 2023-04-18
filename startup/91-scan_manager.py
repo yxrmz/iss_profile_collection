@@ -26,11 +26,11 @@ class ScanManager():
             self.scan_dict = json.loads(f.read())
 
     def init_local_manager(self):
-        self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/scan_manager.json"
+        self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/scan_manager.json"
         self.scan_list_local = []
 
     def load_local_manager(self):
-        self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['PROPOSAL']}/scan_manager.json"
+        self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/scan_manager.json"
         try:
             with open(self.json_file_path_local, 'r') as f:
                 self.scan_list_local = json.loads(f.read())
