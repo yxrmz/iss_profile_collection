@@ -160,59 +160,63 @@ class StandardPICamWithHDF5(StandardPICam):
                root='/nsls2/data/iss/legacy/raw')
 
 # This camera is the default one (with the HDF5 plugin):
-picam = StandardPICamWithHDF5('XF:08IDB-ES{Det:PICAM1}', name='picam')
-picam.hdf5.write_path_template = "/nsls2/data/iss/legacy/raw/picam/hdf5/%Y/%m/%d/"
-
-# TODO: do it conditionally when running the code at the beamline only.
-picam.hdf5.create_directory.put(-3)
-
-picam.cam.ensure_nonblocking()
-for camera in [picam]:
-    camera.read_attrs = ['stats1', 'stats2', 'stats3', 'stats4', 'stats5']
-    for plugin_type in ['hdf5']:
-        if hasattr(camera, plugin_type):
-            camera.read_attrs.append(plugin_type)
-
-    for stats_name in ['stats1', 'stats2', 'stats3', 'stats4', 'stats5']:
-        stats_plugin = getattr(camera, stats_name)
-        stats_plugin.read_attrs = ['total']
-
-    camera.stage_sigs[camera.cam.image_mode] = 'Multiple'
-
-    # 'Sync In 2' is used for fly scans:
-    # camera.stage_sigs[camera.cam.trigger_mode] = 'Sync In 2'
-
-    # 'Fixed Rate' is used for step scans:
-    camera.stage_sigs[camera.cam.array_counter] = 0
-    camera.stats1.total.kind = 'hinted'
-    camera.stats2.total.kind = 'hinted'
+picam = None
+# picam = StandardPICamWithHDF5('XF:08IDB-ES{Det:PICAM1}', name='picam')
 
 
-for cam in [picam]:
-    cam.roi1.kind = "config"
-    cam.roi2.kind = "config"
-    cam.roi1.size.kind = "config"
-    cam.roi1.min_xyz.kind = "config"
-    cam.roi2.size.kind = "config"
-    cam.roi2.min_xyz.kind = "config"
+if picam is not None:
+    picam.hdf5.write_path_template = "/nsls2/data/iss/legacy/raw/picam/hdf5/%Y/%m/%d/"
 
-# Warm-up the hdf5 plugins:
-def warmup_hdf5_plugins(detectors):
-    """
-    Warm-up the hdf5 plugins.
-    This is necessary for when the corresponding IOC restarts we have to trigger one image
-    for the hdf5 plugin to work correctly, else we get file writing errors.
-    Parameter:
-    ----------
-    detectors: list
-    """
-    for det in detectors:
-        _array_size = det.hdf5.array_size.get()
-        if 0 in [_array_size.height, _array_size.width] and hasattr(det, "hdf5"):
-            print(f"\n  Warming up HDF5 plugin for {det.name} as the array_size={_array_size}...")
-            det.hdf5.warmup()
-            print(f"  Warming up HDF5 plugin for {det.name} is done. array_size={det.hdf5.array_size.get()}\n")
-        else:
-            print(f"\n  Warming up of the HDF5 plugin is not needed for {det.name} as the array_size={_array_size}.")
+    # TODO: do it conditionally when running the code at the beamline only.
+    picam.hdf5.create_directory.put(-3)
 
-warmup_hdf5_plugins([picam])
+    picam.cam.ensure_nonblocking()
+    for camera in [picam]:
+        camera.read_attrs = ['stats1', 'stats2', 'stats3', 'stats4', 'stats5']
+        for plugin_type in ['hdf5']:
+            if hasattr(camera, plugin_type):
+                camera.read_attrs.append(plugin_type)
+
+        for stats_name in ['stats1', 'stats2', 'stats3', 'stats4', 'stats5']:
+            stats_plugin = getattr(camera, stats_name)
+            stats_plugin.read_attrs = ['total']
+
+        camera.stage_sigs[camera.cam.image_mode] = 'Multiple'
+
+        # 'Sync In 2' is used for fly scans:
+        # camera.stage_sigs[camera.cam.trigger_mode] = 'Sync In 2'
+
+        # 'Fixed Rate' is used for step scans:
+        camera.stage_sigs[camera.cam.array_counter] = 0
+        camera.stats1.total.kind = 'hinted'
+        camera.stats2.total.kind = 'hinted'
+
+
+    for cam in [picam]:
+        cam.roi1.kind = "config"
+        cam.roi2.kind = "config"
+        cam.roi1.size.kind = "config"
+        cam.roi1.min_xyz.kind = "config"
+        cam.roi2.size.kind = "config"
+        cam.roi2.min_xyz.kind = "config"
+
+    # Warm-up the hdf5 plugins:
+    def warmup_hdf5_plugins(detectors):
+        """
+        Warm-up the hdf5 plugins.
+        This is necessary for when the corresponding IOC restarts we have to trigger one image
+        for the hdf5 plugin to work correctly, else we get file writing errors.
+        Parameter:
+        ----------
+        detectors: list
+        """
+        for det in detectors:
+            _array_size = det.hdf5.array_size.get()
+            if 0 in [_array_size.height, _array_size.width] and hasattr(det, "hdf5"):
+                print(f"\n  Warming up HDF5 plugin for {det.name} as the array_size={_array_size}...")
+                det.hdf5.warmup()
+                print(f"  Warming up HDF5 plugin for {det.name} is done. array_size={det.hdf5.array_size.get()}\n")
+            else:
+                print(f"\n  Warming up of the HDF5 plugin is not needed for {det.name} as the array_size={_array_size}.")
+
+    warmup_hdf5_plugins([picam])
