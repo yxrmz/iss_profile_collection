@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 from ophyd import EpicsMotor as _EpicsMotor
 from ophyd import (Device, Kind, Component as Cpt,
                    EpicsSignal, EpicsSignalRO, Kind,

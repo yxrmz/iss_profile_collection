@@ -1,3 +1,6 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
+
 from ophyd.utils.errors import UnknownStatusFailure, InvalidState
 from ophyd.status import Status
 '''

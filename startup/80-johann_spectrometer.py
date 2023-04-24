@@ -1,3 +1,6 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
+
 import numpy as np
 import pandas as pd
 from xas.spectrometer import Crystal, analyze_many_elastic_scans

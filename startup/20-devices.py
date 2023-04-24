@@ -1,3 +1,6 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
+
 from ophyd import (ProsilicaDetector, SingleTrigger, Component as Cpt, Device,
                    EpicsSignal, EpicsSignalRO, ImagePlugin, StatsPlugin, ROIPlugin,
                    DeviceStatus, Signal)

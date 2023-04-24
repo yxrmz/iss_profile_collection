@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 import itertools
 import uuid
 from collections import namedtuple, deque

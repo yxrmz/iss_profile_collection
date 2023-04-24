@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 tune_elements =  [{'motor': hhm.pitch.name,
                    'detector': 'Focusing mirror BPM',

@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 '''from xas.image_analysis import analyze_spiral_scan
 
 
@@ -1324,7 +1325,7 @@ def generate_xia_file(uuid, name, log_path='/GPFS/xf08id/Sandbox/', graph='xia1_
 
 '''
 
-# print(__file__)
+# print(ttime.ctime() + ' >>>> ' + __file__)
 '''
 
 class ROI(Device):
@@ -1535,3 +1536,55 @@ class XIA(Device):
 #
 # xia_list = ['{}_{}_sum'.format(x,y) for x in list1 for y in list2]
 '''
+# b= [{'uid': '703cd5cd-697a-4615-a682-18c9725a50f4',
+#   'first_name': 'Denis',
+#   'last_name': 'Leshchev',
+#   'affiliation': 'NSLS II',
+#   'email': 'istavitski.bnl.gov'},
+#  {'uid': '68efa620-f2b3-44bb-960d-e18c9edbf6fb',
+#   'first_name': 'Eli',
+#   'last_name': 'Stavitski',
+#   'affiliation': 'NSLS II',
+#   'email': 'istavitski.bnl.gov'},
+#  {'uid': '56f68a95-4c9a-4af8-aeab-2104876ded14',
+#   'first_name': 'Akhil',
+#   'last_name': 'Tayal',
+#   'affiliation': 'DESY',
+#   'email': 'istavitski.bnl.gov'},
+#  {'uid': 'f2bfb046-e560-4fe1-abf7-2aa2c9c5494c',
+#   'first_name': 'Randall',
+#   'last_name': 'Meyer',
+#   'affiliation': 'Exxon Mobil',
+#   'email': 'istavitski@bnl.gov'},
+#  {'uid': '2c3b36a2-146f-4a51-97bf-ab8bf09b5e64',
+#   'first_name': 'Dominik',
+#   'last_name': 'Wirz',
+#   'affiliation': 'Exxon Mobil',
+#   'email': 'istavitski@bnl.gov'},
+#  {'uid': 'a7e89794-d318-47ac-a237-3fea5011dcf6',
+#   'first_name': 'Akhik',
+#   'last_name': 'Tayal',
+#   'affiliation': 'DESY',
+#   'email': 'istavitski@bnl.gov',
+#   'runs': [{'start': 'Mon Apr 24 13:40:56 2023',
+#     'timestamp': 1682358056.8729405,
+#     'proposal': 312089,
+#     'saf': 310653,
+#     'experimenters': []},
+#    {'start': 'Mon Apr 24 13:48:25 2023',
+#     'timestamp': 1682358505.8591702,
+#     'proposal': 312089,
+#     'saf': 310653,
+#     'experimenters': []}]},
+#  {'uid': 'e4cd48a8-5587-4add-8e2d-e2da37851a25',
+#   'first_name': 'Carl',
+#   'last_name': 'Richardson',
+#   'affiliation': 'Toyama',
+#   'email': 'istavitski@bnl.gov',
+#   'sample_manager': 'bc38fe9.json',
+#   'scan_manager': '2ac9de4.json',
+#   'runs': [{'start': 'Mon Apr 24 13:52:43 2023',
+#     'timestamp': 1682358763.243945,
+#     'proposal': 312089,
+#     'saf': 310653,
+#     'experimenters': []}]}]

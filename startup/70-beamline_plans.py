@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 
 def vibration_diagnostics(time=1):

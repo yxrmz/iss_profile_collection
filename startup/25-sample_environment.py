@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 
 sample_env_dict= {

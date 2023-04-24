@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 import copy
 import json
 import uuid
@@ -16,7 +17,8 @@ from collections import Counter
 class ScanManager():
     def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/json/scan_manager.json'):
         self.init_global_manager(json_file_path)
-        self.load_local_manager()
+        _default_local_manager_path = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/scan_manager.json"
+        self.load_local_manager(_default_local_manager_path)
         self.trajectory_path = trajectory_manager.trajectory_path
         self.trajectory_creator = TrajectoryCreator()
 
@@ -25,17 +27,17 @@ class ScanManager():
         with open(self.json_file_path, 'r') as f:
             self.scan_dict = json.loads(f.read())
 
-    def init_local_manager(self):
-        self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/scan_manager.json"
-        self.scan_list_local = []
+    # def init_local_manager(self):
+        # self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/scan_manager.json"
 
-    def load_local_manager(self):
-        self.json_file_path_local = f"{ROOT_PATH}/{USER_PATH}/{RE.md['year']}/{RE.md['cycle']}/{RE.md['proposal']}/scan_manager.json"
+
+    def load_local_manager(self, json_file_path_local):
+        self.json_file_path_local = json_file_path_local
         try:
             with open(self.json_file_path_local, 'r') as f:
                 self.scan_list_local = json.loads(f.read())
         except FileNotFoundError:
-            self.init_local_manager()
+            self.scan_list_local = []
 
     def dump_local_scan_list(self):
         with open(self.json_file_path_local, 'w') as f:

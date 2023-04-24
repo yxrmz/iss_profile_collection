@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 import time as ttime
 #import pexpect
 from pexpect import pxssh

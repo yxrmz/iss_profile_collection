@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 # from xas.trajectory import trajectory, trajectory_manager
 import pandas as pd
 from bluesky.plan_stubs import mv
@@ -125,6 +126,12 @@ class PersistentListInteractingWithGUI:
                 self.add_items_from_file(self.json_file_path)
             except FileNotFoundError:
                 self.save_to_settings()
+
+    @emit_list_update_signal_decorator
+    def init_from_new_file(self, new_json_file_path):
+        self.items = []
+        self.json_file_path = new_json_file_path
+        self.init_from_settings()
 
     @emit_list_update_signal_decorator
     def add_items_from_file(self, file):

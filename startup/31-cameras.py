@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 class BPM(SingleTrigger, ProsilicaDetector):
     polarity = 'pos'
     image = Cpt(ImagePlugin, 'image1:')

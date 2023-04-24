@@ -1,3 +1,6 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
+
 from ophyd import (Component as Cpt, Device,
                    EpicsSignal, ROIPlugin, OverlayPlugin,
                    Signal, HDF5Plugin)

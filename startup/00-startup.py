@@ -1,10 +1,10 @@
-print(__file__)
+
 
 import glob
 import logging
 import os
 import sys
-import time
+
 from pathlib import Path
 from timeit import default_timer as timer
 import appdirs
@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 import xraydb
 from bluesky.utils import PersistentDict
+
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 # the file paths for acquitision and analysis
 

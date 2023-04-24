@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 data_collection_plan_funcs = {
         'step_scan_plan' : step_scan_plan,

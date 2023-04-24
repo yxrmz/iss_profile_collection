@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 from xas.file_io import validate_file_exists
 from xas.metadata import metadata_dict, ghs_selected_gas_key_match
 

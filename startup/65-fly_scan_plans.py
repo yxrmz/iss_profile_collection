@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 from xas.file_io import validate_file_exists
 import time as ttime
 from datetime import datetime

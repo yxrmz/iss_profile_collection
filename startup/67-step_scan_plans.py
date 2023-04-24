@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 
 from ophyd import Staged

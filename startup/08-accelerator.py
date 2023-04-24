@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 from ophyd import (Device, Component as Cpt,
                    EpicsSignal)
 #import numpy as np

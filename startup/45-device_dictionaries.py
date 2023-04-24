@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 import sys
 import collections
 

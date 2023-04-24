@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 from datetime import datetime
 import time
 

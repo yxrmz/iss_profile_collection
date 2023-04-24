@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 class Electrometer(Device):
 
     polarity = 'neg'

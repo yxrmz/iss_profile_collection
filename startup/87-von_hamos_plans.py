@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 def get_vh_metadata(plan_kwargs, scan_for_calibration_purpose=False, create_rixs_filename=False):
     metadata = plan_kwargs.pop('metadata')
     vh_metadata = {'spectrometer': 'von_hamos',

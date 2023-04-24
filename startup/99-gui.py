@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 # from PyQt5.QtWidgets import QApplication
 import atexit
 import requests
@@ -28,6 +29,7 @@ if not os.environ.get('AZURE_TESTING'):
                                sample_manager=sample_manager,
                                scan_sequence_manager=scan_sequence_manager,
                                batch_manager=batch_manager,
+                               user_manager=user_manager,
                                plan_processor=plan_processor,
                                RE=RE,
                                db=db,

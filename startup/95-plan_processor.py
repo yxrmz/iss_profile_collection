@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 
 
 class PlanProcessor(PersistentListInteractingWithGUI):

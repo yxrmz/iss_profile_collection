@@ -1,3 +1,5 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
+
 from xas.trajectory import TrajectoryCreator
 
 

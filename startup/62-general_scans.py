@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 import bluesky as bs
 import bluesky.plans as bp
 import time as ttime

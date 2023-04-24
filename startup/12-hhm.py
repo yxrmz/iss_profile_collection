@@ -1,4 +1,4 @@
-
+print(ttime.ctime() + ' >>>> ' + __file__)
 from xas.pid import PID
 from xas.image_analysis import determine_beam_position_from_fb_image
 #

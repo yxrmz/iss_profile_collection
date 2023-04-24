@@ -1,3 +1,4 @@
+print(ttime.ctime() + ' >>>> ' + __file__)
 def elastic_scan_plan(DE=5, dE=0.1):
     npt = np.round(DE/dE + 1)
     name = 'elastic spectrometer scan'
