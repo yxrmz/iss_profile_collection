@@ -168,11 +168,13 @@ _johann_cr_main_motor_keys = ['motor_cr_main_roll', 'motor_cr_main_yaw']
 _johann_cr_aux2_motor_keys = ['motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw']
 _johann_cr_aux3_motor_keys = ['motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
 
+
+_johann_cr_all_motor_keys = (_johann_cr_assy_motor_keys +
+                             _johann_cr_main_motor_keys +
+                             _johann_cr_aux2_motor_keys +
+                             _johann_cr_aux3_motor_keys)
 _johann_spectrometer_motor_keys = (_johann_det_arm_motor_keys +
-                                   _johann_cr_assy_motor_keys +
-                                   _johann_cr_main_motor_keys +
-                                   _johann_cr_aux2_motor_keys +
-                                   _johann_cr_aux3_motor_keys)
+                                   _johann_cr_all_motor_keys)
 
 _allowed_roll_offsets = [2.5, 11.5, 20.5]
 
@@ -954,6 +956,46 @@ class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
     def home_crystal_piezos(self):
         self.piezo_homing.home_all_axes()
 
+
+class JohannAllCrystals(JohannMultiCrystalPseudoPositioner):
+    _real = _johann_cr_all_motor_keys
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
+    motor_cr_main_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr')
+    motor_cr_main_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:1:Yaw}Mtr')
+
+    motor_cr_aux2_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:X}Mtr')
+    motor_cr_aux2_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Y}Mtr')
+    motor_cr_aux2_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr')
+    motor_cr_aux2_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:2:Yaw}Mtr')
+
+    motor_cr_aux3_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:X}Mtr')
+    motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
+    motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
+    motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+
+    _pseudo = ['bragg']
+
+    @property
+    def motor_to_bragg_keys(self):
+        keys = []
+        if self.enabled_crystals['main']: keys.append('motor_cr_main_roll')
+        if self.enabled_crystals['aux2']: keys.append('motor_cr_aux2_roll')
+        if self.enabled_crystals['aux3']: keys.append('motor_cr_aux3_roll')
+        return keys
+
+    def _forward(self, pseudo_dict):
+        bragg = pseudo_dict['bragg']
+        new_real_positions = self._compute_new_real_positions_for_enabled_crystals(bragg)
+        return new_real_positions
+
+    def _inverse(self, real_dict):
+        braggs = self._compute_braggs_from_motors(real_dict)
+        return {'bragg': np.mean(braggs)}
+
+johann_all_crystals = JohannAllCrystals(name='johann_all_crystals')
 
 class JohannSpectrometer(JohannMultiCrystalPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
