@@ -876,12 +876,12 @@ class JohannCrystalHoming(Device):
     cr_main_roll_home = Cpt(EpicsSignal, '1:Roll}Mtr.HOMF')
     cr_main_yaw_home = Cpt(EpicsSignal, '1:Yaw}Mtr.HOMF')
 
-    cr_aux2_roll_home = Cpt(EpicsSignal, '2:Yaw}Mtr.HOMF')
+    cr_aux2_roll_home = Cpt(EpicsSignal, '2:Roll}Mtr.HOMF')
     cr_aux2_yaw_home = Cpt(EpicsSignal, '2:Yaw}Mtr.HOMF')
     cr_aux2_x_home = Cpt(EpicsSignal, '2:X}Mtr.HOMF')
     cr_aux2_y_home = Cpt(EpicsSignal, '2:Y}Mtr.HOMF')
 
-    cr_aux3_roll_home = Cpt(EpicsSignal, '3:Yaw}Mtr.HOMF')
+    cr_aux3_roll_home = Cpt(EpicsSignal, '3:Roll}Mtr.HOMF')
     cr_aux3_yaw_home = Cpt(EpicsSignal, '3:Yaw}Mtr.HOMF')
     cr_aux3_x_home = Cpt(EpicsSignal, '3:X}Mtr.HOMF')
     cr_aux3_y_home = Cpt(EpicsSignal, '3:Y}Mtr.HOMF')
