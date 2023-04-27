@@ -355,8 +355,8 @@ class PlanProcessor(PersistentListInteractingWithGUI):
         self.liveplot_funcs = liveplot_funcs
 
     def perform_pre_scan_routines(self, idx=0):
-        self.RE(check_hhm_roll_plan())
         if self.beamline_readiness: # this also checks FE shutter
+            self.RE(check_hhm_roll_plan())
             self.RE(check_gate_valves_plan())
             self.RE(check_photon_shutter_plan())
             self.RE(check_ic_voltages())

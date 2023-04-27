@@ -1027,6 +1027,13 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
         return {'energy': np.mean(energy)}
 
     # ops functions
+
+    def move_crystals_to_90_deg(self):
+        self.set_roll_offset(2.5)
+        johann_main_crystal.move(bragg=90)
+        johann_aux2_crystal.move(bragg=90)
+        johann_aux3_crystal.move(bragg=90)
+
     def set_det_arm_parking(self):
         self.rowland_circle.set_det_arm_parking(self.real_position_dict)
 
