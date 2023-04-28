@@ -56,10 +56,7 @@ class RowlandCircle:
         self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
 
         self.init_from_settings()
-
-        self.compute_nominal_trajectory()
-        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
-        self.compute_actual_trajectory()
+        self.compute_trajectories()
 
     def load_config(self, file):
         with open(file, 'r') as f:
@@ -114,7 +111,7 @@ class RowlandCircle:
     def set_spectrometer_config(self, config):
         # config needs a validation may be
         self.config = config
-            #
+        self.config['bragg_registration']['bragg'] = {k : [] for k in _johann_spectrometer_motor_keys}
             #
             #
             #
@@ -257,9 +254,7 @@ class RowlandCircle:
     def roll_offset(self, value):
         assert value in self.allowed_roll_offsets, f'roll_offset value must be equal to one of {self.allowed_roll_offsets}'
         self.config['roll_offset'] = value
-        self.compute_nominal_trajectory()
-        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
-        self.save_current_spectrometer_config_to_settings()
+        self.compute_trajectories()
 
     @property
     def enabled_crystals(self):
@@ -385,41 +380,48 @@ class RowlandCircle:
     def compute_nominal_trajectory(self, npt=250):
         self.traj_nom = self._compute_nominal_trajectory(npt=npt)
 
-    def compute_actual_trajectory(self):
+    def compute_trajectory_correction(self):
         self.traj_delta = {}
-        self.traj = self.traj_nom.copy()
         for motor_key in _johann_spectrometer_motor_keys:
-            pos_act = np.array(self.config['bragg_registration']['pos_act'])
-            pos_nom = np.array(self.config['bragg_registration']['pos_nom'])
+            pos_act = np.array(self.config['bragg_registration']['pos_act'][motor_key])
+            pos_nom = np.array(self.config['bragg_registration']['pos_nom'][motor_key])
             delta =  pos_act - pos_nom
-            bragg = np.array(self.config['bragg_registration']['bragg'])
+            bragg = np.array(self.config['bragg_registration']['bragg'][motor_key])
             bragg_in = self.traj_nom['bragg']
             self.traj_delta[motor_key] = extrapolate_linearly(bragg_in, bragg, delta)
-            self.traj[motor_key] = self.traj[motor_key] + self.traj_delta[motor_key]
+            # self.traj[motor_key] = self.traj[motor_key] + self.traj_delta[motor_key]
         self.traj_delta = pd.DataFrame(self.traj_delta)
+        self.traj = self.traj_nom.copy()
+        self.traj[self.traj_delta.columns] = self.traj[self.traj_delta.columns] + self.traj_delta
 
-    def _convert_motor_pos_nom2act(self, motor_key, pos):
-        if motor_key in self.converter_nom2act.keys():
-            pos = self.converter_nom2act[motor_key].nom2act(pos)
-        return pos
+    def compute_trajectories(self):
+        self.compute_nominal_trajectory()
+        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.compute_trajectory_correction()
 
-    def _convert_motor_pos_act2nom(self, motor_key, pos):
-        if motor_key in self.converter_nom2act.keys():
-            pos = self.converter_nom2act[motor_key].act2nom(pos)
-        return pos
+    # def _convert_motor_pos_nom2act(self, motor_key, pos):
+    #     if motor_key in self.converter_nom2act.keys():
+    #         pos = self.converter_nom2act[motor_key].nom2act(pos)
+    #     return pos
+    #
+    # def _convert_motor_pos_act2nom(self, motor_key, pos):
+    #     if motor_key in self.converter_nom2act.keys():
+    #         pos = self.converter_nom2act[motor_key].act2nom(pos)
+    #     return pos
 
     def register_bragg(self, bragg_act, motor_pos_dict):
         pos_nom = {}
         for motor_key in motor_pos_dict.keys():
+            print(motor_key)
             pos_nom[motor_key] = self.compute_motor_position(motor_key, bragg_act, nom2act=False)
         pos_act = {**motor_pos_dict}
         for motor_key in pos_act.keys():
             # self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
-            self.config['bragg_registration']['bragg'].append(bragg)
+            self.config['bragg_registration']['bragg'][motor_key].append(bragg_act)
             self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
             self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
 
-        self.compute_actual_trajectory()
+        self.compute_trajectory_correction()
         self.save_current_spectrometer_config_to_settings()
 
     # @property
@@ -432,9 +434,10 @@ class RowlandCircle:
         self.register_bragg(bragg_act, motor_pos_dict)
 
     def reset_bragg_registration(self):
-        self.config['bragg_registration'] = {'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
+        self.config['bragg_registration'] = {'bragg' :  {k: [] for k in _johann_spectrometer_motor_keys},
+                                             'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
                                              'pos_act': {k: [] for k in _johann_spectrometer_motor_keys}}
-        self.compute_actual_trajectory()
+        self.compute_trajectory_correction()
         # for motor_key in _johann_spectrometer_motor_keys:
         #     self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
 
@@ -1064,27 +1067,27 @@ johann_emission = JohannEmission(name='johann_emission')
 # johann_emission.energy._limits=(8004, 8068)
 
 
-_johann_motor_dictionary = {
-'auxxy_x':                  {'name': auxxy.x.name,                                     'description': 'Johann Crystal Assy X',        'object': auxxy.x,                                  'keyword': 'Crystal Assy X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
-'auxxy_y':                  {'name': auxxy.y.name,                                     'description': 'Johann Detector X',            'object': auxxy.y,                                  'keyword': 'Detector X',           'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
-'johann_cr_main_roll':      {'name': johann_main_crystal.motor_cr_main_roll.name,      'description': 'Johann Main Crystal Roll',     'object': johann_main_crystal.motor_cr_main_roll,   'keyword': 'Main Crystal Roll',    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
-'johann_cr_main_yaw':       {'name': johann_main_crystal.motor_cr_main_yaw.name,       'description': 'Johann Main Crystal Yaw',      'object': johann_main_crystal.motor_cr_main_yaw,    'keyword': 'Main Crystal Yaw',     'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
-'johann_cr_aux2_roll':      {'name': johann_aux2_crystal.motor_cr_aux2_roll.name,      'description': 'Johann Aux2 Crystal Roll',     'object': johann_aux2_crystal.motor_cr_aux2_roll,   'keyword': 'Aux2 Crystal Roll',    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
-'johann_cr_aux2_yaw':       {'name': johann_aux2_crystal.motor_cr_aux2_yaw.name,       'description': 'Johann Aux2 Crystal Yaw',      'object': johann_aux2_crystal.motor_cr_aux2_yaw,    'keyword': 'Aux2 Crystal Yaw',     'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
-'johann_cr_aux2_x':         {'name': johann_aux2_crystal.motor_cr_aux2_x.name,         'description': 'Johann Aux2 Crystal X',        'object': johann_aux2_crystal.motor_cr_aux2_x,      'keyword': 'Aux2 Crystal X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
-'johann_cr_aux2_y':         {'name': johann_aux2_crystal.motor_cr_aux2_y.name,         'description': 'Johann Aux2 Crystal Y',        'object': johann_aux2_crystal.motor_cr_aux2_y,      'keyword': 'Aux2 Crystal Y',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
-'johann_cr_aux3_roll':      {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,      'description': 'Johann Aux3 Crystal roll',     'object': johann_aux3_crystal.motor_cr_aux3_roll,   'keyword': 'Aux3 Crystal roll',    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
-'johann_cr_aux3_yaw':       {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,       'description': 'Johann Aux3 Crystal Yaw',      'object': johann_aux3_crystal.motor_cr_aux3_yaw,    'keyword': 'Aux3 Crystal Yaw',     'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
-'johann_cr_aux3_x':         {'name': johann_aux3_crystal.motor_cr_aux3_x.name,         'description': 'Johann Aux3 Crystal X',        'object': johann_aux3_crystal.motor_cr_aux3_x,      'keyword': 'Aux3 Crystal X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
-'johann_cr_aux3_y':         {'name': johann_aux3_crystal.motor_cr_aux3_y.name,         'description': 'Johann Aux3 Crystal Y',        'object': johann_aux3_crystal.motor_cr_aux3_y,      'keyword': 'Aux3 Crystal Y',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
-'johann_cr_main_bragg':     {'name': johann_main_crystal.bragg.name,                   'description': 'Johann Main Crystal Bragg',    'object': johann_main_crystal.bragg,                'keyword': 'Main Crystal Bragg',   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
-'johann_cr_aux2_bragg':     {'name': johann_aux2_crystal.bragg.name,                   'description': 'Johann Aux2 Crystal Bragg',    'object': johann_aux2_crystal.bragg,                'keyword': 'Aux2 Crystal Bragg',   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
-'johann_cr_aux3_bragg':     {'name': johann_aux3_crystal.bragg.name,                   'description': 'Johann Aux3 Crystal Bragg',    'object': johann_aux3_crystal.bragg,                'keyword': 'Aux3 Crystal Bragg',   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
-'johann_det_focus':         {'name': johann_det_arm.det_focus.name,                    'description': 'Johann Detector Focus',        'object': johann_det_arm.det_focus,                 'keyword': 'Detector Focus',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 5},
-'johann_x':                 {'name': johann_spectrometer_x.x.name,                     'description': 'Johann Spectrometer X',        'object': johann_spectrometer_x.x,                  'keyword': 'Spectrometer X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
-'johann_bragg_angle':       {'name': johann_spectrometer.bragg.name,                   'description': 'Johann Global Bragg Angle',    'object': johann_spectrometer.bragg,                'keyword': 'Global Bragg Angle',   'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 0.05},
-'johann_energy':            {'name': johann_emission.energy.name,                      'description': 'Johann Emission Energy',       'object': johann_emission.energy,                   'keyword': 'Emission Energy',      'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
-}
-
-motor_dictionary = {**motor_dictionary, **_johann_motor_dictionary}
+# _johann_motor_dictionary = {
+# 'auxxy_x':                  {'name': auxxy.x.name,                                     'description': 'Johann Crystal Assy X',        'object': auxxy.x,                                  'keyword': 'Crystal Assy X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
+# 'auxxy_y':                  {'name': auxxy.y.name,                                     'description': 'Johann Detector X',            'object': auxxy.y,                                  'keyword': 'Detector X',           'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
+# 'johann_cr_main_roll':      {'name': johann_main_crystal.motor_cr_main_roll.name,      'description': 'Johann Main Crystal Roll',     'object': johann_main_crystal.motor_cr_main_roll,   'keyword': 'Main Crystal Roll',    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+# 'johann_cr_main_yaw':       {'name': johann_main_crystal.motor_cr_main_yaw.name,       'description': 'Johann Main Crystal Yaw',      'object': johann_main_crystal.motor_cr_main_yaw,    'keyword': 'Main Crystal Yaw',     'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+# 'johann_cr_aux2_roll':      {'name': johann_aux2_crystal.motor_cr_aux2_roll.name,      'description': 'Johann Aux2 Crystal Roll',     'object': johann_aux2_crystal.motor_cr_aux2_roll,   'keyword': 'Aux2 Crystal Roll',    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+# 'johann_cr_aux2_yaw':       {'name': johann_aux2_crystal.motor_cr_aux2_yaw.name,       'description': 'Johann Aux2 Crystal Yaw',      'object': johann_aux2_crystal.motor_cr_aux2_yaw,    'keyword': 'Aux2 Crystal Yaw',     'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+# 'johann_cr_aux2_x':         {'name': johann_aux2_crystal.motor_cr_aux2_x.name,         'description': 'Johann Aux2 Crystal X',        'object': johann_aux2_crystal.motor_cr_aux2_x,      'keyword': 'Aux2 Crystal X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
+# 'johann_cr_aux2_y':         {'name': johann_aux2_crystal.motor_cr_aux2_y.name,         'description': 'Johann Aux2 Crystal Y',        'object': johann_aux2_crystal.motor_cr_aux2_y,      'keyword': 'Aux2 Crystal Y',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
+# 'johann_cr_aux3_roll':      {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,      'description': 'Johann Aux3 Crystal roll',     'object': johann_aux3_crystal.motor_cr_aux3_roll,   'keyword': 'Aux3 Crystal roll',    'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+# 'johann_cr_aux3_yaw':       {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,       'description': 'Johann Aux3 Crystal Yaw',      'object': johann_aux3_crystal.motor_cr_aux3_yaw,    'keyword': 'Aux3 Crystal Yaw',     'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+# 'johann_cr_aux3_x':         {'name': johann_aux3_crystal.motor_cr_aux3_x.name,         'description': 'Johann Aux3 Crystal X',        'object': johann_aux3_crystal.motor_cr_aux3_x,      'keyword': 'Aux3 Crystal X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
+# 'johann_cr_aux3_y':         {'name': johann_aux3_crystal.motor_cr_aux3_y.name,         'description': 'Johann Aux3 Crystal Y',        'object': johann_aux3_crystal.motor_cr_aux3_y,      'keyword': 'Aux3 Crystal Y',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
+# 'johann_cr_main_bragg':     {'name': johann_main_crystal.bragg.name,                   'description': 'Johann Main Crystal Bragg',    'object': johann_main_crystal.bragg,                'keyword': 'Main Crystal Bragg',   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+# 'johann_cr_aux2_bragg':     {'name': johann_aux2_crystal.bragg.name,                   'description': 'Johann Aux2 Crystal Bragg',    'object': johann_aux2_crystal.bragg,                'keyword': 'Aux2 Crystal Bragg',   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+# 'johann_cr_aux3_bragg':     {'name': johann_aux3_crystal.bragg.name,                   'description': 'Johann Aux3 Crystal Bragg',    'object': johann_aux3_crystal.bragg,                'keyword': 'Aux3 Crystal Bragg',   'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+# 'johann_det_focus':         {'name': johann_det_arm.det_focus.name,                    'description': 'Johann Detector Focus',        'object': johann_det_arm.det_focus,                 'keyword': 'Detector Focus',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 5},
+# 'johann_x':                 {'name': johann_spectrometer_x.x.name,                     'description': 'Johann Spectrometer X',        'object': johann_spectrometer_x.x,                  'keyword': 'Spectrometer X',       'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
+# 'johann_bragg_angle':       {'name': johann_spectrometer.bragg.name,                   'description': 'Johann Global Bragg Angle',    'object': johann_spectrometer.bragg,                'keyword': 'Global Bragg Angle',   'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 0.05},
+# 'johann_energy':            {'name': johann_emission.energy.name,                      'description': 'Johann Emission Energy',       'object': johann_emission.energy,                   'keyword': 'Emission Energy',      'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 1},
+# }
+#
+# motor_dictionary = {**motor_dictionary, **_johann_motor_dictionary}
 
