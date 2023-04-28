@@ -167,9 +167,9 @@ class VonHamosDetectorArm(VonHamosPseudoPositioner):
 von_hamos_det_arm = VonHamosDetectorArm(name='von_hamos_det_arm')
 
 
-_von_hamos_det_arm_dict = {'motor_det_x':   {'name': von_hamos_det_arm.motor_det_x.name,   'description': 'Detector x',   'keyword': 'x',     'object': von_hamos_det_arm.motor_det_x,   'group': 'spectrometer'},
-                           'motor_det_th1': {'name': von_hamos_det_arm.motor_det_th1.name, 'description': 'Detector th1', 'keyword': 'th1',   'object': von_hamos_det_arm.motor_det_th1, 'group': 'spectrometer'},
-                           'motor_det_th2': {'name': von_hamos_det_arm.motor_det_th2.name, 'description': 'Detector th2', 'keyword': 'th2',   'object': von_hamos_det_arm.motor_det_th2, 'group': 'spectrometer'}}
+_von_hamos_det_arm_dict = {'motor_det_x':   {'name': von_hamos_det_arm.motor_det_x.name,   'description': 'Detector x',   'keyword': 'Det x',     'object': von_hamos_det_arm.motor_det_x,   'group': 'spectrometer'},
+                           'motor_det_th1': {'name': von_hamos_det_arm.motor_det_th1.name, 'description': 'Detector th1', 'keyword': 'Det th1',   'object': von_hamos_det_arm.motor_det_th1, 'group': 'spectrometer'},
+                           'motor_det_th2': {'name': von_hamos_det_arm.motor_det_th2.name, 'description': 'Detector th2', 'keyword': 'Det th2',   'object': von_hamos_det_arm.motor_det_th2, 'group': 'spectrometer'}}
 
 motor_dictionary.update(_von_hamos_det_arm_dict)
 #
