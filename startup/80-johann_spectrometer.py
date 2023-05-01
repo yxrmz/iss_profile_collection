@@ -1214,6 +1214,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def e2reflectivity(self, energy):
         return self.rowland_circle.e2reflectivity(energy)
 
+    def read_basic_crystal_config(self):
+        return self.rowland_circle.crystal, self.rowland_circle.R, self.rowland_circle.hkl, self.rowland_circle.roll_offset
+
     # def move(self, position, step_size=0.5, **kwargs):
     #     old_position = self.energy.position
     #     n_steps = int(np.abs(position - old_position) / step_size + 1)
