@@ -155,6 +155,16 @@ class Nominal2ActualConverterWithLinearInterpolation:
             f = interpolate.interp1d(self.x_act, self.x_nom, kind='linear', fill_value='extrapolate')
             return f(x_act)
 
+def extrapolate_linearly(x_in, x, y):
+    if type(x_in) != np.ndarray:
+        x_in = np.array(x_in)
+    if len(x) == 0:
+        return np.zeros(x_in.shape)
+    elif len(x) == 1:
+        return y * np.ones(x_in.shape)
+    else:
+        f = interpolate.interp1d(x, y, kind='linear', fill_value='extrapolate')
+        return f(x_in)
 
 from xas.xray import bragg2e, e2bragg, crystal_reflectivity
 from xas.spectrometer import compute_rowland_circle_geometry, _compute_rotated_rowland_circle_geometry
@@ -195,11 +205,9 @@ class RowlandCircle:
         self.det_L1 = _BIG_DETECTOR_ARM_LENGTH
         self.det_L2 = _SMALL_DETECTOR_ARM_LENGTH
         self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
-
+        self.det_focus_status = 'good'
         self.init_from_settings()
-
-        self.compute_nominal_trajectory()
-        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.compute_trajectories()
 
     def load_config(self, file):
         with open(file, 'r') as f:
@@ -254,16 +262,19 @@ class RowlandCircle:
     def set_spectrometer_config(self, config):
         # config needs a validation may be
         self.config = config
-
-        if 'bragg_registration' in config.keys():
-            self.converter_nom2act = {}
-            for motor_key in _johann_spectrometer_motor_keys:
-                _c_nom2act = Nominal2ActualConverterWithLinearInterpolation()
-                pos_nom = config['bragg_registration']['pos_nom'][motor_key]
-                pos_act = config['bragg_registration']['pos_act'][motor_key]
-                for _pos_nom, _pos_act in zip(pos_nom, pos_act):
-                    _c_nom2act.append_point(_pos_nom, _pos_act)
-                self.converter_nom2act[motor_key] = _c_nom2act
+        # self.config['bragg_registration']['bragg'] = {k : [] for k in _johann_spectrometer_motor_keys}
+            #
+            #
+            #
+            #
+            # self.converter_nom2act = {}
+            # for motor_key in _johann_spectrometer_motor_keys:
+            #     # _c_nom2act = Nominal2ActualConverterWithLinearInterpolation()
+            #     pos_nom = config['bragg_registration']['pos_nom'][motor_key]
+            #     pos_act = config['bragg_registration']['pos_act'][motor_key]
+            #     for _pos_nom, _pos_act in zip(pos_nom, pos_act):
+            #         _c_nom2act.append_point(_pos_nom, _pos_act)
+            #     self.converter_nom2act[motor_key] = _c_nom2act
 
         if 'energy_calibration' in config.keys():
             config_ec = config['energy_calibration']
@@ -355,11 +366,20 @@ class RowlandCircle:
 
     @property
     def det_focus(self):
+        det_focus_est = self.compute_motor_position('motor_det_x', 90, nom2act=False) - self.config['parking']['motor_det_x']
+        if not np.isclose(det_focus_est, self.config['det_focus'], atol=0.1):
+            self.det_focus_status = 'bad'
+        else:
+            self.det_focus_status = 'good'
+            # print_to_gui('WARNING: estimated det_focus differs from the config value by >0.1 mm')
         return self.config['det_focus']
 
     @det_focus.setter
     def det_focus(self, value):
+        self.update_nominal_trajectory_for_detector(value)
+        self.compute_trajectory_correction()
         self.config['det_focus'] = value
+        self.save_current_spectrometer_config_to_settings()
 
     @property
     def R(self):
@@ -369,6 +389,7 @@ class RowlandCircle:
     def R(self, value):
         self.config['parking']['motor_cr_assy_x'] += (self.config['R'] - value)
         self.config['R'] = value
+        self.save_current_spectrometer_config_to_settings()
 
     @property
     def crystal(self):
@@ -394,8 +415,7 @@ class RowlandCircle:
     def roll_offset(self, value):
         assert value in self.allowed_roll_offsets, f'roll_offset value must be equal to one of {self.allowed_roll_offsets}'
         self.config['roll_offset'] = value
-        self.compute_nominal_trajectory()
-        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.compute_trajectories()
         self.save_current_spectrometer_config_to_settings()
 
     @property
@@ -464,7 +484,8 @@ class RowlandCircle:
         motor_cr_aux3_roll = motor_cr_aux2_roll.copy()
         motor_cr_aux3_yaw = -motor_cr_aux2_yaw.copy()
 
-        return {'bragg' :               braggs,
+        return pd.DataFrame(
+               {'bragg' :               braggs,
                 'det_x' :               det_x,
                 'det_y' :               det_y,
                 'cr_main_x' :           cr_main_x,
@@ -489,7 +510,7 @@ class RowlandCircle:
                 'motor_cr_aux3_x':      motor_cr_aux3_x,
                 'motor_cr_aux3_y':      motor_cr_aux3_y,
                 'motor_cr_aux3_roll':   motor_cr_aux3_roll,
-                'motor_cr_aux3_yaw':    motor_cr_aux3_yaw}
+                'motor_cr_aux3_yaw':    motor_cr_aux3_yaw})
 
     def _compute_trajectory_for_detector(self, braggs, det_x, det_y, det_focus=0):
 
@@ -508,49 +529,79 @@ class RowlandCircle:
 
     def update_nominal_trajectory_for_detector(self, det_focus, force_update=False):
         if force_update or (not np.isclose(det_focus, self.det_focus, atol=1e-4)):
-            self.det_focus = det_focus
-            motor_det_x, motor_det_th1, motor_det_th2 = self._compute_trajectory_for_detector(self.traj['bragg'],
-                                                                                              self.traj['det_x'],
-                                                                                              self.traj['det_y'],
+            # self.det_focus = det_focus
+            motor_det_x, motor_det_th1, motor_det_th2 = self._compute_trajectory_for_detector(self.traj_nom['bragg'],
+                                                                                              self.traj_nom['det_x'],
+                                                                                              self.traj_nom['det_y'],
                                                                                               det_focus=det_focus)
-            self.traj['motor_det_x'] = motor_det_x
-            self.traj['motor_det_th1'] = motor_det_th1
-            self.traj['motor_det_th2'] = motor_det_th2
+            self.traj_nom['motor_det_x'] = motor_det_x
+            self.traj_nom['motor_det_th1'] = motor_det_th1
+            self.traj_nom['motor_det_th2'] = motor_det_th2
 
 
     def compute_nominal_trajectory(self, npt=250):
-        self.traj = self._compute_nominal_trajectory(npt=npt)
+        self.traj_nom = self._compute_nominal_trajectory(npt=npt)
 
-    def _convert_motor_pos_nom2act(self, motor_key, pos):
-        if motor_key in self.converter_nom2act.keys():
-            pos = self.converter_nom2act[motor_key].nom2act(pos)
-        return pos
+    def compute_trajectory_correction(self):
+        self.traj_delta = {}
+        for motor_key in _johann_spectrometer_motor_keys:
+            pos_act = np.array(self.config['bragg_registration']['pos_act'][motor_key])
+            pos_nom = np.array(self.config['bragg_registration']['pos_nom'][motor_key])
+            delta =  pos_act - pos_nom
+            bragg = np.array(self.config['bragg_registration']['bragg'][motor_key])
+            bragg_in = self.traj_nom['bragg']
+            self.traj_delta[motor_key] = extrapolate_linearly(bragg_in, bragg, delta)
+            # self.traj[motor_key] = self.traj[motor_key] + self.traj_delta[motor_key]
+        self.traj_delta = pd.DataFrame(self.traj_delta)
+        self.traj = self.traj_nom.copy()
+        self.traj[self.traj_delta.columns] = self.traj[self.traj_delta.columns] + self.traj_delta
 
-    def _convert_motor_pos_act2nom(self, motor_key, pos):
-        if motor_key in self.converter_nom2act.keys():
-            pos = self.converter_nom2act[motor_key].act2nom(pos)
-        return pos
+    def compute_trajectories(self):
+        self.compute_nominal_trajectory()
+        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.compute_trajectory_correction()
+
+    # def _convert_motor_pos_nom2act(self, motor_key, pos):
+    #     if motor_key in self.converter_nom2act.keys():
+    #         pos = self.converter_nom2act[motor_key].nom2act(pos)
+    #     return pos
+    #
+    # def _convert_motor_pos_act2nom(self, motor_key, pos):
+    #     if motor_key in self.converter_nom2act.keys():
+    #         pos = self.converter_nom2act[motor_key].act2nom(pos)
+    #     return pos
 
     def register_bragg(self, bragg_act, motor_pos_dict):
         pos_nom = {}
         for motor_key in motor_pos_dict.keys():
+            print(motor_key)
             pos_nom[motor_key] = self.compute_motor_position(motor_key, bragg_act, nom2act=False)
         pos_act = {**motor_pos_dict}
         for motor_key in pos_act.keys():
-            self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
+            # self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
+            self.config['bragg_registration']['bragg'][motor_key].append(bragg_act)
             self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
             self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
+
+        self.compute_trajectory_correction()
         self.save_current_spectrometer_config_to_settings()
+
+    # @property
+    # def traj(self):
+    #
+    #     return self.traj_nom + self.traj_delta
 
     def register_energy(self, energy_act, motor_pos_dict):
         bragg_act = self.e2bragg(energy_act)
         self.register_bragg(bragg_act, motor_pos_dict)
 
     def reset_bragg_registration(self):
-        self.config['bragg_registration'] = {'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
+        self.config['bragg_registration'] = {'bragg' :  {k: [] for k in _johann_spectrometer_motor_keys},
+                                             'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
                                              'pos_act': {k: [] for k in _johann_spectrometer_motor_keys}}
-        for motor_key in _johann_spectrometer_motor_keys:
-            self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
+        self.compute_trajectory_correction()
+        # for motor_key in _johann_spectrometer_motor_keys:
+        #     self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
 
     def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
         bragg = self.traj['bragg']
@@ -559,15 +610,16 @@ class RowlandCircle:
         plt.plot(bragg, pos)
 
     def _compute_motor_position(self, motor_key, bragg, nom2act=True):
-        pos =  np.interp(bragg, self.traj['bragg'], self.traj[motor_key])
+        if nom2act:
+            pos = np.interp(bragg, self.traj['bragg'], self.traj[motor_key])
+        else:
+            pos = np.interp(bragg, self.traj_nom['bragg'], self.traj_nom[motor_key])
+
         if motor_key in self.config['parking'].keys():
             pos0 = self.config['parking'][motor_key]
         else:
             pos0 = 0
         pos += pos0
-        if nom2act:
-            # pos = self.converter_nom2act[motor_key].nom2act(pos)
-            pos = self._convert_motor_pos_nom2act(motor_key, pos)
         return pos
 
     def compute_motor_position(self, motor_keys, bragg, nom2act=True):
@@ -586,13 +638,23 @@ class RowlandCircle:
         return self.compute_motor_position(motor_keys, bragg, nom2act=nom2act)
 
     def compute_bragg_from_motor(self, motor_key, pos, nom2act=True):
+        if motor_key in self.config['parking'].keys():
+            pos0 = self.config['parking'][motor_key]
+        else:
+            pos0 = 0
+
         if nom2act:
-            # pos = self.converter_nom2act[motor_key].act2nom(pos)
-            pos = self._convert_motor_pos_act2nom(motor_key, pos)
-        pos0 = self.config['parking'][motor_key]
-        vs = self.traj[motor_key]
-        bs = self.traj['bragg']
-        bragg = np.interp(pos - pos0, vs[bs <= 90],  bs[bs <= 90])
+            bragg = np.interp(pos - pos0, self.traj[motor_key], self.traj['bragg'])
+        else:
+            bragg = np.interp(pos - pos0, self.traj_nom[motor_key], self.traj_nom['bragg'])
+
+        # if nom2act:
+        #     pos = self.converter_nom2act[motor_key].act2nom(pos)
+            # pos = self._convert_motor_pos_act2nom(motor_key, pos)
+
+        # vs = self.traj[motor_key]
+        # bs = self.traj['bragg']
+        # bragg = np.interp(pos - pos0, vs[bs <= 90],  bs[bs <= 90])
 
         if bragg > 90:
             bragg = 180 - bragg
@@ -744,7 +806,7 @@ class JohannDetectorArm(JohannPseudoPositioner):
 
     def _forward(self, pseudo_dict):
         bragg, det_focus = pseudo_dict['bragg'], pseudo_dict['det_focus']
-        self.rowland_circle.update_nominal_trajectory_for_detector(det_focus)
+        self.rowland_circle.det_focus = det_focus
         return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
 
     def _inverse(self, real_dict):
