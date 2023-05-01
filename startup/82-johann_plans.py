@@ -40,7 +40,7 @@ def prepare_johann_scan_plan(detectors, spectrometer_energy):
 def prepare_johann_metadata_and_kwargs(**kwargs):
     metadata = kwargs.pop('metadata')
     j_metadata = {'spectrometer': 'johann',
-                  'spectrometer_config': {},}
+                  'spectrometer_config': rowland_circle.config,}
     if 'spectrometer_energy' in kwargs.keys():
         spectrometer_energy = kwargs.pop('spectrometer_energy')
         j_metadata['spectrometer_energy'] = spectrometer_energy
@@ -63,8 +63,8 @@ def step_scan_johann_herfd_plan(**kwargs):
 def fly_scan_johann_herfd_plan(**kwargs):
     # rixs_file_name = kwargs.pop('rixs_file_name')
     yield from prepare_johann_scan_plan(kwargs['detectors'], kwargs['spectrometer_energy'])
-    metadata['spectrometer_config']['scan_type'] = 'constant energy'
     metadata, kwargs = prepare_johann_metadata_and_kwargs(**kwargs)
+    metadata['spectrometer_config']['scan_type'] = 'constant energy'
     yield from fly_scan_plan(metadata=metadata, **kwargs)
 
 
@@ -77,7 +77,7 @@ def get_johann_xes_step_scan_md(name, comment, detectors_dict, emission_energy_l
 
     md_scan = {'experiment': 'step_scan',
                'spectrometer': 'johann',
-               'spectrometer_config': {},
+               'spectrometer_config': rowland_circle.config,
                'spectrometer_energy_steps': emission_energy_list,
                'spectrometer_time_steps': emission_time_list,
                'element': element,
