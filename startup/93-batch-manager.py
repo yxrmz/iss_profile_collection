@@ -7,12 +7,13 @@ from collections import defaultdict
 class Sample:
     position_data = pd.DataFrame(columns=['x', 'y', 'z', 'th', 'exposure_time', 'exposed', 'uids'])
 
-    def __init__(self, name, comment='', coordinates=[], max_exposure=None):
+    def __init__(self, name, comment='', coordinates=[], max_exposure=None, archived=False):
         self.name = name
         self.comment = comment
         self.max_exposure = max_exposure
         self.add_new_positions_from_coordinates(coordinates)
         self.uid = str(uuid.uuid4())[:20]
+        self.archived = archived
         # self.add_positions(positions)
 
     def validate_coordinates(self, coordinates_dict):
@@ -50,6 +51,7 @@ class Sample:
         sample_dict = {}
         sample_dict['name'] = self.name
         sample_dict['comment'] = self.comment
+        sample_dict['archived'] = self.archived
         sample_dict['position_data'] = self.position_data.to_dict()
         return sample_dict
 
@@ -93,7 +95,8 @@ class Sample:
     def from_dict(cls, sample_dict):
         name = sample_dict['name']
         comment = sample_dict['comment']
-        result = cls(name, comment=comment)
+        archived =  sample_dict['archived']
+        result = cls(name, comment=comment, archived=archived)
         result.position_data = pd.DataFrame.from_dict(sample_dict['position_data'])
         return result
 
@@ -147,7 +150,7 @@ class PersistentListInteractingWithGUI:
 
     def save_to_file(self, file):
         with open(file, 'w') as f:
-            json.dump(self.items, f)
+            json.dump(self.items, f, indent=4)
 
     @emit_list_update_signal_decorator
     def reset(self):
@@ -233,8 +236,8 @@ class SampleManager(PersistentListInteractingWithGUI):
         return sample_dict_list
 
     # dealing with addition and deletion of samples
-    def add_new_sample(self, name, comment='', coordinates=[], max_exopsure=None):
-        sample = Sample(name, comment=comment, coordinates=coordinates, max_exposure=max_exopsure)
+    def add_new_sample(self, name, comment='', coordinates=[], max_exposure=None):
+        sample = Sample(name, comment=comment, coordinates=coordinates, max_exposure=max_exposure, archived=False)
         self.add_sample(sample)
 
     def insert_new_sample_at_index(self, index, name, comment='', coordinates=[], max_exopsure=None):
@@ -323,23 +326,41 @@ class SampleManager(PersistentListInteractingWithGUI):
 
     def uid_to_sample_index(self, uid):
         for sample_index, sample in enumerate(self.samples):
-            if uid in sample.uids:
-                sample_point_index = sample.uids.index(uid)
-                return sample_index, sample_point_index
-        return None
+             if uid == sample.uid:
+                return sample_index
 
-    def set_exposed_at_index(self, sample_index, sample_point_index, exposed=True):
-        self.samples[sample_index].set_exposed(sample_point_index, exposed=exposed)
 
-    def sample_exposed_at_uid(self, uid):
-        index_tuple = self.uid_to_sample_index(uid)
-        if index_tuple is not None:
-            self.sample_exposed_at_index(*index_tuple)
 
-    def set_exposed_at_uid(self, uid):
-        index_tuple = self.uid_to_sample_index(uid)
-        if index_tuple is not None:
-            self.set_exposed_at_index(*index_tuple)
+    # def uid_to_sample_index(self, uid):
+    #     for sample_index, sample in enumerate(self.samples):
+    #         if uid in sample.uids:
+    #             sample_point_index = sample.uids.index(uid)
+    #             return sample_index, sample_point_index
+    #     return None
+    #
+    # def set_exposed_at_index(self, sample_index, sample_point_index, exposed=True):
+    #     self.samples[sample_index].set_exposed(sample_point_index, exposed=exposed)
+    #
+    # def sample_exposed_at_uid(self, uid):
+    #     index_tuple = self.sample_point_uid_to_sample_index(uid)
+    #     if index_tuple is not None:
+    #         self.sample_exposed_at_index(*index_tuple)
+    #
+    # def set_exposed_at_uid(self, uid):
+    #     index_tuple = self.sample_point_uid_to_sample_index(uid)
+    #     if index_tuple is not None:
+    #         self.set_exposed_at_index(*index_tuple)
+
+
+    @emit_list_update_signal_decorator
+    def archive_at_index(self, index):
+        self.samples[index].archived = True
+
+    @emit_list_update_signal_decorator
+    def restore_at_index(self, index):
+        self.samples[index].archived = False
+
+
 
 
 sample_manager = SampleManager()

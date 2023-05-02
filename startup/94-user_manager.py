@@ -5,11 +5,9 @@ class UserManager(PersistentListInteractingWithGUI):
 
     def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/user_management/user_manager.json'):
         super().__init__(json_file_path)
-        try:
-            _, current_user = self.current_user()
-            self._init_managers(current_user['sample_manager'], current_user['scan_manager'])
-        except:
-            pass
+        _, current_user = self.current_user()
+        self._init_managers(current_user['sample_manager'], current_user['scan_manager'])
+
 
 
     # Class specific decorators
@@ -17,13 +15,6 @@ class UserManager(PersistentListInteractingWithGUI):
     def users(self):
         return self.items
 
-    # @users.setter
-    # def users(self, value):
-    #     self.items = value
-    #
-    # @users.deleter
-    # def users(self):
-    #     del self.items
 
     def find_user_index(self, first_name, last_name):
         for i, user in enumerate(self.users):
@@ -53,7 +44,7 @@ class UserManager(PersistentListInteractingWithGUI):
             sample_manager_filename = self.users[index]['sample_manager']
             scan_manager_filename = self.users[index]['scan_manager']
 
-        self._init_managers(sample_manager_filename, scan_manager_filename)
+        self.init_managers(sample_manager_filename, scan_manager_filename)
 
     def _init_managers(self, sample_manager_filename, scan_manager_filename):
         sample_manager.init_from_new_file(f'{ROOT_PATH_SHARED}/settings/user_management/{sample_manager_filename}')
@@ -65,6 +56,7 @@ class UserManager(PersistentListInteractingWithGUI):
             if (user['first_name'] == current_user_name[0]) and (user['last_name'] == current_user_name[1]):
                 return indx, user
 
+    @emit_list_update_signal_decorator
     def add_run(self, proposal, saf, experimenters):
         _current_index, _current_user  = self.current_user()
         run={}
@@ -78,11 +70,30 @@ class UserManager(PersistentListInteractingWithGUI):
         else:
             self.users[_current_index]['runs']=[run]
 
+    @emit_list_update_signal_decorator
+    def add_metadata_key(self, key):
+        _current_index, _current_user = self.current_user()
+        if 'metadata' in _current_user.keys():
+            self.users[_current_index]['metadata'].append(key)
+        else:
+            self.users[_current_index]['metadata'] = [key]
+
+    @emit_list_update_signal_decorator
+    def remove_metadata_key(self, key):
+        _current_index, _current_user = self.current_user()
+        if 'metadata' in _current_user.keys():
+            for _indx, _key in enumerate(self.users[_current_index]['metadata']):
+                if _key == key:
+                    self.users[_current_index]['metadata'].pop(_indx)
+
+        else:
+            self.users[_current_index]['metadata'] = [key]
+
 
 user_manager = UserManager()
 
 
-user_manager.set_user('Eli', 'Stavitski', 'NSLS II','istavitski.bnl.gov')
+
 
 
 

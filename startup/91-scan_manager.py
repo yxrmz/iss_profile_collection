@@ -56,7 +56,7 @@ class ScanManager():
         uid = self.check_if_brand_new(scan)
         scan_def = f"{name} ({aux_parameters['scan_description']})"
         scan_name = f"{name}"
-        scan_local = {'uid' : uid, 'scan_def' : scan_def, 'scan_name' : scan_name, 'aux_parameters' : aux_parameters}
+        scan_local = {'uid' : uid, 'scan_def' : scan_def, 'scan_name' : scan_name, 'aux_parameters' : aux_parameters, 'archived': False}
         self.scan_list_local.append(scan_local)
         self.dump_local_scan_list()
         return uid
@@ -64,6 +64,23 @@ class ScanManager():
     def delete_local_scan(self, idx):
         self.scan_list_local.pop(idx)
         self.dump_local_scan_list()
+
+    def archive_scan_at_uid(self, uid):
+        for indx, scan in enumerate(self.scan_list_local):
+            if scan['uid'] == uid:
+                break
+        self.scan_list_local[indx]['archived'] = True
+
+
+    def restore_scan_at_uid(self, uid):
+        for indx, scan in enumerate(self.scan_list_local):
+            if scan['uid'] == uid:
+                break
+        self.scan_list_local[indx]['archived'] = False
+
+
+
+
 
     def check_if_brand_new(self, new_scan):
         for uid, scan in self.scan_dict.items():
@@ -81,11 +98,11 @@ class ScanManager():
                                 parameters_match = False
                                 break
                     if parameters_match:
-                        print_to_gui('SCAN IS OLD')
+                        #print_to_gui('SCAN IS OLD')
                         return uid
 
         new_uid = self.make_scan_uid()
-        print_to_gui('SCAN IS NEW')
+        #print_to_gui('SCAN IS NEW')
         self.scan_dict[new_uid] = new_scan
         self.create_trajectory_file(new_scan, new_uid)
         os.rename(self.json_file_path, f'{os.path.splitext(self.json_file_path)[0]}.bak')
