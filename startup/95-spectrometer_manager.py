@@ -9,8 +9,15 @@ class SpectrometerManager(PersistentListInteractingWithGUI):
     def add_config(self, config_dict):
         self.add_item(config_dict)
 
-    def add_current_config(self, name, timestamp):
-        config_dict = {'name': name, 'timestamp': timestamp, 'config': copy.deepcopy(rowland_circle.config)}
+    def add_current_config(self, name):
+        config_dict = {'name': name,
+                       'uid': str(uuid.uuid4()),
+                       'timestamp': ttime.time(),
+                       'year': RE.md['year'],
+                       'cycle': RE.md['cycle'],
+                       'proposal': RE.md['proposal'],
+                       'PI': RE.md['PI'],
+                       'config': copy.deepcopy(rowland_circle.config)}
         self.add_config(config_dict)
 
     def set_config_by_index(self, config_index):
