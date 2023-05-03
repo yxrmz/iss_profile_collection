@@ -6,7 +6,8 @@ class UserManager(PersistentListInteractingWithGUI):
     def __init__(self, json_file_path = f'{ROOT_PATH_SHARED}/settings/user_management/user_manager.json'):
         super().__init__(json_file_path)
         _, current_user = self.current_user()
-        self._init_managers(current_user['sample_manager'], current_user['scan_manager'])
+        if current_user is not None:
+            self._init_managers(current_user['sample_manager'], current_user['scan_manager'])
 
 
 
@@ -44,7 +45,12 @@ class UserManager(PersistentListInteractingWithGUI):
             sample_manager_filename = self.users[index]['sample_manager']
             scan_manager_filename = self.users[index]['scan_manager']
 
-        self.init_managers(sample_manager_filename, scan_manager_filename)
+
+        self._init_managers(sample_manager_filename, scan_manager_filename)
+
+        RE.md['PI'] = f'{first_name} {last_name}'
+        RE.md['affiliation'] = affiliation
+        RE.md['email'] = email
 
     def _init_managers(self, sample_manager_filename, scan_manager_filename):
         sample_manager.init_from_new_file(f'{ROOT_PATH_SHARED}/settings/user_management/{sample_manager_filename}')
@@ -55,6 +61,7 @@ class UserManager(PersistentListInteractingWithGUI):
         for indx, user in enumerate(self.users):
             if (user['first_name'] == current_user_name[0]) and (user['last_name'] == current_user_name[1]):
                 return indx, user
+        return None, None
 
     @emit_list_update_signal_decorator
     def add_run(self, proposal, saf, experimenters):
