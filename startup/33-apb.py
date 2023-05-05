@@ -120,23 +120,23 @@ class AnalogPizzaBoxAverage(AnalogPizzaBox):
 
 
     def trigger(self):
-        print_to_gui(f"Before {self.name} callback", add_timestamp=True)
+        # print_to_gui(f"Before {self.name} callback", add_timestamp=True)
         def callback(value, old_value, **kwargs):
-            print_to_gui(f"In {self.name} callback", add_timestamp=True)
+            # print_to_gui(f"In {self.name} callback", add_timestamp=True)
             if self._capturing and int(round(old_value)) == 1 and int(round(value)) == 0:
-                print_to_gui(f"In {self.name} callback - DONE", add_timestamp=True)
+                # print_to_gui(f"In {self.name} callback - DONE", add_timestamp=True)
                 self._capturing = False
                 return True
             else:
                 self._capturing = True
                 return False
 
-        print_to_gui(f"Before subscription to callback", add_timestamp=True)
+        # print_to_gui(f"Before subscription to callback", add_timestamp=True)
         status = SubscriptionStatus(self.acquiring, callback, run=True)
-        print_to_gui(f"After subscription to callback", add_timestamp=True)
+        # print_to_gui(f"After subscription to callback", add_timestamp=True)
 
         st_acq = self.acquire.set(1)
-        print_to_gui(f"After acquire set", add_timestamp=True)
+        # print_to_gui(f"After acquire set", add_timestamp=True)
 
         return st_acq & status
 
@@ -168,12 +168,12 @@ apb_ave = AnalogPizzaBoxAverage(prefix="XF:08IDB-CT{PBA:1}:", name="apb_ave")
 apb_ave.wait_for_connection(timeout=10)
 
 
-def cb_print(value, **kwargs):
-    print_to_gui(f"{kwargs['obj'].name:30s}: In cb_print: {kwargs['old_value'] = } -> {value = }", add_timestamp=True)
-
-
-apb_ave.acquiring.subscribe(cb_print)
-apb_ave.acquire.subscribe(cb_print)
+# def cb_print(value, **kwargs):
+#     print_to_gui(f"{kwargs['obj'].name:30s}: In cb_print: {kwargs['old_value'] = } -> {value = }", add_timestamp=True)
+#
+#
+# apb_ave.acquiring.subscribe(cb_print)
+# apb_ave.acquire.subscribe(cb_print)
 
 
 class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
