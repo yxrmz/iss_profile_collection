@@ -1091,3 +1091,227 @@ johann_emission = JohannEmission(name='johann_emission')
 #
 # motor_dictionary = {**motor_dictionary, **_johann_motor_dictionary}
 
+
+centroid_y = EpicsSignal('XF:08IDB-BI{BPM:SP-2}Stats1:CentroidY_RBV', name='centroid_y')
+intensity = EpicsSignal('XF:08IDB-BI{BPM:SP-2}Stats1:Total_RBV', name='intensity')
+
+centroid_y_data = {'value': [], 'timestamp': []}
+intensity_data =  {'value': [], 'timestamp': []}
+
+def cb_add_data(value, **kwargs):
+    # print_to_gui(f"{value = }", add_timestamp=True)
+    if len(centroid_y_data) >=10000:
+        centroid_y_data['value'].pop(0)
+        centroid_y_data['timestamp'].pop(0)
+    centroid_y_data['value'].append(value)
+    centroid_y_data['timestamp'].append(kwargs['timestamp'])
+
+centroid_y.subscribe(cb_add_data)
+
+def cb_add_data_int(value, **kwargs):
+    # print_to_gui(f"{value = }", add_timestamp=True)
+    if len(intensity_data) >=10000:
+        intensity_data['value'].pop(0)
+        intensity_data['timestamp'].pop(0)
+    intensity_data['value'].append(value)
+    intensity_data['timestamp'].append(kwargs['timestamp'])
+
+intensity.subscribe(cb_add_data_int)
+
+
+def get_fft(t, s):
+    freq = np.fft.fftfreq(t.size, d=t[1] - t[0])
+    s_fft = np.abs(np.fft.fft(s))[np.argsort(freq)]
+    freq = freq[np.argsort(freq)]
+    return freq[freq>0], s_fft[freq>0]
+
+def plot_fft(t, s, *args, **kwargs):
+    f, s_fft = get_fft(np.array(t), np.array(s))
+    plt.plot(f, s_fft, *args, **kwargs)
+
+def plot_trace_info(data_dict, fignum=1, clear=True):
+    t = np.linspace(data_dict['timestamp'][0], data_dict['timestamp'][-1], len(data_dict['timestamp']))
+    v = np.interp(t, data_dict['timestamp'], data_dict['value'])
+
+    # t = np.linspace(intensity_data['timestamp'][0], intensity_data['timestamp'][-1], len(intensity_data['timestamp']))
+    # v = np.interp(t, intensity_data['timestamp'], intensity_data['value'])
+
+    freq, centroid_fft = get_fft(t, v)
+    # freq = np.fft.fftfreq(v.size, d=t[1] - t[0])
+    # centroid_fft = np.abs(np.fft.fft(v))[np.argsort(freq)]
+    # freq = freq[np.argsort(freq)]
+
+    plt.figure(fignum, clear=clear)
+    plt.subplot(221)
+    plt.plot(data_dict['timestamp'], data_dict['value'] - np.mean(data_dict['value']))
+
+    plt.subplot(222)
+    plt.hist(data_dict['value'] - np.mean(data_dict['value']), 100, density=True);
+
+    plt.subplot(223)
+    plt.semilogy(freq, centroid_fft)
+    plt.xlim(0.1, 15)
+    # plt.ylim(1e2, 1e6)
+# plt.semilogy(centroid_fft)
+
+
+plot_trace_info(centroid_y_data, )
+plot_trace_info(intensity_data, fignum=2)
+
+centroid_y_data_85_3 = copy.deepcopy(centroid_y_data)
+intensity_data_85_3 = copy.deepcopy(intensity_data)
+
+plot_trace_info(centroid_y_data_85, clear=True, fignum=1)
+plot_trace_info(centroid_y_data_65, clear=False, fignum=1)
+
+plot_trace_info(intensity_data_85, fignum=2)
+
+plot_trace_info(centroid_y_data_85_2, clear=True, fignum=1)
+plot_trace_info(centroid_y_data_85_3, clear=False, fignum=1)
+
+plot_trace_info(intensity_data_85_2, clear=True, fignum=2)
+plot_trace_info(intensity_data_85_3, clear=False, fignum=2)
+
+
+apb_ave.set_exposure_time(10)
+RE(bp.count([apb_ave]))
+
+t = db[-1].table()
+
+# gain was set to 5
+t_all_connected_no_scope = db['af703640-8980-4dcd-9545-4c8f0fce4046'].table()
+t_all_connected_no_scope_ir_it = db['4d156431-bb99-47e0-af71-c1f1b8b3c0ec'].table()
+
+t_no_amplifier_no_scope = db['ced4d069-6d30-443f-913c-704afa08b5a2'].table()
+t_all_conneced_no_scope_with_dominik = db['1c8eaaf9-8d6a-4b86-8255-8559be5d9591'].table()
+
+t_all_connected_no_scope_manual_gain = db['abc456fc-2014-4fab-b55c-6420c7a11e79'].table()
+t_all_connected_no_scope_manual_gain_10MHz = db['676abda3-cb15-4612-a6a7-3c88d3be874e'].table()
+t_all_connected_no_scope_manual_gain_FB = db['d44ce8d5-0fb3-4af6-985e-346dc98c3d93'].table()
+t_all_connected_no_scope_direct_cable = db['aa5c3275-e63f-453a-847d-3d54cce0b015'].table()
+t_all_connected_no_scope_direct_cable_with_grounding = db['6869fdc4-1fc9-4057-88ed-53c636bfed4a'].table()
+
+# t_all_connected_no_scope_direct_cable_keithley = db['e0e2ef0e-796a-49d3-aad4-f8929762fe12'].table()
+t_all_connected_no_scope_direct_cable_keithley = db['0d265f78-2950-4035-a5b8-60a148af1f19'].table()
+
+t_all_connected_no_scope_direct_cable_ir_held_in_air = db['51f7ed41-e51d-4a5c-a45f-6f1db556ddd1'].table()
+
+t_hv_on = db['62165c00-4b05-4883-850c-fa1510fcad8d'].table()
+t_i0_hv_off = db['ae9987b5-7abf-4802-bf72-9067047480ea'].table()
+t_all_hv_off = db['964d21f1-0d25-4ffa-91f7-10bd2c5e29b8'].table()
+
+t_apb_only = db['a363016d-8f62-475b-b95c-20ac01172f91'].table()
+
+def _plot_traces(_time, _v, *args, **kwargs):
+    plt.subplot(221)
+    plt.plot(_time, _v - np.mean(_v), *args, **kwargs)
+
+    plt.subplot(222)
+    plt.hist(_v - np.mean(_v), 50, alpha=0.5);
+
+    plt.subplot(223)
+    plot_fft(_time, _v, *args, **kwargs)
+
+def plot_traces(t, *args, ch=1, **kwargs):
+    _time = np.array(t[f'apb_ave_time_wf'][1])
+    _v = np.array(t[f'apb_ave_ch{ch}_wf'][1])
+    _plot_traces(_time, _v, *args, **kwargs)
+
+
+plt.figure()
+# plot_traces(t_hv_on, label='HV ON')
+# plot_traces(t_i0_hv_off, label='I0 HV OFF')
+# plot_traces(t_all_hv_off, label='ALL HV OFF')
+plot_traces(t_apb_only, ch=1, label='APB only I0')
+plot_traces(t_apb_only, ch=2, label='APB only It')
+# plot_traces(t_apb_only, ch=3, label='APB only Ir')
+# plot_traces(t_apb_only, ch=4, label='APB only If')
+
+
+
+plt.legend()
+plt.yscale('log')
+
+
+bla1 = np.array(t_hv_on['apb_ave_ch1_wf'][1])
+bla2 = np.array(t_hv_on['apb_ave_ch2_wf'][1])
+bla3 = np.array(t_hv_on['apb_ave_ch3_wf'][1])
+bla4 = np.array(t_hv_on['apb_ave_ch4_wf'][1])
+
+bla = np.vstack((bla1, bla2, bla3, bla4))
+
+plt.figure()
+plt.plot(bla2, bla3, 'k.')
+plt.axis('square')
+
+plt.figure()
+plt.imshow(np.corrcoef(bla))
+# plot_traces(t_all_connected_no_scope, label='no scope')
+# plot_traces(t_all_connected_no_scope_direct_cable, label='FEMTO direct cable no scope')
+# plot_traces(t_all_connected_no_scope_direct_cable_keithley, label='KEITHLEY direct cable no scope')
+
+# plot_traces(t_all_connected_no_scope_direct_cable_with_grounding, label='direct cable and grounding no scope')
+
+# plot_traces(t_all_conneced_no_scope_with_dominik, label='dominik no scope')
+# plot_traces(t_all_connected_no_scope_manual_gain, label='1 MHzmanual gain no scope')
+# plot_traces(t_all_connected_no_scope_manual_gain_10MHz, label='10 Mhz manual gain no scope')
+# plot_traces(t_all_connected_no_scope_manual_gain_FB, label='FB manual gain no scope')
+plot_traces(t_no_amplifier_no_scope, label='no amplifier no scope')
+
+plt.legend()
+plt.yscale('log')
+
+
+
+plt.figure()
+plot_traces(t_all_connected_no_scope_ir_it, label='no scope IR', ch=3)
+plot_traces(t_all_connected_no_scope_direct_cable_ir_held_in_air, label='no scope IR in air', ch=3)
+
+# plot_traces(t_all_connected_no_scope_ir_it, label='with scope Ir', ch=2)
+# plot_traces(t_all_connected_no_scope_ir_it, label='with scope It', ch=3)
+# plot_traces(t_all_connected_no_scope_ir_it, label='no scope Ir', ch=3)
+# plot_traces(t_all_conneced_no_scope_with_dominik, label='dominik no scope')
+# plot_traces(t_all_connected_no_scope_manual_gain, label='manual gain no scope')
+# plot_traces(t_all_connected_no_scope_manual_gain_10MHz, label='10 Mhz no scope')
+# plot_traces(t_all_connected_no_scope_manual_gain_FB, label='FB no scope')
+# plot_traces(t_no_amplifier_no_scope, label='no amplifier no scope')
+
+plt.figure()
+_plot_traces(t_all_connected_no_scope[f'apb_ave_time_wf'][1],
+             np.array(t_all_connected_no_scope['apb_ave_ch2_wf'][1]) / np.array(t_all_connected_no_scope['apb_ave_ch1_wf'][1]))
+
+
+
+RE(bp.count([apb_ave]))
+
+
+t_85 = db['668a4f77-567e-4516-ba8e-a861740298ae'].table()
+t_65 = db['d69716cf-454b-4f9d-b567-d5f9ea18b6be'].table()
+
+# no expansion tank
+t_85_2 = db['d8828258-96d6-4b0e-96d1-da68c099afb7'].table()
+
+# with expansion tank
+t_85_3 = db['b33a284e-a12f-4762-a57d-9a280e874b0f'].table()
+
+t_5000 = db['280aec42-a42c-44fd-9862-bbc3f7339d65'].table()
+
+t_2021 = db_archive['65eb5b76-4598-43f0-bde0-233df7a3a5db'].table()
+
+plt.figure()
+# plt.plot(t_2021.apb_ave_time_wf[1], np.array(t_2021.apb_ave_ch1_wf[1])/ 1560 * 930)
+# plt.plot(t_5000.apb_ave_time_wf[1], t_5000.apb_ave_ch1_wf[1])
+# plt.plot(t_85.apb_ave_time_wf[1], t_85.apb_ave_ch1_wf[1])
+# plt.plot(t_65.apb_ave_time_wf[1], t_65.apb_ave_ch1_wf[1])
+
+# plot_traces(t_85, label='85 Hz')
+plot_traces(t_85_2, label='85 Hz no expansion tank')
+plot_traces(t_85_3, label='85 Hz with expansion tank')
+# plot_traces(t_65, label='65 Hz')
+plt.legend()
+plt.yscale('log')
+
+# plt.hist(t_2021.apb_ave_ch1_wf[1]/np.mean(t_2021.apb_ave_ch1_wf[1]), 100, density=True, alpha=0.5);
+# plt.hist(t_85.apb_ave_ch1_wf[1]/np.mean(t_85.apb_ave_ch1_wf[1]), 100, density=True, alpha=0.5);
+# plt.xlabel('intensity')
+# plt.ylabel('')
