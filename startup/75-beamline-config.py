@@ -84,6 +84,31 @@ def tabulate_hhmy_position_plan(stdout=sys.stdout):
         data_df.to_json('/nsls2/data/iss/legacy/xf08id/calibration/beamline_hhmy_tabulation_2022_05_19_high_energies_2.json')
         # data_df.to_json('/nsls2/xf08id/Sandbox/Beamline_components/2022_05_19_beamline_tabulation/beamline_hhmy_tabulation_high_energies.json')
 
+def append_datapoint_plan(data_df):
+    uid = db[-1].start['uid']
+    data_df = data_df.append({'energy': energy,
+                              'hhmy': hhm.y.user_readback.get(),
+                              'uid': uid},
+                             ignore_index=True)
+    data_df.to_json(
+        '/nsls2/data/iss/legacy/xf08id/calibration/beamline_hhmy_tabulation_2023_05_04.json')
+
+
+def tabulate_hhmy_position_plan_bundle():
+    _energies = [7000, 8000]
+    try:
+        data_df = pd.read_json('/nsls2/data/iss/legacy/xf08id/calibration/beamline_hhmy_tabulation_2023_05_04.json')
+    except:
+        data_df = pd.DataFrame(columns=['energy', 'hhmy', 'uid'])
+
+    plans = []
+    for energy in _energies:
+        plans.append({'plan_name': 'move_motor_plan',
+                      'plan_kwargs' : {'motor_attr' : hhm.energy.name,
+                                       'based_on' : 'object_name',
+                                       'position' : energy}})
+        plans.append({'plan_name': 'tune_beamline_plan_bundle',
+                      'plan_kwargs': {}})
 
 
 

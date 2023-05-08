@@ -12,12 +12,13 @@ tune_elements =  [{'motor': hhm.pitch.name,
                    'step': 0.02,
                    'retries': 3,
                    'comment': 'fine monochromator pitch tune'},
-                  # {'motor': hhm.y.name,
-                  #  'detector':'Focusing mirror BPM',
-                  #  'range': 1,
-                  #  'step': 0.025,
-                  #  'retries': 3,
-                  #  'comment': 'monochromator crystal distance tune'},
+                  {'motor': hhm.y.name,
+                   # 'detector':'Focusing mirror BPM',
+                   'detector':'Endstation BPM',
+                   'range': 1,
+                   'step': 0.025,
+                   'retries': 3,
+                   'comment': 'monochromator crystal distance tune'},
                   {'motor': hhrm.y.name, #'motor': [hhrm.y.name, i0_y.pos.name],
                    'detector': 'I0 ion Chamber',
                    'range': 1,
@@ -39,7 +40,7 @@ tune_elements_alt = [
                    'step': 0.02,
                    'retries': 3,
                    'comment': 'fine monochromator pitch tune'},
-                  {'motor': hhm.y_precise.name,
+                  {'motor': hhm.y.name,
                    'detector':'Endstation BPM',
                    'range': 1,
                    'step': 0.025,
@@ -116,7 +117,8 @@ tune_elements_ext =  [{'motor': hhm.pitch.name,
 def tune_beamline_plan_bundle(extended_tuning : bool = False, enable_fb_in_the_end : bool = True, do_liveplot=False):
 
     if extended_tuning:
-        tune_elements_list = tune_elements_ext
+        # tune_elements_list = tune_elements_ext
+        tune_elements_list = tune_elements_alt
     else:
         tune_elements_list = tune_elements
 
