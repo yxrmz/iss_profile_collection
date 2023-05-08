@@ -1315,3 +1315,19 @@ plt.yscale('log')
 # plt.hist(t_85.apb_ave_ch1_wf[1]/np.mean(t_85.apb_ave_ch1_wf[1]), 100, density=True, alpha=0.5);
 # plt.xlabel('intensity')
 # plt.ylabel('')
+
+hdr = db[-1]
+_t = hdr.table(stream_name='apb_stream', fill=True)['apb_stream'][1]
+t_apb = hdr.table(stream_name='apb_stream', fill=True)['apb_stream'][1]
+# _t = hdr.table(stream_name='pb9_enc1', fill=True)['pb9_enc1'][1]
+# t_enc = hdr.table(stream_name='pb9_enc1', fill=True)['pb9_enc1'][1]
+
+# plt.figure(); plt.plot(t_enc[:, 0] + t_enc[:, 1]*1e-9, t_enc[:, 2])
+plt.plot(t_apb[:, 0], t_apb[:, 1])
+
+
+
+
+
+
+
