@@ -196,3 +196,36 @@ def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.
                   'plan_gui_services': plan_gui_services})
 
     return plans
+
+
+
+def quick_crystal_roll_scan(motor_description=None, scan_range=None, velocity=None, pil100k_exosure_time=0.05, plot_func=None, liveplot_kwargs=None):
+    motor_device = get_motor_device(motor_description, based_on='description')
+    # detector_device = get_detector_device_list([detector], flying=False)[0]
+    # detector_channel = get_detector_channel(detector, channel)
+
+    detectors = [apb.ch1, pil100k.stats1.total, pil100k.stats2.total, pil100k.stats3.total, pil100k.stats4.total, ]
+
+    print_to_gui(f'Quick scanning motor {motor}', tag='Spectrometer')
+
+    num_images = (scan_range / velocity + 3) / pil100k_exosure_time
+
+    pil100k_init_exposure_time = pil100k.cam.acquire_period.get()
+    pil100k_init_num_images = pil100k.cam.num_images.get()
+
+    pil100k.set_exposure_time(pil100k_exosure_time)
+    pil100k.set_num_images(num_images)
+    pil100k.cam.acquire.put(1)
+    yield from ramp_motor_scan(motor_device, detectors, scan_range, velocity=velocity, return_motor_to_initial_position=True)
+
+    pil100k.set_exposure_time(pil100k_init_exposure_time)
+    pil100k.set_num_images(pil100k_init_num_images)
+
+
+# RE(quick_crystal_roll_scan(motor_description='Johann Main Crystal Roll',
+#                            scan_range=200,
+#                            velocity=20))
+
+
+
+
