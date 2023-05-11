@@ -208,15 +208,26 @@ def quick_crystal_motor_scan(motor_description=None, scan_range=None, velocity=N
 
     print_to_gui(f'Quick scanning motor {motor_description}', tag='Spectrometer')
 
-    num_images = (scan_range / velocity + 1) / pil100k_exosure_time
-
+    num_images = (scan_range / velocity  + 1) / pil100k_exosure_time
+    print(num_images)
     pil100k_init_exposure_time = pil100k.cam.acquire_period.get()
     pil100k_init_num_images = pil100k.cam.num_images.get()
     pil100k_init_image_mode = pil100k.cam.image_mode.get()
 
+
     pil100k.set_exposure_time(pil100k_exosure_time)
-    pil100k.set_num_images(num_images)
+
+    for i in range(10):
+        if pil100k.cam.num_images.get() != num_images:
+            pil100k.set_num_images(num_images)
+            yield from bps.sleep(0.1)
+        else:
+            break
+
     pil100k.cam.image_mode.set(1).wait()
+
+    # yield from bps.null()
+    # yield from bps.sleep(2)
     start_acquiring_plan = bps.mv(pil100k.cam.acquire, 1)
     yield from ramp_motor_scan(motor_device, detectors, scan_range, velocity=velocity, return_motor_to_initial_position=True, start_acquiring_plan=start_acquiring_plan)
 
@@ -227,8 +238,8 @@ def quick_crystal_motor_scan(motor_description=None, scan_range=None, velocity=N
 
 
 # RE(quick_crystal_motor_scan(motor_description='Johann Main Crystal Roll',
-#                            scan_range=200,
-#                            velocity=30))
+#                            scan_range=800,
+#                            velocity=50))
 
 # def _estimate_width_of_the_peak
 # from numpy.polynomial import Polynomial
