@@ -76,6 +76,9 @@ class UserManager(PersistentListInteractingWithGUI):
             self.users[_current_index]['runs'].append(run)
         else:
             self.users[_current_index]['runs']=[run]
+        RE.md['proposal'] = str(proposal)
+        RE.md['saf'] = str(saf)
+        RE.md['experimenters'] = experimenters
 
     @emit_list_update_signal_decorator
     def add_metadata_key(self, key):
