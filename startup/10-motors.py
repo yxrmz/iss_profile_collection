@@ -275,6 +275,9 @@ sample_stage = SampleStage(name='sample_stage')
 # giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
 
 
+class FIPSpectrometerMotor(Device):
+    x = Cpt(EpicsMotor, ':X}Mtr')
+    y = Cpt(EpicsMotor, ':Y}Mtr')
 
-
-
+fip_spectrometer_crystal = FIPSpectrometerMotor('XF:08IDB-OP{FIP-VHS:Stage1-Ax', name='fip_spectrometer_crystal')
+fip_spectrometer_detector = FIPSpectrometerMotor('XF:08IDB-OP{FIP-VHS:Stage2-Ax', name='fip_spectrometer_detector')

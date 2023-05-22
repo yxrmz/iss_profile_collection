@@ -1332,4 +1332,250 @@ img = bpm_es.get_image_array_data_reshaped()
 
 
 
+# dark_image = picam.image.array_data.get().reshape(2048, 2048)
+xray_image = picam.image.array_data.get().reshape(2048, 2048)
+
+
+VMIN, VMAX = 0, 6000
+plt.figure(1, clear=True)
+plt.subplot(131)
+plt.imshow(dark_image, vmin=VMIN, vmax=VMAX)
+plt.title(f'Dark ({VMIN}-{VMAX})')
+
+plt.subplot(132)
+plt.imshow(xray_image, vmin=VMIN, vmax=VMAX)
+plt.title(f'Bright ({VMIN}-{VMAX})')
+
+plt.subplot(133)
+# plt.imshow(xray_image - dark_image, vmin=VMIN, vmax=VMAX)
+plt.imshow(xray_image - dark_image, vmin=0, vmax=100)
+plt.title(f'Difference ({VMIN}-{VMAX})')
+
+
+##
+t = db[-1].table()
+energy = t.hhm_energy.values
+intensity = t.picam_stats1_total.values
+intensity = normalize_peak(intensity)
+Ecen0, fwhm0 = estimate_center_and_width_of_peak(energy, intensity)
+Ecen, fwhm, intensity_cor, intensity_fit, intensity_fit_raw = fit_gaussian(energy, intensity, Ecen0, fwhm0)
+
+
+##########
+
+RE(bp.count([picam], 6))
+
+uid_xray = '95e43edc-9507-44f1-966f-db923b7338f4'
+uid_dark = 'fc298c99-fd12-4ff6-b915-294e9efadf91'
+
+
+def _get_images(uid):
+    t = db[uid].table(fill=True)
+    imgs = []
+    for i in range(2, t.picam_image.size + 1):
+        imgs.append(t.picam_image[i].squeeze())
+    return np.array(imgs)
+def get_image(uid):
+    imgs = _get_images(uid)
+    return np.mean(imgs, axis=0)
+
+def get_spectrum(uid):
+    image = get_image(uid)
+    # spectrum = np.mean(image[510:560, 535:1000], axis=0)
+    spectrum = np.mean(image[410:460, 1100:2000], axis=0)
+    return spectrum
+
+def get_spectrum_std(uid):
+    images = _get_images(uid)
+    spectra = np.mean(images[:, 510:560, 535:1000], axis=1)
+    spectrum_std = np.std(spectra, axis=0)
+    return spectrum_std
+
+def get_diff_spectrum(uid_xray, uid_dark):
+    spectrum_xray = get_spectrum(uid_xray)
+    spectrum_dark = get_spectrum(uid_dark)
+    return spectrum_xray - spectrum_dark
+
+# xes_CaO = get_diff_spectrum('95e43edc-9507-44f1-966f-db923b7338f4', 'fc298c99-fd12-4ff6-b915-294e9efadf91')
+
+# energy is 8000
+xes_S = get_diff_spectrum('8e5dba0f-ac99-4ed5-bf1b-002638f807b0', 'fa05d9f4-8f17-4203-8074-8fba416829c0')
+xes_NiS = get_diff_spectrum('ce9e1afe-e4d2-4d44-9aca-ee36137921c7', '001c7a48-a31d-4d31-ba10-9b087c9b0c20')
+xes_CuSO4 = get_diff_spectrum('3091b648-593e-445c-b52f-928b26653493', 'c0919773-7097-42b8-a928-46a8cf4a8ca6')
+
+
+# hopefully better statistics
+xes_S = get_diff_spectrum('ed6d26af-4021-4948-bf34-37e9f83c67e4', 'dad47f8b-fb76-4750-8ed7-22b037562930')
+xes_NiS = get_diff_spectrum('fdb767cc-352d-48df-bf6c-d481df424c0b', '1a3fe82d-9b93-4af0-b38a-fef11b94444a')
+
+# energy is 6900
+
+# xes_S = get_diff_spectrum('2b693ada-98da-43c0-84f7-94fe60f8f821', 'fa05d9f4-8f17-4203-8074-8fba416829c0')
+# xes_CuSO4 = get_diff_spectrum('3bf4ae34-21b1-49d3-97eb-d18a1039c9cf', 'c0919773-7097-42b8-a928-46a8cf4a8ca6')
+
+
+# plt.figure(); plt.imshow(get_image('3bf4ae34-21b1-49d3-97eb-d18a1039c9cf'))
+
+
+def norm_y(y):
+    # return (y - np.mean(y[80:100])) / (np.percentile(y, 98) - np.mean(y[:10]))
+    return (y - np.mean(y[:10])) / (np.max(y) - np.mean(y[:10]))
+
+plt.figure(2, clear=True)
+plt.plot(norm_y(xes_S), label='S$^0$')
+plt.plot(norm_y(xes_NiS), label='S$^{2-}$')
+plt.plot(norm_y(xes_CuSO4), label='S$^{6+}$')
+plt.legend()
+
+# plt.plot(spectrum_dark)
+
+data = [{'label': 'Low 4 MHz', 'spectrum': get_diff_spectrum(       'ed6d26af-4021-4948-bf34-37e9f83c67e4', 'dad47f8b-fb76-4750-8ed7-22b037562930')},
+        {'label': 'Low 1 MHz', 'spectrum': get_diff_spectrum(       '3348b8eb-cc6e-497a-9b4e-3956baf9d930', '3db3d8d8-e6ff-4637-9cf2-61798c92a604')},
+        {'label': 'Medium 4 MHz', 'spectrum': get_diff_spectrum(    '2bc9f5d0-9b7f-4028-adf7-ed4dc524e0d6', 'da240c40-1dc5-406d-ae3b-034923161309' )},
+        {'label': 'Medium 1 MHz', 'spectrum': get_diff_spectrum(    '59b4c491-17c8-486c-b720-960c83a8369f', '76f75e5c-4fc8-41be-a8e1-7b2034298223')},
+        {'label': 'High 4 MHz', 'spectrum': get_diff_spectrum(      'a0dc124c-213d-4400-8b2c-77be35067cbc','e6abc2c2-1099-4b5c-974f-87227d7c48b0')},
+        {'label': 'High 1 MHz', 'spectrum': get_diff_spectrum(      '35846bb3-122d-487b-8c50-82f5e4bd7662', '23c569b4-a79c-4847-aba2-97d9c3baf421')}]
+
+plt.figure(1, clear=True)
+for d in data:
+    plt.plot(norm_y(d['spectrum']), label=d['label'])
+plt.legend()
+
+
+uids_xray = ['ed6d26af-4021-4948-bf34-37e9f83c67e4',
+'3348b8eb-cc6e-497a-9b4e-3956baf9d930',
+'2bc9f5d0-9b7f-4028-adf7-ed4dc524e0d6',
+'59b4c491-17c8-486c-b720-960c83a8369f',
+'a0dc124c-213d-4400-8b2c-77be35067cbc',
+'35846bb3-122d-487b-8c50-82f5e4bd7662',]
+
+plt.figure(2, clear=True)
+for uid, d in zip(uids_xray, data):
+    _s = get_spectrum(uid)
+    _s_std = get_spectrum_std(uid)
+
+    # spectrum_std = get_spectrum_std(uid)
+    plt.plot(_s_std/_s,label = d['label'])
+plt.legend()
+
+
+
+xes_CuSO4_200ms_x50 = get_diff_spectrum('26dec81f-d05e-41d0-b6cb-2399d13f8061', '5b0153b5-4800-4b82-8c52-db9e46932641')
+xes_CuSO4_1s_x10 = get_diff_spectrum('bc9ab44d-f7ff-482e-add7-3ea9aae30f50', '4fec3cc0-852d-40d1-a129-a1fcb9df1422')
+xes_CuSO4_10s_x1 = get_diff_spectrum('ba97a231-b4b9-4543-9fe8-3c287ded1e52', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+
+plt.figure(1, clear=True)
+plt.plot(norm_y(xes_CuSO4_200ms_x50), label='200ms x50')
+plt.plot(norm_y(xes_CuSO4_1s_x10)-0.5, label='1s x10')
+plt.plot(norm_y(xes_CuSO4_10s_x1)-1.0, label='10s x1')
+plt.legend()
+
+
+plt.figure(2, clear=True)
+plt.semilogx([0.2, 1, 10], [np.std(norm_y(xes_CuSO4_200ms_x50)[80:180]),
+          np.std(norm_y(xes_CuSO4_1s_x10)[80:180]),
+          np.std(norm_y(xes_CuSO4_10s_x1)[80:180])], 'ks-')
+plt.xticks([0.2, 1, 10], ['0.2', '1', '10'])
+plt.xlabel('exposure time')
+plt.ylabel('readout noise')
+
+
+xes_CuSO4_10s = get_diff_spectrum('02673265-b344-4895-bcee-b5aa4e204b62', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+# xes_NiS_10s = get_diff_spectrum('8737790c-b258-46ee-8717-08d7117cdbd6', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+xes_NiS_10s = get_diff_spectrum('8d212734-0e0d-4974-97a6-a24d34b23daa', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+xes_S_10s = get_diff_spectrum('a345643c-2ac3-48b2-9d68-f53153769736', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+
+plt.figure(1, clear=True)
+plt.plot(np.arange(xes_CuSO4_10s.size), norm_y(xes_CuSO4_10s), label='CuSO4')
+plt.plot(np.arange(xes_S_10s.size) + 2.5, norm_y(xes_S_10s), label='S')
+plt.plot(np.arange(xes_NiS_10s.size)+1, norm_y(xes_NiS_10s), label='NiS')
+# plt.plot(norm_y(xes_CuSO4_1s_x10)-0.5, label='1s x10')
+# plt.plot(norm_y(xes_CuSO4_10s_x1)-1.0, label='10s x1')
+plt.legend()
+
+plt.figure(2, clear=True)
+plt.plot(np.arange(70), norm_y(xes_CuSO4_10s)[:70] / norm_y(xes_CuSO4_10s)[:70].max(), label='CuSO4')
+plt.plot(np.arange(70)+2.5, norm_y(xes_S_10s)[:70] / norm_y(xes_S_10s)[:70].max(), label='S')
+plt.plot(np.arange(70)+1, norm_y(xes_NiS_10s)[:70] / norm_y(xes_NiS_10s)[:70].max(), label='NiS')
+# plt.plot(norm_y(xes_CuSO4_1s_x10)-0.5, label='1s x10')
+# plt.plot(norm_y(xes_CuSO4_10s_x1)-1.0, label='10s x1')
+plt.legend()
+
+
+
+
+xray_image = picam.image.array_data.get().reshape(1024, 2048)
+xray_image2 = picam.image.array_data.get().reshape(1024, 2048)
+dark_image = picam.image.array_data.get().reshape(1024, 2048)
+
+plt.figure(); plt.imshow(xray_image + xray_image2 - 2*dark_image, vmin=0, vmax=2000)
+
+
+xes_Ag = get_diff_spectrum('97d5ec49-1012-4181-9d70-ff7bc5914bba', '6be5c7da-1bb1-406b-a198-c4b35ffcd939')
+
+# xes_PdO = get_diff_spectrum('f5abe7c0-8665-4b56-88d6-fd3b4ae0f8c7', '88c05f17-1f3f-483e-9d98-ff2877997b08')
+xes_PdO = get_diff_spectrum('4ce40b1b-34af-42ce-a8c1-09590c248ebe', 'a9e5b448-bcbc-4bf6-970e-e7c879dce3da')
+xes_Pd = get_diff_spectrum('602a4a09-c573-4ca5-a6df-2179c247b99c', '561198a8-c738-494f-b298-84cc6fe7c8e5')
+#Pd elastic scans: 6670 - '10587276-105a-413f-b021-64a58a2639f6', 6640 - '056c3a42-b10c-48bf-a63f-7c71dc86852c'
+
+xes_PdCl2 = get_diff_spectrum('566a26db-7d27-4d9c-8e46-5cab8c788bb1', 'a35794f5-25e2-46b7-a137-462fe7ac0448')
+xes_12Z23IE = get_diff_spectrum('4a480d33-efb0-4538-9dcd-c9024d0c0eee', '127ea31d-c1fd-4a95-889b-511c75990576')
+
+
+plt.figure(2, clear=True)
+# plt.plot(xes_Ag)
+
+plt.plot(norm_y(xes_Pd), label='Pd')
+plt.plot(norm_y(xes_PdO), label='PdO')
+# plt.plot(norm_y(xes_PdCl2), label='PdCl2')
+plt.plot(norm_y(xes_12Z23IE), label='Z23IE')
+plt.legend()
+
+
+
+daq_dict = [{'sample_name': 'PdCl2', 'position':{'x': -12.520,
+                                                'y': -42.992,
+                                                'z': -12.604}},
+            {'sample_name': 'Pd(NH3)4', 'position': {'x': -12.220,
+                                                     'y': -58.532,
+                                                     'z': -9.504}},
+
+            {'sample_name': 'Pd2', 'position': {'x': -12.220,
+                                                'y': -71.342,
+                                                'z': -9.804}},
+
+            {'sample_name': 'Pd3', 'position': {'x': -12.220,
+                                                'y': -86.592,
+                                                'z': -11.304}},
+
+            ]
+
+while True:
+    for sample in daq_dict:
+        RE(move_sample_stage_plan(sample['position']))
+        md = {**sample}
+
+
+
+        md['image'] = 'dark'
+        RE(bp.count([picam], 6, md=md))
+
+        shutter.open()
+
+        md['image'] = 'data'
+        RE(move_mono_energy(7000))
+        RE(bp.count([picam], 11, md=md))
+
+        md['image'] = '6640'
+        RE(move_mono_energy(6640))
+        RE(bp.count([picam], 2, md=md))
+
+        md['image'] = '6670'
+        RE(move_mono_energy(6670))
+        RE(bp.count([picam], 2, md=md))
+
+        shutter.close()
+
+
+
 

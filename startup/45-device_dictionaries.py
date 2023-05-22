@@ -30,6 +30,9 @@ detector_dictionary =   {
                                      'channels': ['pil100k_stats1_total','pil100k_stats2_total',
                                                                     'pil100k_stats3_total','pil100k_stats4_total',
                                                                      'pil100k_stats1_max_value']},
+                    # 'PI-MTE3': {'device': picam,
+                    #                  'channels': ['picam_stats1_total','picam_stats2_total',
+                    #                                                 'picam_stats3_total','picam_stats4_total']},
                     'Xspress3': {'device' : xs, 'flying_device' : xs_stream,
                                  'channels' : [     'xs_channel1_rois_roi01_value',
                                                     'xs_channel1_rois_roi02_value',
@@ -138,6 +141,10 @@ motor_dictionary = {
     # 'motor_det_x':              {'name': von_hamos_det_arm.motor_det_x.name,  'description': 'Detector x',                ekeyword'description': 'Detector x',                'object': von_hamos_det_arm.motor_det_x,  'group': 'spectrometer'},
     # 'motor_det_th1':            {'name': von_hamos_det_arm.motor_det_th1.name,  'description': 'Detector th1',            et_th1.name,  'description': 'Detector th1',            'object': von_hamos_det_arm.motor_det_th1,  'group': 'spectrometer'},
     # 'motor_det_th2':            {'name': von_hamos_det_arm.motor_det_th2.name,  'description': 'Detector th2',            et_th2.name,  'description': 'Detector th2',            'object': von_hamos_det_arm.motor_det_th2,  'group': 'spectrometer'},
+    'fip_spectrometer_crystal_x': {'name': fip_spectrometer_crystal.x.name,  'description': 'B1 FIP crystal X',              'keyword': 'B1 FIP crystal X',             'object': fip_spectrometer_crystal.x},
+    'fip_spectrometer_crystal_y': {'name': fip_spectrometer_crystal.y.name,  'description': 'B1 FIP crystal Y',              'keyword': 'B1 FIP crystal Y',             'object': fip_spectrometer_crystal.y},
+    'fip_spectrometer_detector_x':{'name': fip_spectrometer_detector.x.name, 'description': 'B1 FIP detector X',             'keyword': 'B1 FIP detector X',            'object': fip_spectrometer_detector.x},
+    'fip_spectrometer_detector_x':{'name': fip_spectrometer_detector.y.name, 'description': 'B1 FIP detector Y',             'keyword': 'B1 FIP detector Y',            'object': fip_spectrometer_detector.y},
 }
 
 def get_motor_device(motor_attr, based_on='description'):
