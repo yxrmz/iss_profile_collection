@@ -2299,7 +2299,16 @@ def fly_johann_rolls_plan(name=None, comment=None, trajectory_dictionary=None,
     aux_detectors = get_detector_device_list(detectors, flying=True)
     flyer_hhm.set_aux_dets(aux_detectors)
     detectors_dict = {k :{'device' : v} for k, v in zip(detectors, aux_detectors)}
-    md = get_fly_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, line, metadata)
+    md_general = get_scan_md(name, comment, detectors_dict, '.dat')
+
+    md_scan = {'experiment': 'fly_scan',
+               'spectrometer': 'johann',
+               'spectrometer_config': rowland_circle.config,
+               'spectrometer_trajectory_dictionary': trajectory_dictionary,
+               'element': element,
+               'line': line,
+               'e0': e0}
+    md = {**md_scan, **md_general, **metadata}
 
     @bpp.stage_decorator([flyer_johann_rolls])
     def _fly(md):
@@ -2318,6 +2327,7 @@ def pseudo_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
                               metadata={}):
 
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
+    metadata = {**metadata, **{'spectrometer_central_energy': central_emission_energy}}
     yield from bps.mv(hhm.energy, mono_energy)
     yield from prepare_johann_scan_plan(detectors, central_emission_energy)
     yield from fly_johann_rolls_plan(name=name, comment=comment, trajectory_dictionary=trajectory_dictionary,
