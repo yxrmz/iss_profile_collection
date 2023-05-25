@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 
 def extrapolate_linearly(x_in, x, y):
     if type(x_in) != np.ndarray:
@@ -1369,21 +1371,29 @@ uid_xray = '95e43edc-9507-44f1-966f-db923b7338f4'
 uid_dark = 'fc298c99-fd12-4ff6-b915-294e9efadf91'
 
 
-def _get_images(uid):
-    t = db[uid].table(fill=True)
+def _get_images(uids):
+    if type(uids) == str:
+        uids = [uids]
+
     imgs = []
-    for i in range(2, t.picam_image.size + 1):
-        imgs.append(t.picam_image[i].squeeze())
+    for uid in uids:
+        t = db[uid].table(fill=True)
+        for i in range(2, t.picam_image.size + 1):
+            imgs.append(t.picam_image[i].squeeze())
     return np.array(imgs)
+
 def get_image(uid):
     imgs = _get_images(uid)
     return np.mean(imgs, axis=0)
 
-def get_spectrum(uid):
+def get_spectrum(uid, nx1=410, nx2=460, ny1=1100, ny2=2000):
     image = get_image(uid)
     # spectrum = np.mean(image[510:560, 535:1000], axis=0)
-    spectrum = np.mean(image[410:460, 1100:2000], axis=0)
+    # nx1=510, nx2=560, ny1=535, ny2=1000
+    spectrum = np.mean(image[nx1:nx2, ny1:ny2], axis=0)
     return spectrum
+
+from scipy.signal import medfilt2d, medfilt
 
 def get_spectrum_std(uid):
     images = _get_images(uid)
@@ -1391,9 +1401,9 @@ def get_spectrum_std(uid):
     spectrum_std = np.std(spectra, axis=0)
     return spectrum_std
 
-def get_diff_spectrum(uid_xray, uid_dark):
-    spectrum_xray = get_spectrum(uid_xray)
-    spectrum_dark = get_spectrum(uid_dark)
+def get_diff_spectrum(uid_xray, uid_dark, **kwargs):
+    spectrum_xray = get_spectrum(uid_xray, **kwargs)
+    spectrum_dark = get_spectrum(uid_dark, **kwargs)
     return spectrum_xray - spectrum_dark
 
 # xes_CaO = get_diff_spectrum('95e43edc-9507-44f1-966f-db923b7338f4', 'fc298c99-fd12-4ff6-b915-294e9efadf91')
@@ -1417,9 +1427,9 @@ xes_NiS = get_diff_spectrum('fdb767cc-352d-48df-bf6c-d481df424c0b', '1a3fe82d-9b
 # plt.figure(); plt.imshow(get_image('3bf4ae34-21b1-49d3-97eb-d18a1039c9cf'))
 
 
-def norm_y(y):
+def norm_y(y, n1=0, n2=10):
     # return (y - np.mean(y[80:100])) / (np.percentile(y, 98) - np.mean(y[:10]))
-    return (y - np.mean(y[:10])) / (np.max(y) - np.mean(y[:10]))
+    return (y - np.mean(y[n1:n2])) / (np.max(y) - np.mean(y[n1:n2]))
 
 plt.figure(2, clear=True)
 plt.plot(norm_y(xes_S), label='S$^0$')
@@ -1480,18 +1490,24 @@ plt.xlabel('exposure time')
 plt.ylabel('readout noise')
 
 
-xes_CuSO4_10s = get_diff_spectrum('02673265-b344-4895-bcee-b5aa4e204b62', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+xes_CuSO4_10s = get_diff_spectrum('02673265-b344-4895-bcee-b5aa4e204b62', 'ac14d1c3-04b7-4068-b165-fce49795c269', nx1=510, nx2=560, ny1=535, ny2=1000)
 # xes_NiS_10s = get_diff_spectrum('8737790c-b258-46ee-8717-08d7117cdbd6', 'ac14d1c3-04b7-4068-b165-fce49795c269')
-xes_NiS_10s = get_diff_spectrum('8d212734-0e0d-4974-97a6-a24d34b23daa', 'ac14d1c3-04b7-4068-b165-fce49795c269')
-xes_S_10s = get_diff_spectrum('a345643c-2ac3-48b2-9d68-f53153769736', 'ac14d1c3-04b7-4068-b165-fce49795c269')
+xes_NiS_10s = get_diff_spectrum('8d212734-0e0d-4974-97a6-a24d34b23daa', 'ac14d1c3-04b7-4068-b165-fce49795c269', nx1=510, nx2=560, ny1=535, ny2=1000)
+xes_S_10s = get_diff_spectrum('a345643c-2ac3-48b2-9d68-f53153769736', 'ac14d1c3-04b7-4068-b165-fce49795c269', nx1=510, nx2=560, ny1=535, ny2=1000)
+
+
+from scipy.interpolate import interp1d
+energy_interp = interp1d([28.5, 265.5], [6900/3, 2308], fill_value='extrapolate')
 
 plt.figure(1, clear=True)
-plt.plot(np.arange(xes_CuSO4_10s.size), norm_y(xes_CuSO4_10s), label='CuSO4')
-plt.plot(np.arange(xes_S_10s.size) + 2.5, norm_y(xes_S_10s), label='S')
-plt.plot(np.arange(xes_NiS_10s.size)+1, norm_y(xes_NiS_10s), label='NiS')
+plt.plot(energy_interp(np.arange(xes_CuSO4_10s.size)), norm_y(xes_CuSO4_10s, n1=60, n2=80), label='S$^{6+}$ (CuSO4)')
+plt.plot(energy_interp(np.arange(xes_S_10s.size) + 2.5), norm_y(xes_S_10s, n1=60, n2=80), label='S$^{0}$ (S)')
+plt.plot(energy_interp(np.arange(xes_NiS_10s.size) + 1), norm_y(xes_NiS_10s, n1=60, n2=80), label='S$^{2-}$ (NiS)')
 # plt.plot(norm_y(xes_CuSO4_1s_x10)-0.5, label='1s x10')
 # plt.plot(norm_y(xes_CuSO4_10s_x1)-1.0, label='10s x1')
 plt.legend()
+
+plt.xlim(2302, 2314)
 
 plt.figure(2, clear=True)
 plt.plot(np.arange(70), norm_y(xes_CuSO4_10s)[:70] / norm_y(xes_CuSO4_10s)[:70].max(), label='CuSO4')
@@ -1501,9 +1517,26 @@ plt.plot(np.arange(70)+1, norm_y(xes_NiS_10s)[:70] / norm_y(xes_NiS_10s)[:70].ma
 # plt.plot(norm_y(xes_CuSO4_10s_x1)-1.0, label='10s x1')
 plt.legend()
 
+# visualizing S images
+VMIN=20000
+VMAX=30000
+plt.figure(2, clear=True)
+plt.subplot(131)
+plt.imshow(get_image('a345643c-2ac3-48b2-9d68-f53153769736')[500:560, 685:900], vmin=VMIN, vmax=VMAX)
+plt.title('X-rays ON')
+plt.colorbar()
 
+plt.subplot(132)
+plt.imshow(get_image('ac14d1c3-04b7-4068-b165-fce49795c269')[500:560, 685:900], vmin=VMIN, vmax=VMAX)
+plt.title('Dark')
+plt.colorbar()
 
-
+plt.subplot(133)
+plt.imshow(get_image('a345643c-2ac3-48b2-9d68-f53153769736')[500:560, 685:900] -
+           get_image('ac14d1c3-04b7-4068-b165-fce49795c269')[500:560, 685:900], vmin=0, vmax=8000)
+plt.title('Difference')
+plt.colorbar()
+plt.tight_layout()
 xray_image = picam.image.array_data.get().reshape(1024, 2048)
 xray_image2 = picam.image.array_data.get().reshape(1024, 2048)
 dark_image = picam.image.array_data.get().reshape(1024, 2048)
@@ -1575,6 +1608,728 @@ while True:
         RE(bp.count([picam], 2, md=md))
 
         shutter.close()
+
+
+
+# visualizing  images
+VMIN=10000
+VMAX=20000
+
+# Pd
+# dark_uids = '602a4a09-c573-4ca5-a6df-2179c247b99c'
+# bright_uids = '561198a8-c738-494f-b298-84cc6fe7c8e5'
+
+# PdO
+# dark_uids = 'a9e5b448-bcbc-4bf6-970e-e7c879dce3da'
+# bright_uids = '4ce40b1b-34af-42ce-a8c1-09590c248ebe'
+
+# Pd_6640
+# bright_uids = '056c3a42-b10c-48bf-a63f-7c71dc86852c'
+# dark_uids = 'a9e5b448-bcbc-4bf6-970e-e7c879dce3da'
+
+# PdCl2
+# bright_uids = '566a26db-7d27-4d9c-8e46-5cab8c788bb1'
+# dark_uids = 'a35794f5-25e2-46b7-a137-462fe7ac0448'
+
+# bright_uids = ['566a26db-7d27-4d9c-8e46-5cab8c788bb1',
+#                '7347de44-6f96-4951-9e02-9f8356f1cca9',
+#                '8fa81c46-b454-48a4-9053-ce4c0aab978c',
+#                '054b9406-5236-407e-bee5-3cef1736c06f',
+#                'b8a09724-2bb3-49d2-a33b-33c4287d3f2e',
+#                '50b91bbe-fd17-4c93-a3e9-6a655a733520',
+#                '45341693-e724-4693-80b7-23f122857bcc',
+#                '2648a34d-416c-495d-9f92-b86eba976a69',
+#                '77a1d220-c711-4eb5-bba2-e1037d44d7bd']
+#
+#
+# dark_uids = ['a35794f5-25e2-46b7-a137-462fe7ac0448',
+#              '3fad56fd-b17f-4733-b08a-28333c33b4ae',
+#              'b9aca12a-309c-4cba-882b-62080026d483',
+#              '55c02ae4-af9e-4997-8722-f1dec2cbb2f7',
+#              'bb1505e6-d740-4d40-b50e-91c1347018ae',
+#              'ac87f9e2-1fbf-4a2f-bf49-493266d2f5e2',
+#              '90c7e76a-835c-42d1-bf86-26230b8f618a',
+#              'bbcad194-f9ae-445c-8afd-a16125b96b81',
+#              '22b18e71-b6e4-4a27-a00f-d4bbbcf6878f',
+#              '89ae0563-0833-4bfb-a5a0-952cd52b42b8']
+
+# PdCl2 elastic
+# bright_uids = ['1992dd7b-7986-42cd-a563-6b8e9f319e9a',
+#  '67ae327a-81fc-4e0a-8d50-3e17736b6fec',
+#  '5ba41985-4ae8-4553-95bb-c28119edb8c7',
+#  '4d7422f9-f982-46df-ad1d-8c73cbc81cbf',
+#  '35b78814-f7a4-4c7b-ba0e-2dc3a2001cd2',
+#  '06d0826d-a0ad-4b87-b397-1701230979f8',
+#  'aaea69f8-0e22-47bb-b43e-8d65d9655fd3',
+#  '08fdf135-7cb8-4dfb-b88f-7e621b4820f2',
+#  'ab20c160-2d36-42d9-8353-7fe9e3ec0721']
+#
+#
+# dark_uids = ['4832393a-4c90-4216-a336-afe2baaae22f',
+#  '851579b3-79db-4927-a770-d8c472ae813d',
+#  'e2301d15-0466-4beb-b1ab-b531ef131288',
+#  'f3fcf316-fb5d-4158-8cfd-9448afbaed99',
+#  'b4dcde49-d414-4bee-9ddd-e1441238d52f',
+#  'f81cdac0-af65-4a91-b3aa-2871ff8880ea',
+#  'a53c7d82-4421-46cf-bafb-ccd60de17771',
+#  '17110bfe-b73a-48d0-9ca0-0a998f7c717d',
+#  '71d650b4-2ac8-48c1-9361-f433826102f8']
+
+# Pd(NH3)4
+# bright_uids = ['c3dfdff3-bf39-4732-a973-522a24f4e6a2',
+#  'e5f0157b-0239-41a0-8197-15e83d0c7b75',
+#  'd0651960-1cd9-4dd7-b8a2-81c058c1085f',
+#  '39470b7c-c7c7-42d4-8d92-b8be21517323',
+#  'c3f8e77d-5b0d-41fb-aac4-0e1a97529878',
+#  '47f756cd-413c-4d8a-9e6c-3fed1e8b7c83',
+#  '08d0def3-2239-4ad5-946d-c9a2281ac474',
+#  '3a874c4b-b724-44aa-94ac-806bdff9a024',
+#  '155e8363-8b42-4b1d-ba14-264a043fc61f']
+#
+# dark_uids=['9173c023-843d-4fdf-b36a-46b7ba65a53b',
+#  'e96e70be-eb75-4711-a655-faf67fca8890',
+#  '0677f1e9-05f3-4ddb-a330-de0264701438',
+#  '326a8be0-82c3-4ea2-ac9d-96bba75df16f',
+#  'ca7be1b8-e532-4273-8d17-05921efafc8b',
+#  '78082826-de89-4692-8504-ee28c66117b2',
+#  'dd31c57c-1e55-4cd4-999c-90227dc53826',
+#  'e004037d-e7ec-4a9d-884a-6ba7536aff72',
+#  '1e9292b6-9005-42f7-b3f2-a9d49ee05e72']
+
+# # Pd(NH3)4 elastic
+# bright_uids = ['35ab3f72-4091-4560-83e2-5b4b2f6effb1',
+#  '9b639407-be56-4c43-8dba-fdaa954745c4',
+#  '928a95ca-6555-41dc-b203-d4d75d2bfa3d',
+#  '6bf5a9cd-2e8c-401d-92a3-d3bed6172a8b',
+#  '604b68c2-3230-46ad-a91a-80662240e818',
+#  '7ca5d3ad-d151-40f8-abeb-8e3318a4ac8e',
+#  '69ac54c3-d2f9-42a1-95ff-df988e34b1d1',
+#  '3afca479-7be2-40bf-abad-e760edd64dfe',
+#  '6ca9689e-e403-4c26-bfb9-fe918a0da0e1']
+#
+# dark_uids=['4f9862e5-7814-43d7-a7a1-3367e04c7901',
+#  'ab6fb0b4-0e24-4d28-aa1f-aef9024ed19c',
+#  '20319d5e-63d8-486d-a2fb-88b1efc21ac1',
+#  '514cba99-4588-457e-a829-bbf9a11454f5',
+#  'a5b9e34b-0b15-4cc2-8bcb-3f0a9f81a4a5',
+#  'aefe2c4d-7215-45c4-bf86-47032b15a502',
+#  'd1477acb-a64f-4f58-8b01-0bde7790271e',
+#  'adb891d5-cff6-4462-b8e2-5e9b933bc030',
+#  '3e92c745-8b99-47ea-b3af-cc89661e8a23']
+
+# Pd2
+# bright_uids =['e14aa64c-27f5-4ff1-b1fd-5f7ba50ec7e7',
+#  'db4fb6f6-1b3e-4bd7-9607-2d26b8597adc',
+#  '6f2ecf29-aa8c-4a39-a646-161e4ee8ed67',
+#  '4b8ef676-7ed2-4ec1-8f86-2ae335b6d8c2',
+#  '8d675274-b0e0-4eb5-98b3-abf653328c6c',
+#  '526aaab2-5e0f-4753-ad0e-846bdd3bdfcd',
+#  '5d9f02cf-6981-4ead-828b-77556204c58e',
+#  '31a40963-83a7-4999-bc0a-6ee1672d3e83',
+#  'dfc54abc-d3e9-440f-bb73-80223dcf499a']
+#
+#
+# dark_uids =['d65afa97-4908-4bd3-a898-b0b500ea2da9',
+#  'e8c5cc0d-e648-4413-b003-590ab5f7bd66',
+#  'a45e9b96-c746-4702-b832-8bc700cca72f',
+#  '617ede9d-cc22-4862-9f94-6430de1ab957',
+#  '8c5deba6-7ab7-490d-87b1-96621310da21',
+#  'ac0c1bd8-a7fc-4e4e-92f6-c05d11e37b61',
+#  '9fd5e67a-c493-400d-aef4-ac90a21c3e0f',
+#  '75b5ebf8-37e7-412c-a61b-817a9dd56882',
+#  'ca84c094-cf61-449c-9a03-09c08de242df']
+
+
+# # Pd2 elastic
+# bright_uids =['57ac501c-fbc9-489a-9fe4-cf985b5ce88d',
+#  '9dd11765-4e27-4c1e-bb36-692a278b5b94',
+#  'c54e71b7-9457-4933-9d16-9c6770ecd5b0',
+#  '5bd922e2-3027-4a30-8d90-64a9075707c0',
+#  '31df1441-6ae2-4e10-847e-5f3a356163ca',
+#  'd1b88cb4-355c-43db-9520-7b64c2072cd2',
+#  '9ea26ba2-84b3-4227-af3a-b9745f41c80d',
+#  '30833947-cabb-4f8d-af2b-5e359fb19933',
+#  '48a69ad7-76b6-4061-a6f3-d0668a01477a']
+#
+# dark_uids =['f48972b5-f829-4342-a8ba-8a1a1ac53ed5',
+#  'c5131f36-eb40-4738-bd52-366ff94e8135',
+#  'cec03d1a-5649-41bc-86ae-2a58f56b86fd',
+#  '4ee97ba0-cc40-4170-a5ce-b2549df0b6ea',
+#  'ea645434-b7d2-44c4-b6f2-372332e126ba',
+#  '24a00ecf-2722-42df-b687-9ff51f1fb78c',
+#  'b8204e28-040a-4139-aa63-839327fd0d00',
+#  '3b675eb1-2571-45b6-a8d8-cb5d0fa27df9',
+#  'd14f0abd-f016-4b15-a376-18f20b502166']
+
+
+# Pd3
+bright_uids =['6b128517-bfe4-40d0-94cf-def3ae979ea1',
+ '34906393-827a-43f1-9863-9ee8525d09ee',
+ '916917fa-6277-466d-b8ac-14f490ec5b30',
+ '94128351-f342-41ef-a93d-081f6d5c670f',
+ 'd038ee63-e076-4d07-a870-6876d511d124',
+ 'dac0c16b-32e9-487c-964a-9d089227e6ca',
+ '578bc61c-7c1d-4966-8b70-803360cee9fc',
+ 'fdc035a2-a090-47f1-8afd-f022ca8d1c34',
+ '34a7b9be-0717-45ba-84ea-f02baa3d7294']
+
+dark_uids =['187f522c-f9ff-42c1-bd8a-21f2d03f1af2',
+ 'd4d1e822-6c7b-4b6f-874b-d10bcb8888f7',
+ '235eefc2-2011-48e3-90fa-260e49ca7445',
+ '524e87d2-4b83-41c8-b8e3-02cc65768275',
+ '578ee294-79df-4772-b981-d3df2b6be59d',
+ 'ef7462ed-4ac3-470f-b7d4-63188e846bc7',
+ '3352a16a-534e-4821-89c1-74a5441bffcb',
+ '3e73d638-f16b-430e-8875-84e8dd201795',
+ '7b2d99b6-d35c-4ab5-a3d9-063835407664']
+
+
+
+# # # Pd3 elastic
+bright_uids =['127ea31d-c1fd-4a95-889b-511c75990576',
+ '4a480d33-efb0-4538-9dcd-c9024d0c0eee',
+ 'd28dd5f7-72d6-4f2b-b28d-a412ee1b8a56',
+ '07479908-d619-4bbf-a1ff-53d73e938f5b',
+ 'a5d210fe-fa1d-4be2-ade4-7dfdbc21c288',
+ '5ae0fca2-8eda-42ef-9f13-67c92884d50b',
+ '4eb1c088-5109-4abb-acd7-2a706ea21e5d',
+ '94a322fc-db1a-40e6-a35d-a62b372e1348',
+ '7f0637d9-449a-4406-a331-d442fa5586b9',
+ 'e068e24f-af07-48ac-acec-8c5988ba003f',
+ 'd0d902cd-0939-487e-8fae-856d72526812',
+ '85f83507-a243-4507-918a-c54cbaa34e34',
+ 'cb6ddfc5-2ada-4310-ac3b-5b2bb559807a',
+ 'c6a6d288-7a62-41a1-a1b3-dd16328210c2']
+
+
+dark_uids =['578d23ff-f35d-45af-8fe9-1f7f18bdefb9',
+ '82604fd3-bd12-4366-aeb4-dae245bb6b55',
+ '2e4e71c1-7ee9-47f0-858e-e95e8a513f4d',
+ 'f11a57de-b661-46a4-8c6b-3477704c55f4',
+ '93c16531-0a2b-458c-9dc5-38d6445b0cc3',
+ '9b37d3fb-bdad-4eba-acbe-d87f0606dada',
+ '435fa16d-5378-441a-8041-7a0f0419d772',
+ 'd91d47f4-f222-40be-ad92-39fd218d48b9']
+
+
+image_bright = get_image(bright_uids)
+image_dark = get_image(dark_uids)
+nx1, nx2 = 1, 1024
+ny1, ny2 = 1, 2048
+
+# nx1, nx2 = 380, 480
+# ny1, ny2 = 600, 2048
+
+
+plt.figure(2, clear=True)
+plt.subplot(311)
+
+plt.imshow(image_bright[nx1:nx2, ny1:ny2], vmin=VMIN, vmax=VMAX)
+plt.title('X-rays ON')
+# plt.colorbar()
+
+plt.subplot(312)
+plt.imshow(image_dark[nx1:nx2, ny1:ny2], vmin=VMIN, vmax=VMAX)
+# plt.imshow(medfilt2d(get_image(dark_uids)[nx1:nx2, ny1:ny2]), vmin=VMIN, vmax=VMAX)
+plt.title('Dark')
+# plt.colorbar()
+
+plt.subplot(313)
+plt.imshow(image_bright[nx1:nx2, ny1:ny2] -
+           image_dark[nx1:nx2, ny1:ny2], vmin=-2000, vmax=2000)
+plt.title('Difference')
+# plt.colorbar()
+# plt.tight_layout()
+
+
+
+xes_PdO = get_diff_spectrum('4ce40b1b-34af-42ce-a8c1-09590c248ebe', 'a9e5b448-bcbc-4bf6-970e-e7c879dce3da', nx1=380, nx2=480, ny1=500, ny2=2048)
+xes_Pd = get_diff_spectrum('602a4a09-c573-4ca5-a6df-2179c247b99c', '561198a8-c738-494f-b298-84cc6fe7c8e5', nx1=380, nx2=480, ny1=500, ny2=2048)
+# xes_PdCl2 = get_diff_spectrum('566a26db-7d27-4d9c-8e46-5cab8c788bb1', 'a35794f5-25e2-46b7-a137-462fe7ac0448', nx1=380, nx2=480, ny1=500, ny2=2048)
+xes_PdCl2 = get_diff_spectrum(['566a26db-7d27-4d9c-8e46-5cab8c788bb1',
+                               '7347de44-6f96-4951-9e02-9f8356f1cca9',
+                               '8fa81c46-b454-48a4-9053-ce4c0aab978c',
+                               '054b9406-5236-407e-bee5-3cef1736c06f',
+                               'b8a09724-2bb3-49d2-a33b-33c4287d3f2e',
+                               '50b91bbe-fd17-4c93-a3e9-6a655a733520',
+                               '45341693-e724-4693-80b7-23f122857bcc',
+                               '2648a34d-416c-495d-9f92-b86eba976a69',
+                               '77a1d220-c711-4eb5-bba2-e1037d44d7bd'],
+                              ['a35794f5-25e2-46b7-a137-462fe7ac0448',
+                               '3fad56fd-b17f-4733-b08a-28333c33b4ae',
+                               'b9aca12a-309c-4cba-882b-62080026d483',
+                               '55c02ae4-af9e-4997-8722-f1dec2cbb2f7',
+                               'bb1505e6-d740-4d40-b50e-91c1347018ae',
+                               'ac87f9e2-1fbf-4a2f-bf49-493266d2f5e2',
+                               '90c7e76a-835c-42d1-bf86-26230b8f618a',
+                               'bbcad194-f9ae-445c-8afd-a16125b96b81',
+                               '22b18e71-b6e4-4a27-a00f-d4bbbcf6878f',
+                               '89ae0563-0833-4bfb-a5a0-952cd52b42b8'],
+                              nx1=380, nx2=480, ny1=500, ny2=2048)
+xes_PdNH34 = get_diff_spectrum(['c3dfdff3-bf39-4732-a973-522a24f4e6a2',
+                                'e5f0157b-0239-41a0-8197-15e83d0c7b75',
+                                'd0651960-1cd9-4dd7-b8a2-81c058c1085f',
+                                '39470b7c-c7c7-42d4-8d92-b8be21517323',
+                                'c3f8e77d-5b0d-41fb-aac4-0e1a97529878',
+                                '47f756cd-413c-4d8a-9e6c-3fed1e8b7c83',
+                                '08d0def3-2239-4ad5-946d-c9a2281ac474',
+                                '3a874c4b-b724-44aa-94ac-806bdff9a024',
+                                '155e8363-8b42-4b1d-ba14-264a043fc61f'],
+                               ['9173c023-843d-4fdf-b36a-46b7ba65a53b',
+                                'e96e70be-eb75-4711-a655-faf67fca8890',
+                                '0677f1e9-05f3-4ddb-a330-de0264701438',
+                                '326a8be0-82c3-4ea2-ac9d-96bba75df16f',
+                                'ca7be1b8-e532-4273-8d17-05921efafc8b',
+                                '78082826-de89-4692-8504-ee28c66117b2',
+                                'dd31c57c-1e55-4cd4-999c-90227dc53826',
+                                'e004037d-e7ec-4a9d-884a-6ba7536aff72',
+                                '1e9292b6-9005-42f7-b3f2-a9d49ee05e72'],
+                              nx1=380, nx2=480, ny1=500, ny2=2048)
+
+xes_Pd2 = get_diff_spectrum(['e14aa64c-27f5-4ff1-b1fd-5f7ba50ec7e7',
+ 'db4fb6f6-1b3e-4bd7-9607-2d26b8597adc',
+ '6f2ecf29-aa8c-4a39-a646-161e4ee8ed67',
+ '4b8ef676-7ed2-4ec1-8f86-2ae335b6d8c2',
+ '8d675274-b0e0-4eb5-98b3-abf653328c6c',
+ '526aaab2-5e0f-4753-ad0e-846bdd3bdfcd',
+ '5d9f02cf-6981-4ead-828b-77556204c58e',
+ '31a40963-83a7-4999-bc0a-6ee1672d3e83',
+ 'dfc54abc-d3e9-440f-bb73-80223dcf499a'],
+                            ['d65afa97-4908-4bd3-a898-b0b500ea2da9',
+                             'e8c5cc0d-e648-4413-b003-590ab5f7bd66',
+                             'a45e9b96-c746-4702-b832-8bc700cca72f',
+                             '617ede9d-cc22-4862-9f94-6430de1ab957',
+                             '8c5deba6-7ab7-490d-87b1-96621310da21',
+                             'ac0c1bd8-a7fc-4e4e-92f6-c05d11e37b61',
+                             '9fd5e67a-c493-400d-aef4-ac90a21c3e0f',
+                             '75b5ebf8-37e7-412c-a61b-817a9dd56882',
+                             'ca84c094-cf61-449c-9a03-09c08de242df'],
+                              nx1=380, nx2=480, ny1=500, ny2=2048)
+
+xes_Pd3 = get_diff_spectrum(['6b128517-bfe4-40d0-94cf-def3ae979ea1',
+ '34906393-827a-43f1-9863-9ee8525d09ee',
+ '916917fa-6277-466d-b8ac-14f490ec5b30',
+ '94128351-f342-41ef-a93d-081f6d5c670f',
+ 'd038ee63-e076-4d07-a870-6876d511d124',
+ 'dac0c16b-32e9-487c-964a-9d089227e6ca',
+ '578bc61c-7c1d-4966-8b70-803360cee9fc',
+ 'fdc035a2-a090-47f1-8afd-f022ca8d1c34',
+ '34a7b9be-0717-45ba-84ea-f02baa3d7294'],
+                            ['187f522c-f9ff-42c1-bd8a-21f2d03f1af2',
+                             'd4d1e822-6c7b-4b6f-874b-d10bcb8888f7',
+                             '235eefc2-2011-48e3-90fa-260e49ca7445',
+                             '524e87d2-4b83-41c8-b8e3-02cc65768275',
+                             '578ee294-79df-4772-b981-d3df2b6be59d',
+                             'ef7462ed-4ac3-470f-b7d4-63188e846bc7',
+                             '3352a16a-534e-4821-89c1-74a5441bffcb',
+                             '3e73d638-f16b-430e-8875-84e8dd201795',
+                             '7b2d99b6-d35c-4ab5-a3d9-063835407664'],
+                              nx1=380, nx2=480, ny1=500, ny2=2048)
+
+
+
+
+#Pd elastic scans: 6670 - '10587276-105a-413f-b021-64a58a2639f6', 6640 - '056c3a42-b10c-48bf-a63f-7c71dc86852c'
+xes_Pd_elastic = get_diff_spectrum('056c3a42-b10c-48bf-a63f-7c71dc86852c', '10587276-105a-413f-b021-64a58a2639f6', nx1=380, nx2=480, ny1=500, ny2=2048)
+# xes_Pd_6670 = get_diff_spectrum(, '561198a8-c738-494f-b298-84cc6fe7c8e5', nx1=380, nx2=480, ny1=500, ny2=2048)
+xes_PdCl2_elastic = get_diff_spectrum(['1992dd7b-7986-42cd-a563-6b8e9f319e9a',
+                                       '67ae327a-81fc-4e0a-8d50-3e17736b6fec',
+                                       '5ba41985-4ae8-4553-95bb-c28119edb8c7',
+                                       '4d7422f9-f982-46df-ad1d-8c73cbc81cbf',
+                                       '35b78814-f7a4-4c7b-ba0e-2dc3a2001cd2',
+                                       '06d0826d-a0ad-4b87-b397-1701230979f8',
+                                       'aaea69f8-0e22-47bb-b43e-8d65d9655fd3',
+                                       '08fdf135-7cb8-4dfb-b88f-7e621b4820f2',
+                                       'ab20c160-2d36-42d9-8353-7fe9e3ec0721'],
+                                      ['4832393a-4c90-4216-a336-afe2baaae22f',
+                                       '851579b3-79db-4927-a770-d8c472ae813d',
+                                       'e2301d15-0466-4beb-b1ab-b531ef131288',
+                                       'f3fcf316-fb5d-4158-8cfd-9448afbaed99',
+                                       'b4dcde49-d414-4bee-9ddd-e1441238d52f',
+                                       'f81cdac0-af65-4a91-b3aa-2871ff8880ea',
+                                       'a53c7d82-4421-46cf-bafb-ccd60de17771',
+                                       '17110bfe-b73a-48d0-9ca0-0a998f7c717d',
+                                       '71d650b4-2ac8-48c1-9361-f433826102f8'], nx1=380, nx2=480, ny1=500, ny2=2048)
+xes_PdNH34_elastic = get_diff_spectrum(['35ab3f72-4091-4560-83e2-5b4b2f6effb1',
+                                        '9b639407-be56-4c43-8dba-fdaa954745c4',
+                                        '928a95ca-6555-41dc-b203-d4d75d2bfa3d',
+                                        '6bf5a9cd-2e8c-401d-92a3-d3bed6172a8b',
+                                        '604b68c2-3230-46ad-a91a-80662240e818',
+                                        '7ca5d3ad-d151-40f8-abeb-8e3318a4ac8e',
+                                        '69ac54c3-d2f9-42a1-95ff-df988e34b1d1',
+                                        '3afca479-7be2-40bf-abad-e760edd64dfe',
+                                        '6ca9689e-e403-4c26-bfb9-fe918a0da0e1'],
+                                       ['4f9862e5-7814-43d7-a7a1-3367e04c7901',
+                                        'ab6fb0b4-0e24-4d28-aa1f-aef9024ed19c',
+                                        '20319d5e-63d8-486d-a2fb-88b1efc21ac1',
+                                        '514cba99-4588-457e-a829-bbf9a11454f5',
+                                        'a5b9e34b-0b15-4cc2-8bcb-3f0a9f81a4a5',
+                                        'aefe2c4d-7215-45c4-bf86-47032b15a502',
+                                        'd1477acb-a64f-4f58-8b01-0bde7790271e',
+                                        'adb891d5-cff6-4462-b8e2-5e9b933bc030',
+                                        '3e92c745-8b99-47ea-b3af-cc89661e8a23'], nx1=380, nx2=480, ny1=500, ny2=2048)
+
+xes_Pd2_elastic = get_diff_spectrum(['57ac501c-fbc9-489a-9fe4-cf985b5ce88d',
+ '9dd11765-4e27-4c1e-bb36-692a278b5b94',
+ 'c54e71b7-9457-4933-9d16-9c6770ecd5b0',
+ '5bd922e2-3027-4a30-8d90-64a9075707c0',
+ '31df1441-6ae2-4e10-847e-5f3a356163ca',
+ 'd1b88cb4-355c-43db-9520-7b64c2072cd2',
+ '9ea26ba2-84b3-4227-af3a-b9745f41c80d',
+ '30833947-cabb-4f8d-af2b-5e359fb19933',
+ '48a69ad7-76b6-4061-a6f3-d0668a01477a'],
+                                    ['f48972b5-f829-4342-a8ba-8a1a1ac53ed5',
+                                     'c5131f36-eb40-4738-bd52-366ff94e8135',
+                                     'cec03d1a-5649-41bc-86ae-2a58f56b86fd',
+                                     '4ee97ba0-cc40-4170-a5ce-b2549df0b6ea',
+                                     'ea645434-b7d2-44c4-b6f2-372332e126ba',
+                                     '24a00ecf-2722-42df-b687-9ff51f1fb78c',
+                                     'b8204e28-040a-4139-aa63-839327fd0d00',
+                                     '3b675eb1-2571-45b6-a8d8-cb5d0fa27df9',
+                                     'd14f0abd-f016-4b15-a376-18f20b502166'], nx1=380, nx2=480, ny1=500, ny2=2048)
+
+xes_Pd3_elastic = get_diff_spectrum(['127ea31d-c1fd-4a95-889b-511c75990576',
+ '4a480d33-efb0-4538-9dcd-c9024d0c0eee',
+ 'd28dd5f7-72d6-4f2b-b28d-a412ee1b8a56',
+ '07479908-d619-4bbf-a1ff-53d73e938f5b',
+ 'a5d210fe-fa1d-4be2-ade4-7dfdbc21c288',
+ '5ae0fca2-8eda-42ef-9f13-67c92884d50b',
+ '4eb1c088-5109-4abb-acd7-2a706ea21e5d',
+ '94a322fc-db1a-40e6-a35d-a62b372e1348',
+ '7f0637d9-449a-4406-a331-d442fa5586b9',
+ 'e068e24f-af07-48ac-acec-8c5988ba003f',
+ 'd0d902cd-0939-487e-8fae-856d72526812',
+ '85f83507-a243-4507-918a-c54cbaa34e34',
+ 'cb6ddfc5-2ada-4310-ac3b-5b2bb559807a',
+ 'c6a6d288-7a62-41a1-a1b3-dd16328210c2'],
+                                    ['578d23ff-f35d-45af-8fe9-1f7f18bdefb9',
+                                     '82604fd3-bd12-4366-aeb4-dae245bb6b55',
+                                     '2e4e71c1-7ee9-47f0-858e-e95e8a513f4d',
+                                     'f11a57de-b661-46a4-8c6b-3477704c55f4',
+                                     '93c16531-0a2b-458c-9dc5-38d6445b0cc3',
+                                     '9b37d3fb-bdad-4eba-acbe-d87f0606dada',
+                                     '435fa16d-5378-441a-8041-7a0f0419d772',
+                                     'd91d47f4-f222-40be-ad92-39fd218d48b9'], nx1=380, nx2=480, ny1=500, ny2=2048)
+
+
+# xes_PdCl2 = get_diff_spectrum('566a26db-7d27-4d9c-8e46-5cab8c788bb1', 'a35794f5-25e2-46b7-a137-462fe7ac0448')
+# xes_12Z23IE = get_diff_spectrum('4a480d33-efb0-4538-9dcd-c9024d0c0eee', '127ea31d-c1fd-4a95-889b-511c75990576')
+
+
+def norm_bkg_y(_y, n1=10, n2=20, do_medfilt=True):
+    if do_medfilt:
+        y = medfilt(_y, 3)
+    else:
+        y = _y.copy()
+    # return (y - np.mean(y[80:100])) / (np.percentile(y, 98) - np.mean(y[:10]))
+    x = np.arange(y.size)
+    x1, x2 = np.mean(x[:n1]), np.mean(x[-n2:])
+    y1, y2 = np.mean(y[:n1]), np.mean(y[-n2:])
+    p = np.polyfit([x1, x2], [y1, y2], 1)
+    y_bkg = np.polyval(p, x)
+    return (y - y_bkg) / (np.max(y) - y_bkg)
+
+energy_interp = interp1d([703, 1338], [6640/2, 6670/2], fill_value='extrapolate')
+
+
+# plt.plot(energy_interp(np.arange(xes_CuSO4_10s.size)), norm_y(xes_CuSO4_10s, n1=60, n2=80), label='S$^{6+}$ (CuSO4)')
+
+
+plt.figure(2, clear=True)
+# plt.plot(xes_Ag)
+
+plt.plot(energy_interp(np.arange(xes_Pd.size)), norm_bkg_y(xes_Pd), label='Pd')
+plt.plot(energy_interp(np.arange(xes_PdO.size)), norm_bkg_y(xes_PdO), label='PdO')
+# plt.plot(energy_interp(np.arange(xes_PdCl2.size)+11), norm_bkg_y(xes_PdCl2), label='PdCl2')
+plt.plot(energy_interp(np.arange(xes_PdNH34.size)+6), norm_bkg_y(xes_PdNH34), label='Pd(NH3)4')
+# plt.plot(energy_interp(np.arange(xes_Pd2.size)+5), norm_bkg_y(xes_Pd2), label='Pd2')
+# plt.plot(energy_interp(np.arange(xes_Pd3.size)+1), norm_bkg_y(xes_Pd3), label='Pd3')
+
+# plt.plot(energy_interp(np.arange(xes_Pd_elastic.size)), norm_bkg_y(np.abs(xes_Pd_elastic)), label='Pd elastic')
+# plt.plot(energy_interp(np.arange(xes_PdCl2_elastic.size)+11), norm_bkg_y(np.abs(xes_PdCl2_elastic)), label='PdCL2 elastic')
+# plt.plot(energy_interp(np.arange(xes_PdNH34_elastic.size)+6), norm_bkg_y(np.abs(xes_PdNH34_elastic)), label='Pd(NH3)4 elastic')
+# plt.plot(energy_interp(np.arange(xes_Pd2_elastic.size)+5), norm_bkg_y(np.abs(xes_Pd2_elastic)), label='Pd2 elastic')
+# plt.plot(energy_interp(np.arange(xes_Pd3_elastic.size)+1), norm_bkg_y(np.abs(xes_Pd3_elastic)), label='Pd3 elastic')
+# plt.plot(xes_Pd_6670, label='6670')
+plt.xlim(3320, 3335)
+
+plt.legend()
+plt.xlabel('Emission energy, eV')
+plt.ylabel('Intensity, a.u.')
+plt.title('incident energy 7000 eV')
+
+
+
+
+
+##################
+
+from ophyd import EpicsMotor as _EpicsMotor
+from ophyd import (Device, Kind, Component as Cpt,
+                   EpicsSignal, EpicsSignalRO, Kind,
+                   PseudoPositioner, PseudoSingle, SoftPositioner, Signal, SignalRO)
+from ophyd.status import SubscriptionStatus, DeviceStatus
+
+class EpicsMotorWithTweaking(_EpicsMotor):
+    # set does not work in this class; use put!
+    twv = Cpt(EpicsSignal, '.TWV', kind='omitted')
+    twr = Cpt(EpicsSignal, '.TWR', kind='omitted')
+    twf = Cpt(EpicsSignal, '.TWF', kind='omitted')
+
+EpicsMotor = EpicsMotorWithTweaking
+
+##
+import threading
+motor_cr_main_roll = EpicsMotor('XF:08IDB-OP{HRS:1-Stk:1:Roll}Mtr', name='motor_cr_main_roll')
+motor_cr_aux2_roll = EpicsMotor('XF:08IDB-OP{HRS:1-Stk:2:Roll}Mtr', name='motor_cr_aux2_roll')
+motor_cr_aux3_roll = EpicsMotor('XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr', name='motor_cr_aux3_roll')
+
+apb_timestamp_s = EpicsSignal('XF:08IDB-CT{PBA:1}:EVR:TS:Sec-I', name='apb_timestamp_s')
+apb_timestamp_ns = EpicsSignal('XF:08IDB-CT{PBA:1}:EVR:TS:NSec-I', name='apb_timestamp_ns')
+
+class FlyableEpicsMotor(Device):
+
+    def __init__(self, motor, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.motor = motor
+        self.traj_dict = None
+        self.flying_status = None
+
+    def set_trajectory(self, traj_dict):
+        # traj_dict = {'positions': [point1, point2, point3, point4],
+        #              'velocities': [v1_2, v2_3 ,v3_4]}
+        self.traj_dict = traj_dict
+
+    def prepare(self):
+        return self.motor.move(self.traj_dict['positions'][0], wait=False)
+
+    def kickoff(self):
+        self.flying_status = DeviceStatus(self)
+        thread = threading.Thread(target=self.execute_motion, daemon=True)
+        thread.start()
+        return self.flying_status
+
+    def execute_motion(self):
+        self.data = []
+        def write_data_callback(value, timestamp, **kwargs):
+            self.data.append([timestamp, value, apb_timestamp_s.get() + apb_timestamp_ns.get() * 1e-9])
+        cid = self.motor.user_readback.subscribe(write_data_callback)
+
+        pre_fly_velocity = self.motor.velocity.get()
+        for prev_position, next_position, duration in zip(self.traj_dict['positions'][:-1],
+                                                          self.traj_dict['positions'][1:],
+                                                          self.traj_dict['durations']):
+            velocity = abs(next_position - prev_position) / duration
+            self.motor.velocity.set(velocity).wait()
+            self.motor.move(next_position).wait()
+        self.flying_status.set_finished()
+
+        self.motor.velocity.set(pre_fly_velocity).wait()
+        self.motor.user_readback.unsubscribe(cid)
+
+
+    def complete(self):
+        self.flying_status = None
+        self.traj_dict = None
+
+    @property
+    def current_trajectory_duration(self):
+        return sum(self.traj_dict['durations']) + 5
+
+flying_motor_cr_main_roll = FlyableEpicsMotor(motor_cr_main_roll, name='flying_motor_cr_main_roll')
+flying_motor_cr_aux2_roll = FlyableEpicsMotor(motor_cr_aux2_roll, name='flying_motor_cr_aux2_roll')
+flying_motor_cr_aux3_roll = FlyableEpicsMotor(motor_cr_aux3_roll, name='flying_motor_cr_aux3_roll')
+
+
+
+traj_dict = {'positions': [-1000, -800, -400, 400, 500], 'durations': [5, 2.5, 20, 2.5]}
+flying_motor_cr_main_roll.set_trajectory(traj_dict)
+prepare_st1 = flying_motor_cr_main_roll.prepare()
+
+flying_motor_cr_aux2_roll.set_trajectory(traj_dict)
+prepare_st2 = flying_motor_cr_aux2_roll.prepare()
+
+flying_motor_cr_aux3_roll.set_trajectory(traj_dict)
+prepare_st3 = flying_motor_cr_aux3_roll.prepare()
+
+combine_status_list([prepare_st1, prepare_st2, prepare_st3]).wait()
+
+st1 = flying_motor_cr_main_roll.kickoff()
+st2 = flying_motor_cr_aux2_roll.kickoff()
+st3 = flying_motor_cr_aux3_roll.kickoff()
+
+data1 = np.array(flying_motor_cr_main_roll.data)
+data2 = np.array(flying_motor_cr_aux2_roll.data)
+data3 = np.array(flying_motor_cr_aux3_roll.data)
+plt.figure(1, clear=True)
+plt.plot(data1[:, 0], data1[:, 1], '.-')
+plt.plot(data2[:, 0], data2[:, 1], '.-')
+plt.plot(data3[:, 0], data3[:, 1], '.-')
+# plt.plot(data[:, 2] - data[0, 2], data[:, 1], 'r.-')
+# plt.plot(data[:, 0] - data[:, 2], 'k.-')
+
+
+###
+class FlyerForFlyableEpicsMotor(Device):
+    def __init__(self, default_dets, motors, shutter, *args, **kwargs):
+        super().__init__(parent=None, *args, **kwargs)
+
+        # apb_stream_idx = dets.index(apb_stream)
+        # self.apb_stream = dets[apb_stream_idx]
+
+        self.default_dets = default_dets
+        self.aux_dets = []
+        self.dets = []
+        self.motors = motors
+        self.shutter = shutter
+        self.complete_status = None
+
+    def set_aux_dets(self, aux_dets):
+        self.aux_dets = aux_dets
+
+    def flush_dets(self):
+        self.aux_dets = []
+        self.dets = []
+
+    def stage(self):
+        print_to_gui(f'Preparing mono starting...', add_timestamp=True, tag='Flyer')
+        motor_prep_status = combine_status_list([motor.prepare() for motor in self.motors])
+        motor_prep_status.wait()
+        print_to_gui(f'Preparing mono complete', add_timestamp=True, tag='Flyer')
+        self.dets = self.default_dets + self.aux_dets
+        print_to_gui(f'Fly scan staging starting...', add_timestamp=True, tag='Flyer')
+        staged_list = super().stage()
+        scan_duration = self.motor.current_trajectory_duration
+            # trajectory_manager.current_trajectory_duration
+        for det in self.dets:
+            if hasattr(det, 'prepare_to_fly'):
+                det.prepare_to_fly(scan_duration)
+            print_to_gui(f'{det.name} staging starting', add_timestamp=True, tag='Flyer')
+            staged_list += det.stage()
+        print_to_gui(f'Fly scan staging complete', add_timestamp=True, tag='Flyer')
+        return staged_list
+
+    def unstage(self):
+        print_to_gui(f'Fly scan unstaging starting...', add_timestamp=True, tag='Flyer')
+        unstaged_list = super().unstage()
+        for det in self.dets:
+            unstaged_list += det.unstage()
+        self.flush_dets()
+        print_to_gui(f'Fly scan unstaging complete', add_timestamp=True, tag='Flyer')
+        return unstaged_list
+
+    def kickoff(self):
+        self.kickoff_status = DeviceStatus(self)
+        self.complete_status = DeviceStatus(self)
+        thread = threading.Thread(target=self.action_sequence, daemon=True)
+        thread.start()
+        return self.kickoff_status
+
+    def action_sequence(self):
+
+        print_to_gui(f'Detector kickoff starting...', add_timestamp=True, tag='Flyer')
+        self.shutter.open(time_opening=True)
+        det_kickoff_status = combine_status_list([det.kickoff() for det in self.dets])
+        det_kickoff_status.wait()
+
+        print_to_gui(f'Detector kickoff complete', add_timestamp=True, tag='Flyer')
+
+        print_to_gui(f'Motor trajectory motion starting...', add_timestamp=True, tag='Flyer')
+
+        self.motor_flying_status = combine_status_list([motor.kickoff() for motor in self.motors])
+        self.kickoff_status.set_finished()
+
+        self.motor_flying_status.wait()
+
+        print_to_gui(f'Motor trajectory motion complete', add_timestamp=True, tag='Flyer')
+
+        print_to_gui(f'Detector complete starting...', add_timestamp=True, tag='Flyer')
+        det_complete_status = combine_status_list([det.complete() for det in self.dets])
+        det_complete_status.wait()
+        for motor in self.motors:
+            motor.complete()
+        self.shutter.close()
+
+        print_to_gui(f'Detector complete complete', add_timestamp=True, tag='Flyer')
+        self.complete_status.set_finished()
+
+    def complete(self):
+        # print(f'{ttime.ctime()} >>> COMPLETE: begin')
+        if self.complete_status is None:
+            raise RuntimeError("No collection in progress")
+        return self.complete_status
+
+    def describe_collect(self):
+        return_dict = {}
+        for det in self.dets:
+            return_dict = {**return_dict, **det.describe_collect()}
+        return return_dict
+
+    def collect(self):
+        # print_to_gui(f'{ttime.ctime()} Collect starting')
+        print_to_gui(f'Collect starting...', add_timestamp=True, tag='Flyer')
+        for det in self.dets:
+            yield from det.collect()
+        # print_to_gui(f'{ttime.ctime()} Collect finished')
+        print_to_gui(f'Collect complete', add_timestamp=True, tag='Flyer')
+
+    def collect_asset_docs(self):
+        print_to_gui(f'Collect asset docs starting...', add_timestamp=True, tag='Flyer')
+        for det in self.dets:
+            yield from det.collect_asset_docs()
+        print_to_gui(f'Collect asset docs complete', add_timestamp=True, tag='Flyer')
+
+
+# flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
+# flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
+flyer_johann_rolls = FlyerForFlyableEpicsMotor([apb_stream],
+                                               [flying_motor_cr_main_roll,
+                                                flying_motor_cr_aux2_roll,
+                                                flying_motor_cr_aux3_roll],
+                                               shutter, name='flyer_apb')
+
+def fly_johann_rolls_plan(name=None, comment=None, trajectory_dictionary=None,
+                          element='', e0=0, line='', metadata={}):
+
+    flying_motor_cr_main_roll.set_trajectory(trajectory_dictionary['main'])
+    flying_motor_cr_aux2_roll.set_trajectory(trajectory_dictionary['aux2'])
+    flying_motor_cr_aux3_roll.set_trajectory(trajectory_dictionary['aux3'])
+
+    detectors = ['Pilatus 100k']
+    aux_detectors = get_detector_device_list(detectors, flying=True)
+    flyer_hhm.set_aux_dets(aux_detectors)
+    detectors_dict = {k :{'device' : v} for k, v in zip(detectors, aux_detectors)}
+    md = get_fly_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, line, metadata)
+
+    @bpp.stage_decorator([flyer_johann_rolls])
+    def _fly(md):
+        plan = bp.fly([flyer_johann_rolls], md=md)
+        yield from monitor_during_wrapper(plan, [flying_motor_cr_main_roll.motor.user_readback,
+                                                 flying_motor_cr_aux2_roll.motor.user_readback,
+                                                 flying_motor_cr_aux3_roll.motor.user_readback])
+    yield from _fly(md)
+
+
+def pseudo_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
+                              mono_energy=None, mono_angle_offset=None,
+                              central_emission_energy=None,
+                              trajectory_dictionary=None,
+                              element='', line='', e0=None,
+                              metadata={}):
+
+    if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
+    yield from bps.mv(hhm.energy, mono_energy)
+    yield from prepare_johann_scan_plan(detectors, central_emission_energy)
+    yield from fly_johann_rolls_plan(name=name, comment=comment, trajectory_dictionary=trajectory_dictionary,
+                                     element=element, line=line, e0=e0, metadata=metadata)
+    # yield from general_energy_step_scan(all_detectors, johann_emission, emission_energy_list, emission_time_list, md=md)
+
+
+
+
+
+
+
 
 
 
