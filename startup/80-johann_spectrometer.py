@@ -788,6 +788,7 @@ class JohannPseudoPositioner(ISSPseudoPositioner):
 
 # inclinometer1 = 12222 - th1 = 0.0
 # inclinometer1 = 12877 - th1 = -7.366
+# inclinometer1 = 11780 - th1 = 4.866
 
 
 class JohannDetectorArm(JohannPseudoPositioner):
