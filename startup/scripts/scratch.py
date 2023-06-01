@@ -2476,3 +2476,39 @@ plot_plot(t_aux3, 'johann_aux3_crystal_motor_cr_aux3_roll', 'pil100k_stats1_tota
 
 # plt.plot(t_aux2.johann_aux2_crystal_motor_cr_aux2_roll, t_aux2.pil100k_stats1_total )
 # plt.plot(t_aux3.johann_aux3_crystal_motor_cr_aux3_roll, t_aux3.pil100k_stats1_total )
+
+# '68f0f134-fcda-4b15-9053-e47031659a18' # main bragg
+ # aux2
+
+def plot_bragg_data(uid, x_key, y_key, n1=0, n2=3):
+    t = db[uid].table()
+    x = t[x_key]
+    y = t[y_key]
+    y_norm = (y - np.mean(y[n1:n2])) / (y.max() - np.mean(y[n1:n2]))
+    plt.plot(x, y_norm)
+
+plt.figure(1, clear=True)
+plot_bragg_data('68f0f134-fcda-4b15-9053-e47031659a18', 'johann_main_crystal_bragg', 'pil100k_stats1_total')
+plot_bragg_data('792720f5-89c8-45c7-8b08-e3f1a3b941cf', 'johann_aux2_crystal_bragg', 'pil100k_stats1_total')
+plot_bragg_data('20da49aa-5019-4470-9fe8-5d9feeb4ae4c', 'johann_aux3_crystal_bragg', 'pil100k_stats1_total', n1=-3, n2=-1)
+
+
+
+
+uids = ('d2bf4db9-5f92-49cf-816f-01c9b8b7357a',
+ 'd7db85e3-7c36-4046-a1e8-caabfedebb78',
+ 'f9773c13-74f2-42dc-baf8-d40c4b136802')
+
+tweak_motor = johann_spectrometer_x.name
+scan_motor = 'johann_main_crystal_motor_cr_main_roll'
+
+fwhm = []
+motor_pos = []
+plt.figure(1, clear=True)
+for uid in uids:
+    _fwhm = estimate_peak_fwhm_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
+    fwhm.append(_fwhm)
+    motor_pos.append(hdr.start[tweak_motor])
+
+plt.figure(2, clear=True)
+plt.plot(motor_pos, fwhm, 'k.-')
