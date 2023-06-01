@@ -2112,7 +2112,7 @@ class FlyableEpicsMotor(Device):
     def execute_motion(self):
         self.data = []
         def write_data_callback(value, timestamp, **kwargs):
-            self.data.append([timestamp, value, apb_timestamp_s.get() + apb_timestamp_ns.get() * 1e-9])
+            self.data.append([timestamp, value])
         cid = self.motor.user_readback.subscribe(write_data_callback)
 
         pre_fly_velocity = self.motor.velocity.get()
@@ -2136,20 +2136,26 @@ class FlyableEpicsMotor(Device):
     def current_trajectory_duration(self):
         return sum(self.traj_dict['durations']) + 5
 
-flying_motor_cr_main_roll = FlyableEpicsMotor(motor_cr_main_roll, name='flying_motor_cr_main_roll')
-flying_motor_cr_aux2_roll = FlyableEpicsMotor(motor_cr_aux2_roll, name='flying_motor_cr_aux2_roll')
-flying_motor_cr_aux3_roll = FlyableEpicsMotor(motor_cr_aux3_roll, name='flying_motor_cr_aux3_roll')
+flying_motor_cr_main_roll = FlyableEpicsMotor(johann_emission.motor_cr_main_roll, name='flying_motor_cr_main_roll')
+flying_motor_cr_aux2_roll = FlyableEpicsMotor(johann_emission.motor_cr_aux2_roll, name='flying_motor_cr_aux2_roll')
+flying_motor_cr_aux3_roll = FlyableEpicsMotor(johann_emission.motor_cr_aux3_roll, name='flying_motor_cr_aux3_roll')
 
 
+pos_dict = johann_emission._forward({'energy' : 7085})
 
-traj_dict = {'positions': [-1000, -800, -400, 400, 500], 'durations': [5, 2.5, 20, 2.5]}
-flying_motor_cr_main_roll.set_trajectory(traj_dict)
+traj_dict_main = {'positions': [pos_dict['motor_cr_main_roll'] - 1000,
+                                pos_dict['motor_cr_main_roll'] + 1000], 'durations': [30]}
+flying_motor_cr_main_roll.set_trajectory(traj_dict_main)
 prepare_st1 = flying_motor_cr_main_roll.prepare()
 
-flying_motor_cr_aux2_roll.set_trajectory(traj_dict)
+traj_dict_aux2 = {'positions': [pos_dict['motor_cr_aux2_roll'] - 1000 - 100,
+                                pos_dict['motor_cr_aux2_roll'] + 1000 - 100], 'durations': [30]}
+flying_motor_cr_aux2_roll.set_trajectory(traj_dict_aux2)
 prepare_st2 = flying_motor_cr_aux2_roll.prepare()
 
-flying_motor_cr_aux3_roll.set_trajectory(traj_dict)
+traj_dict_aux3 = {'positions': [pos_dict['motor_cr_aux3_roll'] - 1000 + 100,
+                                pos_dict['motor_cr_aux3_roll'] + 1000 + 100], 'durations': [30]}
+flying_motor_cr_aux3_roll.set_trajectory(traj_dict_aux3)
 prepare_st3 = flying_motor_cr_aux3_roll.prepare()
 
 combine_status_list([prepare_st1, prepare_st2, prepare_st3]).wait()
@@ -2199,7 +2205,7 @@ class FlyerForFlyableEpicsMotor(Device):
         self.dets = self.default_dets + self.aux_dets
         print_to_gui(f'Fly scan staging starting...', add_timestamp=True, tag='Flyer')
         staged_list = super().stage()
-        scan_duration = self.motor.current_trajectory_duration
+        scan_duration = max([motor.current_trajectory_duration for motor in self.motors])
             # trajectory_manager.current_trajectory_duration
         for det in self.dets:
             if hasattr(det, 'prepare_to_fly'):
@@ -2297,7 +2303,7 @@ def fly_johann_rolls_plan(name=None, comment=None, trajectory_dictionary=None,
 
     detectors = ['Pilatus 100k']
     aux_detectors = get_detector_device_list(detectors, flying=True)
-    flyer_hhm.set_aux_dets(aux_detectors)
+    flyer_johann_rolls.set_aux_dets(aux_detectors)
     detectors_dict = {k :{'device' : v} for k, v in zip(detectors, aux_detectors)}
     md_general = get_scan_md(name, comment, detectors_dict, '.dat')
 
@@ -2329,18 +2335,144 @@ def pseudo_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     metadata = {**metadata, **{'spectrometer_central_energy': central_emission_energy}}
     yield from bps.mv(hhm.energy, mono_energy)
+    pos_dict = johann_emission._forward({'energy': central_emission_energy})
+    johann_emission.motor_cr_main_roll.move(pos_dict['motor_cr_main_roll'])
+    johann_emission.motor_cr_aux2_roll.move(pos_dict['motor_cr_aux2_roll'])
+    johann_emission.motor_cr_aux3_roll.move(pos_dict['motor_cr_aux3_roll'])
     yield from prepare_johann_scan_plan(detectors, central_emission_energy)
     yield from fly_johann_rolls_plan(name=name, comment=comment, trajectory_dictionary=trajectory_dictionary,
                                      element=element, line=line, e0=e0, metadata=metadata)
     # yield from general_energy_step_scan(all_detectors, johann_emission, emission_energy_list, emission_time_list, md=md)
 
 
+trajectory_dictionary = {'main': traj_dict_main,
+                         'aux2': traj_dict_aux2,
+                         'aux3': traj_dict_aux3}
+
+RE(pseudo_fly_scan_johann_xes_plan(name='test', comment='', detectors=['Pilatus 100k'],
+                                mono_energy=7200, mono_angle_offset=None,
+                                central_emission_energy=7085,
+                                trajectory_dictionary=trajectory_dictionary,
+                                element='Fe', line='Kb', e0=7059,
+                                metadata={}))
+
+
+
+for j in range(25):
+    RE(bps.mvr(johann_det_arm.motor_det_th1, 3))
+    RE(bps.sleep(2))
+    RE(bps.mvr(johann_det_arm.motor_det_th1, -3))
 
 
 
 
+#########
+
+# johann_x = [#-8.55,
+#             -6.058, -3.55, -1.057, 1.55, 3.944, 6.445]
+# uids = [
+#    # '4dace7fc-994f-4da4-a2c2-7df3e7f1c233',
+#     'cd5ffdf6-6723-45fe-8fd3-39dfdb703f3c',
+#     '0f568080-b2a0-4e33-a766-c4ac4638178d',
+#     '979a380a-167c-432f-acc6-36bceeea1c6d',
+#     'cd067a65-e402-44f1-9bcd-8f10c01c51d2',
+#     '96dd4ad7-f178-42b2-90f7-3b37978944b9',
+# '32d3bd90-ab2d-40f4-bcb3-62173486c90a'
+# ]
+
+johann_x = [-7.5]
+
+uids = ['1c1d309c-9dc2-4d06-8f71-8c74d1575f17', ]
+
+
+fwhm = []
+plt.figure(1, clear=True)
+for uid in uids:
+    _fwhm = estimate_peak_fwhm_from_roll_scan(db, uid, plotting=True, fignum=1, clear=False)
+    fwhm.append(_fwhm)
+
+plt.figure(2, clear=True)
+plt.plot(johann_x, fwhm, 'k.-')
+
+
+##
+
+# uids = ('ed7aeea7-e50d-4f1d-828f-f335383210cc',
+#  '5ee2f655-c691-400b-8cc0-8f5e5a57aa71',
+#  '40a9f077-7f82-4d40-946f-98a2b1030355',
+#  '4f5dac85-bc61-4757-b868-900b221d2dab',
+#  '75612f5d-0d25-45c6-ba9f-41c558e8a979',
+#  '464e994e-ca73-4ac6-a7a8-52d07872a020',
+#  '398398c7-5d44-4e6b-b4d0-3c93cf95bb2d',
+#  'd3776097-5a61-457e-9318-a447d17400ff',
+#  '0d60c03a-b75b-418f-bb94-02bdfe3f39cb',
+# '0e6f37da-8d43-4bf5-935d-8fc348a35bc6',
+# 'd8278aa1-21d4-424a-b00b-2223e6c3ac42',
+# 'ecacc8a6-ecb7-483d-8cfa-e097839dceae'
+#         )
+# tweak_motor = johann_spectrometer_x.name
+# scan_motor = 'johann_main_crystal_motor_cr_main_roll'
+#
+# uids = (#'135e21d6-f6bc-439c-8840-64e3c769fab7',
+#  'c8b29993-8a05-475d-ab0e-78965ecd4617',
+#  'b2257dcc-7433-4445-ab1b-fb494370edee',
+#  '775c8aaa-dcac-49eb-bf2a-dc3946423ba4',
+#  '38322180-d2c7-469c-83c0-2c6b623f8734',
+#  '677d3d31-9808-44b2-8cea-9c9683ead1fd',
+#  'fa9b925a-4f39-456f-9b92-fcfec349b13d',
+#  '29a90988-23cb-4186-9596-67c184e016cb',
+#  '52d54744-d2d2-4a0d-a748-d01ff3b9fc6e')
+#
+# tweak_motor = johann_aux2_crystal.motor_cr_aux2_x.name
+# scan_motor = 'johann_aux2_crystal_motor_cr_aux2_roll'
+
+uids = ('886406a3-b684-4a42-a62b-3a831fcba65e',
+ '52643015-84ff-4962-9bd1-0407fbe81830',
+ 'a8d60e8b-2ed3-4127-9eb9-2d4b43d42f0a',
+ '51bf692a-cf50-49e4-9eb9-222ddc678ca4',
+ 'be00338e-c124-41de-9074-220d80bbda37',
+ '5290b704-f7fc-4dcc-a8e0-cf54ec4fdfad',
+ 'fcf783e6-bea4-48b1-8497-66a250630d2b',
+ 'db72c465-a47b-44ae-bd84-74c5fd4a59a3',
+ '13eee9db-f5a2-4dc3-974a-5c91090a4681')
+
+tweak_motor = johann_aux3_crystal.motor_cr_aux3_x.name
+scan_motor = 'johann_aux3_crystal_motor_cr_aux3_roll'
+
+fwhm = []
+motor_pos = []
+plt.figure(1, clear=True)
+for uid in uids:
+    hdr = db[uid]
+    df = hdr.table()
+    _fwhm = _estimate_peak_fwhm_from_roll_scan(df, scan_motor, 'pil100k_stats1_total', plotting=True, fignum=1, clear=False)
+    fwhm.append(_fwhm)
+    motor_pos.append(hdr.start[tweak_motor])
+
+
+plt.figure(2, clear=True)
+plt.plot(motor_pos, fwhm, 'k.-')
 
 
 
+# uids = ['97210e1b-d8e0-436c-97e6-8284d10ce1a4', # main
+        # ]
+
+t_main = db['97210e1b-d8e0-436c-97e6-8284d10ce1a4'].table()
+t_aux2 = db['4626bc5e-b945-4fca-80e0-af9bda173d7c'].table()
+t_aux3 = db['a82eaf26-2281-47e4-b601-815fbd489060'].table()
+
+def plot_plot(t, x_key, y_key):
+    x = t[x_key]
+    y = t[y_key]
+    y_norm = (y - np.mean(y[-5:])) / (y.max() - np.mean(y[-5:]))
+    plt.plot(x - np.median(x), y_norm)
 
 
+plt.figure(1, clear=True)
+plot_plot(t_main, 'johann_main_crystal_motor_cr_main_roll', 'pil100k_stats1_total')
+plot_plot(t_aux2, 'johann_aux2_crystal_motor_cr_aux2_roll', 'pil100k_stats1_total')
+plot_plot(t_aux3, 'johann_aux3_crystal_motor_cr_aux3_roll', 'pil100k_stats1_total')
+
+# plt.plot(t_aux2.johann_aux2_crystal_motor_cr_aux2_roll, t_aux2.pil100k_stats1_total )
+# plt.plot(t_aux3.johann_aux3_crystal_motor_cr_aux3_roll, t_aux3.pil100k_stats1_total )

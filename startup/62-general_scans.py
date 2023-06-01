@@ -12,12 +12,12 @@ from ophyd.device import Kind
 import time
 
 
-def general_scan_plan(detectors, motor, rel_start, rel_stop, num, exposure_time):
+def general_scan_plan(detectors, motor, rel_start, rel_stop, num, exposure_time, md=None):
 
     for detector in detectors:
         detector.set_exposure_time(exposure_time)
 
-    plan = bp.relative_scan(detectors, motor, rel_start, rel_stop, num)
+    plan = bp.relative_scan(detectors, motor, rel_start, rel_stop, num, md=md)
     
     if hasattr(detectors[0], 'kickoff'):
         plan = bpp.fly_during_wrapper(plan, detectors)
@@ -25,7 +25,7 @@ def general_scan_plan(detectors, motor, rel_start, rel_stop, num, exposure_time)
     yield from plan
     yield from shutter.close_plan()
 
-def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_steps=1, exposure_time=1, liveplot_kwargs={}):
+def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_steps=1, exposure_time=1, liveplot_kwargs={}, md=None):
 
     # sys.stdout = kwargs.pop('stdout', sys.stdout)
     #print(f'Dets {detectors}')
@@ -34,7 +34,7 @@ def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_st
     detector_devices = get_detector_device_list(detectors, flying=False)
     # print('[General Scan] Starting scan...')
     print_to_gui('[General Scan] Starting scan...')
-    yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps), exposure_time))
+    yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps), exposure_time, md=md))
     # print('[General Scan] Done!')
     print_to_gui('[General Scan] Done!')
 

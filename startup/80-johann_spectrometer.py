@@ -786,6 +786,9 @@ class JohannPseudoPositioner(ISSPseudoPositioner):
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
 
+# inclinometer1 = 12222 - th1 = 0.0
+# inclinometer1 = 12877 - th1 = -7.366
+
 
 class JohannDetectorArm(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
@@ -1247,7 +1250,7 @@ _johann_motor_dictionary = {
 'johann_cr_aux2_yaw':       {'name': johann_aux2_crystal.motor_cr_aux2_yaw.name,       'description': 'Johann Aux2 Crystal Yaw',      'keyword': 'Aux2 Yaw',                  'object': johann_aux2_crystal.motor_cr_aux2_yaw,            'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
 'johann_cr_aux2_x':         {'name': johann_aux2_crystal.motor_cr_aux2_x.name,         'description': 'Johann Aux2 Crystal X',        'keyword': 'Aux2 X',                    'object': johann_aux2_crystal.motor_cr_aux2_x,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
 'johann_cr_aux2_y':         {'name': johann_aux2_crystal.motor_cr_aux2_y.name,         'description': 'Johann Aux2 Crystal Y',        'keyword': 'Aux2 Y',                    'object': johann_aux2_crystal.motor_cr_aux2_y,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
-'johann_cr_aux3_roll':      {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,      'description': 'Johann Aux3 Crystal roll',     'keyword': 'Aux3 roll',                 'object': johann_aux3_crystal.motor_cr_aux3_roll,           'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+'johann_cr_aux3_roll':      {'name': johann_aux3_crystal.motor_cr_aux3_roll.name,      'description': 'Johann Aux3 Crystal Roll',     'keyword': 'Aux3 roll',                 'object': johann_aux3_crystal.motor_cr_aux3_roll,           'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
 'johann_cr_aux3_yaw':       {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,       'description': 'Johann Aux3 Crystal Yaw',      'keyword': 'Aux3 Yaw',                  'object': johann_aux3_crystal.motor_cr_aux3_yaw,            'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
 'johann_cr_aux3_x':         {'name': johann_aux3_crystal.motor_cr_aux3_x.name,         'description': 'Johann Aux3 Crystal X',        'keyword': 'Aux3 X',                    'object': johann_aux3_crystal.motor_cr_aux3_x,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
 'johann_cr_aux3_y':         {'name': johann_aux3_crystal.motor_cr_aux3_y.name,         'description': 'Johann Aux3 Crystal Y',        'keyword': 'Aux3 Y',                    'object': johann_aux3_crystal.motor_cr_aux3_y,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},

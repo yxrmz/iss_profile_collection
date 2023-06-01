@@ -267,6 +267,12 @@ class PilatusStreamHDF5(PilatusHDF5):
         self.hdf5._asset_docs_cache[0][1]['resource_kwargs'] = {}  # This is to make the files to go to correct handler
 
         self.set_num_images(self.num_points)
+        # for i in range(10):
+        #     if self.cam.num_images.get() != self.num_points:
+        #         self.set_num_images(self.num_points)
+        #         ttime.sleep(0.1)
+        #     else:
+        #         break
         self.set_exposure_time(1 / self.acq_rate)
         self.cam.array_counter.put(0)
         self.cam.trigger_mode.put(3)
