@@ -275,7 +275,7 @@ class PilatusStreamHDF5(PilatusHDF5):
         #         break
         self.set_exposure_time(1 / self.acq_rate)
         self.cam.array_counter.put(0)
-        self.cam.trigger_mode.put(3)
+        self.cam.trigger_mode.put(2)
         self.cam.image_mode.put(1)
 
         # self.hdf5.blocking_callbacks.put(1)

@@ -57,18 +57,21 @@ class AnalogPizzaBoxTrigger(Device):
         self._asset_docs_cache.append(('resource', resource))
         self._datum_counter = itertools.count()
         self.max_counts.set(self.num_points).wait()
-        self.stream.set(1).wait()
+        # self.stream.set(1).wait()
         return staged_list
 
     def unstage(self):
         self._datum_counter = None
-        self.stream.set(0).wait()
+        # self.stream.set(0).wait()
         return super().unstage()
 
     def kickoff(self):
-        return self.acquire.set(2)
+        # return self.acquire.set(2)
+        return self.stream.set(1)
 
     def complete(self):
+        # self.acquire.set(0).wait()
+        self.stream.set(0).wait()
         self.acquire.set(0).wait()
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))

@@ -2494,21 +2494,135 @@ plot_bragg_data('20da49aa-5019-4470-9fe8-5d9feeb4ae4c', 'johann_aux3_crystal_bra
 
 
 
-
-uids = ('d2bf4db9-5f92-49cf-816f-01c9b8b7357a',
- 'd7db85e3-7c36-4046-a1e8-caabfedebb78',
- 'f9773c13-74f2-42dc-baf8-d40c4b136802')
+# main crystal
+uids = \
+    ('076e32aa-dc0b-479c-ade9-39e1320a824b',
+     '46ba1136-f7f0-4b02-9839-39822b71d629',
+     '3d0a01a8-1dfa-4ebd-8f7c-babac5462d6f',
+     'a0f89c1f-63ac-4c1d-b038-846c5e596bc6',
+     '1142d1eb-c5ee-4758-aa10-f3697f195f05',
+     '34145c97-9758-4aa4-9524-df335f128189',
+     '6c7843d7-dbe9-4bbf-9fce-55da54557066',
+     '78421744-9db2-4950-84ae-e676e209b0f8',
+     '5b47e90c-fd45-4372-bcb4-f232d21f19e1')
 
 tweak_motor = johann_spectrometer_x.name
 scan_motor = 'johann_main_crystal_motor_cr_main_roll'
+
+uids = \
+('a8d4127c-324a-47be-ba81-7c8fa9e10aee',
+ 'c83ee07c-2775-4c55-88ba-b11b5e7a502c',
+ '7af4035d-f82c-4b69-be11-a8f793f79979',
+ '2fe6b3e8-b869-4fce-847c-455788e48d80',
+ '294e3995-94f3-461a-bd56-72e1f5c19770',
+ '9f67596f-5711-4215-8f41-93ff915dc556',
+ '704d6542-c46d-4876-bbfb-73eb8daba75a',
+ '1401d137-5d07-4393-b111-3e9b3f22cdb6',
+ '9f8e362a-ae2c-47e6-8eb3-89d6b4c0a1f3')
+
+
+
+tweak_motor = johann_aux2_crystal.motor_cr_aux2_x.name
+scan_motor = 'johann_aux2_crystal_motor_cr_aux2_roll'
+
+uids = ('12399c12-6e48-43b5-a26a-491259cbda03',
+ '0bab4c15-3fc4-4fc3-84b6-89134479443c',
+ '11cd518f-e4ca-43da-b3d4-1ff0b0ff6ed6',
+ '1c627016-5a3d-4257-a0c8-5b819abcd2c3',
+ 'e38b8b31-73d7-4af8-9781-8dcb553e2b35',
+ 'ebc9f3bc-7c27-49c5-a8d4-5d1da312b950',
+ '20ba24b0-b9bf-4f6c-bc75-aaad07def7b5',
+ '55510315-d5f9-453c-8074-ab22e380122a',
+ '085ac43e-5ffb-437b-88db-5d8fbe4bcf44',
+ 'b60da7c8-cb01-4d16-937e-99c9ea5d367c',
+ '65794f6d-5d85-4b8a-b909-83c20911bf3f')
+
+tweak_motor = johann_aux3_crystal.motor_cr_aux3_x.name
+scan_motor = 'johann_aux3_crystal_motor_cr_aux3_roll'
+
 
 fwhm = []
 motor_pos = []
 plt.figure(1, clear=True)
 for uid in uids:
-    _fwhm = estimate_peak_fwhm_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
+    # _fwhm = estimate_peak_fwhm_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
+    _fwhm = estimate_peak_intensity_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
     fwhm.append(_fwhm)
+    hdr = db[uid]
     motor_pos.append(hdr.start[tweak_motor])
 
 plt.figure(2, clear=True)
 plt.plot(motor_pos, fwhm, 'k.-')
+
+from xas.db_io import load_apb_dataset_from_db, translate_apb_dataset, load_apb_trig_dataset_from_db, load_pil100k_dataset_from_db
+
+
+uid = 358337
+
+apb_df, energy_df, energy_offset = load_apb_dataset_from_db(db, uid)
+raw_dict = translate_apb_dataset(apb_df, energy_df, energy_offset)
+
+apb_trigger_pil100k_timestamps = load_apb_trig_dataset_from_db(db, uid, use_fall=True,
+                                                               stream_name='apb_trigger_pil100k')
+pil100k_dict = load_pil100k_dataset_from_db(db, uid, apb_trigger_pil100k_timestamps)
+raw_dict = {**raw_dict, **pil100k_dict}
+
+hdr = db[uid]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{'cycle#33': '2',
+ 'slack_channel#42': 'C05AF80JYQ5',
+ 'proposal#36': '312685',
+ 'PI': 'Kyle Lancaster',
+ 'beamline_id#44': 'ISS (8-ID)',
+ 'PI#31': 'Kyle Lancaster',
+ 'slack_channel#43': 'C05AF80JYQ5',
+ 'Facility#32': 'NSLS-II',
+ 'experimenters#34': ['Samantha MacMillan', 'Kyle Lancaster'],
+ 'saf#41': '311453',
+ 'Facility#23': 'NSLS-II',
+ 'saf#42': '311453',
+ 'proposal_id#25': None,
+ 'cycle#45': '2',
+ 'affiliation#37': 'Cornell University',
+ 'year#35': '2023',
+ 'affiliation': 'Cornell University',
+ 'email#40': 'kml236@cornell.edu',
+ 'experimenters#21': ['Samantha MacMillan', 'Kyle Lancaster'],
+ 'group#38': 'iss',
+ 'proposal_id#39': None,
+ 'scan_id#42': 358216,
+ 'proposal': '312685',
+ 'group': 'iss',
+ 'Facility': 'NSLS-II',
+ 'beamline_id': 'ISS (8-ID)',
+ 'proposal_id': None}
+
+
+
