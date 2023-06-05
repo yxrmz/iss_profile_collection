@@ -255,16 +255,16 @@ class SampleManager(PersistentListInteractingWithGUI):
 
     @emit_list_update_signal_decorator
     def delete_samples_with_index_dict(self, index_dict):
-        sample_idx_to_delete = []
+        # sample_idx_to_delete = []
         for sample_index, point_index_list in index_dict.items():
             if len(point_index_list) > 0:
                 sample = self.samples[sample_index]
                 point_index_set = set(point_index_list)
                 sample.remove_positions(list(point_index_set))
-            else:
-                sample_idx_to_delete.append(sample_index)
-        if len(sample_idx_to_delete) > 0:
-            self.delete_multiple_samples(sample_idx_to_delete, emit_signal=False)
+            # else:
+                # sample_idx_to_delete.append(sample_index)
+        # if len(sample_idx_to_delete) > 0:
+        #     self.delete_multiple_samples(sample_idx_to_delete, emit_signal=False)
 
     @emit_list_update_signal_decorator
     def update_sample_at_index(self, index, new_name, new_comment):
