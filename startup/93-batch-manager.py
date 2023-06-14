@@ -77,6 +77,9 @@ class Sample:
     def index_position_index(self, index):
         return int(self.position_data.index[index])
 
+    def sort_positions_by(self, keys):
+        self.position_data = self.position_data.sort_values(keys)
+
     def index_exposed(self, index):
         return bool(self.position_data.iloc[index][['exposed']].item())
 
@@ -329,7 +332,12 @@ class SampleManager(PersistentListInteractingWithGUI):
              if uid == sample.uid:
                 return sample_index
 
+    def set_exposed_at_index(self, sample_index, sample_point_index, exposed=True):
+        self.samples[sample_index].set_exposed(sample_point_index, exposed=exposed)
 
+    @emit_list_update_signal_decorator
+    def sort_sample_positions_by_at_index(self, sample_index, keys):
+        self.samples[sample_index].sort_positions_by(keys)
 
     # def uid_to_sample_index(self, uid):
     #     for sample_index, sample in enumerate(self.samples):
@@ -338,8 +346,6 @@ class SampleManager(PersistentListInteractingWithGUI):
     #             return sample_index, sample_point_index
     #     return None
     #
-    # def set_exposed_at_index(self, sample_index, sample_point_index, exposed=True):
-    #     self.samples[sample_index].set_exposed(sample_point_index, exposed=exposed)
     #
     # def sample_exposed_at_uid(self, uid):
     #     index_tuple = self.sample_point_uid_to_sample_index(uid)
