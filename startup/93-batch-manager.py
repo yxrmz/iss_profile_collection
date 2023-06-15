@@ -67,8 +67,15 @@ class Sample:
     def number_of_unexposed_points(self):
         return int(self.number_of_points - sum(self.position_data['exposed']))
 
+    # def index_coordinate_dict(self, index):
+    #     return self.position_data.iloc[index][['x', 'y', 'z', 'th']].to_dict()
+
     def index_coordinate_dict(self, index):
-        return self.position_data.iloc[index][['x', 'y', 'z', 'th']].to_dict()
+        return {k: v for k, v in self.position_data.iloc[index].to_dict().items() if k in ['x', 'y', 'z', 'th']}
+
+    # def index_coordinate_str(self, index):
+    #     coord_dict = self.index_coordinate_dict(index)
+    #     return ' '.join([(f"{key}={value : 0.2f}") for key, value in coord_dict.items()])
 
     def index_coordinate_str(self, index):
         coord_dict = self.index_coordinate_dict(index)
@@ -80,15 +87,33 @@ class Sample:
     def sort_positions_by(self, keys):
         self.position_data = self.position_data.sort_values(keys)
 
+    # def index_exposed(self, index):
+    #     return bool(self.position_data.iloc[index][['exposed']].item())
+
     def index_exposed(self, index):
-        return bool(self.position_data.iloc[index][['exposed']].item())
+        return self.position_data.iloc[index]['exposed']
 
     def set_exposed(self, index, exposed=True):
         # self.position_data['exposed'][index] = exposed
         self.position_data['exposed'].iloc[index] = exposed
 
+    # def index_uid(self, index):
+    #     return str(self.position_data.iloc[index][['sample_point_uid']].item())
+
     def index_uid(self, index):
-        return str(self.position_data.iloc[index][['sample_point_uid']].item())
+        return self.position_data.iloc[index]['sample_point_uid']
+
+    def index_point_data(self, index):
+        return self.position_data.iloc[index]
+
+    def index_point_info_for_qt_item(self, index):
+        point_data = self.index_point_data(index)
+        point_idx = int(point_data.name)
+        coord_dict = {k: point_data[k] for k in ['x', 'y', 'z', 'th']}
+        point_str = ' '.join([(f"{key}={value : 0.2f}") for key, value in coord_dict.items()])
+        point_exposed = point_data['exposed']
+        point_str = f'{point_idx + 1:3d} - {point_str}'
+        return point_str, point_exposed
 
     @property
     def uids(self):
@@ -109,7 +134,9 @@ def emit_list_update_signal_decorator(method):
     def wrapper(obj, *args, emit_signal=True, **kwargs):
         result = method(obj, *args, **kwargs)
         if emit_signal:
+            # print_to_gui('before update signal', add_timestamp=True, tag='Debug')
             obj.emit_list_update_signal()
+            # print_to_gui('after update signal', add_timestamp=True, tag='Debug')
         return result
     return wrapper
 
@@ -189,8 +216,12 @@ class PersistentListInteractingWithGUI:
 
     def emit_list_update_signal(self):
         if self.list_update_signal is not None:
+            # print_to_gui('before emitting signal', add_timestamp=True, tag='Debug')
             self.list_update_signal.emit()
+            # print_to_gui('after emitting signal', add_timestamp=True, tag='Debug')
+        # print_to_gui('before saving to settings', add_timestamp=True, tag='Debug')
         self.save_to_settings()
+        # print_to_gui('after saving to settings', add_timestamp=True, tag='Debug')
 
 
 class SampleManager(PersistentListInteractingWithGUI):
