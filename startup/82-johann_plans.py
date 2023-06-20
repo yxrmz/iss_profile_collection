@@ -269,10 +269,10 @@ def _estimate_peak_properties(x, y, plotting=False, fignum=None, clear=False):
     y12_int = np.trapz(y_smooth[x_mask], x[x_mask])
     if plotting:
         plt.figure(fignum, clear=clear)
-        plt.plot(x, (y - y_smooth_bkg) / (y_smooth_max - y_smooth_bkg), 'k.')
-        plt.plot(x, y_smooth, '-')
-        plt.vlines([x1, x2], 0, 1, colors='g')
-        plt.hlines([0.5], x1, x2, colors='g')
+        plt.plot(x - x_cen, (y - y_smooth_bkg) / (y_smooth_max - y_smooth_bkg), 'k.')
+        plt.plot(x - x_cen, y_smooth, '-')
+        plt.vlines([x1 - x_cen, x2 - x_cen], 0, 1, colors='g')
+        plt.hlines([0.5], x1 - x_cen, x2 - x_cen, colors='g')
     return x_cen, x_fwhm, x1, x2, y12_int
 
 def _estimate_peak_fwhm(x, y, **kwargs):

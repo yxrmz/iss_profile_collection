@@ -2496,29 +2496,39 @@ plot_bragg_data('20da49aa-5019-4470-9fe8-5d9feeb4ae4c', 'johann_aux3_crystal_bra
 
 # main crystal
 uids = \
-    ('076e32aa-dc0b-479c-ade9-39e1320a824b',
-     '46ba1136-f7f0-4b02-9839-39822b71d629',
-     '3d0a01a8-1dfa-4ebd-8f7c-babac5462d6f',
-     'a0f89c1f-63ac-4c1d-b038-846c5e596bc6',
-     '1142d1eb-c5ee-4758-aa10-f3697f195f05',
-     '34145c97-9758-4aa4-9524-df335f128189',
-     '6c7843d7-dbe9-4bbf-9fce-55da54557066',
-     '78421744-9db2-4950-84ae-e676e209b0f8',
-     '5b47e90c-fd45-4372-bcb4-f232d21f19e1')
+('37e16188-03e6-4be1-a8ab-d8217cea1731',
+ 'b594b1c0-d82a-405d-b6f9-02f203dc337b',
+ '60f686cb-86fb-4072-b53b-52faf79bdf23',
+ 'e9500360-e130-4466-bb6a-d9b6005f5238',
+ '38a05189-9289-45f1-86cb-2de503215029',
+ '256b1c78-d43e-4b80-b87a-0521a80caef6',
+ 'dabbb337-b2ed-4d97-bbee-ed82eaf97acc',
+ 'f5c063b2-7c48-40af-85c5-b07929d993d3',
+ 'f54fd53e-9ca5-4bfc-96f5-1dd33cd32336',
+ '3eae971a-97ec-4832-bc46-435b369a5b9e',
+ '85f6a92c-324e-4be5-a9f9-804dd8bb1d67',
+ '93d30b7d-09e3-4b3b-996c-918fb9967d0a',
+ 'a7e635d1-96cb-49d4-8832-f16ac62c9b0b',
+ '549d7e0a-6f55-475f-8f10-4364bab7667b',
+ '357de376-e16b-4fea-854b-1d20d1aa4d66'
+ )
 
 tweak_motor = johann_spectrometer_x.name
 scan_motor = 'johann_main_crystal_motor_cr_main_roll'
 
+
+
 uids = \
-('a8d4127c-324a-47be-ba81-7c8fa9e10aee',
- 'c83ee07c-2775-4c55-88ba-b11b5e7a502c',
- '7af4035d-f82c-4b69-be11-a8f793f79979',
- '2fe6b3e8-b869-4fce-847c-455788e48d80',
- '294e3995-94f3-461a-bd56-72e1f5c19770',
- '9f67596f-5711-4215-8f41-93ff915dc556',
- '704d6542-c46d-4876-bbfb-73eb8daba75a',
- '1401d137-5d07-4393-b111-3e9b3f22cdb6',
- '9f8e362a-ae2c-47e6-8eb3-89d6b4c0a1f3')
+(#'5a229f07-93b7-4b6c-aac9-fea745d056d3',
+ 'c0afe15e-8a0d-4d52-b70d-613f1937415f',
+ 'b3d35ed9-0c6e-42e0-b665-261c9ea36803',
+ 'b0ea60cc-5fb9-4436-a1c7-59c2921a69df',
+ 'ec9e5f00-4af3-4a74-913b-8760e56ad72a',
+ 'af9b9cb6-f83b-460b-b6a2-b87b0fe1814a',
+ '7a2e6a34-82d5-44b9-866b-f5babe757d67',
+ 'ad5dbb20-28ef-46fd-bf51-496e96bab9dc',
+ '9c5af685-d1e8-4a48-86cd-62900be8c7aa')
+
 
 
 
@@ -2535,7 +2545,35 @@ uids = ('12399c12-6e48-43b5-a26a-491259cbda03',
  '55510315-d5f9-453c-8074-ab22e380122a',
  '085ac43e-5ffb-437b-88db-5d8fbe4bcf44',
  'b60da7c8-cb01-4d16-937e-99c9ea5d367c',
- '65794f6d-5d85-4b8a-b909-83c20911bf3f')
+ '65794f6d-5d85-4b8a-b909-83c20911bf3f',
+ )
+
+uids = \
+(#'8b97d03c-a1a3-494c-ab30-2a96e70ea331',
+ '89d74def-5247-4825-8cdd-339a20552ca8',
+ 'e86769d8-ba26-420c-a435-76f0342fd3c3',
+ #'488056dd-a9a3-4051-959d-2600e6fda66d',
+ '9ac8aab4-6520-403e-82ce-8a31f861e386',
+ 'c6fdffbc-ea86-418f-8d40-f11e3cc96152',
+ 'f558b42c-8131-4c9f-b856-820b35f4ee8a',
+ 'b2d2e157-468d-4105-973c-c639f0c31507',
+ 'd4a71e47-45b7-4ca5-a2d3-3983ef8420a4',
+ '59f702bf-d26c-4c58-869e-a63c0e91a9bf',
+ '2afd4b9d-94fe-43b3-924e-896c247d8666')
+
+uids = \
+('1369a31e-43dc-4f8b-a397-59c0c3dffd9f',
+ '3028682b-fdee-492e-8769-d8baec276357',
+ 'd8e2e525-f881-4322-a3ab-ad1afaf73095',
+ '7b9eba34-6c1f-40f6-a397-a92d5dfc24ed',
+ 'f37f1038-f715-46bf-96b5-a3b02314c874',
+ 'a1b376ec-191e-42be-b445-e64f0c9446cd',
+ '1d8c4b6a-2b28-47eb-b312-326dbc62befc',
+ 'bd7415ef-9f5c-455d-8934-6263536079b2',
+ 'b2e74fb7-2b5c-48bc-9a01-e624c42a5c74',
+ 'd606ed09-935c-4ad2-abb6-56272cc2ec0f',
+ 'ab7c2f99-2ed9-4fbe-917a-c6bb6250ed74')
+
 
 tweak_motor = johann_aux3_crystal.motor_cr_aux3_x.name
 scan_motor = 'johann_aux3_crystal_motor_cr_aux3_roll'

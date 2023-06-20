@@ -119,9 +119,16 @@ bec.disable_table()
 RE.subscribe(bec)
 peaks = bec.peaks  # just as alias for less typing
 
+
+# class ISSPersistnetDict(PersistentDict):
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self._finalizer = None
+
 runengine_metadata_dir = Path(f'{ROOT_PATH_SHARED}/metadata/') / Path("runengine-metadata")
 RE.md = PersistentDict(runengine_metadata_dir) # PersistentDict will create the directory if it does not exist
-
+RE.md._finalizer.atexit = False # added so that when we have stray bsui sessions on other stations, quitting them will not change the md unpredictably.
 
 # Patch to fix Tom's terrible deeds
 # import matplotlib.backends.backend_qt
