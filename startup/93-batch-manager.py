@@ -128,6 +128,7 @@ class Sample:
         result.position_data = pd.DataFrame.from_dict(sample_dict['position_data'])
         return result
 
+FOIL_UID = 'foil'
 
 
 def emit_list_update_signal_decorator(method):
@@ -256,6 +257,14 @@ class SampleManager(PersistentListInteractingWithGUI):
         sample_list = []
         for sample_dict in sample_dict_list:
             sample_list.append(Sample.from_dict(sample_dict))
+
+        if (len(sample_list) == 0) or (sample_list[0].name.lower() != 'foil'):
+            foil_sample = Sample('foil')
+            foil_sample.uid = FOIL_UID
+            sample_list = [foil_sample] + sample_list
+        else:
+            sample_list[0].uid = FOIL_UID
+
         return sample_list
 
     def save_to_file(self, file):
