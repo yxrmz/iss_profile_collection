@@ -434,7 +434,8 @@ class ScanManager():
             plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
                            'dwell_time': scan_parameters['dwell_time'],
                            'mono_energy': scan_parameters['energy'],
-                           'spectrometer_energy': spectrometer_energy}
+                           'spectrometer_energy': spectrometer_energy,
+                           'spectrometer_config': aux_parameters['spectrometer_config']}
 
         elif scan_key == 'johann_xes':
             plan_name = 'step_scan_johann_xes_plan'
@@ -448,7 +449,8 @@ class ScanManager():
                            'emission_time_list': spectrometer_time_grid,
                            'element': element,
                            'line': line,
-                           'e0': e0}
+                           'e0': e0,
+                           'spectrometer_config': aux_parameters['spectrometer_config']}
 
         elif scan_key == 'johann_herfd':
             if scan_type == 'step scan':
@@ -460,7 +462,8 @@ class ScanManager():
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
-                           'spectrometer_energy': spectrometer_energy}
+                           'spectrometer_energy': spectrometer_energy,
+                           'spectrometer_config': aux_parameters['spectrometer_config']}
             # if rixs_file_name is not None:
             #     plan_kwargs['rixs_file_name'] = rixs_file_name
 
@@ -482,7 +485,8 @@ class ScanManager():
                            'e0_line': e0_line,
                            'emission_energy_list': emission_energy_list,
                            'sample_coordinates' : sample_coordinates,
-                           'rixs_kwargs' : rixs_kwargs}
+                           'rixs_kwargs' : rixs_kwargs,
+                           'spectrometer_config': aux_parameters['spectrometer_config']}
 
             #
             # _local_rixs_file_name = create_interp_file_name(name, '.rixs')
