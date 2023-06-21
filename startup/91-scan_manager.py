@@ -431,11 +431,12 @@ class ScanManager():
         elif scan_key == 'constant_e_johann':
             plan_name = 'collect_n_exposures_johann_plan'
             spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+            spectrometer_config_uid = aux_parameters['spectrometer']['spectrometer_config_uid']
             plan_kwargs = {'n_exposures': scan_parameters['n_exposures'],
                            'dwell_time': scan_parameters['dwell_time'],
                            'mono_energy': scan_parameters['energy'],
                            'spectrometer_energy': spectrometer_energy,
-                           'spectrometer_config': aux_parameters['spectrometer_config']}
+                           'spectrometer_config_uid': spectrometer_config_uid}
 
         elif scan_key == 'johann_xes':
             plan_name = 'step_scan_johann_xes_plan'
@@ -444,13 +445,14 @@ class ScanManager():
             element = aux_parameters['spectrometer']['scan_parameters']['element']
             line = aux_parameters['spectrometer']['scan_parameters']['line']
             e0 = aux_parameters['spectrometer']['scan_parameters']['e0']
+            spectrometer_config_uid = aux_parameters['spectrometer']['spectrometer_config_uid']
             plan_kwargs = {'mono_energy': scan_parameters['energy'],
                            'emission_energy_list': spectrometer_energy_grid,
                            'emission_time_list': spectrometer_time_grid,
                            'element': element,
                            'line': line,
                            'e0': e0,
-                           'spectrometer_config': aux_parameters['spectrometer_config']}
+                           'spectrometer_config_uid': spectrometer_config_uid}
 
         elif scan_key == 'johann_herfd':
             if scan_type == 'step scan':
@@ -458,12 +460,13 @@ class ScanManager():
             elif scan_type == 'fly scan':
                 plan_name = 'fly_scan_johann_herfd_plan'
             spectrometer_energy = aux_parameters['spectrometer']['scan_parameters']['energy']
+            spectrometer_config_uid = aux_parameters['spectrometer']['spectrometer_config_uid']
             plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
                            'e0': scan_parameters['e0'],
                            'spectrometer_energy': spectrometer_energy,
-                           'spectrometer_config': aux_parameters['spectrometer_config']}
+                           'spectrometer_config_uid': spectrometer_config_uid}
             # if rixs_file_name is not None:
             #     plan_kwargs['rixs_file_name'] = rixs_file_name
 
@@ -476,6 +479,7 @@ class ScanManager():
             line = aux_parameters['spectrometer']['scan_parameters']['line']
             e0_line = aux_parameters['spectrometer']['scan_parameters']['e0']
             emission_energy_list = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
+            spectrometer_config_uid = aux_parameters['spectrometer']['spectrometer_config_uid']
             plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
                            'element': scan_parameters['element'],
                            'edge': scan_parameters['edge'],
@@ -486,7 +490,7 @@ class ScanManager():
                            'emission_energy_list': emission_energy_list,
                            'sample_coordinates' : sample_coordinates,
                            'rixs_kwargs' : rixs_kwargs,
-                           'spectrometer_config': aux_parameters['spectrometer_config']}
+                           'spectrometer_config_uid': spectrometer_config_uid}
 
             #
             # _local_rixs_file_name = create_interp_file_name(name, '.rixs')
