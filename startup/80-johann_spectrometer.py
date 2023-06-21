@@ -380,7 +380,7 @@ class RowlandCircle:
 
     @R.setter
     def R(self, value):
-        self.config['parking']['motor_cr_assy_x'] += (self.config['R'] - value)
+        # self.config['parking']['motor_cr_assy_x'] += (self.config['R'] - value)
         self.config['R'] = value
         self.compute_trajectories()
         self.save_current_spectrometer_config_to_settings()
