@@ -194,6 +194,7 @@ class RowlandCircle:
 
         self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config_upd.json'
         self.energy_converter = None
+        self.gui_update_signal = None
 
         self.x_src = 0
         self.y_src = 0
@@ -208,6 +209,10 @@ class RowlandCircle:
         self.det_focus_status = 'good'
         self.init_from_settings()
 
+
+
+    def append_gui_update_signal(self, signal):
+        self.gui_update_signal = signal
 
     def load_config(self, file):
         with open(file, 'r') as f:
@@ -265,6 +270,9 @@ class RowlandCircle:
             config_ec = config['energy_calibration']
             if (len(config_ec['x_nom']) > 0) and (len(config_ec['x_act']) > 0) and (config_ec['n_poly'] > 0):
                 self.energy_converter = Nominal2ActualConverter(config_ec['x_nom'], config_ec['x_act'], config_ec['n_poly'])
+
+        if self.gui_update_signal is not None:
+            self.gui_update_signal.emit()
 
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.config['energy_calibration'] = {'x_nom' : x_nom.tolist(), 'x_act' : x_act.tolist(), 'n_poly' : n_poly}
@@ -374,6 +382,7 @@ class RowlandCircle:
     def R(self, value):
         self.config['parking']['motor_cr_assy_x'] += (self.config['R'] - value)
         self.config['R'] = value
+        self.compute_trajectories()
         self.save_current_spectrometer_config_to_settings()
 
     @property
@@ -972,9 +981,14 @@ class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
     def initialized(self, value):
         self.rowland_circle.initialized = value
 
-    def __init__(self, *args, **kwargs):
-        self.enabled_crystals = self.rowland_circle.enabled_crystals
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     self.enabled_crystals = self.rowland_circle.enabled_crystals
+    #     super().__init__(*args, **kwargs)
+
+    @property
+    def enabled_crystals(self):
+        return self.rowland_circle.enabled_crystals
+
 
     def enable_crystal(self, crystal_key, enable):
         self.rowland_circle.enable_crystal(crystal_key, enable)
@@ -1182,6 +1196,10 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def _set_energy_limits(self, e_lo, e_hi):
         self.energy._limits = (e_lo, e_hi)
 
+    def _match_energy_limits_to_rowland_circle(self):
+        e_lo, e_hi = self.rowland_circle.energy_limits
+        self._set_energy_limits(e_lo, e_hi)
+
     def set_energy_limits(self, e_lo, e_hi):
         self.rowland_circle.energy_limits = [e_lo, e_hi]
         self._set_energy_limits(e_lo, e_hi)
@@ -1189,6 +1207,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def reset_energy_limits(self):
         self.rowland_circle.energy_limits = [0, 0]
         self.energy._limits = (0, 0)
+
+    def read_energy_limits(self):
+        return self.energy._limits
 
     def set_crystal(self, value):
         self.rowland_circle.crystal = value
@@ -1206,6 +1227,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def allowed_roll_offsets(self):
         return self.rowland_circle.allowed_roll_offsets
 
+    def get_current_roll_offset(self):
+        return self.rowland_circle.roll_offset
+
     def suggest_roll_offset(self, target_bragg):
         return self.rowland_circle.suggest_roll_offset(target_bragg)
 
@@ -1220,6 +1244,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def read_basic_crystal_config(self):
         return self.rowland_circle.crystal, self.rowland_circle.R, self.rowland_circle.hkl, self.rowland_circle.roll_offset
+
+    def append_gui_update_signal(self, signal):
+        self.rowland_circle.append_gui_update_signal(signal)
 
     # def move(self, position, step_size=0.5, **kwargs):
     #     old_position = self.energy.position
