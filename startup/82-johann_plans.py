@@ -22,13 +22,27 @@ def plot_radiation_damage_scan_data(db, uid):
 
 
 
+# def move_johann_spectrometer_energy(energy=-1):
+#     current_energy = johann_emission.energy.position
+#     energy = float(energy)
+#     energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)/5) + 2)[1:]
+#     for _energy in energy_arr:
+#         print_to_gui(f'Moving spectrometer to {_energy}')
+#         yield from bps.mv(johann_emission, _energy, wait=True)
+#         # yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=float(_energy))
+
 def move_johann_spectrometer_energy(energy=-1):
     current_energy = johann_emission.energy.position
     energy = float(energy)
-    energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)/5) + 2)[1:]
-    for _energy in energy_arr:
+
+    current_bragg = rowland_circle.e2bragg(current_energy)
+    bragg = rowland_circle.e2bragg(energy)
+
+    bragg_arr = np.linspace(current_bragg, bragg, int(np.abs(bragg - current_bragg)/0.25) + 2)[1:]
+    energy_arr = rowland_circle.bragg2e(bragg_arr)
+    for _bragg, _energy in zip(bragg_arr, energy_arr):
         print_to_gui(f'Moving spectrometer to {_energy}')
-        yield from bps.mv(johann_emission, _energy, wait=True)
+        yield from bps.mv(johann_spectrometer, _bragg, wait=True)
         # yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=float(_energy))
 
 
