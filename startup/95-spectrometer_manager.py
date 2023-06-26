@@ -23,7 +23,7 @@ class SpectrometerManager(PersistentListInteractingWithGUI):
     def set_config_by_index(self, config_index):
         config_dict = self.configs[config_index]
         print_to_gui(f'Setting the spectrometer config to {self.generate_config_str(config_dict)}', add_timestamp=True, tag='Spectrometer')
-        config = config_dict['config']
+        config = copy.deepcopy(config_dict['config'])
         rowland_circle.set_spectrometer_config(config)
         rowland_circle.save_current_spectrometer_config_to_settings()
         johann_emission._match_energy_limits_to_rowland_circle()
