@@ -2562,17 +2562,15 @@ uids = \
  '2afd4b9d-94fe-43b3-924e-896c247d8666')
 
 uids = \
-('1369a31e-43dc-4f8b-a397-59c0c3dffd9f',
- '3028682b-fdee-492e-8769-d8baec276357',
- 'd8e2e525-f881-4322-a3ab-ad1afaf73095',
- '7b9eba34-6c1f-40f6-a397-a92d5dfc24ed',
- 'f37f1038-f715-46bf-96b5-a3b02314c874',
- 'a1b376ec-191e-42be-b445-e64f0c9446cd',
- '1d8c4b6a-2b28-47eb-b312-326dbc62befc',
- 'bd7415ef-9f5c-455d-8934-6263536079b2',
- 'b2e74fb7-2b5c-48bc-9a01-e624c42a5c74',
- 'd606ed09-935c-4ad2-abb6-56272cc2ec0f',
- 'ab7c2f99-2ed9-4fbe-917a-c6bb6250ed74')
+('53760d42-63d2-47ff-84c5-de111cbbb136',
+ 'e1d69459-8e4c-45b5-83b8-8306a2fa7107',
+ 'e6f6deef-848b-47ff-8414-a0755916e8f5',
+ 'fc2040af-af1a-465a-97ba-1567cc41b785',
+ '9b7ac035-d97c-460d-8d7b-ff541aa08738',
+ '5e3919ef-13d2-4a97-8ebd-2bb870bd93fd',
+ '5066fde0-df7e-433e-995f-7bb256870675',
+ '39a6639c-cc2d-4df8-bb27-f16b6fafe431',
+ '928b333e-855d-48f2-95b1-c954cfc25919')
 
 
 tweak_motor = johann_aux3_crystal.motor_cr_aux3_x.name
@@ -2583,16 +2581,22 @@ fwhm = []
 motor_pos = []
 plt.figure(1, clear=True)
 for uid in uids:
-    # _fwhm = estimate_peak_fwhm_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
-    _fwhm = estimate_peak_intensity_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
+    _fwhm = estimate_peak_fwhm_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
+    # _fwhm = estimate_peak_intensity_from_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total', plotting=True, fignum=1, clear=False)
     fwhm.append(_fwhm)
     hdr = db[uid]
     motor_pos.append(hdr.start[tweak_motor])
+    # plot_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total')
 
+
+p = np.polyfit(motor_pos, fwhm, 3)
+fwhm_fit = np.polyval(p, motor_pos)
 plt.figure(2, clear=True)
 plt.plot(motor_pos, fwhm, 'k.-')
+plt.plot(motor_pos, fwhm_fit, 'r-')
 
 from xas.db_io import load_apb_dataset_from_db, translate_apb_dataset, load_apb_trig_dataset_from_db, load_pil100k_dataset_from_db
+
 
 
 uid = 358337
@@ -2607,6 +2611,206 @@ raw_dict = {**raw_dict, **pil100k_dict}
 
 hdr = db[uid]
 
+run_quick_alignment_scans_for_crystal(motor_description='Johann Main Crystal Roll', scan_range=800, velocity=25, tweak_motor=johann_spectrometer_x, tweak_motor_rel_start=-10, tweak_motor_rel_stop=10, tweak_motor_num_steps=9)
+run_quick_alignment_scans_for_crystal(motor_description='Johann Aux2 Crystal Roll', scan_range=800, velocity=25, tweak_motor=johann_aux2_crystal.motor_cr_aux2_x, tweak_motor_rel_start=-10000, tweak_motor_rel_stop=10000, tweak_motor_num_steps=9)
+run_quick_alignment_scans_for_crystal(motor_description='Johann Aux3 Crystal Roll', scan_range=800, velocity=25, tweak_motor=johann_aux3_crystal.motor_cr_aux3_x, tweak_motor_rel_start=-10000, tweak_motor_rel_stop=10000, tweak_motor_num_steps=11)
+
+
+
+
+_crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
+                                    'yaw':  'Johann Main Crystal Yaw',
+                                    'x':    'Johann Crystal Assy X'},
+                           'aux2': {'roll': 'Johann Aux2 Crystal Roll',
+                                    'yaw':  'Johann Aux2 Crystal Yaw',
+                                    'x':    'Johann Aux2 Crystal X'},
+                           'aux3': {'roll': 'Johann Aux3 Crystal Roll',
+                                    'yaw':  'Johann Aux3 Crystal Yaw',
+                                    'x':    'Johann Aux3 Crystal X'}}
+
+
+def quick_crystal_piezo_scan(crystal=None, axis=None, scan_range=None, velocity=None, pil100k_exosure_time=0.1, plot_func=None, liveplot_kwargs=None, md=None):
+    motor_description = _crystal_alignment_dict[crystal][axis]
+    motor_device = get_motor_device(motor_description, based_on='description')
+    detectors = [apb.ch1, pil100k.stats1.total, pil100k.stats2.total, pil100k.stats3.total, pil100k.stats4.total, ]
+
+    print_to_gui(f'Quick scanning motor {motor_description}', tag='Spectrometer')
+
+    num_images = (scan_range / velocity  + 1) / pil100k_exosure_time
+    print(num_images)
+    pil100k_init_exposure_time = pil100k.cam.acquire_period.get()
+    pil100k_init_num_images = pil100k.cam.num_images.get()
+    pil100k_init_image_mode = pil100k.cam.image_mode.get()
+
+    pil100k.set_exposure_time(pil100k_exosure_time)
+    pil100k.set_num_images(num_images)
+
+    pil100k.cam.image_mode.set(1).wait()
+
+    start_acquiring_plan = bps.mv(pil100k.cam.acquire, 1)
+    yield from ramp_motor_scan(motor_device, detectors, scan_range, velocity=velocity, return_motor_to_initial_position=True, start_acquiring_plan=start_acquiring_plan, md=md)
+
+    pil100k.set_exposure_time(pil100k_init_exposure_time)
+    pil100k.set_num_images(pil100k_init_num_images)
+    pil100k.cam.image_mode.set(pil100k_init_image_mode).wait()
+
+
+def quick_crystal_piezo_tune(**kwargs):
+    yield from quick_crystal_piezo_scan(**kwargs)
+    com = obtain_ramp_scan_com_plan(db, -1)
+    motor_description = _crystal_alignment_dict[kwargs['crystal']][kwargs['axis']]
+    yield from move_motor_plan(motor_attr=motor_description, based_on='description', position=com)
+
+def get_tweak_motor_positions_for_crystal(crystal, motor_range_mm, motor_num_steps):
+    motor_description = _crystal_alignment_dict[crystal]['x']
+    motor_obj = get_motor_device(motor_description, based_on='description')
+    motor_pos_init = motor_obj.position
+
+    motor_pos_start = motor_pos_init - motor_range_mm / 2
+    motor_pos_stop = motor_pos_init + motor_range_mm / 2
+
+    motor_pos_steps = np.linspace(motor_pos_start, motor_pos_stop, motor_num_steps)
+
+    motor_low_lim = motor_obj.low_limit # check this
+    motor_high_lim = motor_obj.high_limit  # check this
+    motor_pos_steps = motor_pos_steps[(motor_pos_steps >= motor_low_lim) & (motor_pos_steps <= motor_high_lim)]
+    return motor_pos_init, motor_pos_steps, motor_description
+
+
+def estimate_peak_fwhm_from_quick_roll_scan(db, uid, x_col='johann_main_crystal_motor_cr_main_roll',
+                                      y_col='pil100k_stats1_total', **kwargs):
+    df = process_monitor_scan(db, uid, det_for_time_base='pil100k')
+    df = df[3: df.shape[0] - 3]
+    return _estimate_peak_fwhm_from_roll_scan(df, x_col, y_col, **kwargs)[0]
+
+def process_quick_crystal_piezo_roll_scan(crystal=None, pil100k_roi_num=None, alignment_data=None):
+    motor_description = _crystal_alignment_dict[crystal]['roll']
+    motor_device = get_motor_device(motor_description, based_on='description')
+    x_col = motor_device.name
+    y_col = f'pil100k_stats{pil100k_roi_num}_total'
+    fwhm = estimate_peak_fwhm_from_quick_roll_scan(db, -1, x_col=x_col, y_col=y_col)
+    start = db[-1].start
+    uid = start.uid
+    _dict = {'uid': uid,
+             'fwhm': fwhm,
+             'tweak_motor_description':     start['tweak_motor_description'],
+             'tweak_motor_position':        start['tweak_motor_position']}
+    alignment_data.append(_dict)
+
+
+def run_alignment_scans_for_crystal_bundle(crystal=None, alignment_by=None, pil100k_roi_num=None,
+                                           alignment_data=None,
+                                           scan_range_roll=None, scan_range_yaw=None, velocity=None,
+                                           tweak_motor_range=None, tweak_motor_num_steps=None,
+                                           plot_func=None, liveplot_kwargs=None):
+    if alignment_data is None:
+        alignment_data = []
+    tweak_motor_init_pos, tweak_motor_pos, tweak_motor_description = get_tweak_motor_positions_for_crystal(crystal, tweak_motor_range, tweak_motor_num_steps)
+
+    plans = []
+
+    for i, _pos in enumerate(tweak_motor_pos):
+        plans.append({'plan_name': 'print_message_plan',
+                      'plan_kwargs': {'msg': f'Aligning motor {tweak_motor_description} (step {i + 1}, position={_pos})',
+                                      'add_timestamp': True,
+                                      'tag': 'Spectrometer'}})
+        plans.append({'plan_name': 'move_motor_plan',
+                      'plan_kwargs': {'motor_attr': tweak_motor_description,
+                                      'based_on': 'description',
+                                      'position': _pos}})
+        if crystal != 'main':
+            plans.append({'plan_name': 'quick_crystal_piezo_tune',
+                          'plan_kwargs': {'crystal': crystal,
+                                          'axis': 'yaw',
+                                          'scan_range': scan_range_yaw,
+                                          'velocity': velocity,
+                                          'plot_func': plot_func,
+                                          'liveplot_kwargs': liveplot_kwargs}})
+
+        md = {'tweak_motor_description': tweak_motor_description,
+              'tweak_motor_position': _pos}
+
+        if alignment_by == 'emission':
+            plans.append({'plan_name': 'quick_crystal_piezo_scan',
+                          'plan_kwargs': {'crystal': crystal,
+                                          'axis': 'roll',
+                                          'scan_range': scan_range_roll,
+                                          'velocity': velocity,
+                                          'plot_func': plot_func,
+                                          'liveplot_kwargs': liveplot_kwargs,
+                                          'md': md}})
+            plans.append({'plan_name': 'process_quick_crystal_piezo_roll_scan',
+                          'plan_kwargs': {'crystal': crystal,
+                                          'pil100k_roi_num': pil100k_roi_num,
+                                          'alignment_data': alignment_data}})
+
+
+        elif alignment_by == 'elastic':
+            pass
+
+    plans.append({'plan_name': 'move_motor_plan',
+                  'plan_kwargs': {'motor_attr': tweak_motor_description,
+                                  'based_on': 'description',
+                                  'position': tweak_motor_init_pos}})
+
+    return plans
+
+
+
+def align_johann_spectrometer_plan_bundle(alignment_by=None, pil100k_roi_num=None,
+                                          alignment_data=None,
+                                          scan_range_roll=None, scan_range_yaw=None, velocity=None,
+                                          yaw_shift=None,
+                                          tweak_motor_range=None, tweak_motor_num_steps=None,
+                                          plot_func=None, liveplot_kwargs=None):
+    plans = []
+
+    if alignment_data is None:
+        alignment_data = johann_emission.alignment_data
+
+    enabled_crystals = [_c for _c, _e in johann_emission.enabled_crystals.items() if _e]
+    for crystal in enabled_crystals:
+        alignment_data[crystal] = []
+
+        crystals_not_being_aligned = [c for c in enabled_crystals if c != crystal]
+
+        plans.append({'plan_name': 'print_message_plan',
+                      'plan_kwargs': {
+                          'msg': f'Aligning {crystal} crystal. Moving other crystals from the field of view.',
+                          'add_timestamp': True,
+                          'tag': 'Spectrometer'}})
+        for cr in crystals_not_being_aligned:
+            yaw_direction = 1 if cr in ['aux3', 'aux5'] else -1
+            plans.append({'plan_name': 'move_relative_motor_plan',
+                          'plan_kwargs': {'motor_attr': _crystal_alignment_dict[cr]['yaw'],
+                                          'based_on': 'description',
+                                          'position': yaw_shift * yaw_direction}})
+        multiplier = 1 if crystal == 'main' else 1000
+        plans.append({'plan_name': 'run_alignment_scans_for_crystal_bundle',
+                      'plan_kwargs': {'crystal': crystal,
+                                      'alignment_by': alignment_by,
+                                      'pil100k_roi_num': pil100k_roi_num,
+                                      'alignment_data': alignment_data[crystal],
+                                      'scan_range_roll': scan_range_roll,
+                                      'scan_range_yaw': scan_range_yaw,
+                                      'velocity': velocity,
+                                      'tweak_motor_range': tweak_motor_range * multiplier,
+                                      'tweak_motor_num_steps': tweak_motor_num_steps,
+                                      'plot_func': plot_func,
+                                      'liveplot_kwargs': liveplot_kwargs}})
+
+        for cr in crystals_not_being_aligned:
+            yaw_direction = -1 if cr in ['aux3', 'aux5'] else 1
+            plans.append({'plan_name': 'move_relative_motor_plan',
+                          'plan_kwargs': {'motor_attr': _crystal_alignment_dict[cr]['yaw'],
+                                          'based_on': 'description',
+                                          'position': yaw_shift * yaw_direction}})
+
+        plans.append({'plan_name': 'print_message_plan',
+                      'plan_kwargs': {
+                          'msg': f'Done with aligning {crystal} crystal. Moving other crystals back into the field of view.',
+                          'add_timestamp': True,
+                          'tag': 'Spectrometer'}})
 
 
 
@@ -2628,39 +2832,6 @@ hdr = db[uid]
 
 
 
-
-
-
-
-
-
-{'cycle#33': '2',
- 'slack_channel#42': 'C05AF80JYQ5',
- 'proposal#36': '312685',
- 'PI': 'Kyle Lancaster',
- 'beamline_id#44': 'ISS (8-ID)',
- 'PI#31': 'Kyle Lancaster',
- 'slack_channel#43': 'C05AF80JYQ5',
- 'Facility#32': 'NSLS-II',
- 'experimenters#34': ['Samantha MacMillan', 'Kyle Lancaster'],
- 'saf#41': '311453',
- 'Facility#23': 'NSLS-II',
- 'saf#42': '311453',
- 'proposal_id#25': None,
- 'cycle#45': '2',
- 'affiliation#37': 'Cornell University',
- 'year#35': '2023',
- 'affiliation': 'Cornell University',
- 'email#40': 'kml236@cornell.edu',
- 'experimenters#21': ['Samantha MacMillan', 'Kyle Lancaster'],
- 'group#38': 'iss',
- 'proposal_id#39': None,
- 'scan_id#42': 358216,
- 'proposal': '312685',
- 'group': 'iss',
- 'Facility': 'NSLS-II',
- 'beamline_id': 'ISS (8-ID)',
- 'proposal_id': None}
 
 
 

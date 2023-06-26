@@ -438,6 +438,12 @@ class RowlandCircle:
         self.config['energy_limits'] = value
         self.save_current_spectrometer_config_to_settings()
 
+    @property
+    def alignment_data(self):
+        if 'alignment_data' not in self.config.keys():
+            self.config['alignment_data'] = {}
+        return self.config['alignment_data']
+
     def _compute_nominal_trajectory(self, npt=1000):
         braggs = np.linspace(self.bragg_min, self.bragg_max, npt-1)
         braggs = np.sort(np.hstack((braggs, 90)))
@@ -1247,6 +1253,10 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def append_gui_update_signal(self, signal):
         self.rowland_circle.append_gui_update_signal(signal)
+
+    @property
+    def alignment_data(self):
+        return self.rowland_circle.alignment_data
 
     # def move(self, position, step_size=0.5, **kwargs):
     #     old_position = self.energy.position

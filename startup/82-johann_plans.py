@@ -223,9 +223,6 @@ def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.
 
 def quick_crystal_motor_scan(motor_description=None, scan_range=None, velocity=None, pil100k_exosure_time=0.1, plot_func=None, liveplot_kwargs=None, md=None):
     motor_device = get_motor_device(motor_description, based_on='description')
-    # detector_device = get_detector_device_list([detector], flying=False)[0]
-    # detector_channel = get_detector_channel(detector, channel)
-
     detectors = [apb.ch1, pil100k.stats1.total, pil100k.stats2.total, pil100k.stats3.total, pil100k.stats4.total, ]
 
     print_to_gui(f'Quick scanning motor {motor_description}', tag='Spectrometer')
@@ -236,20 +233,11 @@ def quick_crystal_motor_scan(motor_description=None, scan_range=None, velocity=N
     pil100k_init_num_images = pil100k.cam.num_images.get()
     pil100k_init_image_mode = pil100k.cam.image_mode.get()
 
-
     pil100k.set_exposure_time(pil100k_exosure_time)
     pil100k.set_num_images(num_images)
-    # for i in range(10):
-    #     if pil100k.cam.num_images.get() != num_images:
-    #         pil100k.set_num_images(num_images)
-    #         yield from bps.sleep(0.1)
-    #     else:
-    #         break
 
     pil100k.cam.image_mode.set(1).wait()
 
-    # yield from bps.null()
-    # yield from bps.sleep(2)
     start_acquiring_plan = bps.mv(pil100k.cam.acquire, 1)
     yield from ramp_motor_scan(motor_device, detectors, scan_range, velocity=velocity, return_motor_to_initial_position=True, start_acquiring_plan=start_acquiring_plan, md=md)
 
@@ -318,6 +306,12 @@ def estimate_peak_intensity_from_roll_scan(db, uid, x_col='johann_main_crystal_m
     df = df[3 : df.shape[0]-3]
     return _estimate_peak_fwhm_from_roll_scan(df, x_col, y_col, **kwargs)[1]
 
+def plot_roll_scan(db, uid, x_col='johann_main_crystal_motor_cr_main_roll', y_col='pil100k_stats1_total', **kwargs):
+    df = process_monitor_scan(db, uid, det_for_time_base='pil100k')
+    df = df[3 : df.shape[0]-3]
+    plt.plot(df[x_col], df[y_col])
+
+
 
 # RE(general_scan(detectors=['Pilatus 100k'], motor='Johann Main Crystal Roll',
 #              rel_start=-400, rel_stop=400, num_steps=81, exposure_time=0.1, liveplot_kwargs={}))
@@ -343,15 +337,9 @@ def run_alignment_scans_for_crystal(motor=None, rel_start=None, rel_stop=None, n
 def run_quick_alignment_scan_for_crystal_at_tweak_pos(motor_description=None, scan_range=None, velocity=None,
                                     tweak_motor=None, tweak_motor_pos=None):
     yield from bps.mv(tweak_motor, tweak_motor_pos)
-
     md = {tweak_motor.name: tweak_motor.position}
-    print(md)
-
-    # print_to_gui(f'motor {motor} position before scanning {johann_main_crystal.motor_cr_main_roll.position}', add_timestamp=True,
-    #              tag='Spectrometer')
-    uid = yield from quick_crystal_motor_scan(motor_description=motor_description, scan_range=scan_range,
-                                              velocity=velocity, md=md)
-    return uid
+    return (yield from quick_crystal_motor_scan(motor_description=motor_description, scan_range=scan_range,
+                                              velocity=velocity, md=md))
 
 
 def run_quick_alignment_scans_for_crystal(motor_description=None, scan_range=None, velocity=None,
@@ -365,10 +353,9 @@ def run_quick_alignment_scans_for_crystal(motor_description=None, scan_range=Non
         uid = yield from run_quick_alignment_scan_for_crystal_at_tweak_pos(motor_description=motor_description, scan_range=scan_range, velocity=velocity,
                                                                            tweak_motor=tweak_motor, tweak_motor_pos=_pos)
         uids.append(uid)
-
     yield from bps.mv(tweak_motor, tweak_motor_init_pos)
-
     return uids
+
 
 
 def bragg_scan_for_individual_crystals(rel_start=None, rel_stop=None, num_steps=None, exposure_time=None, yaw_offset=None):

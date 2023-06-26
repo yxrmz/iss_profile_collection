@@ -32,6 +32,10 @@ def move_motor_plan(motor_attr='', based_on='description', position=None):
     motor_device = get_motor_device(motor_attr, based_on=based_on)
     yield from bps.mv(motor_device, position, wait=True)
 
+def move_relative_motor_plan(motor_attr='', based_on='description', rel_position=None):
+    motor_device = get_motor_device(motor_attr, based_on=based_on)
+    yield from bps.mv(motor_device, motor_device.position + rel_position, wait=True)
+
 # def move_mono_energy(energy : float = -1):
 #     yield from move_motor_plan(motor_attr=hhm.energy.name, based_on='object_name', position=energy)
 
