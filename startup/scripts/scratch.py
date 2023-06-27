@@ -2589,11 +2589,35 @@ for uid in uids:
     # plot_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total')
 
 
-p = np.polyfit(motor_pos, fwhm, 3)
-fwhm_fit = np.polyval(p, motor_pos)
+from numpy.polynomial import Polynomial as P
+p = P.fit(motor_pos, fwhm, 3)
+
+fwhm_fit = p(np.array(motor_pos))
 plt.figure(2, clear=True)
 plt.plot(motor_pos, fwhm, 'k.-')
 plt.plot(motor_pos, fwhm_fit, 'r-')
+
+def _get_minimum_position(x, y, deg=3):
+    x = np.array(x)
+    y = np.array(y)
+    p = P.fit(x, y, deg)
+    x_extrema = p.deriv().roots()
+    x_minima = x_extrema[p.deriv().deriv()(x_extrema) > 0]
+    x_minima = x_minima[(x_minima>=x.min()) & (x_minima<=x.max())]
+    if len(x_minima) == 0:
+        x_minimum = x[np.argmin(y)]
+    else:
+        y_minima = p(x_minima)
+        x_minimum = x_minima[np.argmin(y_minima)]
+
+    plt.figure(2, clear=True)
+    plt.plot(x, y, 'k.-')
+    plt.plot(x, p(x), 'r-')
+    plt.vlines([x_minimum, x_minimum], y.min(), y.max(), colors='m')
+
+    return x_minimum
+
+_get_minimum_position(motor_pos, fwhm)
 
 from xas.db_io import load_apb_dataset_from_db, translate_apb_dataset, load_apb_trig_dataset_from_db, load_pil100k_dataset_from_db
 
@@ -2769,8 +2793,15 @@ def align_johann_spectrometer_plan_bundle(alignment_by=None, pil100k_roi_num=Non
         alignment_data = johann_emission.alignment_data
 
     enabled_crystals = [_c for _c, _e in johann_emission.enabled_crystals.items() if _e]
+
+    # enforce that the main crystal is aligned first
+    if 'main' in enabled_crystals:
+        enabled_crystals.pop(enabled_crystals.index('main'))
+        enabled_crystals = ['main'] + enabled_crystals
+
     for crystal in enabled_crystals:
-        alignment_data[crystal] = []
+        if crystal not in alignment_data.keys():
+            alignment_data[crystal] = []
 
         crystals_not_being_aligned = [c for c in enabled_crystals if c != crystal]
 
@@ -2811,6 +2842,10 @@ def align_johann_spectrometer_plan_bundle(alignment_by=None, pil100k_roi_num=Non
                           'msg': f'Done with aligning {crystal} crystal. Moving other crystals back into the field of view.',
                           'add_timestamp': True,
                           'tag': 'Spectrometer'}})
+
+
+
+    return plans
 
 
 
