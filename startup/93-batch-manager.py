@@ -236,6 +236,16 @@ class SampleManager(PersistentListInteractingWithGUI):
     #Class specific decorators
     @property
     def samples(self):
+        non_archived_items = [item for item in self.items if not item.archived]
+        return non_archived_items
+
+    @property
+    def archived_samples(self):
+        archived_items = [item for item in self.items if item.archived]
+        return archived_items
+
+    @property
+    def all_samples(self):
         return self.items
 
     @samples.setter
@@ -279,7 +289,7 @@ class SampleManager(PersistentListInteractingWithGUI):
     @property
     def samples_as_dict_list(self):
         sample_dict_list = []
-        for sample in self.samples:
+        for sample in self.all_samples:
             sample_dict_list.append(sample.to_dict())
         return sample_dict_list
 
@@ -295,11 +305,11 @@ class SampleManager(PersistentListInteractingWithGUI):
     def add_sample(self, sample):
         self.add_item(sample)
 
-    def delete_sample_at_index(self, index):
-        self.delete_item_at_index(index)
-
-    def delete_multiple_samples(self, index_list, emit_signal=True):
-        self.delete_multiple_items(index_list, emit_signal=emit_signal)
+    # def delete_sample_at_index(self, index):
+    #     self.delete_item_at_index(index)
+    #
+    # def delete_multiple_samples(self, index_list, emit_signal=True):
+    #     self.delete_multiple_items(index_list, emit_signal=emit_signal)
 
     @emit_list_update_signal_decorator
     def delete_samples_with_index_dict(self, index_dict):
@@ -329,19 +339,24 @@ class SampleManager(PersistentListInteractingWithGUI):
         return len(self.samples)
 
     def sample_at_index(self, index):
-        return self.item_at_index(index)
+        # return self.item_at_index(index)
+        return self.samples[index]
 
     def sample_name_at_index(self, index):
-        return self.sample_at_index(index).name
+        # return self.sample_at_index(index).name
+        return self.samples[index].name
 
     def sample_uid_at_index(self, index):
-        return self.sample_at_index(index).uid
+        # return self.sample_at_index(index).uid
+        return self.samples[index].uid
 
     def sample_comment_at_index(self, index):
-        return self.sample_at_index(index).comment
+        # return self.sample_at_index(index).comment
+        return self.samples[index].comment
 
     def sample_coord_str_at_index(self, sample_index, sample_point_index):
-        return self.sample_at_index(sample_index).index_coordinate_str(sample_point_index)
+        # return self.sample_at_index(sample_index).index_coordinate_str(sample_point_index)
+        return self.samples[sample_index].index_coordinate_str(sample_point_index)
 
     def sample_point_uid_at_index(self, sample_index, sample_point_index):
         return self.samples[sample_index].index_uid(sample_point_index)
@@ -373,7 +388,7 @@ class SampleManager(PersistentListInteractingWithGUI):
         return _uids
 
     def uid_to_sample_index(self, uid):
-        for sample_index, sample in enumerate(self.samples):
+        for sample_index, sample in enumerate(self.all_samples):
              if uid == sample.uid:
                 return sample_index
 
@@ -405,11 +420,20 @@ class SampleManager(PersistentListInteractingWithGUI):
 
     @emit_list_update_signal_decorator
     def archive_at_index(self, index):
-        self.samples[index].archived = True
+        if type(index) != list:
+            index = [index]
+        unarchived_samples = [self.samples[i] for i in index]
+        for sample in unarchived_samples:
+            if not ((sample.name == 'foil') and (sample.uid == FOIL_UID)):
+                sample.archived = True
 
     @emit_list_update_signal_decorator
     def restore_at_index(self, index):
-        self.samples[index].archived = False
+        if type(index) != list:
+            index = [index]
+        archived_samples = [self.archived_samples[i] for i in index]
+        for sample in archived_samples:
+            sample.archived = False
 
 
 
