@@ -47,6 +47,9 @@ class UserManager(PersistentListInteractingWithGUI):
 
 
         self._init_managers(sample_manager_filename, scan_manager_filename)
+        johann_emission.initialized = False
+        scan_sequence_manager.reset()
+        batch_manager.reset()
 
         RE.md['PI'] = f'{first_name} {last_name}'
         RE.md['affiliation'] = affiliation

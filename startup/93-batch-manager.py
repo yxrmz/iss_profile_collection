@@ -253,12 +253,17 @@ class SampleManager(PersistentListInteractingWithGUI):
         item_list = self.parse_sample_dict_list(items)
         self.items += item_list
 
+    def init_from_settings(self, boot_fresh=False):
+        super().init_from_settings(boot_fresh=boot_fresh)
         if (len(self.items) == 0) or (self.items[0].name.lower() != 'foil'):
             foil_sample = Sample('foil')
             foil_sample.uid = FOIL_UID
             self.items = [foil_sample] + self.items
+            self.save_to_settings()
         else:
-            self.items[0].uid = FOIL_UID
+            if self.items[0].uid != FOIL_UID:
+                self.items[0].uid = FOIL_UID
+                self.save_to_settings()
 
     def parse_sample_dict_list(self, sample_dict_list):
         sample_list = []
