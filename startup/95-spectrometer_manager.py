@@ -50,5 +50,13 @@ class SpectrometerManager(PersistentListInteractingWithGUI):
         config = config_dict['config']
         return f'{name} - {config["crystal"]}({"".join([str(i) for i in config["hkl"]])})-{int(config["R"])} - {config_dict["PI"]} - {timestamp_str}'
 
+    def config_from_uid(self, config_uid):
+        for config_dict in self.configs:
+            if config_dict['uid'] == config_uid:
+                return config_dict
+    def generate_config_str_from_uid(self, config_uid):
+        config_dict = self.config_from_uid(config_uid)
+        return self.generate_config_str(config_dict)
+
 johann_spectrometer_manager = SpectrometerManager(json_file_path='/nsls2/data/iss/legacy/xf08id/settings/json/johann_spectrometer_manager')
 

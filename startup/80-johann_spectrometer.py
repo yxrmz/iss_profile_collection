@@ -177,12 +177,16 @@ _johann_cr_assy_motor_keys = ['motor_cr_assy_x', 'motor_cr_assy_y']
 _johann_cr_main_motor_keys = ['motor_cr_main_roll', 'motor_cr_main_yaw']
 _johann_cr_aux2_motor_keys = ['motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_aux2_roll', 'motor_cr_aux2_yaw']
 _johann_cr_aux3_motor_keys = ['motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
+_johann_cr_aux4_motor_keys = ['motor_cr_aux4_x', 'motor_cr_aux4_y', 'motor_cr_aux4_roll', 'motor_cr_aux4_yaw']
+_johann_cr_aux5_motor_keys = ['motor_cr_aux5_x', 'motor_cr_aux5_y', 'motor_cr_aux5_roll', 'motor_cr_aux5_yaw']
 
 
 _johann_cr_all_motor_keys = (_johann_cr_assy_motor_keys +
                              _johann_cr_main_motor_keys +
                              _johann_cr_aux2_motor_keys +
-                             _johann_cr_aux3_motor_keys)
+                             _johann_cr_aux3_motor_keys +
+                             _johann_cr_aux4_motor_keys +
+                             _johann_cr_aux5_motor_keys)
 _johann_spectrometer_motor_keys = (_johann_det_arm_motor_keys +
                                    _johann_cr_all_motor_keys)
 
@@ -206,6 +210,7 @@ class RowlandCircle:
         self.det_L1 = _BIG_DETECTOR_ARM_LENGTH
         self.det_L2 = _SMALL_DETECTOR_ARM_LENGTH
         self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
+        self.cr_aux4_z = 129.5 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
         self.det_focus_status = 'good'
         self.init_from_settings()
 
@@ -349,6 +354,44 @@ class RowlandCircle:
             yaw /= 1000
         return x, y, roll, yaw
 
+    def set_aux4_crystal_parking(self, pos_dict):
+        self.config['parking']['motor_cr_aux4_x'] = pos_dict['motor_cr_aux4_x']
+        self.config['parking']['motor_cr_aux4_y'] = pos_dict['motor_cr_aux4_y']
+        self.config['parking']['motor_cr_aux4_roll'] = pos_dict['motor_cr_aux4_roll'] - 2500
+        self.config['parking']['motor_cr_aux4_yaw'] = pos_dict['motor_cr_aux4_yaw']
+        self.save_current_spectrometer_config_to_settings()
+
+    def aux4_crystal_parking(self, human_readable=True):
+        x, y, roll, yaw = (self.config['parking']['motor_cr_aux4_x'],
+                           self.config['parking']['motor_cr_aux4_y'],
+                           self.config['parking']['motor_cr_aux4_roll'],
+                           self.config['parking']['motor_cr_aux4_yaw'])
+        if human_readable:
+            x /= 1000
+            y /= 1000
+            roll = (roll + 2500) / 1000
+            yaw /= 1000
+        return x, y, roll, yaw
+
+    def set_aux5_crystal_parking(self, pos_dict):
+        self.config['parking']['motor_cr_aux5_x'] = pos_dict['motor_cr_aux5_x']
+        self.config['parking']['motor_cr_aux5_y'] = pos_dict['motor_cr_aux5_y']
+        self.config['parking']['motor_cr_aux5_roll'] = pos_dict['motor_cr_aux5_roll'] - 2500
+        self.config['parking']['motor_cr_aux5_yaw'] = pos_dict['motor_cr_aux5_yaw']
+        self.save_current_spectrometer_config_to_settings()
+
+    def aux5_crystal_parking(self, human_readable=True):
+        x, y, roll, yaw = (self.config['parking']['motor_cr_aux5_x'],
+                           self.config['parking']['motor_cr_aux5_y'],
+                           self.config['parking']['motor_cr_aux5_roll'],
+                           self.config['parking']['motor_cr_aux5_yaw'])
+        if human_readable:
+            x /= 1000
+            y /= 1000
+            roll = (roll + 2500) / 1000
+            yaw /= 1000
+        return x, y, roll, yaw
+
     @property
     def det_dx(self):
         return self.det_L1 * np.cos(np.deg2rad(self.config['det_offsets']['motor_det_th1'])) - self.det_L2
@@ -462,11 +505,19 @@ class RowlandCircle:
         cr_aux2_roll = np.zeros(npt)
         cr_aux2_yaw = np.zeros(npt)
 
+        cr_aux4_x = np.zeros(npt)
+        cr_aux4_y = np.zeros(npt)
+        cr_aux4_roll = np.zeros(npt)
+        cr_aux4_yaw = np.zeros(npt)
+
         for i, bragg in enumerate(braggs):
             cr_main_x[i], cr_main_y[i], det_x[i], det_y[i] = \
                 compute_rowland_circle_geometry(self.x_src, self.y_src, self.R, bragg, 0)
             cr_aux2_x[i], cr_aux2_y[i], cr_aux2_roll[i], cr_aux2_yaw[i] = \
                 _compute_rotated_rowland_circle_geometry(cr_main_x[i], cr_main_y[i], det_x[i], det_y[i], bragg, self.cr_aux2_z)
+            cr_aux4_x[i], cr_aux4_y[i], cr_aux4_roll[i], cr_aux4_yaw[i] = \
+                _compute_rotated_rowland_circle_geometry(cr_main_x[i], cr_main_y[i], det_x[i], det_y[i], bragg,
+                                                         self.cr_aux4_z)
 
         # reals
         # detector
@@ -492,6 +543,21 @@ class RowlandCircle:
         motor_cr_aux3_y = motor_cr_aux2_y.copy()
         motor_cr_aux3_roll = motor_cr_aux2_roll.copy()
         motor_cr_aux3_yaw = -motor_cr_aux2_yaw.copy()
+
+        # aux crystal4
+        _cr_aux4_yaw_0 = np.arcsin(self.cr_aux4_z / self.R)
+        _cr_aux4_dx_0 = (-self.R * np.cos(_cr_aux4_yaw_0)) + self.R
+        _cr_aux4_dx = cr_aux4_x - cr_main_x
+        motor_cr_aux4_x = -(_cr_aux4_dx - _cr_aux4_dx_0) * 1000
+        motor_cr_aux4_y = cr_aux4_y * 1000
+        motor_cr_aux4_roll = (cr_aux4_roll - 90 + self.config['roll_offset']) * 1000
+        motor_cr_aux4_yaw = (cr_aux4_yaw - np.rad2deg(_cr_aux4_yaw_0)) * 1000
+
+        # aux crystal5
+        motor_cr_aux5_x = motor_cr_aux4_x.copy()
+        motor_cr_aux5_y = motor_cr_aux4_y.copy()
+        motor_cr_aux5_roll = motor_cr_aux4_roll.copy()
+        motor_cr_aux5_yaw = -motor_cr_aux4_yaw.copy()
 
         return pd.DataFrame(
                {'bragg' :               braggs,
@@ -519,7 +585,15 @@ class RowlandCircle:
                 'motor_cr_aux3_x':      motor_cr_aux3_x,
                 'motor_cr_aux3_y':      motor_cr_aux3_y,
                 'motor_cr_aux3_roll':   motor_cr_aux3_roll,
-                'motor_cr_aux3_yaw':    motor_cr_aux3_yaw})
+                'motor_cr_aux3_yaw':    motor_cr_aux3_yaw,
+                'motor_cr_aux4_x':      motor_cr_aux4_x,
+                'motor_cr_aux4_y':      motor_cr_aux4_y,
+                'motor_cr_aux4_roll':   motor_cr_aux4_roll,
+                'motor_cr_aux4_yaw':    motor_cr_aux4_yaw,
+                'motor_cr_aux5_x':      motor_cr_aux5_x,
+                'motor_cr_aux5_y':      motor_cr_aux5_y,
+                'motor_cr_aux5_roll':   motor_cr_aux5_roll,
+                'motor_cr_aux5_yaw':    motor_cr_aux5_yaw})
 
     def _compute_trajectory_for_detector(self, braggs, det_x, det_y, det_focus=0):
 
@@ -906,6 +980,56 @@ class JohannAux3Crystal(JohannPseudoPositioner):
 johann_aux3_crystal = JohannAux3Crystal(name='johann_aux3_crystal')
 
 
+class JohannAux4Crystal(JohannPseudoPositioner):
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+    _real = ['motor_cr_assy_x', 'motor_cr_assy_y',
+             'motor_cr_aux4_x', 'motor_cr_aux4_y', 'motor_cr_aux4_roll', 'motor_cr_aux4_yaw']
+    _pseudo = ['bragg']
+
+    def _forward(self, pseudo_dict):
+        bragg = pseudo_dict['bragg']
+        return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+
+    def _inverse(self, real_dict):
+        motor_cr_aux3_roll = real_dict['motor_cr_aux4_roll']
+        bragg = self.rowland_circle.compute_bragg_from_motor('motor_cr_aux4_roll', motor_cr_aux3_roll)
+        return {'bragg': bragg}
+
+johann_aux4_crystal = JohannAux4Crystal(name='johann_aux4_crystal')
+
+
+class JohannAux5Crystal(JohannPseudoPositioner):
+    motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
+    motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+
+    bragg = Cpt(PseudoSingle, name='bragg')
+    _real = ['motor_cr_assy_x', 'motor_cr_assy_y',
+             'motor_cr_aux5_x', 'motor_cr_aux5_y', 'motor_cr_aux5_roll', 'motor_cr_aux5_yaw']
+    _pseudo = ['bragg']
+
+    def _forward(self, pseudo_dict):
+        bragg = pseudo_dict['bragg']
+        return self.rowland_circle.compute_motor_position(self.real_keys, bragg)
+
+    def _inverse(self, real_dict):
+        motor_cr_aux3_roll = real_dict['motor_cr_aux5_roll']
+        bragg = self.rowland_circle.compute_bragg_from_motor('motor_cr_aux5_roll', motor_cr_aux3_roll)
+        return {'bragg': bragg}
+
+johann_aux5_crystal = JohannAux5Crystal(name='johann_aux5_crystal')
+
+
 class JohannSpectrometerX(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
@@ -963,6 +1087,16 @@ class JohannCrystalHoming(Device):
     cr_aux3_x_home = Cpt(EpicsSignal, '3:X}Mtr.HOMF')
     cr_aux3_y_home = Cpt(EpicsSignal, '3:Y}Mtr.HOMF')
 
+    cr_aux4_roll_home = Cpt(EpicsSignal, '5:Roll}Mtr.HOMF')
+    cr_aux4_yaw_home = Cpt(EpicsSignal, '5:Yaw}Mtr.HOMF')
+    cr_aux4_x_home = Cpt(EpicsSignal, '5:X}Mtr.HOMF')
+    cr_aux4_y_home = Cpt(EpicsSignal, '5:Y}Mtr.HOMF')
+
+    cr_aux5_roll_home = Cpt(EpicsSignal, '4:Roll}Mtr.HOMF')
+    cr_aux5_yaw_home = Cpt(EpicsSignal, '4:Yaw}Mtr.HOMF')
+    cr_aux5_x_home = Cpt(EpicsSignal, '4:X}Mtr.HOMF')
+    cr_aux5_y_home = Cpt(EpicsSignal, '4:Y}Mtr.HOMF')
+
     def home_all_axes(self):
         for component in self.component_names:
             cpt = getattr(self, component)
@@ -1005,6 +1139,8 @@ class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
         if self.enabled_crystals['main']: keys.append('motor_cr_main_roll')
         if self.enabled_crystals['aux2']: keys.append('motor_cr_aux2_roll')
         if self.enabled_crystals['aux3']: keys.append('motor_cr_aux3_roll')
+        if self.enabled_crystals['aux4']: keys.append('motor_cr_aux4_roll')
+        if self.enabled_crystals['aux5']: keys.append('motor_cr_aux5_roll')
         return keys
 
     def _compute_new_real_positions_for_enabled_crystals(self, bragg):
@@ -1017,6 +1153,10 @@ class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
                     _motor_keys = _johann_cr_aux2_motor_keys
                 elif crystal_key == 'aux3':
                     _motor_keys = _johann_cr_aux3_motor_keys
+                elif crystal_key == 'aux4':
+                    _motor_keys = _johann_cr_aux4_motor_keys
+                elif crystal_key == 'aux5':
+                    _motor_keys = _johann_cr_aux5_motor_keys
                 else:
                     raise ValueError('this crystal key is not implemented yet')
                 for k in _motor_keys:
@@ -1054,6 +1194,16 @@ class JohannAllCrystals(JohannMultiCrystalPseudoPositioner):
     motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+
     bragg = Cpt(PseudoSingle, name='bragg')
 
     _pseudo = ['bragg']
@@ -1064,6 +1214,8 @@ class JohannAllCrystals(JohannMultiCrystalPseudoPositioner):
         if self.enabled_crystals['main']: keys.append('motor_cr_main_roll')
         if self.enabled_crystals['aux2']: keys.append('motor_cr_aux2_roll')
         if self.enabled_crystals['aux3']: keys.append('motor_cr_aux3_roll')
+        if self.enabled_crystals['aux4']: keys.append('motor_cr_aux4_roll')
+        if self.enabled_crystals['aux5']: keys.append('motor_cr_aux5_roll')
         return keys
 
     def _forward(self, pseudo_dict):
@@ -1096,6 +1248,16 @@ class JohannSpectrometer(JohannMultiCrystalPseudoPositioner):
     motor_cr_aux3_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Y}Mtr')
     motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
+
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
 
@@ -1132,6 +1294,16 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+
     energy = Cpt(PseudoSingle, name='energy')
     _pseudo = ['energy']
 
@@ -1159,6 +1331,8 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
         johann_main_crystal.move(bragg=90)
         johann_aux2_crystal.move(bragg=90)
         johann_aux3_crystal.move(bragg=90)
+        johann_aux4_crystal.move(bragg=90)
+        johann_aux5_crystal.move(bragg=90)
 
     def set_det_arm_parking(self):
         self.rowland_circle.set_det_arm_parking(self.real_position_dict)
@@ -1183,6 +1357,18 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def read_aux3_crystal_parking(self):
         return self.rowland_circle.aux3_crystal_parking(human_readable=True)
+
+    def set_aux4_crystal_parking(self):
+        self.rowland_circle.set_aux4_crystal_parking(self.real_position_dict)
+
+    def read_aux4_crystal_parking(self):
+        return self.rowland_circle.aux4_crystal_parking(human_readable=True)
+
+    def set_aux5_crystal_parking(self):
+        self.rowland_circle.set_aux5_crystal_parking(self.real_position_dict)
+
+    def read_aux5_crystal_parking(self):
+        return self.rowland_circle.aux5_crystal_parking(human_readable=True)
 
     def register_energy(self, energy):
         self.rowland_circle.register_energy(energy, self.real_position_dict)
@@ -1292,9 +1478,19 @@ _johann_motor_dictionary = {
 'johann_cr_aux3_yaw':       {'name': johann_aux3_crystal.motor_cr_aux3_yaw.name,       'description': 'Johann Aux3 Crystal Yaw',      'keyword': 'Aux3 Yaw',                  'object': johann_aux3_crystal.motor_cr_aux3_yaw,            'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
 'johann_cr_aux3_x':         {'name': johann_aux3_crystal.motor_cr_aux3_x.name,         'description': 'Johann Aux3 Crystal X',        'keyword': 'Aux3 X',                    'object': johann_aux3_crystal.motor_cr_aux3_x,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
 'johann_cr_aux3_y':         {'name': johann_aux3_crystal.motor_cr_aux3_y.name,         'description': 'Johann Aux3 Crystal Y',        'keyword': 'Aux3 Y',                    'object': johann_aux3_crystal.motor_cr_aux3_y,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
+'johann_cr_aux4_roll':      {'name': johann_aux4_crystal.motor_cr_aux4_roll.name,      'description': 'Johann Aux4 Crystal Roll',     'keyword': 'Aux4 roll',                 'object': johann_aux4_crystal.motor_cr_aux4_roll,           'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+'johann_cr_aux4_yaw':       {'name': johann_aux4_crystal.motor_cr_aux4_yaw.name,       'description': 'Johann Aux4 Crystal Yaw',      'keyword': 'Aux4 Yaw',                  'object': johann_aux4_crystal.motor_cr_aux4_yaw,            'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+'johann_cr_aux4_x':         {'name': johann_aux4_crystal.motor_cr_aux4_x.name,         'description': 'Johann Aux4 Crystal X',        'keyword': 'Aux4 X',                    'object': johann_aux4_crystal.motor_cr_aux4_x,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
+'johann_cr_aux4_y':         {'name': johann_aux4_crystal.motor_cr_aux4_y.name,         'description': 'Johann Aux4 Crystal Y',        'keyword': 'Aux4 Y',                    'object': johann_aux4_crystal.motor_cr_aux4_y,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
+'johann_cr_aux5_roll':      {'name': johann_aux5_crystal.motor_cr_aux5_roll.name,      'description': 'Johann Aux5 Crystal Roll',     'keyword': 'Aux5 roll',                 'object': johann_aux5_crystal.motor_cr_aux5_roll,           'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 100},
+'johann_cr_aux5_yaw':       {'name': johann_aux5_crystal.motor_cr_aux5_yaw.name,       'description': 'Johann Aux5 Crystal Yaw',      'keyword': 'Aux5 Yaw',                  'object': johann_aux5_crystal.motor_cr_aux5_yaw,            'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 50},
+'johann_cr_aux5_x':         {'name': johann_aux5_crystal.motor_cr_aux5_x.name,         'description': 'Johann Aux5 Crystal X',        'keyword': 'Aux5 X',                    'object': johann_aux5_crystal.motor_cr_aux5_x,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2500},
+'johann_cr_aux5_y':         {'name': johann_aux5_crystal.motor_cr_aux5_y.name,         'description': 'Johann Aux5 Crystal Y',        'keyword': 'Aux5 Y',                    'object': johann_aux5_crystal.motor_cr_aux5_y,              'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 1000},
 'johann_cr_main_bragg':     {'name': johann_main_crystal.bragg.name,                   'description': 'Johann Main Crystal Bragg',    'keyword': 'Main Bragg',                'object': johann_main_crystal.bragg,                        'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
 'johann_cr_aux2_bragg':     {'name': johann_aux2_crystal.bragg.name,                   'description': 'Johann Aux2 Crystal Bragg',    'keyword': 'Aux2 Bragg',                'object': johann_aux2_crystal.bragg,                        'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
 'johann_cr_aux3_bragg':     {'name': johann_aux3_crystal.bragg.name,                   'description': 'Johann Aux3 Crystal Bragg',    'keyword': 'Aux3 Bragg',                'object': johann_aux3_crystal.bragg,                        'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+'johann_cr_aux4_bragg':     {'name': johann_aux4_crystal.bragg.name,                   'description': 'Johann Aux4 Crystal Bragg',    'keyword': 'Aux4 Bragg',                'object': johann_aux4_crystal.bragg,                        'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
+'johann_cr_aux5_bragg':     {'name': johann_aux5_crystal.bragg.name,                   'description': 'Johann Aux5 Crystal Bragg',    'keyword': 'Aux5 Bragg',                'object': johann_aux5_crystal.bragg,                        'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 0.05},
 'johann_det_focus':         {'name': johann_det_arm.det_focus.name,                    'description': 'Johann Detector Focus',        'keyword': 'Detector Focus',            'object': johann_det_arm.det_focus,                 'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 5},
 'johann_x':                 {'name': johann_spectrometer_x.x.name,                     'description': 'Johann Spectrometer X',        'keyword': 'Spectrometer X',            'object': johann_spectrometer_x.x,                  'group': 'spectrometer',  'user': False, 'spectrometer_kind': 'johann', 'typical_step': 2.5},
 'johann_bragg_angle':       {'name': johann_spectrometer.bragg.name,                   'description': 'Johann Global Bragg Angle',    'keyword': 'Global Bragg Angle',        'object': johann_spectrometer.bragg,                'group': 'spectrometer',  'user': True,  'spectrometer_kind': 'johann', 'typical_step': 0.05},

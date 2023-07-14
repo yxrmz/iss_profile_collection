@@ -37,6 +37,7 @@ service_plan_funcs = {
         # 'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
         'move_mono_energy' : move_mono_energy,
         'calibrate_sample_cameras_plan' : calibrate_sample_cameras_plan,
+        'move_johann_spectrometer_energy': move_johann_spectrometer_energy,
         # 'move_mono_pitch' : move_mono_pitch,
         }
 
@@ -58,7 +59,11 @@ aux_plan_funcs = {
         'obtain_hhm_calibration_plan' : obtain_hhm_calibration_plan,
         'move_sample_stage_plan' : move_sample_stage_plan,
         'prepare_scan_plan' : prepare_scan_plan,
-        'take_pil100k_test_image_plan' : take_pil100k_test_image_plan
+        'take_pil100k_test_image_plan' : take_pil100k_test_image_plan,
+        'crystal_piezo_scan': crystal_piezo_scan,
+        'crystal_piezo_tune': crystal_piezo_tune,
+        'process_crystal_piezo_roll_scan': process_crystal_piezo_roll_scan,
+        'johann_hhm_resolution_scan': johann_hhm_resolution_scan
     }
 
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}

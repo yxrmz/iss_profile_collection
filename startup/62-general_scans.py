@@ -12,6 +12,12 @@ from ophyd.device import Kind
 import time
 
 
+def convert_range_to_start_stop(scan_range, step_size):
+    rel_start = -scan_range / 2
+    rel_stop = scan_range / 2
+    num_steps = scan_range / step_size + 1
+    return rel_start, rel_stop, num_steps
+
 def general_scan_plan(detectors, motor, rel_start, rel_stop, num, exposure_time, md=None):
 
     for detector in detectors:

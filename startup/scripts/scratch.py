@@ -1174,6 +1174,30 @@ plot_trace_info(centroid_y_data_85_3, clear=False, fignum=1)
 plot_trace_info(intensity_data_85_2, clear=True, fignum=2)
 plot_trace_info(intensity_data_85_3, clear=False, fignum=2)
 
+###
+
+centroid_y_340 = {}
+centroid_y_340['value'] = np.array(centroid_y_data['value'])[np.array(centroid_y_data['timestamp'])<=intensity_data['timestamp'][1400]]
+centroid_y_340['timestamp'] = np.array(centroid_y_data['timestamp'])[np.array(centroid_y_data['timestamp'])<=intensity_data['timestamp'][1400]]
+
+centroid_y_225 = {}
+centroid_y_225['value'] = np.array(centroid_y_data['value'])[(np.array(centroid_y_data['timestamp'])>=intensity_data['timestamp'][28904]) &
+                                                             (np.array(centroid_y_data['timestamp']) <= intensity_data['timestamp'][43600])]
+centroid_y_225['timestamp'] = np.array(centroid_y_data['timestamp'])[(np.array(centroid_y_data['timestamp'])>=intensity_data['timestamp'][28904]) &
+                                                             (np.array(centroid_y_data['timestamp']) <= intensity_data['timestamp'][43600])]
+
+plot_trace_info(centroid_y_340 )
+plot_trace_info(centroid_y_225 )
+
+plt.figure(3, clear=True)
+plt.hist(centroid_y_340['value'] - np.mean(centroid_y_340['value']), 100, alpha=0.3);
+plt.hist(centroid_y_225['value'] - np.mean(centroid_y_225['value']), 100, alpha=0.3);
+
+
+bla = np.array(intensity_data['value'])[(np.array(intensity_data['timestamp'])>=intensity_data['timestamp'][28904]) &
+                                                             (np.array(intensity_data['timestamp']) <= intensity_data['timestamp'][43600])]
+plt.figure(); plt.plot(bla)
+
 
 apb_ave.set_exposure_time(10)
 RE(bp.count([apb_ave]))
@@ -2513,6 +2537,18 @@ uids = \
  '357de376-e16b-4fea-854b-1d20d1aa4d66'
  )
 
+uids = \
+('28f4e4d0-0000-45e4-9440-fc48731dfe05',
+ #'65efae59-e92b-47e7-9444-40f2666d8f0c',
+ 'ea9dbfd0-2134-479c-8c00-ab50cd8696e7',
+ '251642dd-ca9c-4f6b-838e-0f4263bc56ec',
+ 'a80ef314-9569-4027-8c12-fbbb8011a6ee',
+ '09e9ba0f-20a9-436d-ae85-6e6c153446b8',
+ 'e873ced5-259c-460c-b465-8d52798ce3f8',
+ '0883a0d0-9bd3-4332-b1d1-bc1e6c2f8039',
+ '1388d51a-41b2-40ca-b8d2-b906e3eb3062')
+
+
 tweak_motor = johann_spectrometer_x.name
 scan_motor = 'johann_main_crystal_motor_cr_main_roll'
 
@@ -2588,6 +2624,8 @@ for uid in uids:
     motor_pos.append(hdr.start[tweak_motor])
     # plot_roll_scan(db, uid, x_col=scan_motor, y_col='pil100k_stats1_total')
 
+motor_pos = np.array(motor_pos).squeeze()
+fwhm = np.array(fwhm).squeeze()
 
 from numpy.polynomial import Polynomial as P
 p = P.fit(motor_pos, fwhm, 3)
@@ -2651,6 +2689,8 @@ _crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
                            'aux3': {'roll': 'Johann Aux3 Crystal Roll',
                                     'yaw':  'Johann Aux3 Crystal Yaw',
                                     'x':    'Johann Aux3 Crystal X'}}
+
+
 
 
 def quick_crystal_piezo_scan(crystal=None, axis=None, scan_range=None, velocity=None, pil100k_exosure_time=0.1, plot_func=None, liveplot_kwargs=None, md=None):
@@ -2862,11 +2902,352 @@ def align_johann_spectrometer_plan_bundle(alignment_by=None, pil100k_roi_num=Non
 
 
 
+uids = (
+'2c0ca392-00fe-4cc8-b4d5-eecf07f41547',
+'2a4a899b-0a1b-4962-a7bf-92542026d1d8',
+'fe009829-41ac-49b9-b2e7-ba2e91430a05',
+'4148c7dd-fb0b-458f-8553-73a088124198',
+'b8abe0c6-4a0a-422e-aacf-1a80e1fe0bc9',
+'863e5780-bce0-4eb1-9145-fc1dce9e64bc',
+'cca6e4e6-54a8-4690-98fa-076cfb3ab4d8',
+'a0a2dc82-de59-4b07-a22d-84cae2e859d1',
+'6790bbc8-cd29-45de-b825-0c76dcbec351',
+'62ab5550-370b-4877-b200-6910a793e031',
+'e1373193-cc3c-4376-9df5-7a26ddf19b62',
+'d7f87aae-4664-4eca-b14d-99a1d6965ee4',
+'fe9a725b-282b-4f44-a6a8-c93acd4d48bb',
+'7de32b40-be34-491d-bc18-f22f1c33165a',
+'f37ba8e4-3466-400c-a291-e1caa5be3037',
+'a55e6c90-9329-417d-9288-fed688be12c9',
+'40fdbc4b-0fb0-4f27-b2ef-4b3de4e5a689',
+'7c4b889a-ecfa-4bdb-bbdf-7974644c1bf1',
+)
+
+ALIGNMENT_DATA = []
+for uid in uids:
+    hdr = db[uid]
+    if 'tweak_motor_description' in hdr.start:
+        RE(process_crystal_piezo_roll_scan(crystal='aux2', pil100k_roi_num=1, alignment_data=ALIGNMENT_DATA, uid=uid))
 
 
 
 
+[{'uid': '2a4a899b-0a1b-4962-a7bf-92542026d1d8',
+  'fwhm': 109.85048884796174,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -8674.124},
+ {'uid': '4148c7dd-fb0b-458f-8553-73a088124198',
+  'fwhm': 106.86883456590192,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -7174.124},
+ {'uid': '863e5780-bce0-4eb1-9145-fc1dce9e64bc',
+  'fwhm': 103.67161694659023,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -5674.124},
+ {'uid': 'a0a2dc82-de59-4b07-a22d-84cae2e859d1',
+  'fwhm': 101.33901125348939,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -4174.124},
+ {'uid': '62ab5550-370b-4877-b200-6910a793e031',
+  'fwhm': 98.63497076951717,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -2674.124},
+ {'uid': 'd7f87aae-4664-4eca-b14d-99a1d6965ee4',
+  'fwhm': 96.96312591408594,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -1174.1239999999998},
+ {'uid': '7de32b40-be34-491d-bc18-f22f1c33165a',
+  'fwhm': 95.9164672340288,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 325.8760000000002},
+ {'uid': 'a55e6c90-9329-417d-9288-fed688be12c9',
+  'fwhm': 94.67777548320714,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 1825.8760000000002},
+ {'uid': '7c4b889a-ecfa-4bdb-bbdf-7974644c1bf1',
+  'fwhm': 93.88133496961007,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 3325.8759999999997}]
 
 
 
+### main crystal elastic on Cu foil
+[{'uid': '56e31fc3-cdbd-4f98-81c4-8511a8dcf7b1',
+  'fwhm': 1.4969813851357685,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 972.888154149},
+ {'uid': '7ae0f696-83ee-4c22-b443-3d3cf41b4c4c',
+  'fwhm': 1.4849839817607062,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 975.388154149},
+ {'uid': 'c8b1c8e3-5e67-489b-8b2d-97ac8ab7df61',
+  'fwhm': 1.5552265480819187,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 977.888154149},
+ {'uid': '4be2883b-54f4-48b2-865f-3e0c6980a4a4',
+  'fwhm': 1.6928793954039065,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 980.388154149},
+ {'uid': '0bb8f882-d7ff-474e-a90c-ca1f421cbff1',
+  'fwhm': 1.649486713891747,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 982.888154149},
+ {'uid': '1c052e4c-afcd-4a3e-921d-c7a31f8ef8f2',
+  'fwhm': 1.7126857458733866,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 985.388154149},
+ {'uid': 'b36be526-92c7-46f1-b9c1-22c3b7228408',
+  'fwhm': 1.7495045014229618,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 987.888154149},
+ {'uid': '21647db6-4acc-4886-87ad-fc9d3f8af841',
+  'fwhm': 1.8407076891280667,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 990.388154149},
+ {'uid': '3b69e77d-5b56-4920-8997-01e3a7f3af1f',
+  'fwhm': 1.8300737904373818,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 992.888154149}]
+
+# main crystal fluorescence on Cu foil
+[{'uid': 'b01d5359-8832-4a8b-b42c-0434477c5c3b',
+  'fwhm': 103.0131452325918,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 972.888154149},
+ {'uid': 'c5c3fb6b-46aa-456c-817d-92de2e7b0bc5',
+  'fwhm': 101.25272973337042,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 975.388154149},
+ {'uid': 'f12a8319-e51b-462d-bdb5-8e5134d35c3c',
+  'fwhm': 100.85851172676712,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 977.888154149},
+ {'uid': '0da229dc-7721-40fd-8bf5-6a27caaea248',
+  'fwhm': 99.20244253792407,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 980.388154149},
+ {'uid': '17881529-2ccb-4cf0-a3d2-2dd1626d7ba6',
+  'fwhm': 99.36881768443118,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 982.888154149},
+ {'uid': 'e54f6a69-e30e-4bfd-b6ae-1210eefbcfff',
+  'fwhm': 101.23082158479315,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 985.388154149},
+ {'uid': 'c21f5926-b682-47ad-95bf-c6daffa43eda',
+  'fwhm': 103.16026433967136,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 987.888154149},
+ {'uid': '67bdeada-a861-4560-84a5-1ff0dc741720',
+  'fwhm': 106.10226721603112,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 990.388154149},
+ {'uid': '3189f05e-0a7a-40cc-a076-c3c0edc0dc68',
+  'fwhm': 109.74666410627765,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 992.888154149}]
+
+
+# main crystal elastic peak on water
+[{'uid': '21dd2097-f3c5-42c1-837a-26bf2a57be82',
+  'fwhm': 1.5203829584625055,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 972.888154149},
+ {'uid': 'e9338e5f-462f-4b74-bade-48d062e8a32d',
+  'fwhm': 1.5598377745800462,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 975.388154149},
+ {'uid': '2ad1e27e-8e0a-4928-8cde-4abe021e47c4',
+  'fwhm': 1.530486475104226,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 977.888154149},
+ {'uid': '1d06885a-c17b-4d66-af4f-c76a456b5847',
+  'fwhm': 1.6073704188665943,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 980.388154149},
+ {'uid': '99b20bd8-3de5-40de-afdd-a239fbdd7d54',
+  'fwhm': 1.6830465732546145,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 982.888154149},
+ {'uid': 'c2568092-3eaf-40f8-82f5-d63cf5d9754f',
+  'fwhm': 1.6799933046841034,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 985.388154149},
+ {'uid': 'a49dd39d-0eb2-46f8-85fe-747cfc5901f7',
+  'fwhm': 1.7063572256956832,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 987.888154149},
+ {'uid': 'aed14f3e-e339-49ef-b8df-1d98e45bdd46',
+  'fwhm': 1.8170261371833476,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 990.388154149},
+ {'uid': '716c8f9a-39a9-43e6-9d2b-791c6c9c20d1',
+  'fwhm': 1.8061672367330175,
+  'tweak_motor_description': 'Johann Crystal Assy X',
+  'tweak_motor_position': 992.888154149}]
+
+
+# aux2 crystal elastic peak on water
+[{'uid': 'd2d45639-7787-4f06-8c5f-97daa0d16cac',
+  'fwhm': 2.00445572829085,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -12673.993},
+ {'uid': '12fba8bf-2a38-4b0b-9330-39014a32328e',
+  'fwhm': 1.9520583201510817,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -10173.993},
+ {'uid': '01081b77-dca2-40bb-85f9-f947306ac094',
+  'fwhm': 1.8096046514519912,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -7673.993},
+ {'uid': 'e41d6da7-01c2-47dc-9b5f-01ce54b28519',
+  'fwhm': 1.7827555236535773,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -5173.993},
+ {'uid': '1ddb9cb1-26c6-4d59-8561-6c632eef82a3',
+  'fwhm': 1.6361589040898252,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -2673.9930000000004},
+ {'uid': '04a1903c-8adf-40af-87f0-d49a9016344c',
+  'fwhm': 1.5704819213387964,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -173.9930000000004},
+ {'uid': '346b13b3-9320-45bf-8a48-112701f68367',
+  'fwhm': 1.5424939347876716,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 2326.0069999999996},
+ {'uid': 'bb93219c-5081-4835-9a00-20ea3e6f74ef',
+  'fwhm': 1.4700413649352413,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 4826.007},
+ {'uid': 'faa72d77-a05f-4ec6-a0f6-d162dbbc9968',
+  'fwhm': 1.4617302860033305,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 7326.007},
+ {'uid': 'c5d51498-4c55-45e4-9a8e-c2eee2cb9e02',
+  'fwhm': 1.368008458037366,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 8000.0},
+ {'uid': 'e3214fc5-021d-4f12-b4f5-20e6ddc9dabb',
+  'fwhm': 1.4516299726528814,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 10000.0},
+ {'uid': 'b4af7372-01e4-401a-9edc-62724869131d',
+  'fwhm': 1.644220724688239,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 12000.0}]
+
+#aux2 crystal emission on foil
+[{'uid': '70d2c1e9-9f05-4723-9900-f505beb70720',
+  'fwhm': 125.37645892598186,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -12300.0},
+ {'uid': 'c727947e-30f1-4cdc-8d25-77b603a74aa7',
+  'fwhm': 116.9006887461228,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -9900.0},
+ {'uid': '5b4ea25b-cb18-4884-87c8-fc49ef0848cd',
+  'fwhm': 111.42263227664591,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -7500.0},
+ {'uid': '316e8cc7-823e-4207-a65f-6a1ee7fe0f1a',
+  'fwhm': 105.6021815665315,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -5100.0},
+ {'uid': '06de6e90-8bd4-47b8-bc2b-09f00fa0e42f',
+  'fwhm': 101.11294992660271,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -2700.0},
+ {'uid': 'ec28477c-f5c7-45bf-9142-9feff85ae96b',
+  'fwhm': 97.74861285840143,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -300.0},
+ {'uid': 'd451ea35-5203-4a49-94af-04c78cc3d96b',
+  'fwhm': 95.71593851942123,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 2100.0},
+ {'uid': 'ea82a574-e42d-4e62-9409-efc2603849a7',
+  'fwhm': 94.40073361374868,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 4500.0},
+ {'uid': '32b863eb-3a4f-4f60-85e0-45e63a03f023',
+  'fwhm': 94.53097367988698,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 6900.0},
+ {'uid': '18cf624b-dabe-41c2-a074-1310b7592aed',
+  'fwhm': 95.42932443648715,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 9300.0},
+ {'uid': 'eb87ab7c-b2c2-4531-afc9-f9c45e279ae4',
+  'fwhm': 98.01414694788969,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 11700.0}]
+
+# aux2 crystal elastic on foil
+[{'uid': 'fc148109-7b0b-4193-91b8-e58345ada866',
+  'fwhm': 2.9011180606603375,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -12300.0},
+ {'uid': '704ca4e5-6d3e-481d-b951-e83353ccdcfa',
+  'fwhm': 2.7307806616945527,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -9900.0},
+ {'uid': '37ef7525-e02d-4b8c-a942-e89bb11ab899',
+  'fwhm': 2.4222016766434535,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -7500.0},
+ {'uid': 'fc42436b-2d71-46f9-ad1b-11d1c4938fb4',
+  'fwhm': 2.271535088661949,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -5100.0},
+ {'uid': '7865f00e-82d8-40b7-9092-e52a06d52532',
+  'fwhm': 2.00544902767615,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -2700.0},
+ {'uid': 'e48a7559-a076-49be-aa6b-2b2c4f3c25d5',
+  'fwhm': 1.8584364404050575,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': -300.0},
+ {'uid': '154391bf-5e78-4243-aede-8906227c4746',
+  'fwhm': 1.783954573079427,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 2100.0},
+ {'uid': '731f834a-a6f2-465b-9b50-43799596b928',
+  'fwhm': 1.5156032852937642,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 4500.0},
+ {'uid': '9bbbcd2b-4fa4-44a5-866a-938f140a7765',
+  'fwhm': 1.4024573581864388,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 6900.0},
+ {'uid': '9cf41dc8-b1a1-435c-8cef-60979e1a2cc8',
+  'fwhm': 1.3853129494218592,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 9300.0},
+ {'uid': 'ab905e84-5ca1-4166-b2ca-b05be03933f8',
+  'fwhm': 1.3691874164233013,
+  'tweak_motor_description': 'Johann Aux2 Crystal X',
+  'tweak_motor_position': 11700.0}]
+
+
+[{'uid': '9d15c670-a7ac-4b60-b7f4-c19dec7776b7',
+  'fwhm': 79.5193314899443,
+  'tweak_motor_description': 'Johann Aux4 Crystal X',
+  'tweak_motor_position': -5000.0},
+ {'uid': '3d285540-4333-4fa1-845a-6a4470496202',
+  'fwhm': 79.21308886134102,
+  'tweak_motor_description': 'Johann Aux4 Crystal X',
+  'tweak_motor_position': -2500.0},
+ {'uid': '5bfb4507-7a1c-494d-9564-fa727569a72d',
+  'fwhm': 78.83613586202637,
+  'tweak_motor_description': 'Johann Aux4 Crystal X',
+  'tweak_motor_position': 0.0},
+ {'uid': '64cb92f5-a13c-4ae5-903e-b2f362b9c13b',
+  'fwhm': 79.87258246084957,
+  'tweak_motor_description': 'Johann Aux4 Crystal X',
+  'tweak_motor_position': 2500.0},
+ {'uid': 'b8d48a67-b2a7-4836-9266-b9dc60b2596d',
+  'fwhm': 82.78787885287375,
+  'tweak_motor_description': 'Johann Aux4 Crystal X',
+  'tweak_motor_position': 5000.0}]
 
