@@ -3251,3 +3251,37 @@ for uid in uids:
   'tweak_motor_description': 'Johann Aux4 Crystal X',
   'tweak_motor_position': 5000.0}]
 
+
+x = xview_gui.widget_project
+idxs = [i.row() for i in x.list_project.selectedIndexes()]
+project = xview_gui.project
+ref_idx = idxs[0]
+test_idxs = idxs[1:]
+
+
+energy_ref = project[ref_idx].energy
+mu_ref = project[ref_idx].flat
+
+e0 = 8979
+emin = e0 - 25
+emax = e0 + 25
+energy_mask = (energy_ref >= emin) & (energy_ref <= emax)
+
+chisq = []
+roll = []
+
+for idx in test_idxs:
+    energy_test = project[idx].energy
+    mu_test = project[idx].flat
+    mu_test_interp = np.interp(energy_ref, energy_test, mu_test)
+    _chisq = np.sum((mu_test_interp - mu_ref)[energy_mask]**2)
+    chisq.append(_chisq)
+
+    _roll = float('.'.join(project[idx].name.split(' ')[3].split('_')))
+    roll.append(_roll)
+
+plt.figure(1, clear=True)
+plt.plot(roll, chisq, 'ks')
+
+
+

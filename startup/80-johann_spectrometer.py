@@ -983,10 +983,10 @@ johann_aux3_crystal = JohannAux3Crystal(name='johann_aux3_crystal')
 class JohannAux4Crystal(JohannPseudoPositioner):
     motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
     motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
-    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
-    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
-    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
-    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
     _real = ['motor_cr_assy_x', 'motor_cr_assy_y',
@@ -1008,10 +1008,10 @@ johann_aux4_crystal = JohannAux4Crystal(name='johann_aux4_crystal')
 class JohannAux5Crystal(JohannPseudoPositioner):
     motor_cr_assy_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:X}Mtr')
     motor_cr_assy_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Ana:Assy:Y}Mtr')
-    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
-    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
-    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
-    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
     _real = ['motor_cr_assy_x', 'motor_cr_assy_y',
@@ -1087,15 +1087,15 @@ class JohannCrystalHoming(Device):
     cr_aux3_x_home = Cpt(EpicsSignal, '3:X}Mtr.HOMF')
     cr_aux3_y_home = Cpt(EpicsSignal, '3:Y}Mtr.HOMF')
 
-    cr_aux4_roll_home = Cpt(EpicsSignal, '5:Roll}Mtr.HOMF')
-    cr_aux4_yaw_home = Cpt(EpicsSignal, '5:Yaw}Mtr.HOMF')
-    cr_aux4_x_home = Cpt(EpicsSignal, '5:X}Mtr.HOMF')
-    cr_aux4_y_home = Cpt(EpicsSignal, '5:Y}Mtr.HOMF')
+    cr_aux4_roll_home = Cpt(EpicsSignal, '4:Roll}Mtr.HOMF')
+    cr_aux4_yaw_home = Cpt(EpicsSignal, '4:Yaw}Mtr.HOMF')
+    cr_aux4_x_home = Cpt(EpicsSignal, '4:X}Mtr.HOMF')
+    cr_aux4_y_home = Cpt(EpicsSignal, '4:Y}Mtr.HOMF')
 
-    cr_aux5_roll_home = Cpt(EpicsSignal, '4:Roll}Mtr.HOMF')
-    cr_aux5_yaw_home = Cpt(EpicsSignal, '4:Yaw}Mtr.HOMF')
-    cr_aux5_x_home = Cpt(EpicsSignal, '4:X}Mtr.HOMF')
-    cr_aux5_y_home = Cpt(EpicsSignal, '4:Y}Mtr.HOMF')
+    cr_aux5_roll_home = Cpt(EpicsSignal, '5:Roll}Mtr.HOMF')
+    cr_aux5_yaw_home = Cpt(EpicsSignal, '5:Yaw}Mtr.HOMF')
+    cr_aux5_x_home = Cpt(EpicsSignal, '5:X}Mtr.HOMF')
+    cr_aux5_y_home = Cpt(EpicsSignal, '5:Y}Mtr.HOMF')
 
     def home_all_axes(self):
         for component in self.component_names:
@@ -1194,15 +1194,15 @@ class JohannAllCrystals(JohannMultiCrystalPseudoPositioner):
     motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
-    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
-    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
-    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
-    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
 
-    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
-    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
-    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
-    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
 
@@ -1249,15 +1249,15 @@ class JohannSpectrometer(JohannMultiCrystalPseudoPositioner):
     motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
-    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
-    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
-    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
-    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
 
-    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
-    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
-    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
-    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
 
@@ -1294,15 +1294,15 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     motor_cr_aux3_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Roll}Mtr')
     motor_cr_aux3_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:3:Yaw}Mtr')
 
-    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
-    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
-    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
-    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
+    motor_cr_aux4_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
+    motor_cr_aux4_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
+    motor_cr_aux4_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
+    motor_cr_aux4_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
 
-    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:X}Mtr')
-    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Y}Mtr')
-    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Roll}Mtr')
-    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:4:Yaw}Mtr')
+    motor_cr_aux5_x = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:X}Mtr')
+    motor_cr_aux5_y = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Y}Mtr')
+    motor_cr_aux5_roll = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Roll}Mtr')
+    motor_cr_aux5_yaw = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Stk:5:Yaw}Mtr')
 
     energy = Cpt(PseudoSingle, name='energy')
     _pseudo = ['energy']
