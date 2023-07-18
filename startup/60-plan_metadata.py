@@ -52,6 +52,8 @@ populate_standard_metadata_dict({
 'sample_y_position':             sample_stage.y.user_readback,
 'sample_z_position':             sample_stage.z.user_readback,
 'sample_th_position':            sample_stage.th.user_readback,
+'potentiostat_v':                potentiostatV,
+'potentiostat_i':                potentiostatI,
 })
 
 
