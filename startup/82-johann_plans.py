@@ -127,6 +127,56 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from general_energy_step_scan(all_detectors, johann_emission, emission_energy_list, emission_time_list, md=md)
 
 
+def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_central_energy, trajectory, element, e0, line, spectrometer_config_uid, metadata):
+    try:
+        full_element_name = getattr(elements, element).name.capitalize()
+    except:
+        full_element_name = element
+    md_general = get_scan_md(name, comment, detectors_dict, '.dat')
+
+    md_scan = {'experiment': 'fly_scan',
+               'spectrometer': 'johann',
+               'spectrometer_config': rowland_circle.config,
+               'spectrometer_config_uid': spectrometer_config_uid,
+               'spectrometer_central_energy': spectrometer_central_energy,
+               'spectrometer_trajectory': trajectory,
+               'element': element,
+               'element_full': full_element_name,
+               'line': line,
+               'e0': e0,}
+    return {**md_scan, **md_general, **metadata}
+
+def fly_epics_scan_johann_xes_plan(name=None, comment=None, detectors=[],
+                                   mono_energy=None, mono_angle_offset=None,
+                                   spectrometer_central_energy=None, trajectory=None,
+                                   crystal_selection=None,
+                                   element='', e0=0, line='',
+                                   spectrometer_config_uid=None,
+                                   metadata={}):
+    default_detectors = [apb_ave]
+    aux_detectors = get_detector_device_list(detectors, flying=False)
+    all_detectors = default_detectors + aux_detectors
+    detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
+    if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
+    yield from bps.mv(hhm.energy, mono_energy)
+    yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy[0], spectrometer_config_uid)
+
+    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, emission_energy_list, emission_time_list, element,
+                                     e0, line, spectrometer_config_uid, metadata)
+    if crystal_selection is None:
+        crystal_selection = johann_emission.enabled_crystals
+    if type(crystal_selection) == str:
+        crystal_selection = [crystal_selection]
+
+    motor_dict = {}
+    trajectory_dict = {}
+    for crystal in crystal_selection:
+        motor_description = _crystal_alignment_dict[crystal]
+        motor_dict[crystal] = get_motor_device(motor_description, based_on='description')
+        trajectory_dict[crystal] = copy.deepcopy(trajectory)
+
+    yield from general_epics_motor_fly_scan(all_detectors, motor_dict, trajectory_dict, md=md)
+
 
 def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list, name):
     if type(sample_coordinates) == list:
