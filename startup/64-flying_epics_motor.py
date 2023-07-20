@@ -1,6 +1,6 @@
 
 
-class FlyableEpicsMotor(Device):
+class FlyableEpicsMotor(Device): # device is needed to have Device status
     '''
     This class mimics hhm behavior that is used in the standard HHM ISS flyer
     '''
