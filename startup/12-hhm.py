@@ -204,6 +204,10 @@ class HHM(Device):
     def get_mono_encoder_resolution_str(self):
         return f'{(np.round(hhm.main_motor_res.get() * np.pi / 180 * 1e9))} nrad'
 
+    @property
+    def current_trajetory_duration(self):
+        # calls function from trajectory manager defined in the next file :'(
+        return trajectory_manager.current_trajectory_duration
 
 hhm = HHM('XF:08IDA-OP{', name='hhm')
 # TODO: move to the HHM class definition.
