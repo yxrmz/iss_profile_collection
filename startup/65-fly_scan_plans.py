@@ -7,8 +7,8 @@ from ophyd.sim import NullStatus
 
 import threading
 
-class FlyerHHM(Device):
-    def __init__(self, default_dets, hhm, shutter, *args, **kwargs):
+class FlyerWithMotor(Device):
+    def __init__(self, default_dets, motor, shutter, *args, **kwargs):
         super().__init__(parent=None, **kwargs)
 
         # apb_stream_idx = dets.index(apb_stream)
@@ -17,7 +17,7 @@ class FlyerHHM(Device):
         self.default_dets = default_dets
         self.aux_dets = []
         self.dets = []
-        self.hhm = hhm
+        self.motor = motor
         self.shutter = shutter
         self.complete_status = None
 
@@ -30,12 +30,12 @@ class FlyerHHM(Device):
 
     def stage(self):
         print_to_gui(f'Preparing mono starting...', add_timestamp=True, tag='Flyer')
-        self.hhm.prepare()
+        self.motor.prepare()
         print_to_gui(f'Preparing mono complete', add_timestamp=True, tag='Flyer')
         self.dets = self.default_dets + self.aux_dets
         print_to_gui(f'Fly scan staging starting...', add_timestamp=True, tag='Flyer')
         staged_list = super().stage()
-        scan_duration = trajectory_manager.current_trajectory_duration
+        scan_duration = motor.current_trajectory_duration
         for det in self.dets:
             if hasattr(det, 'prepare_to_fly'):
                 det.prepare_to_fly(scan_duration)
@@ -76,10 +76,10 @@ class FlyerHHM(Device):
 
         print_to_gui(f'Mono trajectory motion starting...', add_timestamp=True, tag='Flyer')
 
-        self.hhm_flying_status = self.hhm.kickoff()
+        self.motor_flying_status = self.motor.kickoff()
         self.kickoff_status.set_finished()
 
-        self.hhm_flying_status.wait()
+        self.motor_flying_status.wait()
 
         print_to_gui(f'Mono trajectory motion complete', add_timestamp=True, tag='Flyer')
 
@@ -91,7 +91,7 @@ class FlyerHHM(Device):
         # ttime.sleep(1)
         # priority_det_complete_status = priority_det.complete()
         # priority_det_complete_status.wait()
-        self.hhm.complete()
+        self.motor.complete()
         self.shutter.close()
 
         print_to_gui(f'Detector complete complete', add_timestamp=True, tag='Flyer')
@@ -126,7 +126,7 @@ class FlyerHHM(Device):
 
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1, xs_stream], hhm, shutter, name='flyer_apb')
 # flyer_apb = FlyerHHM([apb_stream, pb9.enc1], hhm, shutter, name='flyer_apb')
-flyer_hhm = FlyerHHM([apb_stream, hhm_encoder], hhm, shutter, name='flyer_apb')
+flyer_hhm = FlyerWithMotor([apb_stream, hhm_encoder], hhm, shutter, name='flyer_hhm')
 # flyer_hhm_em = FlyerHHM([em_stream, hhm_encoder], hhm, shutter, name='flyer_apb')
 
 def get_fly_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata):
@@ -149,3 +149,12 @@ def fly_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle_
     def _fly(md):
         yield from bp.fly([flyer_hhm], md=md)
     yield from _fly(md)
+
+
+
+
+
+
+
+
+
