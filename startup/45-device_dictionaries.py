@@ -51,7 +51,15 @@ detector_dictionary =   {
                                                     'xs_channel4_rois_roi03_value',
                                                     'xs_channel4_rois_roi04_value',
                                                     'xs_settings_acquire_time'
-                                                    ]}
+                                                    ]},
+                    'EM I0 I monitor' : {'device' : em_ave, 'channels': ['em_ave_ch1_mean']},
+                    'EM I1 I monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch2_mean']},
+                    'EM I2 I monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch3_mean']},
+                    'EM Fluo I monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch4_mean']},
+                    'EM I0 V monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch5_mean']},
+                    'EM I1 V monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch6_mean']},
+                    'EM I2 V monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch7_mean']},
+                    'EM Fluo V monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch8_mean']},
                 }
 
 def get_detector_device_list(key_list, flying=True):
