@@ -2189,4 +2189,26 @@ plt.figure(1, clear=True)
 plt.plot(roll, chisq, 'ks')
 
 
+#
+# class Bla:
+#
+#     def __init__(self):
+#         self.a = 1
+#         b = 3
+#
+#     def another_method(self):
+#         print(b) # does not work
+#         print(self.a) # does work
+
+
+
+
+bla = Bla()
+
+
+
+{'temperature': 100, 'color': 'red'}
+
+
+
 

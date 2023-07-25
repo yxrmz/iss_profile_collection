@@ -1,35 +1,21 @@
 print(ttime.ctime() + ' >>>> ' + __file__)
-def elastic_scan_plan(DE=5, dE=0.1):
-    npt = np.round(DE/dE + 1)
-    name = 'elastic spectrometer scan'
-    plan = bp.relative_scan([pil100k, apb_ave], hhm.energy, -DE/2, DE/2, npt, md={'plan_name': 'elastic_scan ' + motor.name, 'name' : name})
-    yield from plan
 
-
-def johann_calibration_scan_plan(energies=None, DE=5, dE=0.1):
-    for energy in energies:
-        yield from bps.mv(hhm.energy, energy)
-        # yield from move_emission_energy_plan(energy)
-        yield from bps.mv(johann_emission.energy, energy)
-        yield from elastic_scan_plan(DE=DE, dE=dE)
-
-
-
-def plot_radiation_damage_scan_data(db, uid):
-    t = db[uid].table()
-    plt.figure()
-    plt.plot(t['time'], t['pil100k_stats1_total']/np.abs(t['apb_ave_ch1_mean']))
-
-
-
-# def move_johann_spectrometer_energy(energy=-1):
-#     current_energy = johann_emission.energy.position
-#     energy = float(energy)
-#     energy_arr = np.linspace(current_energy, energy, int(np.abs(energy - current_energy)/5) + 2)[1:]
-#     for _energy in energy_arr:
-#         print_to_gui(f'Moving spectrometer to {_energy}')
-#         yield from bps.mv(johann_emission, _energy, wait=True)
-#         # yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=float(_energy))
+_crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
+                                    'yaw':  'Johann Main Crystal Yaw',
+                                    'x':    'Johann Crystal Assy X'},
+                           'aux2': {'roll': 'Johann Aux2 Crystal Roll',
+                                    'yaw':  'Johann Aux2 Crystal Yaw',
+                                    'x':    'Johann Aux2 Crystal X'},
+                           'aux3': {'roll': 'Johann Aux3 Crystal Roll',
+                                    'yaw':  'Johann Aux3 Crystal Yaw',
+                                    'x':    'Johann Aux3 Crystal X'},
+                           'aux4': {'roll': 'Johann Aux4 Crystal Roll',
+                                    'yaw':  'Johann Aux4 Crystal Yaw',
+                                    'x':    'Johann Aux4 Crystal X'},
+                           'aux5': {'roll': 'Johann Aux5 Crystal Roll',
+                                    'yaw':  'Johann Aux5 Crystal Yaw',
+                                    'x':    'Johann Aux5 Crystal X'}
+                           }
 
 def move_johann_spectrometer_energy(energy : float=-1):
     current_energy = johann_emission.energy.position
@@ -50,7 +36,8 @@ def prepare_johann_scan_plan(detectors, spectrometer_energy, spectrometer_config
     ensure_pilatus_is_in_detector_list(detectors)
     if spectrometer_config_uid is not None:
         johann_spectrometer_manager.set_config_by_uid(spectrometer_config_uid)
-    yield from move_johann_spectrometer_energy(spectrometer_energy)
+    if spectrometer_energy is not None:
+        yield from move_johann_spectrometer_energy(spectrometer_energy)
     # yield from bps.mv(johann_emission, spectrometer_energy)
 
 def prepare_johann_metadata_and_kwargs(**kwargs):
@@ -127,7 +114,8 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from general_energy_step_scan(all_detectors, johann_emission, emission_energy_list, emission_time_list, md=md)
 
 
-def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_central_energy, trajectory, element, e0, line, spectrometer_config_uid, metadata):
+
+def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_central_energy, relative_trajectory, element, e0, line, spectrometer_config_uid, metadata):
     try:
         full_element_name = getattr(elements, element).name.capitalize()
     except:
@@ -139,7 +127,7 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_centr
                'spectrometer_config': rowland_circle.config,
                'spectrometer_config_uid': spectrometer_config_uid,
                'spectrometer_central_energy': spectrometer_central_energy,
-               'spectrometer_trajectory': trajectory,
+               'spectrometer_relative_trajectory': relative_trajectory,
                'element': element,
                'element_full': full_element_name,
                'line': line,
@@ -148,23 +136,23 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_centr
 
 def fly_epics_scan_johann_xes_plan(name=None, comment=None, detectors=[],
                                    mono_energy=None, mono_angle_offset=None,
-                                   spectrometer_central_energy=None, trajectory=None,
+                                   spectrometer_central_energy=None, relative_trajectory=None,
                                    crystal_selection=None,
                                    element='', e0=0, line='',
                                    spectrometer_config_uid=None,
                                    metadata={}):
     default_detectors = [apb_ave]
-    aux_detectors = get_detector_device_list(detectors, flying=False)
+    aux_detectors = get_detector_device_list(detectors, flying=True)
     all_detectors = default_detectors + aux_detectors
     detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
     if mono_angle_offset is not None: hhm.set_new_angle_offset(mono_angle_offset)
     yield from bps.mv(hhm.energy, mono_energy)
-    yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy[0], spectrometer_config_uid)
+    yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy, spectrometer_config_uid)
 
-    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, emission_energy_list, emission_time_list, element,
+    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_central_energy, relative_trajectory, element,
                                      e0, line, spectrometer_config_uid, metadata)
     if crystal_selection is None:
-        crystal_selection = johann_emission.enabled_crystals
+        crystal_selection = [cr for cr, enabled in johann_emission.enabled_crystals.items() if enabled]
     if type(crystal_selection) == str:
         crystal_selection = [crystal_selection]
 
@@ -172,8 +160,11 @@ def fly_epics_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     trajectory_dict = {}
     for crystal in crystal_selection:
         motor_description = _crystal_alignment_dict[crystal]
-        motor_dict[crystal] = get_motor_device(motor_description, based_on='description')
-        trajectory_dict[crystal] = copy.deepcopy(trajectory)
+        motor_device = get_motor_device(motor_description, based_on='description')
+        motor_pos = motor_device.position
+        motor_dict[crystal] = motor_device
+        trajectory_dict[crystal] = {'positions': [(motor_pos + delta) for delta in relative_trajectory['positions']],
+                                    'durations': copy.deepcopy(relative_trajectory['durations'])}
 
     yield from general_epics_motor_fly_scan(all_detectors, motor_dict, trajectory_dict, md=md)
 
@@ -236,7 +227,7 @@ def step_scan_johann_rixs_plan_bundle(**kwargs):
     return johann_rixs_plan_bundle('step_scan_johann_herfd_plan', **kwargs)
 
 
-from xas.spectrometer import analyze_elastic_fly_scan
+from xas.spectrometer import analyze_elastic_fly_scan, analyze_linewidth_fly_scan
 
 def obtain_spectrometer_resolution_plan(rois=None, plot_func=None, liveplot_kwargs=None, attempts=5, sleep=5, alignment_data=None):
     for i in range(attempts):
@@ -263,6 +254,10 @@ def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, e_width, e_velocity)
     if md is None: md = {}
 
+    md = {'sample_name': 'foil',
+          'sample_uid': FOIL_UID,
+          **md}
+
     name = f'Resolution scan {e_cen} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
@@ -278,40 +273,49 @@ def johann_resolution_scan_plan_bundle(e_cen=8000.0, e_width=10.0, e_velocity=2.
 
     return plans
 
+def obtain_spectrometer_linewidth_plan(rois=None, plot_func=None, liveplot_kwargs=None, attempts=5, sleep=5, alignment_data=None):
+    for i in range(attempts):
+        try:
+            print_to_gui(f'Analyzing linewidth scan: attempt {i + 1}', tag='Spectrometer', add_timestamp=True)
+            fwhm = analyze_linewidth_fly_scan(db, -1, rois=rois, plot_func=plot_func)
+            if alignment_data is not None:
+                start = db[-1].start
+                uid = start.uid
+                _dict = {'uid': uid,
+                         'fwhm': fwhm,
+                         'tweak_motor_description': start['tweak_motor_description'],
+                         'tweak_motor_position': start['tweak_motor_position']}
+                alignment_data.append(_dict)
+            yield from bps.null()
+            break
+        except Exception as e:
+            yield from bps.sleep(sleep)
+
+def johann_linewidth_fly_scan_plan_bundle(crystal=None, scan_range=None, duration=None, rois=None, motor_info='', plan_gui_services=None, liveplot_kwargs=None, md=None, alignment_data=None):
+    plans = []
+    mono_energy = hhm.energy.position
+    if md is None: md = {}
+    md = {'sample_name': 'foil',
+          'sample_uid': FOIL_UID,
+          **md}
+
+    name = f'Linewidth scan {motor_info}'
+    scan_kwargs = {'name': name, 'comment': '', 'detectors': ['Pilatus 100k'],
+                   'mono_energy': mono_energy,
+                   'spectrometer_central_energy': None,
+                   'relative_trajectory': {'positions' : [-scan_range/2, scan_range/2], 'durations': [duration]},
+                   'crystal_selection': crystal,
+                   'element': '', 'e0': None, 'line': '',
+                   'metadata': md}
+
+    plans.append({'plan_name': 'fly_epics_scan_johann_xes_plan',
+                  'plan_kwargs': scan_kwargs})
+    plans.append({'plan_name': 'obtain_spectrometer_linewidth_plan',
+                  'plan_kwargs': {'rois': rois, 'liveplot_kwargs': liveplot_kwargs, 'alignment_data': alignment_data},
+                  'plan_gui_services': plan_gui_services})
 
 
-def quick_crystal_motor_scan(motor_description=None, scan_range=None, velocity=None, pil100k_exosure_time=0.1, plot_func=None, liveplot_kwargs=None, md=None):
-    motor_device = get_motor_device(motor_description, based_on='description')
-    detectors = [apb.ch1, pil100k.stats1.total, pil100k.stats2.total, pil100k.stats3.total, pil100k.stats4.total, ]
 
-    print_to_gui(f'Quick scanning motor {motor_description}', tag='Spectrometer')
-
-    num_images = (scan_range / velocity  + 1) / pil100k_exosure_time
-    print(num_images)
-    pil100k_init_exposure_time = pil100k.cam.acquire_period.get()
-    pil100k_init_num_images = pil100k.cam.num_images.get()
-    pil100k_init_image_mode = pil100k.cam.image_mode.get()
-
-    pil100k.set_exposure_time(pil100k_exosure_time)
-    pil100k.set_num_images(num_images)
-
-    pil100k.cam.image_mode.set(1).wait()
-
-    start_acquiring_plan = bps.mv(pil100k.cam.acquire, 1)
-    yield from ramp_motor_scan(motor_device, detectors, scan_range, velocity=velocity, return_motor_to_initial_position=True, start_acquiring_plan=start_acquiring_plan, md=md)
-
-    pil100k.set_exposure_time(pil100k_init_exposure_time)
-    pil100k.set_num_images(pil100k_init_num_images)
-    pil100k.cam.image_mode.set(pil100k_init_image_mode).wait()
-
-
-
-# RE(quick_crystal_motor_scan(motor_description='Johann Main Crystal Roll',
-#                            scan_range=800,
-#                            velocity=25))
-
-# def _estimate_width_of_the_peak
-# from numpy.polynomial import Polynomial
 
 from scipy.signal import savgol_filter
 def estimate_center_and_width_of_peak(E, I):
@@ -458,22 +462,7 @@ def bragg_scan_for_individual_crystals(rel_start=None, rel_stop=None, num_steps=
 
 
 
-_crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
-                                    'yaw':  'Johann Main Crystal Yaw',
-                                    'x':    'Johann Crystal Assy X'},
-                           'aux2': {'roll': 'Johann Aux2 Crystal Roll',
-                                    'yaw':  'Johann Aux2 Crystal Yaw',
-                                    'x':    'Johann Aux2 Crystal X'},
-                           'aux3': {'roll': 'Johann Aux3 Crystal Roll',
-                                    'yaw':  'Johann Aux3 Crystal Yaw',
-                                    'x':    'Johann Aux3 Crystal X'},
-                           'aux4': {'roll': 'Johann Aux4 Crystal Roll',
-                                    'yaw':  'Johann Aux4 Crystal Yaw',
-                                    'x':    'Johann Aux4 Crystal X'},
-                           'aux5': {'roll': 'Johann Aux5 Crystal Roll',
-                                    'yaw':  'Johann Aux5 Crystal Yaw',
-                                    'x':    'Johann Aux5 Crystal X'}
-                           }
+
 
 
 

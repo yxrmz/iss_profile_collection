@@ -26,8 +26,6 @@ service_plan_funcs = {
         'tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : tune_beamline_plan_bundle},
         'quick_tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : quick_tune_beamline_plan_bundle},
         'optimize_beamline_plan_bundle': {'kind' : 'bundle', 'func' : optimize_beamline_plan_bundle},
-        # 'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
-        'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'random_xy_step' : move_sample_by_random_xy_step,
         'move_motor_plan' : move_motor_plan,
         'calibrate_mono_energy_plan_bundle' : {'kind' : 'bundle', 'func' : calibrate_mono_energy_plan_bundle},
@@ -52,7 +50,6 @@ aux_plan_funcs = {
         'move_bpm_fm_plan' : move_bpm_fm_plan,
         'put_bpm_fm_to_continuous_mode' : put_bpm_fm_to_continuous_mode,
         'set_hhm_feedback_plan' : set_hhm_feedback_plan,
-
         'move_johann_spectrometer_energy' : move_johann_spectrometer_energy,
         'shutter_close_plan' : shutter.close_plan,
         'foil_camera_validate_barcode_plan' : foil_camera_validate_barcode_plan,
