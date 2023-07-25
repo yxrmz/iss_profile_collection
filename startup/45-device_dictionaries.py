@@ -61,7 +61,7 @@ detector_dictionary =   {
                     'EM I2 V monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch7_mean']},
                     'EM Fluo V monitor' : {'device' : em_ave, 'channels' : ['em_ave_ch8_mean']},
                 }
-
+# comment
 def get_detector_device_list(key_list, flying=True):
     dets = []
     for key in key_list:
