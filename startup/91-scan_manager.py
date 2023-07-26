@@ -265,10 +265,46 @@ class ScanManager():
                                     'revert': True,
                                     'filename': ''}}
 
+    def quick_herfd_scan_dict(self, element, edge, duration):
+        duration_base = 10
+        duration_scaler = duration / duration_base
+        preedge_start = -50.0
+        XANES_start = -10.0
+        XANES_end = 20.0
+        EXAFS_end = 6.0
+        type = 'standard'
+        preedge_duration = 1.5 * duration_scaler
+        edge_duration = 5.0 * duration_scaler
+        postedge_duration = 3.0 * duration_scaler
+
+        return {'scan_type': 'fly scan',
+                'scan_parameters': {'element': element,
+                                    'edge': edge,
+                                    'e0': xraydb.xray_edge(element, edge).energy,
+                                    'preedge_start': preedge_start,
+                                    'XANES_start': XANES_start,
+                                    'XANES_end': XANES_end,
+                                    'EXAFS_end': EXAFS_end,
+                                    'type': type,
+                                    'preedge_duration': preedge_duration,
+                                    'edge_duration': edge_duration,
+                                    'postedge_duration': postedge_duration,
+                                    'preedge_flex': 0.5,
+                                    'postedge_flex': 0.3,
+                                    'pad': 0.25,
+                                    'repeat': 1,
+                                    'single_direction': True,
+                                    'revert': True,
+                                    'filename': ''}}
 
     def standard_trajectory_filename(self, element, edge, short=False):
         standard_scan_dict = self.standard_scan_dict(element, edge, short=short)
         uid = self.check_if_brand_new(standard_scan_dict)
+        return self.scan_dict[uid]['scan_parameters']['filename']
+
+    def quick_herfd_trajectory_filename(self, element, edge):
+        quick_herfd_scan_dict = self.quick_herfd_scan_dict(element, edge)
+        uid = self.check_if_brand_new(quick_herfd_scan_dict)
         return self.scan_dict[uid]['scan_parameters']['filename']
 
 
