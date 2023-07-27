@@ -1,3 +1,4 @@
+import numpy as np
 
 centroid_y = EpicsSignal('XF:08IDB-BI{BPM:SP-2}Stats1:CentroidY_RBV', name='centroid_y')
 intensity = EpicsSignal('XF:08IDB-BI{BPM:SP-2}Stats1:Total_RBV', name='intensity')
@@ -2124,25 +2125,94 @@ plt.figure(1, clear=True)
 plt.plot(roll, chisq, 'ks')
 
 
-#
-# class Bla:
-#
-#     def __init__(self):
-#         self.a = 1
-#         b = 3
-#
-#     def another_method(self):
-#         print(b) # does not work
-#         print(self.a) # does work
+from numpy.polynomial import Polynomial
 
 
+# uid = '53760d42-63d2-47ff-84c5-de111cbbb136'
+# uid = 'e1d69459-8e4c-45b5-83b8-8306a2fa7107'
+# uid = 'e6f6deef-848b-47ff-8414-a0755916e8f5'
+# uid = 'fc2040af-af1a-465a-97ba-1567cc41b785'
+# uid = '9b7ac035-d97c-460d-8d7b-ff541aa08738'
+uid = '5e3919ef-13d2-4a97-8ebd-2bb870bd93fd'
+# uid = '5066fde0-df7e-433e-995f-7bb256870675'
+# uid = '39a6639c-cc2d-4df8-bb27-f16b6fafe431'
+# uid = '928b333e-855d-48f2-95b1-c954cfc25919'
 
+# uid = 'fc2040af-af1a-465a-97ba-1567cc41b785'
+hdr = db[uid]
 
-bla = Bla()
+df = process_monitor_scan(db, uid, det_for_time_base='pil100k')
 
+x_key, y_key = 'johann_aux3_crystal_motor_cr_aux3_roll', 'pil100k_stats1_total'
+x = df[x_key].values
+y = df[y_key].values
+y = y - np.mean(y[:10])
 
+y_max = np.mean(np.sort(y)[-5:])
+mask = y >= y_max * 0.1
 
-{'temperature': 100, 'color': 'red'}
+x_roi = x[mask]
+y_roi = y[mask]
+
+y_roi_log = np.log(y_roi)
+
+from sklearn.linear_model import BayesianRidge, RidgeCV
+
+x_roi_prep = (x_roi - np.mean(x_roi)) / np.std(x_roi)
+y_roi_prep = (y_roi_log - np.mean(y_roi_log)) / np.std(y_roi_log)
+
+n_order = 7
+X_roi = np.vander(x_roi_prep, n_order + 1, increasing=True)
+# reg = BayesianRidge(tol=1e-6, fit_intercept=False)
+# reg.set_params(alpha_init=1e3, lambda_init=1e-3)
+
+reg = RidgeCV(alphas=10**np.linspace(-5, 5, 25), fit_intercept=False, store_cv_values=True)
+
+reg.fit(X_roi, y_roi_prep)
+
+p = Polynomial.fit(x_roi_prep, y_roi_prep, n_order)
+
+plt.figure(1, clear=True)
+plt.plot(x_roi_prep, y_roi_prep)
+plt.plot(x_roi_prep, reg.predict(X_roi))
+plt.plot(x_roi_prep, p(x_roi_prep))
+
+# p = Polynomial.fit(x_roi, y_roi_log, 5)
+p = Polynomial(reg.coef_)
+y_roi_log_fit = p(x_roi)
+y_roi_fit = np.exp(y_roi_log_fit)
+
+y_log_fit = p(x)
+y_fit = np.exp(y_log_fit)
+
+x_extrema = p.deriv().roots()
+x_maxima = x_extrema[p.deriv().deriv()(x_extrema) < 0]
+x_maxima = x_maxima[(x_maxima>=x_roi.min()) & (x_maxima<=x_roi.max())]
+
+x_maximum = np.real(x_maxima[np.argmin(np.abs(x_maxima - x_roi[np.argmax(y_roi)]))])
+y_maximum = np.exp(p(x_maximum))
+
+def estimate_hm_positions_of_peak(x, y):
+    x_cen = x[np.argmax(np.abs(y))]
+    y_diff = np.abs(y - 0.5)
+    x_low = x < x_cen
+    x_high = x > x_cen
+    x1 = np.interp(0.5, y[x_low], x[x_low])
+    x2 = np.interp(0.5, y[x_high][::-1], x[x_high][::-1])
+    return x1, x2
+
+x1, x2 = estimate_hm_positions_of_peak(x_roi, y_roi_fit/y_maximum)
+
+# _, fwhm = estimate_center_and_width_of_peak(x_roi, y_roi_fit)
+
+plt.figure(1, clear=True)
+plt.plot(x, y / y_maximum, 'k.-')
+plt.plot(x_roi, y_roi / y_maximum, 'b.-')
+plt.plot(x_roi, y_roi_fit / y_maximum, 'r-')
+
+plt.vlines([x1, x2], 0, 1, colors='r')
+
+# plt.plot(x_roi, p(x_roi), 'r-')
 
 
 
