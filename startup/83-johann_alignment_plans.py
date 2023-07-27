@@ -68,7 +68,7 @@ def _johann_analyze_alignment_scan(alignemnt_plan, rois=None, plot_func=None, li
     if alignment_data is not None:
         alignment_data.append(_dict)
 
-def johann_analyze_alignment_scan(attempts=5, sleep=3, **kwargs):
+def johann_analyze_alignment_scan_plan(attempts=5, sleep=3, **kwargs):
     for i in range(attempts):
         try:
             print_to_gui(f'Analyzing spectrometer alignment scan: attempt {i+1}', tag='Spectrometer', add_timestamp=True)
@@ -147,7 +147,7 @@ def johann_alignment_scan_plan_bundle(alignemnt_plan=None, rois=None, liveplot_k
     plans = []
     plans.append({'plan_name': alignemnt_plan,
                   'plan_kwargs': {**scan_kwargs}})
-    plans.append({'plan_name': 'johann_analyze_alignment_scan',
+    plans.append({'plan_name': 'johann_analyze_alignment_scan_plan',
                   'plan_kwargs': {'alignemnt_plan': alignemnt_plan, 'rois': rois, 'liveplot_kwargs': liveplot_kwargs,
                                   'alignment_data': alignment_data, 'fom': fom},
                   'plan_gui_services': plan_gui_services})
