@@ -166,12 +166,14 @@ def general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, md):
     flyable_motors = []
     motor_position_monitors = []
     motor_stream_names = []
+    motor_init_pos = {}
     for motor_key, motor in motor_dict.items():
         flyable_motor = FlyableEpicsMotor(motor, name=f'flyable_{motor.name}')
         flyable_motor.set_trajectory(trajectory_dict[motor_key])
         flyable_motors.append(flyable_motor)
         motor_position_monitors.append(motor.user_readback)
         motor_stream_names.append(f'{motor.name}_monitor')
+        motor_init_pos[motor_key] = motor.position
 
     md['motor_stream_names'] = motor_stream_names
     general_motor_flyer = FlyerWithMotors(detectors, flyable_motors, shutter, name='general_motor_flyer')
@@ -182,6 +184,11 @@ def general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, md):
         yield from monitor_during_wrapper(fly_plan, motor_position_monitors)
 
     yield from _fly(md)
+
+    for motor_key, motor in motor_dict.items():
+        motor.move(motor_init_pos[motor_key], wait=True)
+
+
 
 
 
