@@ -135,11 +135,12 @@ class HHM(Device):
 
         self._ensure_mono_faces_down()
         self.prepare_trajectory.set('1')  # Yes, the IOC requires a string.
-        status.wait()
+        # status.wait()
         # print_to_gui(f'Ensuring mono faces down (starting)', add_timestamp=True, ntabs=2)
         # self._ensure_mono_faces_down()
         # print_to_gui(f'Mono trajectory prepare done', add_timestamp=True, ntabs=2)
         self.flying_status = None
+        return status
 
     def kickoff(self):
         def callback(value, old_value, **kwargs):
@@ -205,7 +206,7 @@ class HHM(Device):
         return f'{(np.round(hhm.main_motor_res.get() * np.pi / 180 * 1e9))} nrad'
 
     @property
-    def current_trajetory_duration(self):
+    def current_trajectory_duration(self):
         # calls function from trajectory manager defined in the next file :'(
         return trajectory_manager.current_trajectory_duration
 

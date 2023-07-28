@@ -1586,6 +1586,33 @@ run_quick_alignment_scans_for_crystal(motor_description='Johann Aux3 Crystal Rol
 
 
 
+###
+detectors = ['Pilatus 100k']
+motor_dict = {'main': johann_emission.motor_cr_main_roll}
+
+roll_center = 1000
+roll_delta = 500
+
+trajectory_dict = {'main': {'positions': [roll_center - roll_delta, roll_center + roll_delta],
+                            'durations': [10]}}
+
+_plan = general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, {})
+RE(_plan)
+
+from xas.db_io import load_apb_trig_dataset_from_db, load_pil100k_dataset_from_db
+
+uid = '0cfd6579-6010-4dbe-a41d-10d2a45a5385'
+
+apb_trigger_pil100k_timestamps = load_apb_trig_dataset_from_db(db, uid, use_fall=True,
+                                                               stream_name='apb_trigger_pil100k')
+pil100k_dict = load_pil100k_dataset_from_db(db, uid, apb_trigger_pil100k_timestamps)
+
+roll_monitor_df = hdr.table('johann_emission_motor_cr_main_roll_monitor')
+
+
+###
+
+
 _crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
                                     'yaw':  'Johann Main Crystal Yaw',
                                     'x':    'Johann Crystal Assy X'},
@@ -2149,36 +2176,36 @@ y = df[y_key].values
 y = y - np.mean(y[:10])
 
 y_max = np.mean(np.sort(y)[-5:])
-mask = y >= y_max * 0.1
+mask = y >= y_max * 0.3
 
 x_roi = x[mask]
 y_roi = y[mask]
 
 y_roi_log = np.log(y_roi)
+#
+# from sklearn.linear_model import BayesianRidge, RidgeCV
+#
+# x_roi_prep = (x_roi - np.mean(x_roi)) / np.std(x_roi)
+# y_roi_prep = (y_roi_log - np.mean(y_roi_log)) / np.std(y_roi_log)
+#
+# n_order = 7
+# X_roi = np.vander(x_roi_prep, n_order + 1, increasing=True)
+# # reg = BayesianRidge(tol=1e-6, fit_intercept=False)
+# # reg.set_params(alpha_init=1e3, lambda_init=1e-3)
+#
+# reg = RidgeCV(alphas=10**np.linspace(-5, 5, 25), fit_intercept=False, store_cv_values=True)
+#
+# reg.fit(X_roi, y_roi_prep)
 
-from sklearn.linear_model import BayesianRidge, RidgeCV
-
-x_roi_prep = (x_roi - np.mean(x_roi)) / np.std(x_roi)
-y_roi_prep = (y_roi_log - np.mean(y_roi_log)) / np.std(y_roi_log)
-
-n_order = 7
-X_roi = np.vander(x_roi_prep, n_order + 1, increasing=True)
-# reg = BayesianRidge(tol=1e-6, fit_intercept=False)
-# reg.set_params(alpha_init=1e3, lambda_init=1e-3)
-
-reg = RidgeCV(alphas=10**np.linspace(-5, 5, 25), fit_intercept=False, store_cv_values=True)
-
-reg.fit(X_roi, y_roi_prep)
-
-p = Polynomial.fit(x_roi_prep, y_roi_prep, n_order)
+# p = Polynomial.fit(x_roi_prep, y_roi_prep, n_order)
 
 plt.figure(1, clear=True)
 plt.plot(x_roi_prep, y_roi_prep)
 plt.plot(x_roi_prep, reg.predict(X_roi))
 plt.plot(x_roi_prep, p(x_roi_prep))
 
-# p = Polynomial.fit(x_roi, y_roi_log, 5)
-p = Polynomial(reg.coef_)
+p = Polynomial.fit(x_roi, y_roi_log, 5)
+# p = Polynomial(reg.coef_)
 y_roi_log_fit = p(x_roi)
 y_roi_fit = np.exp(y_roi_log_fit)
 
