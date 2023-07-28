@@ -1609,6 +1609,12 @@ pil100k_dict = load_pil100k_dataset_from_db(db, uid, apb_trigger_pil100k_timesta
 
 roll_monitor_df = hdr.table('johann_emission_motor_cr_main_roll_monitor')
 
+roll_monitor_df['timestamp'] = (roll_monitor_df.time.values - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
+
+
+plt.figure(1, clear=True)
+plt.plot(roll_monitor_df.timestamp.values, roll_monitor_df.johann_emission_motor_cr_main_roll, '.-')
+plt.plot(apb_trigger_pil100k_timestamps, 1000*np.ones(apb_trigger_pil100k_timestamps.shape), '.-')
 
 ###
 
