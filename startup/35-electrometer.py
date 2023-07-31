@@ -51,6 +51,7 @@ class Electrometer(Device):
 
     trig_source = Cpt(EpicsSignal, 'Machine:Clk-SP')
 
+
 em = Electrometer('xf08id-em1:', name = 'em')
 
 class ElectrometerAverage(Electrometer):
@@ -106,6 +107,20 @@ class ElectrometerAverage(Electrometer):
         yield from bps.abs_set(self.divide, self.saved_status['divide'])
         yield from bps.abs_set(self.sample_len, self.saved_status['sample_len'])
         yield from bps.abs_set(self.wf_len, self.saved_status['wf_len'])
+
+    def read_exposure_time(self):
+        # data_rate = self.data_rate.get()
+        data_rate = self.acq_rate.get()
+        sample_len = self.sample_len.get()
+        return np.round((data_rate * sample_len / 1000), 3)
+
+    def set_exposure_time(self, new_exp_time):
+        data_rate = self.acq_rate.get()
+        sample_len = 500 * (np.round(new_exp_time * data_rate * 1000 / 500))
+        self.sample_len.set(sample_len).wait()
+        self.wf_len.set(sample_len).wait()
+
+
 
 em_ave = ElectrometerAverage('xf08id-em1:', name = 'em_ave')
 
@@ -233,6 +248,8 @@ class ElectrometerStream(ElectrometerAverage):
         # traj_duration = get_traj_duration()
         acq_num_points = traj_duration * self.acq_rate.get() * 1000 * 1.3
         self.num_points = int(round(acq_num_points, ndigits=-3))
+
+
 
 
 
