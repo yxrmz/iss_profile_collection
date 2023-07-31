@@ -3283,5 +3283,19 @@ for idx in test_idxs:
 plt.figure(1, clear=True)
 plt.plot(roll, chisq, 'ks')
 
+########
+
+
+for axis in ['x', 'y', 'roll', 'yaw']:
+    k4 = f'motor_cr_aux4_{axis}'
+    k5 = f'motor_cr_aux5_{axis}'
+    rowland_circle.config['parking'][k4] = _config[k5]
+    rowland_circle.config['parking'][k5] = _config[k4]
+
+
+
+
+
+
 
 

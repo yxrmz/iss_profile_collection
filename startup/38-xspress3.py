@@ -97,8 +97,11 @@ from event_model import compose_datum_page, schema_validators, DocumentNames, sc
 # resource, datum_ids, datum_kwarg_list)
 
 
-_xs_calibration_data = {'Cu' : {'true': 8039, 'ch1': 8160, 'ch2': 7980, 'ch3': 8120, 'ch4': 7880},
-                        'Pd': {'true': 21124, 'ch1': 21430, 'ch2': 20990, 'ch3': 21340, 'ch4': 20730}}
+# _xs_calibration_data = {'Cu' : {'true': 8039, 'ch1': 8160, 'ch2': 7980, 'ch3': 8120, 'ch4': 7880},
+#                         'Pd': {'true': 21124, 'ch1': 21430, 'ch2': 20990, 'ch3': 21340, 'ch4': 20730}}
+_xs_calibration_data = {'Cu' : {'true': 8039, 'ch1': 8230, 'ch2': 7980, 'ch3': 8120, 'ch4': 7880},
+                        'Pd': {'true': 21124, 'ch1': 21613, 'ch2': 20990, 'ch3': 21340, 'ch4': 20730}}
+
 def _convert_xs_energy_nom2act(energy, ch_index):
     ch = f'ch{ch_index}'
     e_acts = [0, _xs_calibration_data['Cu'][ch], _xs_calibration_data['Pd'][ch], _xs_calibration_data['Pd'][ch] * 2]
