@@ -74,7 +74,8 @@ def _johann_analyze_alignment_scan(alignemnt_plan, _uid=-1, rois=None, plot_func
     _dict = {'uid': uid,
              fom: fom_value,
              'tweak_motor_description': start['tweak_motor_description'],
-             'tweak_motor_position': start['tweak_motor_position']}
+             'tweak_motor_position': start['tweak_motor_position'],
+             'crystal': start['spectrometer_current_crystal']}
 
     if alignment_data is not None:
         alignment_data.append(_dict)
@@ -104,7 +105,7 @@ def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, sc
 
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
-          'plan_name': 'fly_scan_johann_elastic_alignment_plan',
+          'spectrometer_current_crystal': crystal,
           **md}
 
     name = f'{crystal} elastic scan at {e_cen: 0.1f} {motor_info}'
@@ -123,7 +124,7 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
     if md is None: md = {}
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
-          'plan_name': 'epics_fly_scan_johann_emission_alignment_plan',
+          'spectrometer_current_crystal': crystal,
           **md}
 
     name = f'{crystal} emission scan at {motor_info}'
@@ -149,7 +150,7 @@ def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge
 
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
-          'plan_name': 'fly_scan_johann_herfd_alignment_plan',
+          'spectrometer_current_crystal': crystal,
           **md}
 
     name = f'{crystal} herfd scan at {element}-{edge} {motor_info}'
@@ -179,7 +180,7 @@ def johann_focus_on_one_crystal_plan(crystal, yaw_shift=800):
     print_to_gui(f'Setting the focus on the {crystal} crystal. Moving other crystals from the field of view.',
                  add_timestamp=True, tag='Spectrometer')
 
-    enabled_crystals = [_c for _c, _e in johann_emission.enabled_crystals.items() if _e]
+    enabled_crystals = johann_emission.enabled_crystals_list
     unwanted_crystals = [c for c in enabled_crystals if c != crystal]
     for cr in unwanted_crystals:
         yaw_direction = 1 if cr in ['aux3', 'aux5'] else -1
@@ -334,6 +335,10 @@ def johann_crystal_alignment_plan_bundle(crystal=None, scan_range_alignment_mult
                   'plan_kwargs': {'motor_attr': tweak_motor_description,
                                   'based_on': 'description',
                                   'position': tweak_motor_init_pos}})
+    plans.append({'plan_name': 'move_motor_plan',
+                  'plan_kwargs': {'motor_attr': 'A Monochromator Energy',
+                                  'based_on': 'description',
+                                  'position': mono_energy}})
     if crystal != 'main':
         plans.append({'plan_name': 'move_motor_plan',
                       'plan_kwargs': {'motor_attr': _crystal_alignment_dict[crystal]['yaw'],
@@ -357,170 +362,20 @@ def johann_crystal_alignment_plan_bundle(crystal=None, scan_range_alignment_mult
 #                                              'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
 #                                              'plot_func': None, 'liveplot_kwargs': None}})
 
-# ALIGNMENT_DATA = []
-# plans = []
-#
-# plans.append({'plan_name': 'move_sample_stage_plan', # Cu foil
-#    'plan_kwargs': {'sample_coordinates': {'x': 23.309,
-#      'y': -45.664,
-#      'z': 7.0,
-#      'th': 80.364}},
-#    'plan_description': 'move_sample_stage_plan'})
-#
-# for alignment_by in ['emission', 'herfd']:
-#
-#     plans.append({'plan_name': 'move_motor_plan',
-#                   'plan_kwargs': {'motor_attr': 'A Monochromator Energy',
-#                                   'based_on': 'description',
-#                                   'position': 9000}})
-#     plans.append({'plan_name': 'johann_crystal_alignment_plan_bundle',
-#                   'plan_kwargs': {'crystal': 'main', 'scan_range_alignment_multiplier': 1,
-#                                                  'alignment_data': ALIGNMENT_DATA,
-#                                                  'tweak_motor_axis': 'x', 'tweak_motor_range': 25, 'tweak_motor_num_steps': 25,
-#                                                  'alignment_by': alignment_by, 'scan_kind': 'fly',
-#                                                  'pil100k_roi_num': 1,
-#                                                  'exposure_time': None,
-#                                                  'scan_range_yaw': 1000, 'scan_step_yaw': 20, 'scan_duration_yaw': 10,
-#                                                  'scan_range_roll': 1000, 'scan_step_roll': None, 'scan_duration_roll': 10,
-#                                                  'scan_range_mono': 15, 'scan_step_mono': 0.1, 'scan_duration_mono': 10,
-#                                                  'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
-#                                                  'plot_func': None, 'liveplot_kwargs': None}})
-#
-#
-#     for i in range(2, 6):
-#         plans.append({'plan_name': 'johann_crystal_alignment_plan_bundle',
-#                       'plan_kwargs': {'crystal': f'aux{i}', 'scan_range_alignment_multiplier': 1000,
-#                                       'alignment_data': ALIGNMENT_DATA,
-#                                       'tweak_motor_axis': 'x', 'tweak_motor_range': 30, 'tweak_motor_num_steps': 30,
-#                                       'alignment_by': alignment_by, 'scan_kind': 'fly',
-#                                       'pil100k_roi_num': 1,
-#                                       'exposure_time': None,
-#                                       'scan_range_yaw': 1000, 'scan_step_yaw': 20, 'scan_duration_yaw': 10,
-#                                       'scan_range_roll': 1000, 'scan_step_roll': None, 'scan_duration_roll': 10,
-#                                       'scan_range_mono': 15, 'scan_step_mono': 0.1, 'scan_duration_mono': 10,
-#                                       'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
-#                                       'plot_func': None, 'liveplot_kwargs': None}})
-#
-#
-# plans.append({'plan_name': 'move_motor_plan',
-#                       'plan_kwargs': {'motor_attr': 'A Monochromator Energy',
-#                                       'based_on': 'description',
-#                                       'position': 8046}})
-#
-#
-# sample_move_plans = \
-# [{'plan_name': 'move_sample_stage_plan', # Cu foil
-#    'plan_kwargs': {'sample_coordinates': {'x': 23.309,
-#      'y': -45.664,
-#      'z': 7.0,
-#      'th': 80.364}},
-#    'plan_description': 'move_sample_stage_plan'},
-#
-#  {'plan_name': 'move_sample_stage_plan', # w foil
-#    'plan_kwargs': {'sample_coordinates': {'x': 28.316,
-#      'y': -71.268,
-#      'z': 7.0,
-#      'th': 80.364}},
-#    'plan_description': 'move_sample_stage_plan'},
-#
-#  {'plan_name': 'move_sample_stage_plan', # water
-#    'plan_kwargs': {'sample_coordinates': {'x': -21.519,
-#      'y': -63.759,
-#      'z': 6.38,
-#      'th': 80.364}},
-#    'plan_description': 'move_sample_stage_plan'},
-#
-#  {'plan_name': 'move_sample_stage_plan', # zeolite
-#    'plan_kwargs': {'sample_coordinates': {'x': -26.11,
-#      'y': -63.759,
-#      'z': 7.31,
-#      'th': 80.364}},
-#    'plan_description': 'move_sample_stage_plan'},
-#
-#  {'plan_name': 'move_sample_stage_plan', # plastic
-#    'plan_kwargs': {'sample_coordinates': {'x': -14.021,
-#      'y': -63.976,
-#      'z': 6.38,
-#      'th': 80.364}},
-#    'plan_description': 'move_sample_stage_plan'},
-#  ]
-#
-# for sample_move_plan in sample_move_plans:
-#     plans.append(sample_move_plan)
-#
-#     plans.append({'plan_name': 'johann_crystal_alignment_plan_bundle',
-#                   'plan_kwargs': {'crystal': 'main', 'scan_range_alignment_multiplier': 1,
-#                                   'alignment_data': ALIGNMENT_DATA,
-#                                   'tweak_motor_axis': 'x', 'tweak_motor_range': 25, 'tweak_motor_num_steps': 25,
-#                                   'alignment_by': 'elastic', 'scan_kind': 'fly',
-#                                   'pil100k_roi_num': 1,
-#                                   'exposure_time': None,
-#                                   'scan_range_yaw': 1000, 'scan_step_yaw': 20, 'scan_duration_yaw': 10,
-#                                   'scan_range_roll': 1000, 'scan_step_roll': None, 'scan_duration_roll': 10,
-#                                   'scan_range_mono': 15, 'scan_step_mono': 0.1, 'scan_duration_mono': 10,
-#                                   'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
-#                                   'plot_func': None, 'liveplot_kwargs': None}})
-#
-#     for i in range(2, 6):
-#         plans.append({'plan_name': 'johann_crystal_alignment_plan_bundle',
-#                       'plan_kwargs': {'crystal': f'aux{i}', 'scan_range_alignment_multiplier': 1000,
-#                                       'alignment_data': ALIGNMENT_DATA,
-#                                       'tweak_motor_axis': 'x', 'tweak_motor_range': 30, 'tweak_motor_num_steps': 30,
-#                                       'alignment_by': 'elastic', 'scan_kind': 'fly',
-#                                       'pil100k_roi_num': 1,
-#                                       'exposure_time': None,
-#                                       'scan_range_yaw': 1000, 'scan_step_yaw': 20, 'scan_duration_yaw': 10,
-#                                       'scan_range_roll': 1000, 'scan_step_roll': None, 'scan_duration_roll': 10,
-#                                       'scan_range_mono': 15, 'scan_step_mono': 0.1, 'scan_duration_mono': 10,
-#                                       'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
-#                                       'plot_func': None, 'liveplot_kwargs': None}})
-#
-#
-#
-# plan_processor.add_plans(plans)
-
-# ALIGNMENT_DATA = []
-# plans = run_alignment_scans_for_crystal_bundle(crystal='main', alignment_by='elastic', pil100k_roi_num=1,
-#                                            alignment_data=ALIGNMENT_DATA,
-#                                            scan_range_roll=12, scan_range_yaw=400, step_size=10,
-#                                            exposure_time = 0.5,
-#                                            tweak_motor_range=20, tweak_motor_num_steps=9,
-#                                            plot_func=None, liveplot_kwargs=None)
-
-# plans = run_alignment_scans_for_crystal_bundle(crystal='aux2', alignment_by='elastic', pil100k_roi_num=1,
-#                                            alignment_data=ALIGNMENT_DATA,
-#                                            scan_range_roll=12, scan_range_yaw=600, step_size=20,
-#                                            exposure_time = 0.3,
-#                                            tweak_motor_range=24000, tweak_motor_num_steps=11,
-#                                            plot_func=None, liveplot_kwargs=None)
-
-# plans = run_alignment_scans_for_crystal_bundle(crystal='main', alignment_by='emission', pil100k_roi_num=1,
-#                                                alignment_data=ALIGNMENT_DATA,
-#                                                scan_range_roll=800, scan_range_yaw=400, step_size=10,
-#                                                exposure_time = 0.3,
-#                                                tweak_motor_range=15, tweak_motor_num_steps=7,
-#                                                plot_func=None, liveplot_kwargs=None)
-
-# plans = run_alignment_scans_for_crystal_bundle(crystal='aux5', alignment_by='emission', pil100k_roi_num=1,
-#                                            alignment_data=ALIGNMENT_DATA,
-#                                            scan_range_roll=800, scan_range_yaw=600, step_size=10,
-#                                            exposure_time = 0.3,
-#                                            tweak_motor_range=10000, tweak_motor_num_steps=5,
-#                                            plot_func=None, liveplot_kwargs=None)
-
-
 
 def johann_spectrometer_alignment_plan_bundle(**kwargs):
     plans = []
 
     alignment_data = johann_emission.alignment_data
+    enabled_crystals = johann_emission.enabled_crystals_list
 
-    enabled_crystals = [_c for _c, _e in johann_emission.enabled_crystals.items() if _e]
+    mono_energy = hhm.energy.position
 
-    # enforce that the main crystal is aligned first
-    if 'main' in enabled_crystals:
-        enabled_crystals.pop(enabled_crystals.index('main'))
-        enabled_crystals = ['main'] + enabled_crystals
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Starting the spectrometer alignment.',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
 
     for crystal in enabled_crystals:
         if crystal not in alignment_data.keys():
@@ -543,6 +398,52 @@ def johann_spectrometer_alignment_plan_bundle(**kwargs):
                                       'fom': _scan_fom_dict[kwargs['alignment_by']]['alignment']['fom'],
                                       'polarity': _scan_fom_dict[kwargs['alignment_by']]['alignment']['polarity']}})
 
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Performing post-alignment yaw motor tuning)',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
+
+    scan_range_yaw = kwargs['scan_range_yaw']
+    scan_duration_yaw = kwargs['scan_duration_yaw']
+    scan_step_yaw = kwargs['scan_step_yaw']
+    exposure_time = kwargs['exposure_time']
+    pil100k_roi_num = kwargs['pil100k_roi_num']
+    scan_kind = kwargs['scan_kind']
+    plot_func = kwargs['plot_func']
+    liveplot_kwargs = kwargs['liveplot_kwargs']
+
+    for crystal in enabled_crystals:
+        if crystal != 'main':
+            # pretune yaw
+            plans.append({'plan_name': 'move_motor_plan',
+                          'plan_kwargs': {'motor_attr': 'A Monochromator Energy',
+                                          'based_on': 'description',
+                                          'position': mono_energy}})
+            yaw_scan_params = {'scan_range': scan_range_yaw}
+            if scan_kind == 'fly':
+                yaw_scan_params['duration'] = scan_duration_yaw
+            elif scan_kind == 'step':
+                yaw_scan_params['step_size'] = scan_step_yaw
+                yaw_scan_params['exposure_time'] = exposure_time
+
+            plans.append({'plan_name': 'tune_johann_piezo_plan',
+                          'plan_kwargs': {'property': 'com',
+                                          'pil100k_roi_num': pil100k_roi_num,
+                                          'scan_kind': scan_kind,
+                                          'crystal': crystal,
+                                          'axis': 'yaw',
+                                          'scan_range': scan_range_yaw,
+                                          **yaw_scan_params,
+                                          'plot_func': plot_func,
+                                          'liveplot_kwargs': liveplot_kwargs}})
+
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Spectrometer alignment is complete.',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
+
     return plans
 
 
@@ -550,20 +451,23 @@ def johann_spectrometer_calibration_plan_bundle(calibrate_by=None, scan_kind=Non
                                                 pil100k_roi_num=None,
                                                 calibration_data=None,
                                                 exposure_time=None,
-                                                scan_range_roll=None, scan_step_roll=None, scan_duration_roll=None,
+                                                scan_range_roll=None, scan_step_roll=None, scan_duration_roll=None, # scan range roll better be small for this
                                                 herfd_element=None, herfd_edge=None, scan_duration_herfd=None,
                                                 liveplot_kwargs=None):
 
-    enabled_crystals = [_c for _c, _e in johann_emission.enabled_crystals.items() if _e]
+    enabled_crystals = johann_emission.enabled_crystals_list
 
-    # enforce that the main crystal is aligned first
-    if 'main' in enabled_crystals:
-        enabled_crystals.pop(enabled_crystals.index('main'))
-        enabled_crystals = ['main'] + enabled_crystals
     if calibration_data is None:
         calibration_data = {}
 
     plans = []
+
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Starting the spectrometer calibration.',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
+
     if calibrate_by == 'roll':
         for crystal in enabled_crystals:
             scan_params = {'scan_range': scan_range_roll}
@@ -616,7 +520,53 @@ def johann_spectrometer_calibration_plan_bundle(calibrate_by=None, scan_kind=Non
                                           'fom': _scan_fom_dict['herfd']['calibration']['fom'],
                                           'polarity': _scan_fom_dict['herfd']['calibration']['polarity']}})
 
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Spectrometer calibration is complete.',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
+
     return plans
+
+
+def johann_analyze_spectrometer_resolution_plan(resolution_data=None, fom=None):
+    fwhms = []
+    print_to_gui('')
+    for crystal, scan_result in resolution_data.items():
+        print_to_gui(f'Resolution for {crystal} crystal is {scan_result[fom]}')
+        fwhms.append(scan_result[fom])
+    print_to_gui('')
+    print_to_gui(f'The average spectrometer resolution is {np.mean(fwhms): 0.2f} eV.')
+    print_to_gui('')
+    yield from bps.null()
+
+def johann_measure_spectrometer_resolution_plan_bundle(**kwargs):
+
+    plans = []
+    resolution_data = {}
+    fom = _scan_fom_dict['elastic']['alignnment']
+
+    enabled_crystals = johann_emission.enabled_crystals_list
+    for crystal in enabled_crystals:
+        plans.append({'plan_name': 'johann_focus_on_one_crystal_plan', 'plan_kwargs': {'crystal': crystal}})
+        plans.append({'plan_name': 'johann_alignment_scan_plan_bundle',
+                      'plan_kwargs': {'crystal': crystal,
+                                      'alignment_plan': 'fly_scan_johann_elastic_alignment_plan_bundle',
+                                      'fom': fom,
+                                      'alignment_data': resolution_data,
+                                      **kwargs}})
+
+        plans.append({'plan_name': 'undo_johann_focus_on_one_crystal_plan', 'plan_kwargs': {'crystal': crystal}})
+
+    plans.append({'plan_name': 'estimate_spectrometer_resolution_plan',
+                  'plan_kwargs': {'resolution_data': resolution_data,
+                                  'fom': fom}})
+
+    return plans
+
+
+ # plans = []
+ # plans.extend(johann_elastic_scan_for_individual_crystals_bundle(e_cen=8046, scan_range=10, duration=5, motor_info='water', md={}))
 
 
 

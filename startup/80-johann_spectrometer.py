@@ -1129,6 +1129,15 @@ class JohannMultiCrystalPseudoPositioner(JohannPseudoPositioner):
     def enabled_crystals(self):
         return self.rowland_circle.enabled_crystals
 
+    @property
+    def enabled_crystals_list(self):
+        enabled_crystals_list = [_c for _c, _e in johann_emission.enabled_crystals.items() if _e]
+
+        # enforce that the main crystal comes first
+        if 'main' in enabled_crystals_list:
+            enabled_crystals_list.pop(enabled_crystals_list.index('main'))
+            enabled_crystals_list = ['main'] + enabled_crystals_list
+        return enabled_crystals_list
 
     def enable_crystal(self, crystal_key, enable):
         self.rowland_circle.enable_crystal(crystal_key, enable)

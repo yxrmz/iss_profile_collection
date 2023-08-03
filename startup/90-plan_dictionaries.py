@@ -71,7 +71,9 @@ aux_plan_funcs = {
         'move_to_optimal_crystal_alignment_position_plan': move_to_optimal_crystal_alignment_position_plan,
         'johann_crystal_alignment_plan_bundle': {'kind' : 'bundle', 'func' : johann_crystal_alignment_plan_bundle},
         'johann_spectrometer_alignment_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_alignment_plan_bundle},
-        'johann_spectrometer_calibration_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_calibration_plan_bundle}
+        'johann_spectrometer_calibration_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_calibration_plan_bundle,
+        'johann_measure_spectrometer_resolution_plan_bundle': {'kind': 'bundle', 'func': johann_measure_spectrometer_resolution_plan_bundle}
+        'johann_analyze_spectrometer_resolution_plan': johann_analyze_spectrometer_resolution_plan}
 }
 
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}
