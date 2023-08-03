@@ -121,7 +121,7 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_centr
         full_element_name = element
     md_general = get_scan_md(name, comment, detectors_dict, '.dat')
 
-    md_scan = {'experiment': 'fly_scan',
+    md_scan = {'experiment': 'epics_fly_scan',
                'spectrometer': 'johann',
                'spectrometer_config': rowland_circle.config,
                'spectrometer_config_uid': spectrometer_config_uid,
@@ -154,7 +154,7 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
                                    element='', e0=0, line='',
                                    spectrometer_config_uid=None,
                                    metadata={}):
-    default_detectors = [apb_ave]
+    default_detectors = [apb_stream]
     aux_detectors = get_detector_device_list(detectors, flying=True)
     all_detectors = default_detectors + aux_detectors
     detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
@@ -170,7 +170,7 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
         crystal_selection = [crystal_selection]
 
     yield from epics_fly_scan_custom_johann_piezo_plan(crystals=crystal_selection, axis='roll', detectors=all_detectors,
-                                                relative_trajectory=relative_trajectory, md=None)
+                                                relative_trajectory=relative_trajectory, md=md)
 
 
 

@@ -302,8 +302,8 @@ class ScanManager():
         uid = self.check_if_brand_new(standard_scan_dict)
         return self.scan_dict[uid]['scan_parameters']['filename']
 
-    def quick_herfd_trajectory_filename(self, element, edge):
-        quick_herfd_scan_dict = self.quick_herfd_scan_dict(element, edge)
+    def quick_herfd_trajectory_filename(self, element, edge, duration):
+        quick_herfd_scan_dict = self.quick_herfd_scan_dict(element, edge, duration)
         uid = self.check_if_brand_new(quick_herfd_scan_dict)
         return self.scan_dict[uid]['scan_parameters']['filename']
 

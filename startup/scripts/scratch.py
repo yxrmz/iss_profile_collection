@@ -1603,18 +1603,24 @@ from xas.db_io import load_apb_trig_dataset_from_db, load_pil100k_dataset_from_d
 
 uid = '0cfd6579-6010-4dbe-a41d-10d2a45a5385'
 
+
+uid = -2
+
+hdr = db[uid]
 apb_trigger_pil100k_timestamps = load_apb_trig_dataset_from_db(db, uid, use_fall=True,
                                                                stream_name='apb_trigger_pil100k')
 pil100k_dict = load_pil100k_dataset_from_db(db, uid, apb_trigger_pil100k_timestamps)
 
-roll_monitor_df = hdr.table('johann_emission_motor_cr_main_roll_monitor')
+roll_monitor_df = hdr.table('johann_main_crystal_motor_cr_main_roll_monitor')
 
 roll_monitor_df['timestamp'] = (roll_monitor_df.time.values - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
 
 
-plt.figure(1, clear=True)
-plt.plot(roll_monitor_df.timestamp.values, roll_monitor_df.johann_emission_motor_cr_main_roll, '.-')
+plt.figure(2, clear=True)
+plt.plot(roll_monitor_df.timestamp.values, roll_monitor_df.johann_main_crystal_motor_cr_main_roll, '.-')
 plt.plot(apb_trigger_pil100k_timestamps, 1000*np.ones(apb_trigger_pil100k_timestamps.shape), '.-')
+
+
 
 ###
 

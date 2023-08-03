@@ -176,8 +176,8 @@ def general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, md):
         motor_init_pos[motor_key] = motor.position
 
     md['motor_stream_names'] = motor_stream_names
-    detector_device_list = get_detector_device_list(detectors, flying=True)
-    general_motor_flyer = FlyerWithMotors(detector_device_list, flyable_motors, shutter, name='general_motor_flyer')
+    # detector_device_list = get_detector_device_list(detectors, flying=True)
+    general_motor_flyer = FlyerWithMotors(detectors, flyable_motors, shutter, name='general_motor_flyer')
 
     @bpp.stage_decorator([general_motor_flyer])
     def _fly(md):

@@ -9,6 +9,7 @@ data_collection_plan_funcs = {
         'fly_scan_von_hamos_plan' : fly_scan_von_hamos_plan,
         'collect_n_exposures_johann_plan' : collect_n_exposures_johann_plan,
         'step_scan_johann_xes_plan' : step_scan_johann_xes_plan,
+        'epics_fly_scan_johann_xes_plan': epics_fly_scan_johann_xes_plan,
         'step_scan_johann_herfd_plan' : step_scan_johann_herfd_plan,
         'fly_scan_johann_herfd_plan' : fly_scan_johann_herfd_plan,
         'fly_scan_johann_rixs_plan_bundle' : {'kind' : 'bundle', 'func' : fly_scan_johann_rixs_plan_bundle},
