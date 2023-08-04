@@ -74,8 +74,9 @@ def _johann_analyze_alignment_scan(alignemnt_plan, _uid=-1, rois=None, plot_func
     _dict = {'uid': uid,
              fom: fom_value,
              'tweak_motor_description': start['tweak_motor_description'],
-             'tweak_motor_position': start['tweak_motor_position'],
-             'crystal': start['spectrometer_current_crystal']}
+             'tweak_motor_position': start['tweak_motor_position']}
+    if 'spectrometer_current_crystal' in start.keys():
+        _dict['crystal'] = start['spectrometer_current_crystal']
 
     if alignment_data is not None:
         alignment_data.append(_dict)
@@ -122,7 +123,7 @@ def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, sc
     return [{'plan_name': 'fly_scan_plan',
                   'plan_kwargs': {**scan_kwargs}}]
 
-# plans = fly_scan_johann_elastic_alignment_plan_bundle(crystal='main', e_cen=8046, scan_range=10, duration=5, motor_info='test', md={})
+# plans = fly_scan_johann_elastic_alignment_plan_bundle(crystal='aux5', e_cen=8046, scan_range=12, duration=20, motor_info='Cu foil spot2', md={})
 # plan_processor.add_plans(plans)
 
 def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_energy=None, scan_range=None, duration=None, motor_info='', md=None):
@@ -181,7 +182,7 @@ def johann_alignment_scan_plan_bundle(alignment_plan=None, rois=None, liveplot_k
     return plans
 
 
-def johann_focus_on_one_crystal_plan(crystal, yaw_shift=800):
+def johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
     print_to_gui(f'Setting the focus on the {crystal} crystal. Moving other crystals from the field of view.',
                  add_timestamp=True, tag='Spectrometer')
 
@@ -194,7 +195,7 @@ def johann_focus_on_one_crystal_plan(crystal, yaw_shift=800):
                                             rel_position=yaw_shift * yaw_direction)
 
 
-def undo_johann_focus_on_one_crystal_plan(crystal, yaw_shift=800):
+def undo_johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
     print_to_gui(f'Focus was on the {crystal} crystal. Moving other crystals back into the field of view.',
                  add_timestamp=True, tag='Spectrometer')
     yield from johann_focus_on_one_crystal_plan(crystal, yaw_shift=-yaw_shift)
@@ -353,19 +354,22 @@ def johann_crystal_alignment_plan_bundle(crystal=None, scan_range_alignment_mult
 
     return plans
 
+
 # ALIGNMENT_DATA = []
+#
+# plans = []
 # plans.append({'plan_name': 'johann_crystal_alignment_plan_bundle',
-#               'plan_kwargs': {'crystal': 'aux2', 'scan_range_alignment_multiplier': 1,
-#                                              'alignment_data': ALIGNMENT_DATA,
-#                                              'tweak_motor_axis': 'x', 'tweak_motor_range': 0, 'tweak_motor_num_steps': 1,
-#                                              'alignment_by': alignment_by, 'scan_kind': 'fly',
-#                                              'pil100k_roi_num': 1,
-#                                              'exposure_time': None,
-#                                              'scan_range_yaw': 1000, 'scan_step_yaw': 20, 'scan_duration_yaw': 10,
-#                                              'scan_range_roll': 1000, 'scan_step_roll': None, 'scan_duration_roll': 10,
-#                                              'scan_range_mono': 15, 'scan_step_mono': 0.1, 'scan_duration_mono': 10,
-#                                              'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
-#                                              'plot_func': None, 'liveplot_kwargs': None}})
+#               'plan_kwargs': {'crystal': 'aux5', 'scan_range_alignment_multiplier': 1000,
+#                               'alignment_data': ALIGNMENT_DATA,
+#                               'tweak_motor_axis': 'x', 'tweak_motor_range': 30, 'tweak_motor_num_steps': 11,
+#                               'alignment_by': 'emission', 'scan_kind': 'fly',
+#                               'pil100k_roi_num': 1,
+#                               'exposure_time': None,
+#                               'scan_range_yaw': 1000, 'scan_step_yaw': 20, 'scan_duration_yaw': 10,
+#                               'scan_range_roll': 1000, 'scan_step_roll': None, 'scan_duration_roll': 10,
+#                               'scan_range_mono': 15, 'scan_step_mono': 0.1, 'scan_duration_mono': 10,
+#                               'herfd_element': 'Cu', 'herfd_edge': 'K', 'scan_duration_herfd': 10,
+#                               'plot_func': None, 'liveplot_kwargs': None}})
 # ALIGNMENT_DATA = {}
 #
 # plans = []
@@ -719,7 +723,7 @@ def johann_analyze_spectrometer_resolution_plan(resolution_data=None, fom=None):
 def johann_measure_spectrometer_resolution_plan_bundle(**kwargs):
     plans = []
     resolution_data = {}
-    fom = _scan_fom_dict['elastic']['alignnment']
+    fom = _scan_fom_dict['elastic']['alignment']
 
     enabled_crystals = johann_emission.enabled_crystals_list
     for crystal in enabled_crystals:
@@ -741,9 +745,20 @@ def johann_measure_spectrometer_resolution_plan_bundle(**kwargs):
 
 
 # plans = []
-# plans.extend(johann_measure_spectrometer_resolution_plan_bundle(e_cen=8046, scan_range=12, duration=20, motor_info='resolution', md={}))
+# plans.extend(johann_measure_spectrometer_resolution_plan_bundle(e_cen=8340, scan_range=12, duration=20, motor_info='resolution', md={}))
 # plan_processor.add_plans(plans)
-
+#
+# bla=[]
+# plans = []
+# # plans.append({'plan_name': 'johann_focus_on_one_crystal_plan', 'plan_kwargs': {'crystal': 'aux5'}})
+# plans.append({'plan_name': 'johann_alignment_scan_plan_bundle',
+#               'plan_kwargs': {'crystal': 'main',
+#                               'alignment_plan': 'fly_scan_johann_elastic_alignment_plan_bundle',
+#                               'fom': _scan_fom_dict['elastic']['alignment'],
+#                               'alignment_data': bla,
+#                               'e_cen': 8340, 'scan_range': 12, 'duration': 20, 'motor_info': 'main try2', 'md': {}}})
+#
+# plan_processor.add_plans(plans)
 # plans = []
 # plans.extend(johann_spectrometer_calibration_plan_bundle(calibrate_by='roll', scan_kind='fly', pil100k_roi_num=1, scan_range_roll=1000, scan_duration_roll=10))
 # plan_processor.add_plans(plans)

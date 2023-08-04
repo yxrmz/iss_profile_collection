@@ -5,16 +5,20 @@ _crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
                                     'x':    'Johann Crystal Assy X'},
                            'aux2': {'roll': 'Johann Aux2 Crystal Roll',
                                     'yaw':  'Johann Aux2 Crystal Yaw',
-                                    'x':    'Johann Aux2 Crystal X'},
+                                    'x':    'Johann Aux2 Crystal X',
+                                    'y':    'Johann Aux2 Crystal Y'},
                            'aux3': {'roll': 'Johann Aux3 Crystal Roll',
                                     'yaw':  'Johann Aux3 Crystal Yaw',
-                                    'x':    'Johann Aux3 Crystal X'},
+                                    'x':    'Johann Aux3 Crystal X',
+                                    'y':    'Johann Aux3 Crystal Y'},
                            'aux4': {'roll': 'Johann Aux4 Crystal Roll',
                                     'yaw':  'Johann Aux4 Crystal Yaw',
-                                    'x':    'Johann Aux4 Crystal X'},
+                                    'x':    'Johann Aux4 Crystal X',
+                                    'y':    'Johann Aux4 Crystal Y'},
                            'aux5': {'roll': 'Johann Aux5 Crystal Roll',
                                     'yaw':  'Johann Aux5 Crystal Yaw',
-                                    'x':    'Johann Aux5 Crystal X'}
+                                    'x':    'Johann Aux5 Crystal X',
+                                    'y':    'Johann Aux5 Crystal Y'}
                            }
 
 def move_johann_spectrometer_energy(energy : float=-1):

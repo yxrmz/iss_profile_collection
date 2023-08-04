@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 centroid_y = EpicsSignal('XF:08IDB-BI{BPM:SP-2}Stats1:CentroidY_RBV', name='centroid_y')
 intensity = EpicsSignal('XF:08IDB-BI{BPM:SP-2}Stats1:Total_RBV', name='intensity')
@@ -2253,6 +2254,55 @@ plt.vlines([x1, x2], 0, 1, colors='r')
 
 # plt.plot(x_roi, p(x_roi), 'r-')
 
+def _test_analyze_linewidth_fly_scan(db, uid, x_key='johann_main_crystal_motor_cr_main_roll', rois=None,
+                                     plot_func=None):
+    fname_bin = db[uid].start['interp_filename'][:-3] + 'dat'
+    df, _ = load_binned_df_from_file(fname_bin)
+    x = df[x_key].values
+    if rois is None: rois = [1]
+
+    for i in rois:
+        field = f'pil100k_roi{i}'
+        y = np.abs(df[field].values / df['i0'].values)
+
+        y_max_act = np.mean(np.sort(y)[-5:])
+
+        y = normalize_peak(y, bkg1=5, bkg2=-5, nmax=5)
+
+        y_max = np.mean(np.sort(y)[-5:])
+        mask = y >= y_max * 0.3
+
+        x_roi = x[mask]
+        y_roi = y[mask]
+
+        com = np.sum(y_roi * x_roi) / np.sum(y_roi)
+        variance = np.sum(y_roi * x_roi ** 2) / np.sum(y_roi) - com ** 2
+
+    return variance, y_max_act
 
 
+uids = range(390431+2, 390457+1, 2)
+uids = range(390413, 390427+1, 2)
+ALIGNMENT_DATA = []
+
+for uid in uids:
+    _johann_analyze_alignment_scan('epics_fly_scan_johann_emission_alignment_plan_bundle', _uid=uid, rois=[1],
+                                   alignment_data=ALIGNMENT_DATA, fom=_scan_fom_dict['emission']['alignment']['fom'])
+    x_key = db[uid].start['motor_stream_names'][0].replace('_monitor', '')
+    variance, y_max = _test_analyze_linewidth_fly_scan(db, uid, x_key=x_key, rois=[1])
+    ALIGNMENT_DATA[-1]['variance'] = variance
+    ALIGNMENT_DATA[-1]['y_max'] = y_max
+
+df = pd.DataFrame(ALIGNMENT_DATA)
+
+plt.figure(1, clear=True)
+get_optimal_crystal_alignment_position(df.tweak_motor_position, df.emission_line_fwhm, plot_func=my_plot_func)
+
+
+plt.figure(2, clear=True)
+get_optimal_crystal_alignment_position(df.tweak_motor_position, df.variance, plot_func=my_plot_func)
+
+
+plt.figure(3, clear=True)
+get_optimal_crystal_alignment_position(df.tweak_motor_position, -df.y_max, plot_func=my_plot_func)
 
