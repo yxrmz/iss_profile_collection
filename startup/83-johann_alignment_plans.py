@@ -23,7 +23,14 @@ def fly_epics_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=
 
 
 #
-
+# plan = epics_fly_scan_custom_johann_piezo_plan(#crystals=['main', 'aux4', 'aux2'],
+#                                                crystals=['main', 'aux2', 'aux3', 'aux4', 'aux5'],
+#                                                 axis='roll',
+#                                                 detectors=[pil100k_stream, apb_stream],
+#                                                 relative_trajectory={'positions': [-400, -395, 395, 400],
+#                                                                      'durations': [0.1, 30, 0.1]},
+#                                                 md={'experiment': 'epics_fly_scan'})
+# RE(plan)
 
 def simple_johann_piezo_plan(scan_kind=None, **kwargs):
     if scan_kind == 'step':

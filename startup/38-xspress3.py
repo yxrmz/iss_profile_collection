@@ -439,6 +439,9 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger_xs)
 
+# xs = None
+# xs_stream = None
+
 
 #
 # class ISSXspress3HDF5Handler(Xspress3HDF5Handler):

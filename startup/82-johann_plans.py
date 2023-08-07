@@ -176,6 +176,15 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from epics_fly_scan_custom_johann_piezo_plan(crystals=crystal_selection, axis='roll', detectors=all_detectors,
                                                 relative_trajectory=relative_trajectory, md=md)
 
+# plan = epics_fly_scan_johann_xes_plan(name='fly_test', comment='', detectors=['Pilatus 100k'],
+#                                    mono_energy=8500, mono_angle_offset=None,
+#                                    spectrometer_central_energy=None, relative_trajectory={'positions': [-500, -495, 395, 400],
+#                                                                      'durations': [0.1, 30, 0.1]},
+#                                    crystal_selection=None,
+#                                    element='Ni', e0=8267, line='Kb1',
+#                                    spectrometer_config_uid=None,
+#                                    metadata={})
+# RE(plan)
 
 
 def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list, name):
