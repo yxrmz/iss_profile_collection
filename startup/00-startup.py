@@ -1,5 +1,4 @@
-
-
+import copy
 import glob
 import logging
 import os
@@ -163,3 +162,28 @@ def get_hook():
 
 import faulthandler
 faulthandler.enable()
+
+
+def handle_pound_keys_in_md_folder():
+    for filename in os.listdir(runengine_metadata_dir):
+        filepath = runengine_metadata_dir / Path(filename)
+        os.rename(filepath, str(filepath).replace('#', '%23'))
+# handle_pound_keys_in_md_folder()
+def fix_RE_persistent_dict_md():
+    md = copy.deepcopy(dict(RE.md))
+    _keys = copy.deepcopy(list(md.keys()))
+    for key in _keys:
+        # print(key)
+        if '#' in key:
+            value = md.pop(key)
+            new_key = key.split('#')[0]
+            print(key, new_key)
+            md[new_key] = value
+
+    for k in md.keys():
+        RE.md[k] = md[k]
+
+
+# bla = copy.deepcopy(dict(_20))
+# fix_RE_persistent_dict_md(bla)
+# bla
