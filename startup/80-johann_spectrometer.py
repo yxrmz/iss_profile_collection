@@ -880,9 +880,69 @@ class JohannPseudoPositioner(ISSPseudoPositioner):
 # inclinometer1 = 11795 - th1 = 4.866
 
 
+
+
+# class EpicsMotorWithExternalSensor(EpicsMotor):
+#     def __init__(self, *args, sensor=None, conversion_json_path='', polynom_order=1, atol=0.1, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.sensor = sensor
+#         self._conversion_df = pd.read_json(conversion_json_path)
+#         self._get_converter_parameters(polynom_order)
+#         self._atol = atol
+#
+#     #     def callback(value, old_value, **kwargs):
+#     #         if (int(value == 1)) and (int(old_value) == 0):
+#     #             self.check_with_sensor()
+#     #     self._sensor_subscription_cid = self.motor_is_moving.subscribe(callback)
+#     #
+#     # def _unsubscribe_sensor(self):
+#     #     self.motor_is_moving.unsubscribe(self._sensor_subscription_cid)
+#
+#     def _get_converter_parameters(self, polynom_order):
+#         d = self._conversion_df.values
+#         self._p_sen2pos = np.polyfit(d[:, 1], d[:, 0], polynom_order)
+#     def _sen2pos(self, sensor_value):
+#         return np.polyval(self._p_sen2pos, sensor_value)
+#
+#     @property
+#     def position_from_sensor(self):
+#         value = self.sensor.get()
+#         return self._sen2pos(value)
+#
+#     def set_current_position(self, new_position):
+#         limits = self.limits
+#         old_offset = self.user_offset.get()
+#         new_offset = old_offset + new_position - self.position
+#         self.user_offset.set(new_offset)
+#         self.set_lim(*limits)
+#
+#     def check_with_sensor(self):
+#         if abs(self.position - self.position_from_sensor) > self._atol:
+#             ttime.sleep(0.1)
+#             print_to_gui(f'Detector Goniometer 1 position disagrees with inclinometer by >{self._atol} degrees. Correcting.', tag='Spectrometer', add_timestamp=True)
+#             self.set_current_position(self.position_from_sensor)
+
+    # def move(self, *args, **kwargs):
+    #     st = super().move(*args, **kwargs)
+
+
+
+
+# det_inclinometer1 = EpicsSignal('XF:08IDB-CT{DIODE-Box_B2:4}InCh0:Data-I', name='det_inclinometer1')
+# bla = EpicsMotorWithExternalSensor('XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr', name='bla',
+#                               sensor=det_inclinometer1,
+#                               conversion_json_path=f'{ROOT_PATH_SHARED}/settings/json/inclinometer_data.json')
+
+    # def move(self, *args, **kwargs):
+
+#f'{ROOT_PATH_SHARED}/settings/json/inclinometer_data.json'
+
 class JohannDetectorArm(JohannPseudoPositioner):
     motor_det_x = Cpt(EpicsMotor, 'XF:08IDB-OP{Stage:Aux1-Ax:Y}Mtr')
     motor_det_th1 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr')  # give better names
+    # motor_det_th1 = Cpt(EpicsMotorWithExternalSensor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta1}Mtr',
+    #                     sensor=det_inclinometer1,
+    #                     conversion_json_path=f'{ROOT_PATH_SHARED}/settings/json/inclinometer_data.json')  # give better names
     motor_det_th2 = Cpt(EpicsMotor, 'XF:08IDB-OP{HRS:1-Det:Gon:Theta2}Mtr')
 
     bragg = Cpt(PseudoSingle, name='bragg')
@@ -1461,6 +1521,68 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
 johann_emission = JohannEmission(name='johann_emission')
 
+
+class EpicsSignalAsEncoderForMotor(EpicsSignal):
+    def __init__(self, *args, conversion_json_path='', motor=None, polynom_order=1, atol=0.1, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._conversion_df = pd.read_json(conversion_json_path)
+        self._get_converter_parameters(polynom_order)
+        self._atol = atol
+        self.motor = motor
+        self._callback_cid = None
+        self._subscribe_to_moving_status()
+
+    def _subscribe_to_moving_status(self):
+        def callback(value, old_value, timestamp, **kwargs):
+            if (int(value) == 0) and (int(old_value) == 1):
+
+                # check if the inclinometer value read was done ~0.3 seconds (empirically derived) AFTER the motion has stopped
+                for i in range(10):
+                    sensor_timestamp = self.read()[self.name]['timestamp']
+                    if sensor_timestamp - timestamp >= 0.3:
+                        break
+                    ttime.sleep(0.2)
+
+                # if a new motion has started, then skip the checking
+                if not self.motor.moving:
+                    self.check_with_sensor()
+
+        self._callback_cid = self.motor.motor_is_moving.subscribe(callback, run=False)
+
+    def _unsubscribe_from_moving_status(self):
+        if self._callback_cid is not None:
+            self.motor.motor_is_moving.unsubscribe(self._callback_cid)
+
+    def _get_converter_parameters(self, polynom_order):
+        d = self._conversion_df.values
+        self._p_sen2pos = np.polyfit(d[:, 1], d[:, 0], polynom_order)
+
+    def _sen2pos(self, sensor_value):
+        return np.polyval(self._p_sen2pos, sensor_value)
+
+    @property
+    def position_from_sensor(self):
+        value = self.get()
+        return self._sen2pos(value)
+
+    def update_motor_position(self, new_position):
+        limits = self.motor.limits
+        old_offset = self.motor.user_offset.get()
+        new_offset = old_offset + new_position - self.motor.position
+        self.motor.user_offset.set(new_offset)
+        self.motor.set_lim(*limits)
+
+    def check_with_sensor(self):
+        if (abs(self.motor.position - self.position_from_sensor) > self._atol):
+            print_to_gui(
+                f'Detector Goniometer 1 position disagrees with inclinometer by >{self._atol} degrees. Correcting.',
+                tag='Spectrometer', add_timestamp=True)
+            self.update_motor_position(self.position_from_sensor)
+
+
+det_inclinometer1 = EpicsSignalAsEncoderForMotor('XF:08IDB-CT{DIODE-Box_B2:4}InCh0:Data-I', name='det_inclinometer1',
+                                conversion_json_path=f'{ROOT_PATH_SHARED}/settings/json/inclinometer_data.json',
+                                motor=johann_emission.motor_det_th1)
 
 # johann_emission.energy._limits=(8004, 8068)
 
