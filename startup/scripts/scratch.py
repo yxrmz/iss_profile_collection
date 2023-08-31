@@ -2136,8 +2136,8 @@ for uid in uids:
 x = xview_gui.widget_project
 idxs = [i.row() for i in x.list_project.selectedIndexes()]
 project = xview_gui.project
-ref_idx = idxs[0]
-test_idxs = idxs[1:]
+ref_idx = idxs[-1]
+test_idxs = idxs[:-1]
 
 
 energy_ref = project[ref_idx].energy
@@ -2306,3 +2306,20 @@ get_optimal_crystal_alignment_position(df.tweak_motor_position, df.variance, plo
 plt.figure(3, clear=True)
 get_optimal_crystal_alignment_position(df.tweak_motor_position, -df.y_max, plot_func=my_plot_func)
 
+hdr = db[389939]
+t = hdr.table(stream_name='pil100k_stream', fill=True)
+fig, ax = plt.subplots(1,100, figsize=(5,10))
+for i, img in enumerate(t.pil100k_image[1]):
+    ax[i].imshow(img)
+
+elastic_scan = {}
+for uid in range(389939, 389963):
+    hdr = db[uid]
+    x = hdr.start['tweak_motor_position']
+    t = hdr.table(stream_name='pil100k_stream', fill=True)
+    scan = []
+    for img in t.pil100k_image[1]:
+        scan.append(np.sum(img[85:101, 246:251]))
+    elastic_scan[x] = scan
+
+########
