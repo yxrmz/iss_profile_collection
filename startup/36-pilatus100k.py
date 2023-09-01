@@ -254,7 +254,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 
     def prepare_to_fly(self, traj_duration):
         self.acq_rate = self.ext_trigger_device.freq.get()
-        self.num_points = int(self.acq_rate * (traj_duration + 1))
+        self.num_points = int(self.acq_rate * (traj_duration + 5))
         self.ext_trigger_device.prepare_to_fly(traj_duration)
 
 

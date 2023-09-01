@@ -9,6 +9,7 @@ data_collection_plan_funcs = {
         'fly_scan_von_hamos_plan' : fly_scan_von_hamos_plan,
         'collect_n_exposures_johann_plan' : collect_n_exposures_johann_plan,
         'step_scan_johann_xes_plan' : step_scan_johann_xes_plan,
+        'epics_fly_scan_johann_xes_plan': epics_fly_scan_johann_xes_plan,
         'step_scan_johann_herfd_plan' : step_scan_johann_herfd_plan,
         'fly_scan_johann_herfd_plan' : fly_scan_johann_herfd_plan,
         'fly_scan_johann_rixs_plan_bundle' : {'kind' : 'bundle', 'func' : fly_scan_johann_rixs_plan_bundle},
@@ -26,13 +27,11 @@ service_plan_funcs = {
         'tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : tune_beamline_plan_bundle},
         'quick_tune_beamline_plan_bundle': {'kind' : 'bundle', 'func' : quick_tune_beamline_plan_bundle},
         'optimize_beamline_plan_bundle': {'kind' : 'bundle', 'func' : optimize_beamline_plan_bundle},
-        # 'calibrate_mono_energy_plan': calibrate_mono_energy_plan,
-        'johann_calibration_scan_plan' : johann_calibration_scan_plan,
         'random_xy_step' : move_sample_by_random_xy_step,
         'move_motor_plan' : move_motor_plan,
         'calibrate_mono_energy_plan_bundle' : {'kind' : 'bundle', 'func' : calibrate_mono_energy_plan_bundle},
-        'johann_resolution_scan_plan_bundle' : {'kind' : 'bundle', 'func' : johann_resolution_scan_plan_bundle},
-        'obtain_spectrometer_resolution_plan' : obtain_spectrometer_resolution_plan,
+        'fly_scan_johann_elastic_alignment_plan_bundle' : {'kind' : 'bundle', 'func' : fly_scan_johann_elastic_alignment_plan_bundle},
+        'johann_analyze_alignment_scan_plan' : johann_analyze_alignment_scan_plan,
         'quick_pitch_optimization' : quick_pitch_optimization,
         # 'set_bpm_es_exposure_time' : set_bpm_es_exposure_time,
         'move_mono_energy' : move_mono_energy,
@@ -52,7 +51,6 @@ aux_plan_funcs = {
         'move_bpm_fm_plan' : move_bpm_fm_plan,
         'put_bpm_fm_to_continuous_mode' : put_bpm_fm_to_continuous_mode,
         'set_hhm_feedback_plan' : set_hhm_feedback_plan,
-
         'move_johann_spectrometer_energy' : move_johann_spectrometer_energy,
         'shutter_close_plan' : shutter.close_plan,
         'foil_camera_validate_barcode_plan' : foil_camera_validate_barcode_plan,
@@ -60,11 +58,23 @@ aux_plan_funcs = {
         'move_sample_stage_plan' : move_sample_stage_plan,
         'prepare_scan_plan' : prepare_scan_plan,
         'take_pil100k_test_image_plan' : take_pil100k_test_image_plan,
-        'crystal_piezo_scan': crystal_piezo_scan,
-        'crystal_piezo_tune': crystal_piezo_tune,
-        'process_crystal_piezo_roll_scan': process_crystal_piezo_roll_scan,
-        'johann_hhm_resolution_scan': johann_hhm_resolution_scan
-    }
+        'simple_johann_piezo_plan': simple_johann_piezo_plan,
+        'tune_johann_piezo_plan': tune_johann_piezo_plan,
+        'johann_analyze_alignment_scan_plan': johann_analyze_alignment_scan_plan,
+        'johann_analyze_herfd_calibration_data_plan': johann_analyze_herfd_calibration_data_plan,
+        'fly_scan_johann_elastic_alignment_plan_bundle': {'kind' : 'bundle', 'func' : fly_scan_johann_elastic_alignment_plan_bundle},
+        'epics_fly_scan_johann_emission_alignment_plan_bundle': {'kind' : 'bundle', 'func' : epics_fly_scan_johann_emission_alignment_plan_bundle},
+        'fly_scan_johann_herfd_alignment_plan_bundle': {'kind' : 'bundle', 'func' : fly_scan_johann_herfd_alignment_plan_bundle},
+        'johann_alignment_scan_plan_bundle': {'kind' : 'bundle', 'func' : johann_alignment_scan_plan_bundle},
+        'johann_focus_on_one_crystal_plan': johann_focus_on_one_crystal_plan,
+        'undo_johann_focus_on_one_crystal_plan': undo_johann_focus_on_one_crystal_plan,
+        'move_to_optimal_crystal_alignment_position_plan': move_to_optimal_crystal_alignment_position_plan,
+        'johann_crystal_alignment_plan_bundle': {'kind' : 'bundle', 'func' : johann_crystal_alignment_plan_bundle},
+        'johann_spectrometer_alignment_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_alignment_plan_bundle},
+        'johann_spectrometer_calibration_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_calibration_plan_bundle,
+        'johann_measure_spectrometer_resolution_plan_bundle': {'kind': 'bundle', 'func': johann_measure_spectrometer_resolution_plan_bundle},
+        'johann_analyze_spectrometer_resolution_plan': johann_analyze_spectrometer_resolution_plan}
+}
 
 all_plan_funcs = {**data_collection_plan_funcs, **service_plan_funcs, **aux_plan_funcs}
 
