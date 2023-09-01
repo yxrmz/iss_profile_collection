@@ -1523,7 +1523,22 @@ johann_emission = JohannEmission(name='johann_emission')
 
 
 class EpicsSignalAsEncoderForMotor(EpicsSignal):
-    def __init__(self, *args, conversion_json_path='', motor=None, polynom_order=1, atol=0.1, **kwargs):
+    """
+    A hook class to connect an inclinometer to a goniometer motor and correct its position.
+    Requires a table (pandas df saved as json) for conversion between the inclinometer readback values and the motor
+    positions. Loosly, this allows to use the EpicsSignal sensor as an absolute encoder for the motor.
+    """
+
+    def __init__(self, *args, conversion_json_path: str = '', motor: EpicsMotor = None, polynom_order: int = 1,
+                 atol: float = 0.1, **kwargs):
+        """
+        args, kwargs as those for EpicsSignal;
+        conversion_json_path - conversion table saved as pandas DataFrame json. Format: 1st column - motor position, 2nd
+        column - sensor values;
+        motor - EpicsMotor instance to connect with sensor;
+        polynom_order - order for polynomial fitting of the conversion table;
+        atol - absolute tolerance to the differences between the nominal motor position and sensor-inferred motor position
+        """
         super().__init__(*args, **kwargs)
         self._conversion_df = pd.read_json(conversion_json_path)
         self._get_converter_parameters(polynom_order)
