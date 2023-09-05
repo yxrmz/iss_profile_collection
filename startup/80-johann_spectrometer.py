@@ -209,8 +209,10 @@ class RowlandCircle:
 
         self.det_L1 = _BIG_DETECTOR_ARM_LENGTH
         self.det_L2 = _SMALL_DETECTOR_ARM_LENGTH
-        self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
-        self.cr_aux4_z = 129.5 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+        # self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
+        # self.cr_aux4_z = 129.5 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+        self.cr_aux2_z = 140  # z-distance between the main and the auxiliary crystal (stack #2)
+        self.cr_aux4_z = 125 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
         self.det_focus_status = 'good'
         self.init_from_settings()
 
@@ -692,16 +694,71 @@ class RowlandCircle:
         plt.figure(fignum, clear=True)
         plt.plot(bragg, pos)
 
+
+    def get_motor_parking_offset_correction(self, motor_key):
+
+        if not motor_key.startswith('motor_cr_'):
+            return 0
+
+        if motor_key in ['motor_cr_assy_x', 'motor_cr_assy_y', 'motor_cr_main_yaw', 'motor_cr_main_roll',
+                         'motor_cr_aux2_roll', 'motor_cr_aux2_y',
+                         'motor_cr_aux3_y', 'motor_cr_aux3_roll',
+                         'motor_cr_aux4_roll', 'motor_cr_aux4_y',
+                         'motor_cr_aux5_roll', 'motor_cr_aux5_y']:
+            return 0
+
+        R1 = self.config['parking']['R']
+        R2 = self.R
+
+        cr_main_x1, cr_main_y1, det_x1, det_y1 = compute_rowland_circle_geometry(self.x_src, self.y_src, R1, 90, 0)
+        cr_main_x2, cr_main_y2, det_x2, det_y2 = compute_rowland_circle_geometry(self.x_src, self.y_src, R2, 90, 0)
+
+        # if motor_key == 'motor_cr_assy_x':
+        #     return cr_main_x2 - cr_main_x1
+
+        cr_aux2_x1, cr_aux2_y1, cr_aux2_roll1, cr_aux2_yaw1 = \
+            _compute_rotated_rowland_circle_geometry(cr_main_x1, cr_main_y1, det_x1, det_y1, 90, self.cr_aux2_z)
+        cr_aux2_x2, cr_aux2_y2, cr_aux2_roll2, cr_aux2_yaw2 = \
+            _compute_rotated_rowland_circle_geometry(cr_main_x2, cr_main_y2, det_x2, det_y2, 90, self.cr_aux2_z)
+
+        if motor_key in ['motor_cr_aux2_x', 'motor_cr_aux3_x']:
+            return -((cr_aux2_x2 - cr_aux2_x1) - (cr_main_x2 - cr_main_x1)) * 1000
+
+        if motor_key == 'motor_cr_aux2_yaw':
+            return (cr_aux2_yaw2 - cr_aux2_yaw1) * 1000
+        elif motor_key == 'motor_cr_aux3_yaw':
+            return (cr_aux2_yaw1 - cr_aux2_yaw2) * 1000
+
+        cr_aux4_x1, cr_aux4_y1, cr_aux4_roll1, cr_aux4_yaw1 = \
+            _compute_rotated_rowland_circle_geometry(cr_main_x1, cr_main_y1, det_x1, det_y1, 90, self.cr_aux4_z)
+        cr_aux4_x2, cr_aux4_y2, cr_aux4_roll2, cr_aux4_yaw2 = \
+            _compute_rotated_rowland_circle_geometry(cr_main_x2, cr_main_y2, det_x2, det_y2, 90, self.cr_aux4_z)
+
+        if motor_key in ['motor_cr_aux4_x', 'motor_cr_aux5_x']:
+            return -((cr_aux4_x2 - cr_aux4_x1) - (cr_main_x2 - cr_main_x1)) * 1000
+
+        if motor_key == 'motor_cr_aux4_yaw':
+            return (cr_aux4_yaw2 - cr_aux4_yaw1) * 1000
+        elif motor_key == 'motor_cr_aux5_yaw':
+            return (cr_aux4_yaw1 - cr_aux4_yaw2) * 1000
+
+
+
+    def get_motor_parking_offset(self, motor_key):
+        if motor_key in self.config['parking'].keys():
+            pos0 = self.config['parking'][motor_key]
+            delta = self.get_motor_parking_offset_correction(motor_key) # additional correction due to change in R
+            pos0 += delta
+        else:
+            pos0 = 0
+        return pos0
+
     def _compute_motor_position(self, motor_key, bragg, nom2act=True):
         if nom2act:
             pos = np.interp(bragg, self.traj['bragg'], self.traj[motor_key])
         else:
             pos = np.interp(bragg, self.traj_nom['bragg'], self.traj_nom[motor_key])
-
-        if motor_key in self.config['parking'].keys():
-            pos0 = self.config['parking'][motor_key]
-        else:
-            pos0 = 0
+        pos0 = self.get_motor_parking_offset(motor_key)
         pos += pos0
         return pos
 
@@ -721,10 +778,7 @@ class RowlandCircle:
         return self.compute_motor_position(motor_keys, bragg, nom2act=nom2act)
 
     def compute_bragg_from_motor(self, motor_key, pos, nom2act=True):
-        if motor_key in self.config['parking'].keys():
-            pos0 = self.config['parking'][motor_key]
-        else:
-            pos0 = 0
+        pos0 = self.get_motor_parking_offset(motor_key)
 
         if nom2act:
             bragg = np.interp(pos - pos0, self.traj[motor_key], self.traj['bragg'])
@@ -775,6 +829,22 @@ class RowlandCircle:
     #     self.energy_converter = ec
 
 rowland_circle = RowlandCircle()
+
+
+# R1 = 1000
+# R2 = 990
+#
+# cr_main_x1, cr_main_y1, det_x1, det_y1 = compute_rowland_circle_geometry(0, 0, R1, 90, 0)
+# cr_main_x2, cr_main_y2, det_x2, det_y2 = compute_rowland_circle_geometry(0, 0, R2, 90, 0)
+#
+# cr_aux2_x1, cr_aux2_y1, cr_aux2_roll1, cr_aux2_yaw1 = \
+#     _compute_rotated_rowland_circle_geometry(cr_main_x1, cr_main_y1, det_x1, det_y1, 90, 140)
+# cr_aux2_x2, cr_aux2_y2, cr_aux2_roll2, cr_aux2_yaw2 = \
+#     _compute_rotated_rowland_circle_geometry(cr_main_x2, cr_main_y2, det_x2, det_y2, 90, 140)
+#
+# print((cr_aux2_x2 - cr_aux2_x1) - (cr_main_x2 - cr_main_x1))
+# print(cr_aux2_yaw2 - cr_aux2_yaw1)
+
 
 # def suggest_roll_offsets(bragg_target, roll_range=5):
 
