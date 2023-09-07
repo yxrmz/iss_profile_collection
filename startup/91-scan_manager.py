@@ -65,6 +65,11 @@ class ScanManager():
         self.scan_list_local.pop(idx)
         self.dump_local_scan_list()
 
+    def update_local_scan_offset_to_current(self, indexes):
+        for index in indexes:
+            self.scan_list_local[index]['aux_parameters']['offset'] = hhm.angle_offset.get()
+        self.dump_local_scan_list()
+
     def archive_scan_at_uid(self, uid):
         for indx, scan in enumerate(self.scan_list_local):
             if scan['uid'] == uid:
