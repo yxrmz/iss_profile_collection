@@ -70,6 +70,22 @@ class ScanManager():
             self.scan_list_local[index]['aux_parameters']['offset'] = hhm.angle_offset.get()
         self.dump_local_scan_list()
 
+    def update_local_scans_offset_in_vicinity_of_e(self, energy):
+        indexes = []
+        for index, local_scan in enumerate(self.scan_list_local):
+            uid = local_scan['uid']
+            global_scan = self.scan_dict[uid]
+            if global_scan['scan_type'] == 'constant energy':
+                scan_energy = global_scan['scan_parameters']['energy']
+            else:
+                scan_energy = global_scan['scan_parameters']['e0']
+
+            if (scan_energy >= (energy - 200)) and (scan_energy <= (energy + 500)):
+                indexes.append(index)
+
+        # print(indexes)
+        self.update_local_scan_offset_to_current(indexes)
+
     def archive_scan_at_uid(self, uid):
         for indx, scan in enumerate(self.scan_list_local):
             if scan['uid'] == uid:
