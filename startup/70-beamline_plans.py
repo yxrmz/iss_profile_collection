@@ -95,7 +95,7 @@ def bender_scan_plan_bundle(element, edge, error_message_func=None):
     return plans
 
 
-def obtain_hhm_calibration_plan(dE=25, is_final=False, plot_func=None, error_message_func=None, liveplot_kwargs=None):
+def obtain_hhm_calibration_plan(dE=25, is_final=False, propagate_calibration=False, plot_func=None, error_message_func=None, liveplot_kwargs=None):
     energy_nominal, energy_actual = get_energy_offset(-1, db, db_proc, dE=dE, plot_fun=plot_func)
 
     print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
@@ -104,13 +104,15 @@ def obtain_hhm_calibration_plan(dE=25, is_final=False, plot_func=None, error_mes
     if is_final:
         print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy shift is {energy_actual - energy_nominal:.2f} eV')
         if np.abs(energy_actual - energy_nominal) < 0.1:
+            if propagate_calibration:
+                scan_manager.update_local_scans_offset_in_vicinity_of_e(energy_actual)
             print_to_gui(f'{ttime.ctime()} [Energy calibration] Completed')
         else:
             print_to_gui(f'{ttime.ctime()} [Energy calibration] Energy calibration error is > 0.1 eV. Check Manually.')
     yield from bps.null()
 
 
-def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_services=None, question_message_func=None, ):
+def calibrate_mono_energy_plan_bundle(element='', edge='', propagate_calibration=False, dE=25, plan_gui_services=None, question_message_func=None, ):
     # # check if current trajectory is good for this calibration
     # validate_element_edge_in_db_proc(element, edge, error_message_func=error_message_func)
     run_calibration = True
@@ -148,7 +150,7 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', dE=25, plan_gui_servi
         plans.append({'plan_name': 'fly_scan_plan',
                       'plan_kwargs': {**scan_kwargs}})
         plans.append({'plan_name': 'obtain_hhm_calibration_plan',
-                      'plan_kwargs': {'dE' : dE, 'is_final' : True, 'liveplot_kwargs': {}},
+                      'plan_kwargs': {'dE' : dE, 'is_final' : True, 'propagate_calibration': propagate_calibration, 'liveplot_kwargs': {}},
                       'plan_gui_services': plan_gui_services})
     else:
         if run_simple_scan:
