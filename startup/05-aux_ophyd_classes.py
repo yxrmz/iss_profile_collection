@@ -136,7 +136,8 @@ class InfirmStuckingEpicsMotor(StuckingEpicsMotor):
 def combine_status_list(status_list):
     st_all = status_list[0]
     for st in status_list[1:]:
-        st_all = st_all and st
+        # st_all = st_all and st
+        st_all = st_all & st
     return st_all
 
 

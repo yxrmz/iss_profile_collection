@@ -241,14 +241,17 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
     def complete(self, *args, **kwargs):
         # print(f'{ttime.ctime()} >>> {self.name} complete: begin')
         print_to_gui(f'{self.name} complete starting', add_timestamp=True)
-        self.stream.set(0).wait()
         def callback_saving(value, old_value, **kwargs):
-            if int(round(old_value)) == 1 and int(round(value)) == 0:
+            # if int(round(old_value)) == 1 and int(round(value)) == 0:
+            if int(round(old_value)) == 0 and int(round(value)) == 1:
+                print_to_gui('APB FILEWRITING DONE', add_timestamp=True)
                 return True
             else:
                 return False
         filebin_st = SubscriptionStatus(self.filebin_status, callback_saving)
         filetxt_st = SubscriptionStatus(self.filetxt_status, callback_saving)
+        self.stream.set(0).wait()
+        # filebin_st.wait()
         # print_debug(f'filebin_st={filebin_st} filetxt_st={filetxt_st}')
         self._datum_ids = []
         datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
