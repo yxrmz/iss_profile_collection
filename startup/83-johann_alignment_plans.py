@@ -52,7 +52,10 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
     x = t[motor_object.name].values
 
     if property == 'com':
-        new_position = np.sum((y - y.min()) * x) / np.sum((y - y.min()))
+        # new_position = np.sum((y - y.min()) * x) / np.sum((y - y.min()))
+        _y = y - y.min()
+        _y_half = _y >= np.percentile(_y, 50)
+        new_position = np.sum((_y * x)[_y_half]) / np.sum(_y[_y_half])
     elif property == 'max':
         new_position = x[np.argmax(y)]
     else:
@@ -60,6 +63,7 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
     print_to_gui(f'Moving motor {motor_description} to position {new_position}', tag='spectrometer', add_timestamp=True)
     yield from move_motor_plan(motor_attr=motor_description, based_on='description', position=new_position)
 
+# RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux5', axis='yaw', scan_range=1000, duration=10, md={}))
 # RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux2', axis='yaw', scan_range=500, duration=5, md={}))
 
 
@@ -182,16 +186,17 @@ def johann_alignment_scan_plan_bundle(alignment_plan=None, rois=None, liveplot_k
     plans = []
     plans.append({'plan_name': alignment_plan,
                   'plan_kwargs': {**scan_kwargs}})
-    plans.append({'plan_name': 'johann_analyze_alignment_scan_plan',
-                  'plan_kwargs': {'alignemnt_plan': alignment_plan, 'rois': rois, 'liveplot_kwargs': liveplot_kwargs,
-                                  'alignment_data': alignment_data, 'fom': fom},
-                  'plan_gui_services': plan_gui_services})
+    # plans.append({'plan_name': 'johann_analyze_alignment_scan_plan',
+    #               'plan_kwargs': {'alignemnt_plan': alignment_plan, 'rois': rois, 'liveplot_kwargs': liveplot_kwargs,
+    #                               'alignment_data': alignment_data, 'fom': fom},
+    #               'plan_gui_services': plan_gui_services})
     return plans
 
 
-def johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
-    print_to_gui(f'Setting the focus on the {crystal} crystal. Moving other crystals from the field of view.',
-                 add_timestamp=True, tag='Spectrometer')
+def johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200, print_msg=True):
+    if print_msg:
+        print_to_gui(f'Setting the focus on the {crystal} crystal. Moving other crystals from the field of view.',
+                     add_timestamp=True, tag='Spectrometer')
 
     enabled_crystals = johann_emission.enabled_crystals_list
     unwanted_crystals = [c for c in enabled_crystals if c != crystal]
@@ -205,7 +210,7 @@ def johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
 def undo_johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
     print_to_gui(f'Focus was on the {crystal} crystal. Moving other crystals back into the field of view.',
                  add_timestamp=True, tag='Spectrometer')
-    yield from johann_focus_on_one_crystal_plan(crystal, yaw_shift=-yaw_shift)
+    yield from johann_focus_on_one_crystal_plan(crystal, yaw_shift=-yaw_shift, print_msg=False)
 
 
 def get_johann_crystal_axis_motor_pos(crystal, axis):
@@ -441,6 +446,22 @@ def johann_crystal_alignment_vs_R_plan_bundle(alignment_data=None,
                                              'scan_range': scan_range_roll,
                                              'duration': scan_duration_roll}
             elif alignment_by == 'elastic':
+                roll_scan_params = {'scan_range': scan_range_roll}
+                if scan_kind == 'fly':
+                    roll_scan_params['duration'] = scan_duration_roll
+                elif scan_kind == 'step':
+                    roll_scan_params['step_size'] = scan_step_roll
+                    roll_scan_params['exposure_time'] = exposure_time
+                plans.append({'plan_name': 'tune_johann_piezo_plan',
+                              'plan_kwargs': {'property': 'com',
+                                              'pil100k_roi_num': pil100k_roi_num,
+                                              'scan_kind': scan_kind,
+                                              'crystal': crystal,
+                                              'axis': 'roll',
+                                              'scan_range': scan_range_yaw,
+                                              **roll_scan_params,
+                                              'plot_func': plot_func,
+                                              'liveplot_kwargs': liveplot_kwargs}})
                 if scan_kind == 'fly':
                     alignment_plan_kwargs = {'alignment_plan': 'fly_scan_johann_elastic_alignment_plan_bundle',
                                              'crystal': crystal,
@@ -490,13 +511,13 @@ def johann_crystal_alignment_vs_R_plan_bundle(alignment_data=None,
 # ALIGNMENT_DATA = {}
 # plans = johann_crystal_alignment_vs_R_plan_bundle(
 #                                               alignment_data=ALIGNMENT_DATA,
-#                                               spectrometer_energy=8046.3, R_range=15, R_num_steps=11,
+#                                               spectrometer_energy=8046.3, R_range=24, R_num_steps=13,
 #                                               alignment_by='emission', scan_kind='fly',
 #                                               pil100k_roi_num=1,
 #                                               exposure_time=0.5,
 #                                               scan_range_yaw=1000, scan_step_yaw=10, scan_duration_yaw=10,
 #                                               scan_range_roll=1000, scan_step_roll=None, scan_duration_roll=10,
-#                                               scan_range_mono=None, scan_step_mono=None, scan_duration_mono=None,
+#                                               scan_range_mono=12, scan_step_mono=None, scan_duration_mono=10,
 #                                               herfd_element=None, herfd_edge=None, scan_duration_herfd=None,
 #                                               plot_func=None, liveplot_kwargs=None)
 # plan_processor.add_plans(plans)
