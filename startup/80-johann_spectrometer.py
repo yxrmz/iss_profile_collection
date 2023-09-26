@@ -3,158 +3,16 @@ print(ttime.ctime() + ' >>>> ' + __file__)
 
 import numpy as np
 import pandas as pd
-from xas.spectrometer import Crystal, analyze_many_elastic_scans
-import copy
-
-
 
 from ophyd import (PseudoPositioner, PseudoSingle)
 from ophyd.pseudopos import (pseudo_position_argument,
                              real_position_argument)
 
-
-# def move_crystal_plan(x, y):
-#     yield from bps.mv(auxxy.x, x)
-#     yield from bps.mv(auxxy.y, y)
-
-
-
-# class JohannSpectrometerMotor(PseudoPositioner):
-#     energy = Cpt(PseudoSingle, name='emission_energy')
-#     motor_crystal_x = auxxy.x
-#     motor_crystal_y = auxxy.y
-#     motor_detector_y = huber_stage.z
-#     _real = ['motor_crystal_x',
-#              'motor_crystal_y',F
-#              'motor_detector_y']
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.energy0 = None
-#         self.cr_x0 = None
-#         self.cr_x0=None
-#         self.cr_y0=None
-#         self.det_y0=None
-#         self.spectrometer_root_path = f"{ROOT_PATH}/{USER_PATH}"
-#         self._initialized = False
-#
-#
-#     def define_motor_coordinates(self, energy0, R, kind, hkl,
-#                                   cr_x0=None, cr_y0=None, det_y0=None,
-#                  energy_limits=None):
-#
-#         self.energy0 = energy0
-#         if cr_x0 is None:
-#             self.cr_x0 = self.motor_crystal_x.user_readback.get()
-#         else:
-#             self.cr_x0 = cr_x0
-#         if cr_y0 is None:
-#             self.cr_y0 = self.motor_crystal_y.user_readback.get()
-#         else:
-#             self.cr_y0 = cr_y0
-#         if det_y0 is None:
-#             self.det_y0 = self.motor_detector_y.user_readback.get()
-#         else:
-#             self.det_y0 = det_y0
-#         self.crystal = Crystal(R, 50, hkl, kind)
-#         self.crystal.place_E(energy0)
-#         self.cr_x0_nom = copy.copy(self.crystal.x)
-#         self.cry_0_nom = copy.copy(self.crystal.y)
-#         self.det_y0_nom = copy.copy(self.crystal.d_y)
-#
-#         if energy_limits is not None:
-#             condition = ((type(energy_limits) == tuple) and (len(energy_limits)==2))
-#             assert condition, 'Invalid limits for emission energy motor'
-#             self.energy._limits = energy_limits
-#         self.energy_converter = None
-#         self._initialized = True
-#
-#     def append_energy_converter(self, ec):
-#         self.energy_converter = ec
-#
-#     @pseudo_position_argument
-#     def forward(self, energy_input_object):
-#         energy = energy_input_object.energy
-#         if self.energy_converter is not None:
-#             energy = self.energy_converter.act2nom(energy)
-#         self.crystal.place_E(energy)
-#         dcr_x = self.crystal.x - self.cr_x0_nom
-#         dcr_y = self.crystal.y - self.cry_0_nom
-#         ddet_y = self.crystal.d_y - self.det_y0_nom
-#
-#         position_detector_y = self.det_y0 - ddet_y
-#         position_crystal_y = self.cr_y0 + dcr_y
-#         position_crystal_x = self.cr_x0 - dcr_x
-#
-#         return self.RealPosition(motor_detector_y = position_detector_y,
-#                                  motor_crystal_y = position_crystal_y,
-#                                  motor_crystal_x = position_crystal_x)
-#
-#     @real_position_argument
-#     def inverse(self, real_pos):
-#         x = self.cr_x0 + self.cr_x0_nom  - real_pos.motor_crystal_x
-#         y = self.cry_0_nom - self.cr_y0 + real_pos.motor_crystal_y
-#         d_y = self.det_y0 + self.det_y0_nom - real_pos.motor_detector_y
-#         energy = self.crystal.compute_energy_from_positions(x, y, d_y)
-#         if self.energy_converter is not None:
-#             energy = self.energy_converter.nom2act(energy)
-#         return [energy]
-
-
-# johann_spectrometer_motor = JohannSpectrometerMotor(name='motor_emission')
-
-# motor_emission_key = 'motor_emission'
-#
-# motor_emission_dict = {'name': johann_spectrometer_motor.name, 'description' : 'Emission energy', 'object': johann_spectrometer_motor, 'group': 'spectrometer'}
-# motor_dictionary['motor_emission'] = motor_emission_dict
-
-# class JohannCrystal(Device):
-#     x = Cpt(EpicsMotor, '}X')
-#     y = Cpt(EpicsMotor, '}Y')
-#     pitch = Cpt(EpicsMotor, '}PITCH')
-#     yaw = Cpt(EpicsMotor, '}YAW')
-#
-#     def __init__(self, *args, leading=True, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.leading = leading
-from xas.spectrometer import compute_rowland_circle_geometry
 from xas.fitting import Nominal2ActualConverter
+from xas.xray import bragg2e, e2bragg, crystal_reflectivity
+from xas.spectrometer import compute_rowland_circle_geometry, _compute_rotated_rowland_circle_geometry
 
 from scipy import interpolate
-class Nominal2ActualConverterWithLinearInterpolation:
-
-    def __init__(self):
-        self.x_nom = []
-        self.x_act = []
-
-    def append_point(self, x_nom, x_act):
-        if np.any(np.isclose(x_nom, self.x_nom, atol=1e-4)) or np.any(np.isclose(x_act, self.x_act, atol=1e-4)):
-            return
-        self.x_nom.append(x_nom)
-        self.x_act.append(x_act)
-
-    @property
-    def npt(self):
-        return len(self.x_nom)
-
-    def nom2act(self, x_nom):
-        if self.npt == 0:
-            return x_nom
-        elif self.npt == 1:
-            return x_nom - (self.x_nom[0] - self.x_act[0])
-        else:
-            f = interpolate.interp1d(self.x_nom, self.x_act, kind='linear', fill_value='extrapolate')
-            return f(x_nom)
-
-    def act2nom(self, x_act):
-        if self.npt == 0:
-            return x_act
-        elif self.npt == 1:
-            return x_act - (self.x_act[0] - self.x_nom[0])
-        else:
-            f = interpolate.interp1d(self.x_act, self.x_nom, kind='linear', fill_value='extrapolate')
-            return f(x_act)
-
 def extrapolate_linearly(x_in, x, y):
     if type(x_in) != np.ndarray:
         x_in = np.array(x_in)
@@ -166,12 +24,11 @@ def extrapolate_linearly(x_in, x, y):
         f = interpolate.interp1d(x, y, kind='linear', fill_value='extrapolate')
         return f(x_in)
 
-from xas.xray import bragg2e, e2bragg, crystal_reflectivity
-from xas.spectrometer import compute_rowland_circle_geometry, _compute_rotated_rowland_circle_geometry
-
+# spectrometer detector arms
 _BIG_DETECTOR_ARM_LENGTH = 550 # length of the big arm
 _SMALL_DETECTOR_ARM_LENGTH = 91 # distance between the second gon and the sensitive surface of the detector
 
+# organizing motor keys for convenience
 _johann_det_arm_motor_keys = ['motor_det_x', 'motor_det_th1', 'motor_det_th2']
 _johann_cr_assy_motor_keys = ['motor_cr_assy_x', 'motor_cr_assy_y']
 _johann_cr_main_motor_keys = ['motor_cr_main_roll', 'motor_cr_main_yaw']
@@ -179,7 +36,6 @@ _johann_cr_aux2_motor_keys = ['motor_cr_aux2_x', 'motor_cr_aux2_y', 'motor_cr_au
 _johann_cr_aux3_motor_keys = ['motor_cr_aux3_x', 'motor_cr_aux3_y', 'motor_cr_aux3_roll', 'motor_cr_aux3_yaw']
 _johann_cr_aux4_motor_keys = ['motor_cr_aux4_x', 'motor_cr_aux4_y', 'motor_cr_aux4_roll', 'motor_cr_aux4_yaw']
 _johann_cr_aux5_motor_keys = ['motor_cr_aux5_x', 'motor_cr_aux5_y', 'motor_cr_aux5_roll', 'motor_cr_aux5_yaw']
-
 
 _johann_cr_all_motor_keys = (_johann_cr_assy_motor_keys +
                              _johann_cr_main_motor_keys +
@@ -190,12 +46,46 @@ _johann_cr_all_motor_keys = (_johann_cr_assy_motor_keys +
 _johann_spectrometer_motor_keys = (_johann_det_arm_motor_keys +
                                    _johann_cr_all_motor_keys)
 
+# roll offsets curretnly available for the spectrometer
 _allowed_roll_offsets = [2.5, 11.5, 20.5]
 
 class RowlandCircle:
+    """
+    Rowland Circle (RC) class to compute motor positions for Johann geometry and manage spectrometer configuration.
+
+    The geometry calculations are done in several steps:
+    1 - set up the geometry parameters (RC radius R, side crystals' Z-offsets, and detector arm parameters)
+    2 - compute theoretical positions of spectrometer elements (crystals, detectors) WRT to source (sample)
+    3 - convert the element positions to motor positions
+    4 - offset the computed motor positions according to the parking position. Parking positions for motors
+    correspond to nominal motor positions at specific nominal R. They are obtained via independent crystal
+    positioning exersize using rulers/yard sticks.
+    5 - correct the motor positions according to the Bragg registration (configured for the setup)
+    6 - correct the motor positions according to the energy calibration (sample specific)
+
+    main attributes:
+    R - Rowland circle radius
+    cr_aux2_z - z-offset between the main crystal and inner side crystals (aux2, aux3)
+    cr_aux4_z - z-offset between the main crystal and outer side crystals (aux4, aux5)
+
+    status attributes:
+    det_focus_status - checks whether the detector position corresponds to the nominal det_focus
+
+    auxiliary attributes:
+    x_src - x-coordinate of the source
+    y_src - y-coordinate of the source
+    det_L1 - length of the big detector arm
+    det_L2 - length of the small detector arm
+    json_path - path for config file
+    bragg_min - min limit for geometry calculations (does not reflect the motor limits)
+    bragg_max - max limit for geometry calculations (does not reflect the motor limits)
+    gui_update_signal - PyQt signal to interact with GUIs
+    """
 
     def __init__(self):
-
+        """
+        Boot rowland circle from config saved in settings
+        """
         self.json_path = f'{ROOT_PATH_SHARED}/settings/json/johann_config_upd.json'
         self.energy_converter = None
         self.gui_update_signal = None
@@ -216,11 +106,17 @@ class RowlandCircle:
         self.det_focus_status = 'good'
         self.init_from_settings()
 
-
-
     def append_gui_update_signal(self, signal):
+        """
+        Set the PyQt signal that drives gui updates.
+
+        Parameters
+        ----------
+        signal - PyQt signal defined in the widget.
+        """
         self.gui_update_signal = signal
 
+    # config management functions
     def load_config(self, file):
         with open(file, 'r') as f:
             config = json.loads(f.read())
@@ -281,6 +177,7 @@ class RowlandCircle:
         if self.gui_update_signal is not None:
             self.gui_update_signal.emit()
 
+    # spectrometer calibration functions
     def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
         self.config['energy_calibration'] = {'x_nom' : x_nom.tolist(), 'x_act' : x_act.tolist(), 'n_poly' : n_poly}
         self.energy_converter = Nominal2ActualConverter(x_nom, x_act, n_poly=n_poly)
@@ -289,7 +186,21 @@ class RowlandCircle:
         self.config['energy_calibration'] = {'x_nom': [], 'x_act': [], 'n_poly': 2}
         self.energy_converter = None
 
-    def set_det_arm_parking(self, pos_dict):
+    # parking functions
+    def set_det_arm_parking(self, pos_dict: dict):
+        """
+        Set detector parking using position dictionary. Must be done when the detector is placed at nominal 90-degree
+        Bragg angle (i.e. backscattering).
+
+        Notes
+        -----
+        Note that parking purpose is to offset the motors during the manual alignment. Since motor_det_th1 and
+        motor_det_th2 are assumed to be correctly prealigned, the correspoding fields in PARKING must be set to 0.
+
+        At the same time, the goniometer positions at 90-degree Bragg angle are used to compute the detector
+        trajectory (see det_dx and det_h) and so the input values are used to update ['det_offsets'] fields in the
+        config.
+        """
         self.config['parking']['motor_det_x'] = pos_dict['motor_det_x']
         self.config['det_offsets']['motor_det_th1'] = pos_dict['motor_det_th1']
         self.config['det_offsets']['motor_det_th2'] = pos_dict['motor_det_th2']
@@ -300,7 +211,15 @@ class RowlandCircle:
                 self.config['det_offsets']['motor_det_th1'],
                 self.config['det_offsets']['motor_det_th2'])
 
-    def set_main_crystal_parking(self, pos_dict):
+    def set_main_crystal_parking(self, pos_dict: dict):
+        """
+        Set main crystal parking.
+
+        Notes
+        -----
+        Due to the way parking offset is applied to the motor_cr_assy_x, the stored value equals the
+        motor position minus the current R
+        """
         self.config['parking']['motor_cr_assy_x'] = pos_dict['motor_cr_assy_x'] - self.R
         self.config['parking']['motor_cr_assy_y'] = pos_dict['motor_cr_assy_y']
         self.config['parking']['motor_cr_main_roll'] = pos_dict['motor_cr_main_roll'] - 2500

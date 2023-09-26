@@ -2337,3 +2337,10 @@ for uid in range(389939, 389963):
     elastic_scan[x] = scan
 
 ########
+class Bla:
+    '''class bla bla bla '''
+    def __init__(self):
+        '''
+        bla bla bla for init
+        '''
+        self.value = 1
