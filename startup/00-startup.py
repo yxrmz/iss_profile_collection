@@ -183,6 +183,11 @@ def fix_RE_persistent_dict_md():
     for k in md.keys():
         RE.md[k] = md[k]
 
+    for key in _keys:
+        if '#' in key:
+            RE.md.pop(key)
+
+
 
 # bla = copy.deepcopy(dict(_20))
 # fix_RE_persistent_dict_md(bla)
