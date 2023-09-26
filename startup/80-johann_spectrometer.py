@@ -57,14 +57,18 @@ class RowlandCircle:
     1 - set up the geometry parameters (RC radius R, side crystals' Z-offsets, and detector arm parameters)
     2 - compute theoretical positions of spectrometer elements (crystals, detectors) WRT to source (sample)
     3 - convert the element positions to motor positions
-    4 - offset the computed motor positions according to the parking position. Parking positions for motors
-    correspond to nominal motor positions at specific nominal R. They are obtained via independent crystal
-    positioning exersize using rulers/yard sticks.
-    5 - correct the motor positions according to the Bragg registration (configured for the setup)
-    6 - correct the motor positions according to the energy calibration (sample specific)
+    4 - offset the crystal roll angles by roll_offset
+    5 - offset the computed motor positions according to the parking position. Parking positions for motors
+    correspond to nominal motor positions at specific nominal R. They are obtained via crystal prealignment.
+    6 - correct the motor positions according to the Bragg registration (configured for the setup)
+    7 - correct the motor positions according to the energy calibration (sample specific)
 
     main attributes:
+    config - main dictionary that defines the Rowland Circle parameters. Saved to settings on every update for
+    persistence purposes.
     R - Rowland circle radius
+    roll_offset - manually set angular offset on the crystals
+    det_focus - detector shift inside (positive) or outside (negative) of the Rowland circle
     cr_aux2_z - z-offset between the main crystal and inner side crystals (aux2, aux3)
     cr_aux4_z - z-offset between the main crystal and outer side crystals (aux4, aux5)
 
@@ -72,13 +76,14 @@ class RowlandCircle:
     det_focus_status - checks whether the detector position corresponds to the nominal det_focus
 
     auxiliary attributes:
+    json_path - path for config file
     x_src - x-coordinate of the source
     y_src - y-coordinate of the source
     det_L1 - length of the big detector arm
     det_L2 - length of the small detector arm
-    json_path - path for config file
     bragg_min - min limit for geometry calculations (does not reflect the motor limits)
     bragg_max - max limit for geometry calculations (does not reflect the motor limits)
+    allowed_roll_offsets - permitted roll offsets defined by the ones available on the beamline
     gui_update_signal - PyQt signal to interact with GUIs
     """
 
@@ -177,15 +182,6 @@ class RowlandCircle:
         if self.gui_update_signal is not None:
             self.gui_update_signal.emit()
 
-    # spectrometer calibration functions
-    def set_spectrometer_calibration(self, x_nom, x_act, n_poly=2):
-        self.config['energy_calibration'] = {'x_nom' : x_nom.tolist(), 'x_act' : x_act.tolist(), 'n_poly' : n_poly}
-        self.energy_converter = Nominal2ActualConverter(x_nom, x_act, n_poly=n_poly)
-
-    def reset_spectrometer_calibration(self):
-        self.config['energy_calibration'] = {'x_nom': [], 'x_act': [], 'n_poly': 2}
-        self.energy_converter = None
-
     # parking functions
     def set_det_arm_parking(self, pos_dict: dict):
         """
@@ -200,6 +196,11 @@ class RowlandCircle:
         At the same time, the goniometer positions at 90-degree Bragg angle are used to compute the detector
         trajectory (see det_dx and det_h) and so the input values are used to update ['det_offsets'] fields in the
         config.
+
+        See also
+        --------
+        det_dx
+        det_h
         """
         self.config['parking']['motor_det_x'] = pos_dict['motor_det_x']
         self.config['det_offsets']['motor_det_th1'] = pos_dict['motor_det_th1']
@@ -218,7 +219,10 @@ class RowlandCircle:
         Notes
         -----
         Due to the way parking offset is applied to the motor_cr_assy_x, the stored value equals the
-        motor position minus the current R
+        motor position minus the current R.
+
+        Similarly, the roll offset must be subtracted from the roll motor readback. Since parking is done at
+        90-degree bragg angle, the offset must be set to 2500 degrees.
         """
         self.config['parking']['motor_cr_assy_x'] = pos_dict['motor_cr_assy_x'] - self.R
         self.config['parking']['motor_cr_assy_y'] = pos_dict['motor_cr_assy_y']
@@ -227,6 +231,14 @@ class RowlandCircle:
         self.save_current_spectrometer_config_to_settings()
 
     def main_crystal_parking(self, human_readable=True):
+        """
+        Get main crystal parking.
+
+        Parameters
+        ----------
+        human_readable - offsets the motor positions so that they correspond to the nominal motor positions in the
+        parking configuration (90-degree Bragg angle).
+        """
         x, y, roll, yaw = (self.config['parking']['motor_cr_assy_x'],
                            self.config['parking']['motor_cr_assy_y'],
                            self.config['parking']['motor_cr_main_roll'],
@@ -238,6 +250,13 @@ class RowlandCircle:
         return x, y, roll, yaw
 
     def set_aux2_crystal_parking(self, pos_dict):
+        """
+        Set aux2 crystal parking.
+
+        See also
+        --------
+        set_main_crystal_parking
+        """
         self.config['parking']['motor_cr_aux2_x'] = pos_dict['motor_cr_aux2_x']
         self.config['parking']['motor_cr_aux2_y'] = pos_dict['motor_cr_aux2_y']
         self.config['parking']['motor_cr_aux2_roll'] = pos_dict['motor_cr_aux2_roll'] - 2500
@@ -245,6 +264,13 @@ class RowlandCircle:
         self.save_current_spectrometer_config_to_settings()
 
     def aux2_crystal_parking(self, human_readable=True):
+        """
+        Get aux2 crystal parking.
+
+        See also
+        --------
+        main_crystal_parking
+        """
         x, y, roll, yaw = (self.config['parking']['motor_cr_aux2_x'],
                            self.config['parking']['motor_cr_aux2_y'],
                            self.config['parking']['motor_cr_aux2_roll'],
@@ -257,6 +283,13 @@ class RowlandCircle:
         return x, y, roll, yaw
 
     def set_aux3_crystal_parking(self, pos_dict):
+        """
+        Set aux3 crystal parking.
+
+        See also
+        --------
+        set_main_crystal_parking
+        """
         self.config['parking']['motor_cr_aux3_x'] = pos_dict['motor_cr_aux3_x']
         self.config['parking']['motor_cr_aux3_y'] = pos_dict['motor_cr_aux3_y']
         self.config['parking']['motor_cr_aux3_roll'] = pos_dict['motor_cr_aux3_roll'] - 2500
@@ -264,6 +297,13 @@ class RowlandCircle:
         self.save_current_spectrometer_config_to_settings()
 
     def aux3_crystal_parking(self, human_readable=True):
+        """
+        Get aux3 crystal parking.
+
+        See also
+        --------
+        main_crystal_parking
+        """
         x, y, roll, yaw = (self.config['parking']['motor_cr_aux3_x'],
                            self.config['parking']['motor_cr_aux3_y'],
                            self.config['parking']['motor_cr_aux3_roll'],
@@ -276,6 +316,13 @@ class RowlandCircle:
         return x, y, roll, yaw
 
     def set_aux4_crystal_parking(self, pos_dict):
+        """
+        Set aux4 crystal parking.
+
+        See also
+        --------
+        set_main_crystal_parking
+        """
         self.config['parking']['motor_cr_aux4_x'] = pos_dict['motor_cr_aux4_x']
         self.config['parking']['motor_cr_aux4_y'] = pos_dict['motor_cr_aux4_y']
         self.config['parking']['motor_cr_aux4_roll'] = pos_dict['motor_cr_aux4_roll'] - 2500
@@ -283,6 +330,13 @@ class RowlandCircle:
         self.save_current_spectrometer_config_to_settings()
 
     def aux4_crystal_parking(self, human_readable=True):
+        """
+        Get aux4 crystal parking.
+
+        See also
+        --------
+        main_crystal_parking
+        """
         x, y, roll, yaw = (self.config['parking']['motor_cr_aux4_x'],
                            self.config['parking']['motor_cr_aux4_y'],
                            self.config['parking']['motor_cr_aux4_roll'],
@@ -295,6 +349,13 @@ class RowlandCircle:
         return x, y, roll, yaw
 
     def set_aux5_crystal_parking(self, pos_dict):
+        """
+        Set aux5 crystal parking.
+
+        See also
+        --------
+        set_main_crystal_parking
+        """
         self.config['parking']['motor_cr_aux5_x'] = pos_dict['motor_cr_aux5_x']
         self.config['parking']['motor_cr_aux5_y'] = pos_dict['motor_cr_aux5_y']
         self.config['parking']['motor_cr_aux5_roll'] = pos_dict['motor_cr_aux5_roll'] - 2500
@@ -302,6 +363,13 @@ class RowlandCircle:
         self.save_current_spectrometer_config_to_settings()
 
     def aux5_crystal_parking(self, human_readable=True):
+        """
+        Get aux5 crystal parking.
+
+        See also
+        --------
+        main_crystal_parking
+        """
         x, y, roll, yaw = (self.config['parking']['motor_cr_aux5_x'],
                            self.config['parking']['motor_cr_aux5_y'],
                            self.config['parking']['motor_cr_aux5_roll'],
@@ -313,16 +381,29 @@ class RowlandCircle:
             yaw /= 1000
         return x, y, roll, yaw
 
+    # geometry-related methods and attributes
     @property
     def det_dx(self):
+        """
+        X-projection of the vector between the pivot point of the big detector goniometer (motor_det_th1) and the
+        center of the detector face.
+        """
         return self.det_L1 * np.cos(np.deg2rad(self.config['det_offsets']['motor_det_th1'])) - self.det_L2
 
     @property
     def det_h(self):
+        """
+        Y-projection of the vector between the pivot point of the big detector goniometer (motor_det_th1) and the
+        center of the detector face.
+        """
         return self.det_L1 * np.sin(np.deg2rad(self.config['det_offsets']['motor_det_th1']))
 
     @property
     def det_focus(self):
+        """
+        Detector shift in or out of the Rowland circle.
+        When computed, also updates self.det_focus_status to check if the config value represents the reality.
+        """
         det_focus_est = self.compute_motor_position('motor_det_x', 90, nom2act=False) - self.config['parking']['motor_det_x']
         if not np.isclose(det_focus_est, self.config['det_focus'], atol=0.1):
             self.det_focus_status = 'bad'
@@ -333,6 +414,9 @@ class RowlandCircle:
 
     @det_focus.setter
     def det_focus(self, value):
+        """
+        Changing the detector focus updates the config and the detetor trajectory.
+        """
         self.update_nominal_trajectory_for_detector(value)
         self.compute_trajectory_correction()
         self.config['det_focus'] = value
@@ -340,17 +424,25 @@ class RowlandCircle:
 
     @property
     def R(self):
+        """
+        Rowland circle radius R stored in the config.
+        """
         return self.config['R']
 
     @R.setter
     def R(self, value):
-        # self.config['parking']['motor_cr_assy_x'] += (self.config['R'] - value)
+        """
+        Changing Rowland circle radius R also updates the spectrometer trajectories and the config.
+        """
         self.config['R'] = value
         self.compute_trajectories()
         self.save_current_spectrometer_config_to_settings()
 
     @property
     def crystal(self):
+        """
+        Current crystal material stored in the config.
+        """
         return self.config['crystal']
 
     @crystal.setter
@@ -359,6 +451,9 @@ class RowlandCircle:
 
     @property
     def hkl(self):
+        """
+        Current crystal miller indices stored in the config.
+        """
         return self.config['hkl']
 
     @hkl.setter
@@ -367,10 +462,17 @@ class RowlandCircle:
 
     @property
     def roll_offset(self):
+        """
+        Current manual angular roll offset.
+        """
         return self.config['roll_offset']
 
     @roll_offset.setter
     def roll_offset(self, value):
+        """
+        Changing the angular offset updates the config and trajectories.
+        The offset can only take specific values defined in the allowed_roll_offsets
+        """
         assert value in self.allowed_roll_offsets, f'roll_offset value must be equal to one of {self.allowed_roll_offsets}'
         self.config['roll_offset'] = value
         self.compute_trajectories()
@@ -378,37 +480,73 @@ class RowlandCircle:
 
     @property
     def enabled_crystals(self):
+        """
+        Currently enabled crystals. Enabled crystals are active during scans, i.e. move during scans. Disabled
+        crystals do not move at all.
+        """
         return self.config['enabled_crystals']
 
-    def enable_crystal(self, crystal_key, enable):
+    def enable_crystal(self, crystal_key: str, enable: bool):
+        """
+        Enable or disable one of the spectrometer crystals.
+
+        Parameters
+        ----------
+        crystal_key - spectrometer crystal (main, aux2, aux3, aux4, aux5)
+        enable - enable flag. True - enabled, False - disabled.
+        """
         self.enabled_crystals[crystal_key] = enable
         self.save_current_spectrometer_config_to_settings()
 
     @property
     def initialized(self):
+        """
+        True/False flag indicating whether the spectrometer was initialized for safety. At the beginning of a new
+        user experiment the initialized flag is set to False. Once the instrument is aligned, the flag is set to True.
+        """
         return self.config['initialized']
 
     @initialized.setter
     def initialized(self, value):
+        """
+        Updates the initialized flag and sets it to settings.
+        """
         self.config['initialized'] = value
         self.save_current_spectrometer_config_to_settings()
 
     @property
     def energy_limits(self):
+        """
+        Set energy limits on the spectrometer.
+        """
         return self.config['energy_limits']
 
     @energy_limits.setter
     def energy_limits(self, value):
+        """
+        Update the spectrometer energy limits.
+        """
         self.config['energy_limits'] = value
         self.save_current_spectrometer_config_to_settings()
 
     @property
     def alignment_data(self):
+        """
+        Data with spectrometer alignment scan uids and analysis results. Stored for metadata tracking purposes.
+        """
         if 'alignment_data' not in self.config.keys():
             self.config['alignment_data'] = {}
         return self.config['alignment_data']
 
     def _compute_nominal_trajectory(self, npt=1000):
+        """
+        Compute nominal trajectory for spectrometer motors as a function of Bragg angle.
+        This method takes care of steps 2, 3, and 4a of the geometry calculation workflow (see the class docstring).
+
+        Parameters
+        ----------
+        npt - number of points for Bragg angle array.
+        """
         braggs = np.linspace(self.bragg_min, self.bragg_max, npt-1)
         braggs = np.sort(np.hstack((braggs, 90)))
 
@@ -517,6 +655,16 @@ class RowlandCircle:
                 'motor_cr_aux5_yaw':    motor_cr_aux5_yaw})
 
     def _compute_trajectory_for_detector(self, braggs, det_x, det_y, det_focus=0):
+        """
+        Compute trajectory for the detector.
+
+        Parameters
+        ----------
+        braggs - array of Bragg angles in degrees
+        det_x - x coordinate of the detector sensor center
+        det_y - y coordinate of the detector sensor center
+        det_focus - detector shift in/out of the Rowland circle
+        """
 
         _det_bragg_rad = np.deg2rad(braggs)
         det_x = det_x.copy() - det_focus * np.cos(np.pi - 2 * _det_bragg_rad)
@@ -532,6 +680,14 @@ class RowlandCircle:
         return motor_det_x, motor_det_th1, motor_det_th2
 
     def update_nominal_trajectory_for_detector(self, det_focus, force_update=False):
+        """
+        Update detector trajectory given det_focus.
+
+        Parameters:
+            det_focus - detector shift in/out of the Rowland circle.
+            force_update - new trajectory is computed if True. If False, then the method checks if the new det_focus
+            is sufficiently different from the current one.
+        """
         if force_update or (not np.isclose(det_focus, self.det_focus, atol=1e-4)):
             # self.det_focus = det_focus
             motor_det_x, motor_det_th1, motor_det_th2 = self._compute_trajectory_for_detector(self.traj_nom['bragg'],
@@ -544,78 +700,48 @@ class RowlandCircle:
 
 
     def compute_nominal_trajectory(self, npt=250):
+        """
+        Wrapper method for _compute_nominal_trajectory which was retained for historical reasons.
+        """
         self.traj_nom = self._compute_nominal_trajectory(npt=npt)
 
-    def compute_trajectory_correction(self):
-        self.traj_delta = {}
-        for motor_key in _johann_spectrometer_motor_keys:
-            pos_act = np.array(self.config['bragg_registration']['pos_act'][motor_key])
-            pos_nom = np.array(self.config['bragg_registration']['pos_nom'][motor_key])
-            delta =  pos_act - pos_nom
-            bragg = np.array(self.config['bragg_registration']['bragg'][motor_key])
-            bragg_in = self.traj_nom['bragg']
-            self.traj_delta[motor_key] = extrapolate_linearly(bragg_in, bragg, delta)
-            # self.traj[motor_key] = self.traj[motor_key] + self.traj_delta[motor_key]
-        self.traj_delta = pd.DataFrame(self.traj_delta)
-        self.traj = self.traj_nom.copy()
-        self.traj[self.traj_delta.columns] = self.traj[self.traj_delta.columns] + self.traj_delta
+    # methods for computing parking offsets
+    def get_motor_parking_offset(self, motor_key):
+        """
+        Compute parking offset for a motor.
 
-    def compute_trajectories(self):
-        self.compute_nominal_trajectory()
-        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
-        self.compute_trajectory_correction()
+        Parameters:
+            motor_key - spectrometer motor key.
 
-    # def _convert_motor_pos_nom2act(self, motor_key, pos):
-    #     if motor_key in self.converter_nom2act.keys():
-    #         pos = self.converter_nom2act[motor_key].nom2act(pos)
-    #     return pos
-    #
-    # def _convert_motor_pos_act2nom(self, motor_key, pos):
-    #     if motor_key in self.converter_nom2act.keys():
-    #         pos = self.converter_nom2act[motor_key].act2nom(pos)
-    #     return pos
+        Returns:
+            parking offset value.
 
-    def register_bragg(self, bragg_act, motor_pos_dict):
-        pos_nom = {}
-        for motor_key in motor_pos_dict.keys():
-            print(motor_key)
-            pos_nom[motor_key] = self.compute_motor_position(motor_key, bragg_act, nom2act=False)
-        pos_act = {**motor_pos_dict}
-        for motor_key in pos_act.keys():
-            # self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
-            self.config['bragg_registration']['bragg'][motor_key].append(bragg_act)
-            self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
-            self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
-
-        self.compute_trajectory_correction()
-        self.save_current_spectrometer_config_to_settings()
-
-    # @property
-    # def traj(self):
-    #
-    #     return self.traj_nom + self.traj_delta
-
-    def register_energy(self, energy_act, motor_pos_dict):
-        bragg_act = self.e2bragg(energy_act)
-        self.register_bragg(bragg_act, motor_pos_dict)
-
-    def reset_bragg_registration(self):
-        self.config['bragg_registration'] = {'bragg' :  {k: [] for k in _johann_spectrometer_motor_keys},
-                                             'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
-                                             'pos_act': {k: [] for k in _johann_spectrometer_motor_keys}}
-        self.compute_trajectory_correction()
-        # for motor_key in _johann_spectrometer_motor_keys:
-        #     self.converter_nom2act[motor_key] = Nominal2ActualConverterWithLinearInterpolation()
-
-    def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
-        bragg = self.traj['bragg']
-        pos = self.compute_motor_position(motor_key, bragg)
-        plt.figure(fignum, clear=True)
-        plt.plot(bragg, pos)
-
+        Notes:
+            This method performs step 5 of the geometry calculation workflow.
+        """
+        if motor_key in self.config['parking'].keys():
+            pos0 = self.config['parking'][motor_key]
+            delta = self.get_motor_parking_offset_correction(motor_key)  # additional correction due to change in R
+            pos0 += delta
+        else:
+            pos0 = 0
+        return pos0
 
     def get_motor_parking_offset_correction(self, motor_key):
+        """
+        Compute motor parking position correction based on current Rowland circle radius.
 
+        Parameters:
+            motor_key - spectrometer motor key.
+
+        Returns:
+            parking offset correction factor.
+
+        Notes:
+            Parking is performed for a specific nominal Rowland circle radius R, usually 1000 or 500 mm. During
+            alignment R is varied, which results in the incorrect parking positions of the crystals. This method
+            computes correction factors for parking offsets using current R.
+        """
         if not motor_key.startswith('motor_cr_'):
             return 0
 
@@ -661,18 +787,129 @@ class RowlandCircle:
         elif motor_key == 'motor_cr_aux5_yaw':
             return (cr_aux4_yaw1 - cr_aux4_yaw2) * 1000
 
+    # bragg registration methods
+    def register_bragg(self, bragg_act, motor_pos_dict):
+        '''
+        Register observed (actual) Bragg angle for given real motor positions.
+        The method updates the spectrometer motor trajectories.
 
+        Parameters:
+             bragg_act - observed (actual) Bragg angle obtained from calibration
+             motor_pos_dict - real motor position dictionary
 
-    def get_motor_parking_offset(self, motor_key):
-        if motor_key in self.config['parking'].keys():
-            pos0 = self.config['parking'][motor_key]
-            delta = self.get_motor_parking_offset_correction(motor_key) # additional correction due to change in R
-            pos0 += delta
-        else:
-            pos0 = 0
-        return pos0
+        Notes:
+            The registration is done on the individual motor basis and stored in config field 'bragg_registration'.
+        '''
+        pos_nom = {}
+        for motor_key in motor_pos_dict.keys():
+            print(motor_key)
+            pos_nom[motor_key] = self.compute_motor_position(motor_key, bragg_act, nom2act=False)
+        pos_act = {**motor_pos_dict}
+        for motor_key in pos_act.keys():
+            # self.converter_nom2act[motor_key].append_point(pos_nom[motor_key], pos_act[motor_key])
+            self.config['bragg_registration']['bragg'][motor_key].append(bragg_act)
+            self.config['bragg_registration']['pos_nom'][motor_key].append(pos_nom[motor_key])
+            self.config['bragg_registration']['pos_act'][motor_key].append(pos_act[motor_key])
 
-    def _compute_motor_position(self, motor_key, bragg, nom2act=True):
+        self.compute_trajectory_correction()
+        self.save_current_spectrometer_config_to_settings()
+
+    def register_energy(self, energy_act, motor_pos_dict):
+        """
+        Register observed (actual) energy for given real motor positions.
+
+        See also:
+            register_bragg
+        """
+        bragg_act = self.e2bragg(energy_act)
+        self.register_bragg(bragg_act, motor_pos_dict)
+
+    def reset_bragg_registration(self):
+        """
+        Reset the bragg registration.
+        """
+        self.config['bragg_registration'] = {'bragg' :  {k: [] for k in _johann_spectrometer_motor_keys},
+                                             'pos_nom': {k: [] for k in _johann_spectrometer_motor_keys},
+                                             'pos_act': {k: [] for k in _johann_spectrometer_motor_keys}}
+        self.compute_trajectory_correction()
+
+    def compute_trajectory_correction(self):
+        """
+        Spectrometer motor trajectory correction based on the bragg registration.
+
+        Notes:
+            This method performs step 6 of the geometry calculation workflow.
+        """
+        self.traj_delta = {}
+        for motor_key in _johann_spectrometer_motor_keys:
+            pos_act = np.array(self.config['bragg_registration']['pos_act'][motor_key])
+            pos_nom = np.array(self.config['bragg_registration']['pos_nom'][motor_key])
+            delta =  pos_act - pos_nom
+            bragg = np.array(self.config['bragg_registration']['bragg'][motor_key])
+            bragg_in = self.traj_nom['bragg']
+            self.traj_delta[motor_key] = extrapolate_linearly(bragg_in, bragg, delta)
+            # self.traj[motor_key] = self.traj[motor_key] + self.traj_delta[motor_key]
+        self.traj_delta = pd.DataFrame(self.traj_delta)
+        self.traj = self.traj_nom.copy()
+        self.traj[self.traj_delta.columns] = self.traj[self.traj_delta.columns] + self.traj_delta
+
+    # methods for computing motor positions
+    def compute_trajectories(self):
+        """
+        Compute motor trajectories for current spectrometer configuration.
+        """
+        self.compute_nominal_trajectory()
+        self.update_nominal_trajectory_for_detector(self.det_focus, force_update=True)
+        self.compute_trajectory_correction()
+
+    # spectrometer calibration functions
+    def set_spectrometer_calibration(self, energy_nom, energy_act, n_poly=2):
+        """
+        Set energy calibration for the spectrometer.
+
+        Parameters:
+            energy_nom - nominal energy array
+            energy_act - actual (observed) energy array
+            n_poly - polynom order to fit the energy conversion
+        """
+        self.config['energy_calibration'] = {'x_nom' : energy_nom.tolist(), 'x_act' : energy_act.tolist(), 'n_poly' : n_poly}
+        self.energy_converter = Nominal2ActualConverter(energy_nom, energy_act, n_poly=n_poly)
+        self.save_current_spectrometer_config_to_settings()
+
+    def reset_spectrometer_calibration(self):
+        """
+        Reset the energy calibration.
+        """
+        self.config['energy_calibration'] = {'x_nom': [], 'x_act': [], 'n_poly': 2}
+        self.energy_converter = None
+        self.save_current_spectrometer_config_to_settings()
+
+    # motor position calculation functions
+    def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
+        """
+        Plot motor position as a function of bragg angle.
+
+        Parameters:
+            motor_key - spectrometer motor key;
+            fignum - figure number for the plot.
+        """
+        bragg = self.traj['bragg']
+        pos = self.compute_motor_position(motor_key, bragg)
+        plt.figure(fignum, clear=True)
+        plt.plot(bragg, pos)
+
+    def _compute_motor_position(self, motor_key: str, bragg: float, nom2act=True):
+        """
+        Compute motor position for a given Bragg angle.
+
+        Parameters:
+            motor_key - spectrometer motor key;
+            bragg - bragg angle in degrees;
+            nom2act - accounts for Bragg registration if True; returns nominal values if False.
+
+        Returns:
+            motor position
+        """
         if nom2act:
             pos = np.interp(bragg, self.traj['bragg'], self.traj[motor_key])
         else:
@@ -682,6 +919,17 @@ class RowlandCircle:
         return pos
 
     def compute_motor_position(self, motor_keys, bragg, nom2act=True):
+        """
+        Wrapper method to compute positions of multiple motors.
+
+        Parameters:
+            motor_keys - list of spectrometer motor keys;
+            bragg - bragg angle in degrees;
+            nom2act - accounts for Bragg registration if True; returns nominal values if False.
+
+        Returns:
+            dictionary with motor_key/position key/value pairs.
+        """
         if type(motor_keys) == str:
             return self._compute_motor_position(motor_keys, bragg, nom2act=nom2act)
         else:
@@ -691,12 +939,37 @@ class RowlandCircle:
             return output
 
     def compute_motor_position_from_energy(self, motor_keys, energy, nom2act=True, use_energy_calibration=True):
+        """
+        Compute motor position for given energy.
+
+        Parameters:
+            motor_keys - list of spectrometer motor keys;
+            energy - energy in eV;
+            nom2act - accounts for Bragg registration if True; returns nominal values if False;
+            use_energy_calibration - accounts for energy calibration if True AND if energy calibration was set. Skips
+            the energy calibration if false.
+        """
         if use_energy_calibration and (self.energy_converter is not None):
             energy = self.energy_converter.act2nom(energy)
         bragg = e2bragg(energy, self.crystal, self.hkl)
         return self.compute_motor_position(motor_keys, bragg, nom2act=nom2act)
 
-    def compute_bragg_from_motor(self, motor_key, pos, nom2act=True):
+    def compute_bragg_from_motor(self, motor_key: str, pos: float, nom2act=True):
+        """
+        Compute Bragg angle from the motor position.
+
+        Parameters:
+            motor_key - spectrometer motor key;
+            pos - motor position;
+            nom2act - accounts for Bragg registration if True; use nominal values if False.
+
+        Returns:
+            Derived Bragg angle value in degrees.
+
+        Notes:
+            This method should be used for motors that directly correlate with Bragg angle, i.e. crystal rolls and
+            detector goniometers.
+        """
         pos0 = self.get_motor_parking_offset(motor_key)
 
         if nom2act:
@@ -704,19 +977,28 @@ class RowlandCircle:
         else:
             bragg = np.interp(pos - pos0, self.traj_nom[motor_key], self.traj_nom['bragg'])
 
-        # if nom2act:
-        #     pos = self.converter_nom2act[motor_key].act2nom(pos)
-            # pos = self._convert_motor_pos_act2nom(motor_key, pos)
-
-        # vs = self.traj[motor_key]
-        # bs = self.traj['bragg']
-        # bragg = np.interp(pos - pos0, vs[bs <= 90],  bs[bs <= 90])
-
         if bragg > 90:
             bragg = 180 - bragg
         return bragg
 
     def compute_energy_from_motor(self, motor_key, pos, nom2act=True, use_energy_calibration=True):
+        """
+        Compute energy from motor position.
+
+        Parameters:
+            motor_key - spectrometer motor key;
+            pos - motor position;
+            nom2act - accounts for Bragg registration if True; use nominal values if False;
+            use_energy_calibration - accounts for energy calibration if True AND if energy calibration was set. Skips
+            the energy calibration if False.
+
+        Returns:
+            Derived energy in eV.
+
+        Notes:
+            This method should be used for motors that directly correlate with Bragg angle, i.e. crystal rolls and
+            detector goniometers.
+        """
         bragg = self.compute_bragg_from_motor(motor_key, pos, nom2act=nom2act)
         energy = bragg2e(bragg, self.crystal, self.hkl)
         if use_energy_calibration and (self.energy_converter is not None):
@@ -724,21 +1006,73 @@ class RowlandCircle:
         return energy
 
     def compute_bragg_from_motor_dict(self, motor_pos_dict, nom2act=True):
+        """
+        Wrapper method to compute Bragg angles for a set of motors.
+
+        Parameters:
+            motor_pos_dict - a dictionary with motor_key/position as key/value pairs.
+            nom2act - accounts for Bragg registration if True; use nominal values if False;
+
+        Returns:
+            a dictionary with motor_key/Bragg angle as key/value pairs.
+
+        See also:
+            compute_bragg_from_motor
+        """
         output = {}
         for motor_key, motor_pos in motor_pos_dict.items():
             output[motor_key] = self._compute_motor_position(motor_key, motor_pos, nom2act=nom2act)
 
+    # auxilliary methods
     def e2bragg(self, energy):
+        """
+        Compute energy for a given Bragg angle.
+
+        Parameters:
+            energy - energy in eV;
+
+        Returns:
+            Bragg angle in degrees.
+        """
         return e2bragg(energy, self.crystal, self.hkl)
 
     def bragg2e(self, bragg):
+        """
+        Compute Bragg angle for a given energy.
+
+        Parameters:
+            bragg - Bragg angle in degrees;
+
+        Returns:
+            energy - energy in eV.
+        """
         return bragg2e(bragg, self.crystal, self.hkl)
 
     def e2reflectivity(self, energy):
+        """
+        Compute theoretical crystal reflectivity for a given energy.
+
+        Parameters:
+            energy - energy in eV;
+
+        Returns:
+            Integrated reflectivity.
+        """
         bragg = self.e2bragg(energy)
         return crystal_reflectivity(self.crystal, self.hkl, bragg, energy)
 
     def suggest_roll_offset(self, bragg_target, roll_range=5):
+        """
+        Suggest a roll angle offset value for a given Bragg angle. Favors the smaller offsets.
+
+        Parameters:
+            bragg_target - Bragg angle in degrees;
+            roll_range - roll motor motion range (+/- 5 degrees)
+
+        Returns:
+            Roll offset value to use for a given bragg agnle
+
+        """
         offsets = np.array(self.allowed_roll_offsets)
         offset_braggs = 90 - offsets
         options = np.isclose(bragg_target, offset_braggs, atol=roll_range)
