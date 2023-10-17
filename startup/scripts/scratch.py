@@ -2344,3 +2344,8 @@ class Bla:
         bla bla bla for init
         '''
         self.value = 1
+
+
+
+RE(fly_epics_scan_simple_johann_piezo_plan(crystal='main', axis='roll', scan_range=300, duration=4))
+RE(fly_epics_scan_simple_johann_piezo_plan(crystal='main', axis='roll', scan_range=300, duration=10))

@@ -156,7 +156,7 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
     return [{'plan_name': 'epics_fly_scan_johann_xes_plan',
              'plan_kwargs': scan_kwargs}]
 
-# plans = epics_fly_scan_johann_emission_alignment_plan_bundle(crystal='aux2', mono_energy=9000, scan_range=1000, duration=10, motor_info='test', md={})
+# plans = epics_fly_scan_johann_emission_alignment_plan_bundle(crystal='aux2', mono_energy=11570, scan_range=1000, duration=10, motor_info='test', md={})
 # plan_processor.add_plans(plans)
 
 
@@ -639,6 +639,19 @@ def johann_crystal_alignment_plan_bundle(crystal=None, scan_range_alignment_mult
 
     return plans
 
+# ALIGNMENT_DATA = {}
+# plans = johann_crystal_alignment_plan_bundle(crystal='aux2', scan_range_alignment_multiplier=1000,
+#                                          alignment_data=ALIGNMENT_DATA,
+#                                          tweak_motor_axis='x', tweak_motor_range=15, tweak_motor_num_steps=5,
+#                                          alignment_by='emission', scan_kind='fly',
+#                                          pil100k_roi_num=1,
+#                                          exposure_time=0.25,
+#                                          scan_range_yaw=1000, scan_step_yaw=10, scan_duration_yaw=5,
+#                                          scan_range_roll=1000, scan_step_roll=None, scan_duration_roll=10,
+#                                          scan_range_mono=None, scan_step_mono=None, scan_duration_mono=None,
+#                                          herfd_element=None, herfd_edge=None, scan_duration_herfd=None,
+#                                          plot_func=None, liveplot_kwargs=None)
+# plan_processor.add_plans(plans)
 
 def johann_spectrometer_alignment_plan_bundle(**kwargs):
     plans = []
