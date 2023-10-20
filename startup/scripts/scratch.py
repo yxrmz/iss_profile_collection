@@ -2144,16 +2144,22 @@ energy_ref = project[ref_idx].energy
 mu_ref = project[ref_idx].flat
 
 e0 = 8979
-emin = e0 - 25
-emax = e0 + 25
+# emin = e0 - 25
+# emax = e0 + 25
+emin = e0 - 5
+emax = e0 + 5
 energy_mask = (energy_ref >= emin) & (energy_ref <= emax)
 
 chisq = []
 roll = []
+e_shift = []
 
 for idx in test_idxs:
     energy_test = project[idx].energy
     mu_test = project[idx].flat
+
+    _shift, _ = compute_shift_between_spectra(energy_test, mu_test, energy_ref[energy_mask], mu_ref[energy_mask])
+    e_shift.append(_shift)
     mu_test_interp = np.interp(energy_ref, energy_test, mu_test)
     _chisq = np.sum((mu_test_interp - mu_ref)[energy_mask]**2)
     chisq.append(_chisq)
@@ -2163,6 +2169,9 @@ for idx in test_idxs:
 
 plt.figure(1, clear=True)
 plt.plot(roll, chisq, 'ks')
+
+plt.figure(2, clear=True)
+plt.plot(roll, e_shift, 'ks')
 
 ########
 
