@@ -544,6 +544,7 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
                                       **kwargs}})
 
         # in automatic mode it is important that if main crystal is enabled, it should be optimized first
+        # that is currently enforced in the parent plans calling this one
         if automatic_mode:
             _alignment_plan = _alignment_strategy_to_plan_dict[kwargs['alignment_strategy']][kwargs['scan_kind']]
             analysis_kwargs = {'alignment_data': alignment_data,
