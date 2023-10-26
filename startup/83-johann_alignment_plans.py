@@ -608,6 +608,38 @@ def johann_spectrometer_alignment_plan_bundle(
 
     plans.extend(_plans)
 
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Performing post-alignment yaw motor tuning)',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
+
+    for crystal in crystals:
+        if (crystal != 'main') and kwargs['yaw_tune']:
+            yaw_tune_params = {'scan_range': kwargs['yaw_tune_range']}
+            if kwargs['scan_kind'] == 'fly':
+                yaw_tune_params['duration'] = kwargs['yaw_tune_duration']
+            elif kwargs['scan_kind'] == 'step':
+                yaw_tune_params['step_size'] = kwargs['yaw_tune_step']
+                yaw_tune_params['exposure_time'] = kwargs['yaw_tune_exposure']
+
+            plans.append({'plan_name': 'tune_johann_piezo_plan',
+                          'plan_kwargs': {'property': 'com',
+                                          'pil100k_roi_num': kwargs['pil100k_roi_num'],
+                                          'scan_kind': kwargs['scan_kind'],
+                                          'crystal': crystal,
+                                          'axis': 'yaw',
+                                          **yaw_tune_params,
+                                          'plot_func': kwargs['plot_func'],
+                                          'liveplot_kwargs': kwargs['liveplot_kwargs']}})
+
+    plans.append({'plan_name': 'print_message_plan',
+                  'plan_kwargs': {
+                      'msg': f'Spectrometer alignment is complete.',
+                      'add_timestamp': True,
+                      'tag': 'Spectrometer'}})
+
+    return plans
 
 
 
@@ -617,11 +649,7 @@ def johann_spectrometer_alignment_plan_bundle(
     #     #                               'fom': _scan_fom_dict[kwargs['alignment_by']]['alignment']['fom'],
     #     #                               'polarity': _scan_fom_dict[kwargs['alignment_by']]['alignment']['polarity']}})
     #
-    # plans.append({'plan_name': 'print_message_plan',
-    #               'plan_kwargs': {
-    #                   'msg': f'Performing post-alignment yaw motor tuning)',
-    #                   'add_timestamp': True,
-    #                   'tag': 'Spectrometer'}})
+
     #
     # scan_range_yaw = kwargs['scan_range_yaw']
     # scan_duration_yaw = kwargs['scan_duration_yaw']
