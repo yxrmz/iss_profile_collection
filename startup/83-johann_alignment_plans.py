@@ -561,6 +561,20 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
     return plans
 
 
+# ALIGNMENT_DATA = {}
+# plans = johann_crystal_alignment_plan_bundle(crystal='aux3', scan_range_alignment_multiplier=1000,
+#                                          alignment_data=ALIGNMENT_DATA,
+#                                          tweak_motor_axis='x', tweak_motor_range=10, tweak_motor_num_steps=5,
+#                                          alignment_by='elastic', scan_kind='fly',
+#                                          pil100k_roi_num=1,
+#                                          exposure_time=0.25,
+#                                          scan_range_yaw=1000, scan_step_yaw=10, scan_duration_yaw=10,
+#                                          scan_range_roll=1000, scan_step_roll=None, scan_duration_roll=10,
+#                                          scan_range_mono=25, scan_step_mono=None, scan_duration_mono=60,
+#                                          herfd_element='U', herfd_edge='L3', scan_duration_herfd=45,
+#                                          plot_func=None, liveplot_kwargs=None)
+# plan_processor.add_plans(plans)
+
 def johann_spectrometer_alignment_plan_bundle(
         crystals=None,
         alignment_data=None,
