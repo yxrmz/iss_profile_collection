@@ -38,6 +38,9 @@ def general_scan(detectors=[], motor=None, rel_start=None, rel_stop=None, num_st
     #print(f'Motors {motor}')
     motor_device = get_motor_device(motor)
     detector_devices = get_detector_device_list(detectors, flying=False)
+    for det in detector_devices:
+        if hasattr(det,'total_points'):
+            det.total_points.put(num_steps)
     # print('[General Scan] Starting scan...')
     print_to_gui('[General Scan] Starting scan...')
     yield from (general_scan_plan(detector_devices, motor_device, rel_start, rel_stop, int(num_steps), exposure_time, md=md))

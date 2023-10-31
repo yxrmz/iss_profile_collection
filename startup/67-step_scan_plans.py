@@ -69,6 +69,9 @@ def step_scan_plan(name=None, comment=None, trajectory_filename=None, mono_angle
     default_detectors = [apb_ave, hhm_encoder]
     aux_detectors = get_detector_device_list(detectors, flying=False)
     all_detectors = default_detectors + aux_detectors
+    for det in all_detectors:
+        if hasattr(det,'total_points'):
+            det.total_points.put(len(energy_list))
     detectors_dict = {k: {'device': v} for k, v in zip(detectors, aux_detectors)}
     md = get_step_scan_md(name, comment, trajectory_filename, detectors_dict, element, e0, edge, metadata)
 
