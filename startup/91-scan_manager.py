@@ -286,13 +286,15 @@ class ScanManager():
                                     'revert': True,
                                     'filename': ''}}
 
-    def quick_herfd_scan_dict(self, element, edge, duration):
+    def quick_herfd_scan_dict(self, element, edge, duration, scan_range):
+        range_base = 200
+        range_scaler = scan_range / range_base
         duration_base = 10
         duration_scaler = duration / duration_base
-        preedge_start = -50.0
-        XANES_start = -10.0
-        XANES_end = 20.0
-        EXAFS_end = 6.0
+        preedge_start = -50.0 * range_scaler
+        XANES_start = -10.0 * range_scaler
+        XANES_end = 20.0 * range_scaler
+        EXAFS_end = e2k(150 * range_scaler, 0)
         type = 'standard'
         preedge_duration = 1.5 * duration_scaler
         edge_duration = 5.0 * duration_scaler
@@ -323,8 +325,8 @@ class ScanManager():
         uid = self.check_if_brand_new(standard_scan_dict)
         return self.scan_dict[uid]['scan_parameters']['filename']
 
-    def quick_herfd_trajectory_filename(self, element, edge, duration):
-        quick_herfd_scan_dict = self.quick_herfd_scan_dict(element, edge, duration)
+    def quick_herfd_trajectory_filename(self, element, edge, duration, scan_range):
+        quick_herfd_scan_dict = self.quick_herfd_scan_dict(element, edge, duration, scan_range)
         uid = self.check_if_brand_new(quick_herfd_scan_dict)
         return self.scan_dict[uid]['scan_parameters']['filename']
 
