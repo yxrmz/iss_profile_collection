@@ -440,6 +440,8 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
 
 
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')
+xs.hdf5.filestore_spec = "XSP3_STEP"
+
 xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', ext_trigger_device=apb_trigger_xs)
 
 # xs = None
@@ -491,8 +493,11 @@ xs_stream = ISSXspress3DetectorStream('XF:08IDB-ES{Xsp:1}:', name='xs_stream', e
 
 
 
-from xas.handlers import ISSXspress3HDF5Handler
+from xas.handlers import ISSXspress3HDF5Handler, Xspress3HDF5Handler
+
 # heavy-weight file handler
+db.reg.register_handler("XSP3_STEP",
+                        Xspress3HDF5Handler, overwrite=True)
 db.reg.register_handler(ISSXspress3HDF5Handler.HANDLER_NAME,
                         ISSXspress3HDF5Handler, overwrite=True)
 
