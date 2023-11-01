@@ -372,6 +372,24 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                           'plot_func': plot_func,
                                           'liveplot_kwargs': liveplot_kwargs}})
 
+        # pretune roll
+        if roll_tune:
+            roll_tune_params = {'scan_range': roll_tune_range}
+            if scan_kind == 'fly':
+                roll_tune_params['duration'] = roll_tune_duration
+            elif scan_kind == 'step':
+                roll_tune_params['step_size'] = roll_tune_step
+                roll_tune_params['exposure_time'] = roll_tune_exposure
+            plans.append({'plan_name': 'tune_johann_piezo_plan',
+                          'plan_kwargs': {'property': 'com',
+                                          'pil100k_roi_num': pil100k_roi_num,
+                                          'scan_kind': scan_kind,
+                                          'crystal': crystal,
+                                          'axis': 'roll',
+                                          **roll_tune_params,
+                                          'plot_func': plot_func,
+                                          'liveplot_kwargs': liveplot_kwargs}})
+
         _md = {**md}
         if ('tweak_motor_description' not in _md.keys()) and ('tweak_motor_position' not in _md.keys()):
             _md = {'tweak_motor_description': tweak_motor_description,
@@ -384,28 +402,13 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                 alignment_plan_kwargs = {'mono_energy': mono_energy,
                                          'scan_range': scan_range,
                                          'duration': scan_duration}
-        elif alignment_strategy == 'elastic':
-            if roll_tune:
-                roll_tune_params = {'scan_range': roll_tune_range}
-                if scan_kind == 'fly':
-                    roll_tune_params['duration'] = roll_tune_duration
-                elif scan_kind == 'step':
-                    roll_tune_params['step_size'] = roll_tune_step
-                    roll_tune_params['exposure_time'] = roll_tune_exposure
 
-                plans.append({'plan_name': 'tune_johann_piezo_plan',
-                              'plan_kwargs': {'property': 'com',
-                                              'pil100k_roi_num': pil100k_roi_num,
-                                              'scan_kind': scan_kind,
-                                              'crystal': crystal,
-                                              'axis': 'roll',
-                                              **roll_tune_params,
-                                              'plot_func': plot_func,
-                                              'liveplot_kwargs': liveplot_kwargs}})
+        elif alignment_strategy == 'elastic':
             if scan_kind == 'fly':
                 alignment_plan_kwargs = {'e_cen': mono_energy,
                                          'scan_range': scan_range,
                                          'duration': scan_duration}
+
         elif alignment_strategy == 'herfd':
             if scan_kind == 'fly':
                 alignment_plan_kwargs = {'element': herfd_scan_element,
