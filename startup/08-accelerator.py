@@ -41,3 +41,23 @@ class Accelerator(Device):
 
 nsls_ii=Accelerator('SR', name='nsls_ii')
 
+class FrontEnd(Device):
+    slit_top = Cpt(EpicsSignal, '{Slt:12-Ax:Y}xp')
+    slit_inb = Cpt(EpicsSignal,'{Slt:12-Ax:X}xp')
+    slit_bottom = Cpt(EpicsSignal, '{Slt:12-Ax:Y}xn')
+    slit_outb = Cpt(EpicsSignal, '{Slt:12-Ax:X}xn')
+
+    slit_vert_gap = Cpt(EpicsSignal, '{Slt:12-Ax:Y}size')
+    slit_vert_pos = Cpt(EpicsSignal, '{Slt:12-Ax:Y}center')
+    slit_horiz_gap = Cpt(EpicsSignal, '{Slt:12-Ax:X}size')
+    slit_horiz_pos = Cpt(EpicsSignal, '{Slt:12-Ax:X}center')
+
+    sync_horiz = Cpt(EpicsSignal,'{Slt:12-Ax:X}sync.PROC')
+    sync_vert = Cpt(EpicsSignal,'{Slt:12-Ax:Y}sync.PROC')
+
+    def sync_slits(self):
+        self.sync_horiz.put(1)
+        self.sync_vert.put(1)
+
+front_end = FrontEnd('FE:C08A-OP', name= 'front_end')
+

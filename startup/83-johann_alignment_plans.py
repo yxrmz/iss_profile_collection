@@ -176,8 +176,8 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
 # plan_processor.add_plans(plans)
 
 
-def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge=None, duration=None, motor_info='', md=None):
-    trajectory_filename = scan_manager.quick_herfd_trajectory_filename(element, edge, duration)
+def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge=None, duration=None, scan_range=None, motor_info='', md=None):
+    trajectory_filename = scan_manager.quick_herfd_trajectory_filename(element, edge, duration, scan_range)
     e0 = xraydb.xray_edge(element, edge).energy
     if md is None: md = {}
 
@@ -372,6 +372,24 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                           'plot_func': plot_func,
                                           'liveplot_kwargs': liveplot_kwargs}})
 
+        # pretune roll
+        if roll_tune:
+            roll_tune_params = {'scan_range': roll_tune_range}
+            if scan_kind == 'fly':
+                roll_tune_params['duration'] = roll_tune_duration
+            elif scan_kind == 'step':
+                roll_tune_params['step_size'] = roll_tune_step
+                roll_tune_params['exposure_time'] = roll_tune_exposure
+            plans.append({'plan_name': 'tune_johann_piezo_plan',
+                          'plan_kwargs': {'property': 'com',
+                                          'pil100k_roi_num': pil100k_roi_num,
+                                          'scan_kind': scan_kind,
+                                          'crystal': crystal,
+                                          'axis': 'roll',
+                                          **roll_tune_params,
+                                          'plot_func': plot_func,
+                                          'liveplot_kwargs': liveplot_kwargs}})
+
         _md = {**md}
         if ('tweak_motor_description' not in _md.keys()) and ('tweak_motor_position' not in _md.keys()):
             _md = {'tweak_motor_description': tweak_motor_description,
@@ -379,38 +397,22 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                    'alignment_crystal': crystal,
                    **_md}
 
-        if alignment_strategy == 'emission':
-            if scan_kind == 'fly':
-                alignment_plan_kwargs = {'mono_energy': mono_energy,
-                                         'scan_range': scan_range,
-                                         'duration': scan_duration}
-        elif alignment_strategy == 'elastic':
-            if roll_tune:
-                roll_tune_params = {'scan_range': roll_tune_range}
-                if scan_kind == 'fly':
-                    roll_tune_params['duration'] = roll_tune_duration
-                elif scan_kind == 'step':
-                    roll_tune_params['step_size'] = roll_tune_step
-                    roll_tune_params['exposure_time'] = roll_tune_exposure
+        alignment_plan_kwargs = {'scan_range': scan_range}
+        if scan_kind == 'fly':
+            alignment_plan_kwargs['duration'] = scan_duration
+        elif scan_kind == 'step':
+            alignment_plan_kwargs['step_size'] = scan_step
+            alignment_plan_kwargs['exposure_time'] = scan_exposure
 
-                plans.append({'plan_name': 'tune_johann_piezo_plan',
-                              'plan_kwargs': {'property': 'com',
-                                              'pil100k_roi_num': pil100k_roi_num,
-                                              'scan_kind': scan_kind,
-                                              'crystal': crystal,
-                                              'axis': 'roll',
-                                              **roll_tune_params,
-                                              'plot_func': plot_func,
-                                              'liveplot_kwargs': liveplot_kwargs}})
-            if scan_kind == 'fly':
-                alignment_plan_kwargs = {'e_cen': mono_energy,
-                                         'scan_range': scan_range,
-                                         'duration': scan_duration}
+        if alignment_strategy == 'emission':
+            alignment_plan_kwargs['mono_energy'] = mono_energy
+
+        elif alignment_strategy == 'elastic':
+            alignment_plan_kwargs['e_cen'] = mono_energy
+
         elif alignment_strategy == 'herfd':
-            if scan_kind == 'fly':
-                alignment_plan_kwargs = {'element': herfd_scan_element,
-                                         'edge': herfd_scan_edge,
-                                         'duration': scan_duration}
+            alignment_plan_kwargs = {'element': herfd_scan_element,
+                                     'edge': herfd_scan_edge}
         if motor_info is None:
             motor_info = f'{tweak_motor_description}={_pos: 0.2f}'
         plans.append({'plan_name': 'johann_alignment_scan_plan_bundle',
@@ -582,6 +584,8 @@ def johann_spectrometer_alignment_plan_bundle(
         motor_range=None, motor_num_steps=None,
         spectrometer_nominal_energy=None,
         automatic_mode=False,
+        automatic_fom='max',
+        post_tuning=True,
         **kwargs):
 
     plans = []
@@ -607,6 +611,7 @@ def johann_spectrometer_alignment_plan_bundle(
             R_range=motor_range, R_num_steps=motor_num_steps, spectrometer_nominal_energy=spectrometer_nominal_energy,
             mono_energy=mono_energy,
             automatic_mode=automatic_mode,
+            automatic_fom=automatic_fom,
             **kwargs)
 
     elif alignment_motor == 'X':
@@ -616,36 +621,38 @@ def johann_spectrometer_alignment_plan_bundle(
             x_range=motor_range, x_num_steps=motor_num_steps,
             mono_energy=mono_energy,
             automatic_mode=automatic_mode,
+            automatic_fom=automatic_fom,
             **kwargs)
     else:
         raise NotImplementedError('Alignment can be performed only by X and R!')
 
     plans.extend(_plans)
 
-    plans.append({'plan_name': 'print_message_plan',
-                  'plan_kwargs': {
-                      'msg': f'Performing post-alignment yaw motor tuning)',
-                      'add_timestamp': True,
-                      'tag': 'Spectrometer'}})
+    if post_tuning:
+        plans.append({'plan_name': 'print_message_plan',
+                      'plan_kwargs': {
+                          'msg': f'Performing post-alignment yaw motor tuning)',
+                          'add_timestamp': True,
+                          'tag': 'Spectrometer'}})
 
-    for crystal in crystals:
-        if (crystal != 'main') and kwargs['yaw_tune']:
-            yaw_tune_params = {'scan_range': kwargs['yaw_tune_range']}
-            if kwargs['scan_kind'] == 'fly':
-                yaw_tune_params['duration'] = kwargs['yaw_tune_duration']
-            elif kwargs['scan_kind'] == 'step':
-                yaw_tune_params['step_size'] = kwargs['yaw_tune_step']
-                yaw_tune_params['exposure_time'] = kwargs['yaw_tune_exposure']
+        for crystal in crystals:
+            if (crystal != 'main') and kwargs['yaw_tune']:
+                yaw_tune_params = {'scan_range': kwargs['yaw_tune_range']}
+                if kwargs['scan_kind'] == 'fly':
+                    yaw_tune_params['duration'] = kwargs['yaw_tune_duration']
+                elif kwargs['scan_kind'] == 'step':
+                    yaw_tune_params['step_size'] = kwargs['yaw_tune_step']
+                    yaw_tune_params['exposure_time'] = kwargs['yaw_tune_exposure']
 
-            plans.append({'plan_name': 'tune_johann_piezo_plan',
-                          'plan_kwargs': {'property': 'com',
-                                          'pil100k_roi_num': kwargs['pil100k_roi_num'],
-                                          'scan_kind': kwargs['scan_kind'],
-                                          'crystal': crystal,
-                                          'axis': 'yaw',
-                                          **yaw_tune_params,
-                                          'plot_func': kwargs['plot_func'],
-                                          'liveplot_kwargs': kwargs['liveplot_kwargs']}})
+                plans.append({'plan_name': 'tune_johann_piezo_plan',
+                              'plan_kwargs': {'property': 'com',
+                                              'pil100k_roi_num': kwargs['pil100k_roi_num'],
+                                              'scan_kind': kwargs['scan_kind'],
+                                              'crystal': crystal,
+                                              'axis': 'yaw',
+                                              **yaw_tune_params,
+                                              'plot_func': kwargs['plot_func'],
+                                              'liveplot_kwargs': kwargs['liveplot_kwargs']}})
 
     plans.append({'plan_name': 'print_message_plan',
                   'plan_kwargs': {
