@@ -104,10 +104,19 @@ class RowlandCircle:
 
         self.det_L1 = _BIG_DETECTOR_ARM_LENGTH
         self.det_L2 = _SMALL_DETECTOR_ARM_LENGTH
-        # self.cr_aux2_z = 139.5 # z-distance between the main and the auxiliary crystal (stack #2)
-        # self.cr_aux4_z = 129.5 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
-        self.cr_aux2_z = 140  # z-distance between the main and the auxiliary crystal (stack #2)
-        self.cr_aux4_z = 125 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+
+        # 1000 mm values - old
+        # self.cr_aux2_z = 140  # z-distance between the main and the auxiliary crystal (stack #2)
+        # self.cr_aux4_z = 125 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+
+        # 1000 mm values - new adapter plates
+        # self.cr_aux2_z = 144.738  # z-distance between the main and the auxiliary crystal (stack #2)
+        # self.cr_aux4_z = 131.014 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+
+        # 500 mm values - new adapter plates
+        self.cr_aux2_z = 132.752  # z-distance between the main and the auxiliary crystal (stack #2)
+        self.cr_aux4_z = 120.921 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+
         self.det_focus_status = 'good'
         self.init_from_settings()
 
