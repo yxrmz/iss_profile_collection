@@ -1940,6 +1940,7 @@ det_inclinometer1 = EpicsSignalAsEncoderForMotor('XF:08IDB-CT{DIODE-Box_B2:4}InC
                                 conversion_json_path=f'{ROOT_PATH_SHARED}/settings/json/inclinometer_data.json',
                                 motor=johann_emission.motor_det_th1)
 
+
 # johann_emission.energy._limits=(8004, 8068)
 
 
