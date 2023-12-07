@@ -56,8 +56,13 @@ class FrontEnd(Device):
     sync_vert = Cpt(EpicsSignal,'{Slt:12-Ax:Y}sync.PROC')
 
     def sync_slits(self):
-        self.sync_horiz.put(1)
-        self.sync_vert.put(1)
+        try:
+            self.sync_horiz.put(1)
+            self.sync_vert.put(1)
+        except:
+            # print('Could not sync slits - permissions')
+            pass
+
 
 front_end = FrontEnd('FE:C08A-OP', name= 'front_end')
 
