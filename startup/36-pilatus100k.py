@@ -417,7 +417,9 @@ class PilatusStreamHDF5(PilatusHDF5):
 
 
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
+pil100k2 = PilatusHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2")
 pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream", ext_trigger_device=apb_trigger_pil100k)
+pil100k2_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2_stream", ext_trigger_device=apb_trigger_pil100k)
 
 pil100k.set_primary_roi(1)
 pil100k.stats1.kind = 'hinted'

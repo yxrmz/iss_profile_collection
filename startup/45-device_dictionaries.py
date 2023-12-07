@@ -30,6 +30,11 @@ detector_dictionary =   {
                                      'channels': ['pil100k_stats1_total','pil100k_stats2_total',
                                                                     'pil100k_stats3_total','pil100k_stats4_total',
                                                                      'pil100k_stats1_max_value']},
+                    'Pilatus 100k New': {'device': pil100k2, 'flying_device': pil100k2_stream,
+                                     'channels': ['pil100k2_stats1_total', 'pil100k2_stats2_total',
+                                                  'pil100k2_stats3_total', 'pil100k2_stats4_total',
+                                                  'pil100k2_stats1_max_value']},
+
                     # 'PI-MTE3': {'device': picam,
                     #                  'channels': ['picam_stats1_total','picam_stats2_total',
                     #                                                 'picam_stats3_total','picam_stats4_total']},
