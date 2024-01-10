@@ -125,7 +125,7 @@ class AnalogPizzaBoxTrigger(Device):
 apb_trigger = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:1:", name="apb_trigger")
 apb_trigger_xs = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:1:", name="apb_trigger_xs")
 apb_trigger_pil100k = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:2:", name="apb_trigger_pil100k")
-
+apb_trigger_pil100k2 = AnalogPizzaBoxTrigger(prefix="XF:08IDB-CT{PBA:1}:Pulse:3:", name="apb_trigger_pil100k2")
 
 
 class APBTriggerFileHandler(HandlerBase):

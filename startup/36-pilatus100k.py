@@ -123,10 +123,9 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     over1 = Cpt(OverlayPlugin, 'Over1:')
 
-    readout = 0.0025 # seconds; actually it is 0.0023, but we are conservative
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, readout=0.0025, **kwargs):
         super().__init__(*args, **kwargs)
+        self.readout = readout  # seconds; actually it is 0.0023, but we are conservative
         self.hint_channels()
         # self._is_flying = False
 
@@ -417,9 +416,9 @@ class PilatusStreamHDF5(PilatusHDF5):
 
 
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
-pil100k2 = PilatusHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2")
+pil100k2 = PilatusHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2", readout=0.00095)
 pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream", ext_trigger_device=apb_trigger_pil100k)
-pil100k2_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2_stream", ext_trigger_device=apb_trigger_pil100k)
+pil100k2_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2_stream", ext_trigger_device=apb_trigger_pil100k2, readout=0.00095)
 
 pil100k.set_primary_roi(1)
 pil100k.stats1.kind = 'hinted'
@@ -427,6 +426,12 @@ pil100k.stats2.kind = 'hinted'
 pil100k.stats3.kind = 'hinted'
 pil100k.stats4.kind = 'hinted'
 
+
+pil100k2.set_primary_roi(1)
+pil100k2.stats1.kind = 'hinted'
+pil100k2.stats2.kind = 'hinted'
+pil100k2.stats3.kind = 'hinted'
+pil100k2.stats4.kind = 'hinted'
 
 
 # pil100k.cam.ensure_nonblocking()
