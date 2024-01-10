@@ -205,7 +205,7 @@ def johann_alignment_scan_plan_bundle(alignment_plan=None, rois=None,  alignment
                   'plan_kwargs': {**scan_kwargs}})
     plans.append({'plan_name': 'johann_add_scan_to_alignment_data_plan',
                   'plan_kwargs': {'alignment_data': alignment_data,
-                                  'alignemnt_plan': alignment_plan,
+                                  'alignment_plan': alignment_plan,
                                   '_uid': -1,
                                   'rois': rois}})
     return plans
@@ -394,7 +394,9 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
         if ('tweak_motor_description' not in _md.keys()) and ('tweak_motor_position' not in _md.keys()):
             _md = {'tweak_motor_description': tweak_motor_description,
                    'tweak_motor_position': _pos,
-                   'alignment_crystal': crystal,
+                   **_md}
+        if ('alignment_crystal' not in _md.keys()):
+            _md = {'alignment_crystal': crystal,
                    **_md}
 
         alignment_plan_kwargs = {'scan_range': scan_range}
@@ -509,10 +511,10 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
 
 
 # ALIGNMENT_DATA = {}
-# plans = johann_crystal_alignment_vs_R_plan_bundle(
+# plans = johann_spectrometer_run_alignment_scans_vs_R_plans(
 #                                               alignment_data=ALIGNMENT_DATA,
-#                                               spectrometer_energy=8046.3, R_range=24, R_num_steps=13,
-#                                               alignment_by='emission', scan_kind='fly',
+#                                               spectrometer_energy=9989, R_range=0, R_num_steps=1,
+#                                               alignment_by='elastic', scan_kind='fly',
 #                                               pil100k_roi_num=1,
 #                                               exposure_time=0.5,
 #                                               scan_range_yaw=1000, scan_step_yaw=10, scan_duration_yaw=10,
@@ -661,9 +663,23 @@ def johann_spectrometer_alignment_plan_bundle(
                       'tag': 'Spectrometer'}})
 
     return plans
-
-
-
+#
+'''
+ALIGNMENT_DATA = []
+plans = johann_spectrometer_alignment_plan_bundle(
+        alignment_data=ALIGNMENT_DATA,
+        alignment_motor='R',
+        motor_range=12, motor_num_steps=4,
+        spectrometer_nominal_energy=9989,
+        post_tuning=False,
+        alignment_strategy='elastic', scan_kind='fly',
+        pil100k_roi_num=1,
+        yaw_tune=True, yaw_tune_range=800, yaw_tune_duration=5,
+        roll_tune=False, roll_tune_range=800, roll_tune_duration=10,
+        scan_range=15, scan_duration=10,
+        herfd_scan_element='', herfd_scan_edge='')
+plan_processor.add_plans(plans)
+'''
 
     #     # plans.append({'plan_name': 'move_to_optimal_crystal_alignment_position_plan',
     #     #               'plan_kwargs': {'alignment_data': alignment_data[crystal],
