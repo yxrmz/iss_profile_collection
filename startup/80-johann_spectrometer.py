@@ -114,8 +114,8 @@ class RowlandCircle:
         # self.cr_aux4_z = 131.014 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
 
         # 500 mm values - new adapter plates
-        self.cr_aux2_z = 132.752  # z-distance between the main and the auxiliary crystal (stack #2)
-        self.cr_aux4_z = 120.921 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
+        # self.cr_aux2_z = 132.752  # z-distance between the main and the auxiliary crystal (stack #2)
+        # self.cr_aux4_z = 120.921 + self.cr_aux2_z  # z-distance between the main and the auxiliary crystal (stack #4)
 
         self.det_focus_status = 'good'
         self.init_from_settings()
@@ -182,6 +182,7 @@ class RowlandCircle:
     def set_spectrometer_config(self, config):
         # config needs a validation may be
         self.config = config
+        self.update_crystal_aux_dz()
         self.compute_trajectories()
         if 'energy_calibration' in config.keys():
             config_ec = config['energy_calibration']
@@ -430,6 +431,43 @@ class RowlandCircle:
         self.compute_trajectory_correction()
         self.config['det_focus'] = value
         self.save_current_spectrometer_config_to_settings()
+
+    @property
+    def R_parking(self):
+        return self.config['parking']['R']
+
+    @R_parking.setter
+    def R_parking(self, value):
+        self.config['parking']['R'] = value
+        self.update_crystal_aux_dz()
+        self.save_current_spectrometer_config_to_settings()
+
+    @property
+    def cr_aux20_dz(self):
+        return self.config['cr_aux20_dz']
+
+    @property
+    def cr_aux42_dz(self):
+        return self.config['cr_aux42_dz']
+
+    @property
+    def cr_aux2_z(self):
+        return self.cr_aux20_dz
+
+    @property
+    def cr_aux4_z(self):
+        return self.cr_aux20_dz + self.cr_aux42_dz
+
+    def update_crystal_aux_dz(self):
+        if self.R_parking == 500:  # 500 mm values - new adapter plates
+            self.config['cr_aux20_dz'] = 132.752  # z-distance between the main and the aux2 (stack #2)
+            self.config['cr_aux42_dz'] = 120.921  # z-distance between the aux2 and the aux4 (stack #4)
+
+        elif self.R_parking == 1000:  # 1000 mm values - new adapter plates
+            self.config['cr_aux20_dz'] = 144.738  # z-distance between the main and the aux2 (stack #2)
+            self.config['cr_aux42_dz'] = 131.014  # z-distance between the aux2 and the aux4 (stack #4)
+        else:
+            print('Nominal Rowland cirle radius should be either 1000 or 500 mm.')
 
     @property
     def R(self):
@@ -1770,6 +1808,15 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def read_aux5_crystal_parking(self):
         return self.rowland_circle.aux5_crystal_parking(human_readable=True)
+
+    def update_R_parking(self, value):
+        self.rowland_circle.R_parking = value
+
+    def read_R_parking(self):
+        return self.rowland_circle.R_parking
+
+    def read_crystal_aux_dz(self):
+        return self.rowland_circle.cr_aux20_dz, self.rowland_circle.cr_aux42_dz
 
     def register_energy(self, energy):
         self.rowland_circle.register_energy(energy, self.real_position_dict)
