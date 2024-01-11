@@ -1860,6 +1860,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def set_R(self, value):
         self.rowland_circle.R = value
 
+    def read_R(self):
+        return self.rowland_circle.R
+
     def set_roll_offset(self, value):
         self.rowland_circle.roll_offset = value
 
