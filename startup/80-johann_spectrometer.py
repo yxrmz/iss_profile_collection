@@ -931,6 +931,16 @@ class RowlandCircle:
         self.energy_converter = None
         self.save_current_spectrometer_config_to_settings()
 
+    def reset_alignment_data(self):
+        """
+        Reset alignment data dictionary
+        """
+        self.config['alignment_data'] = {}
+        self.save_current_spectrometer_config_to_settings()
+
+    def save_alignment_data_to_settings(self):
+        self.save_current_spectrometer_config_to_settings()
+
     # motor position calculation functions
     def plot_motor_pos_vs_bragg(self, motor_key, fignum=1):
         """
@@ -1894,6 +1904,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     @property
     def alignment_data(self):
         return self.rowland_circle.alignment_data
+
+    def save_alignment_data_to_settings(self):
+        self.rowland_circle.save_alignment_data_to_settings()
 
     # def move(self, position, step_size=0.5, **kwargs):
     #     old_position = self.energy.position

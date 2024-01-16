@@ -6,13 +6,13 @@ from xas.process import get_processed_df_from_uid_for_epics_fly_scan
 ALIGNMENT_SAMPLE_NAME = 'alignment sample'
 ALIGNMENT_SAMPLE_UID = 'alignment'
 
-def step_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, step_size=None, exposure_time=0.5, plot_func=None, liveplot_kwargs=None, md=None):
+def step_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, step_size=None, exposure_time=0.5, md=None):
     motor_description = _crystal_alignment_dict[crystal][axis]
     rel_start, rel_stop, num_steps = convert_range_to_start_stop(scan_range, step_size)
     yield from general_scan(detectors=['Pilatus 100k'], motor=motor_description, rel_start=rel_start, rel_stop=rel_stop,
                             num_steps=num_steps, exposure_time=exposure_time, liveplot_kwargs={}, md=md)
 
-def fly_epics_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, duration=None, plot_func=None, liveplot_kwargs=None, md=None):
+def fly_epics_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, duration=None, md=None):
     crystals = [crystal]
     detectors = [pil100k_stream]
     relative_trajectory = {'positions': [-scan_range/2, scan_range/2],
@@ -38,7 +38,8 @@ def simple_johann_piezo_plan(scan_kind=None, **kwargs):
     elif scan_kind == 'fly':
         yield from fly_epics_scan_simple_johann_piezo_plan(**kwargs)
 
-def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None, **kwargs):
+def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None, plot_func=None,
+                           liveplot_kwargs=None, plan_gui_services=None, **kwargs):
     yield from simple_johann_piezo_plan(scan_kind, **kwargs)
     if scan_kind == 'step':
         t = db[-1].table()
@@ -61,6 +62,8 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
     else:
         raise ValueError('not implemented')
     print_to_gui(f'Moving motor {motor_description} to position {new_position}', tag='spectrometer', add_timestamp=True)
+    if plot_func is not None:
+        plot_func(x, y, x_peak=new_position, y_peak=y.max(), x_label=motor_description, scan_motor_description=motor_description)
     yield from move_motor_plan(motor_attr=motor_description, based_on='description', position=new_position)
 
 # RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux5', axis='yaw', scan_range=1000, duration=10, md={}))
@@ -78,6 +81,9 @@ def johann_add_scan_to_alignment_data_plan(alignment_data=None, alignment_plan='
             'alignment_plan': alignment_plan,
             'rois': rois,
             'uid': uid, })
+        if alignment_data is johann_emission.alignment_data:
+            johann_emission.save_alignment_data_to_settings()
+
     yield from bps.null()
 
 
@@ -119,6 +125,8 @@ def johann_analyze_alignment_data_plan(alignment_data=None, scan_scope=None, ali
                 ((alignment_plan is None) or (entry['alignment_plan'] == alignment_plan))):
                 if force_analysis or any(k not in entry.keys() for k in ['fwhm_value', 'max_value', 'max_loc', 'com_loc']):
                     johann_analyze_alignment_data_entry(entry)
+        if alignment_data is johann_emission.alignment_data:
+            johann_emission.save_alignment_data_to_settings()
     yield from bps.null()
 
 
