@@ -250,7 +250,9 @@ class PilatusStreamHDF5(PilatusHDF5):
                                     "roi_num" : i + 1})
 
     def format_datum_key(self, input_dict):
-        output =f'pil100k_{input_dict["data_type"]}'
+        name_short = self.name.split('_')[0]  # to remove "stream" part if needed
+        # output =f'pil100k_{input_dict["data_type"]}'
+        output = f'{name_short}_{input_dict["data_type"]}'
         if input_dict["data_type"] == 'roi':
             output += f'{input_dict["roi_num"]:01d}'
         return output
