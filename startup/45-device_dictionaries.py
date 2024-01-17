@@ -96,7 +96,7 @@ class KeyDetectorNotIncluded(Exception):
     pass
 
 def ensure_pilatus_is_in_detector_list(detectors):
-    if not ('Pilatus 100k' in detectors):
+    if (not ('Pilatus 100k' in detectors)) or (not (('Pilatus 100k New' in detectors))):
         raise KeyDetectorNotIncluded(f'Error: Pilatus 100k not found in the detector list')
 
 

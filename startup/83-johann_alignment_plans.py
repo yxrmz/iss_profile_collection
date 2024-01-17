@@ -6,15 +6,20 @@ from xas.process import get_processed_df_from_uid_for_epics_fly_scan
 ALIGNMENT_SAMPLE_NAME = 'alignment sample'
 ALIGNMENT_SAMPLE_UID = 'alignment'
 
+# JOHANN_DEFAULT_DETECTOR_KEY = 'Pilatus 100k'
+JOHANN_DEFAULT_DETECTOR_KEY = 'Pilatus 100k New'
+JOHANN_DEFAULT_DETECTOR_DICT = detector_dictionary[JOHANN_DEFAULT_DETECTOR_KEY]
+
+
 def step_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, step_size=None, exposure_time=0.5, md=None):
     motor_description = _crystal_alignment_dict[crystal][axis]
     rel_start, rel_stop, num_steps = convert_range_to_start_stop(scan_range, step_size)
-    yield from general_scan(detectors=['Pilatus 100k'], motor=motor_description, rel_start=rel_start, rel_stop=rel_stop,
+    yield from general_scan(detectors=[JOHANN_DEFAULT_DETECTOR_KEY], motor=motor_description, rel_start=rel_start, rel_stop=rel_stop,
                             num_steps=num_steps, exposure_time=exposure_time, liveplot_kwargs={}, md=md)
 
 def fly_epics_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, duration=None, md=None):
     crystals = [crystal]
-    detectors = [pil100k_stream]
+    detectors = [JOHANN_DEFAULT_DETECTOR_DICT['flying_device']]
     relative_trajectory = {'positions': [-scan_range/2, scan_range/2],
                            'durations': [duration]}
     if md is None: md = {}
@@ -43,10 +48,10 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
     yield from simple_johann_piezo_plan(scan_kind, **kwargs)
     if scan_kind == 'step':
         t = db[-1].table()
-        y = t[f'pil100k_stats{pil100k_roi_num}_total'].values
+        y = t[f'{JOHANN_DEFAULT_DETECTOR_DICT["device"].name}_stats{pil100k_roi_num}_total'].values
     elif scan_kind == 'fly':
         t = get_processed_df_from_uid_for_epics_fly_scan(db, -1)
-        y = t[f'pil100k_roi{pil100k_roi_num}'].values
+        y = t[f'{JOHANN_DEFAULT_DETECTOR_DICT["device"].name}_roi{pil100k_roi_num}'].values
 
     motor_description = _crystal_alignment_dict[kwargs['crystal']][kwargs['axis']]
     motor_object = get_motor_device(motor_description, based_on='description')
@@ -152,7 +157,7 @@ def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, sc
     name = f'{crystal} elastic scan at {e_cen: 0.1f} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
-                   'detectors': ['Pilatus 100k'],
+                   'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
                    'element': '', 'e0': e_cen, 'edge': '',
                    'metadata': md}
     return [{'plan_name': 'fly_scan_plan',
@@ -169,7 +174,7 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
           **md}
 
     name = f'{crystal} emission scan at {motor_info}'
-    scan_kwargs = {'name': name, 'comment': '', 'detectors': ['Pilatus 100k'],
+    scan_kwargs = {'name': name, 'comment': '', 'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
                    'mono_energy': mono_energy,
                    'spectrometer_central_energy': None,
                    'relative_trajectory': {'positions' : [-scan_range/2, scan_range/2], 'durations': [duration]},
@@ -197,7 +202,7 @@ def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge
     name = f'{crystal} herfd scan at {element}-{edge} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
-                   'detectors': ['Pilatus 100k'],
+                   'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
                    'element': element, 'e0': e0, 'edge': edge,
                    'metadata': md}
     return [{'plan_name': 'fly_scan_plan',
