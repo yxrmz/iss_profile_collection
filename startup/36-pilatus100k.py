@@ -123,9 +123,9 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     over1 = Cpt(OverlayPlugin, 'Over1:')
 
-    def __init__(self, *args, readout=0.0025, **kwargs):
+    def __init__(self, *args, readout=0.0024, **kwargs):
         super().__init__(*args, **kwargs)
-        self.readout = readout  # seconds; actually it is 0.0023, but we are conservative
+        self.readout = readout  # seconds; for old Pilatus it is 0.0023s; for the new one it is 0.00095s
         self.hint_channels()
         # self._is_flying = False
 
@@ -143,7 +143,7 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         return self.cam.acquire_period.get()
 
     def set_exposure_time(self, exp_t):
-        self.cam.acquire_time.put(np.floor((exp_t - self.readout) * 1000) / 1000)
+        self.cam.acquire_time.put(np.floor((exp_t - self.readout) * 10000) / 10000)
         self.cam.acquire_period.put(exp_t)
 
     def set_num_images(self, num):
@@ -259,7 +259,7 @@ class PilatusStreamHDF5(PilatusHDF5):
 
     def prepare_to_fly(self, traj_duration):
         self.acq_rate = self.ext_trigger_device.freq.get()
-        self.num_points = int(self.acq_rate * (traj_duration + 5))
+        self.num_points = int(self.acq_rate * (traj_duration + 2))
         self.ext_trigger_device.prepare_to_fly(traj_duration)
 
 
@@ -418,9 +418,9 @@ class PilatusStreamHDF5(PilatusHDF5):
 
 
 pil100k = PilatusHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k")  # , detector_id="SAXS")
-pil100k2 = PilatusHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2", readout=0.00095)
+pil100k2 = PilatusHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2", readout=0.001)
 pil100k_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL1}:", name="pil100k_stream", ext_trigger_device=apb_trigger_pil100k)
-pil100k2_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2_stream", ext_trigger_device=apb_trigger_pil100k2, readout=0.00095)
+pil100k2_stream = PilatusStreamHDF5("XF:08IDB-ES{Det:PIL2}", name="pil100k2_stream", ext_trigger_device=apb_trigger_pil100k2, readout=0.001)
 
 pil100k.set_primary_roi(1)
 pil100k.stats1.kind = 'hinted'
