@@ -582,7 +582,7 @@ class RowlandCircle:
         Data with spectrometer alignment scan uids and analysis results. Stored for metadata tracking purposes.
         """
         if 'alignment_data' not in self.config.keys():
-            self.config['alignment_data'] = {}
+            self.config['alignment_data'] = []
         return self.config['alignment_data']
 
     def _compute_nominal_trajectory(self, npt=1000):
@@ -935,7 +935,7 @@ class RowlandCircle:
         """
         Reset alignment data dictionary
         """
-        self.config['alignment_data'] = {}
+        self.config['alignment_data'] = []
         self.save_current_spectrometer_config_to_settings()
 
     def save_alignment_data_to_settings(self):

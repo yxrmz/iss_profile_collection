@@ -110,10 +110,13 @@ def johann_add_scan_to_alignment_data_plan(alignment_data=None, alignment_plan='
 
 def _johann_analyze_alignment_data_entry(entry):
     if entry['alignment_plan'] == 'fly_scan_johann_elastic_alignment_plan_bundle':
-        fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
-                                                                           rois=entry['rois'])
+        # fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
+        #                                                                    rois=entry['rois'])
+        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
+                                                                             x_key='energy',
+                                                                             rois=entry['rois'])
     elif entry['alignment_plan'] == 'epics_fly_scan_johann_emission_alignment_plan_bundle':
-        x_key = db[uid].start['motor_stream_names'][0].replace('_monitor', '')
+        x_key = db[entry['uid']].start['motor_stream_names'][0].replace('_monitor', '')
         fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
                                                                              x_key=x_key,
                                                                              rois=entry['rois'])
@@ -132,6 +135,7 @@ def johann_analyze_alignment_data_entry(entry, attempts=5, sleep=3):
             _johann_analyze_alignment_data_entry(entry)
             break
         except Exception as e:
+            print(e)
             ttime.sleep(sleep)
 
 def johann_analyze_alignment_data_plan(alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None, force_analysis=False, plot_func=None, ):
@@ -358,7 +362,8 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                                                                                            tweak_motor_axis,
                                                                                                            _tweak_motor_range,
                                                                                                            tweak_motor_num_steps)
-
+    if liveplot_kwargs is None:
+        liveplot_kwargs = {}
     if mono_energy is None: mono_energy = hhm.energy.position
     yaw_init_position = get_johann_crystal_axis_motor_pos(crystal, 'yaw')
 
@@ -564,7 +569,7 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
         plans.append({'plan_name': 'johann_tweak_crystal_and_scan_plan_bundle',
                       'plan_kwargs': {'crystal': crystal,
                                       'scan_range_alignment_multiplier': multiplier,
-                                      'alignment_data': alignment_data[crystal],
+                                      'alignment_data': alignment_data,
                                       'mono_energy': mono_energy,
                                       'tweak_motor_axis': 'x',
                                       'tweak_motor_range': x_range,
@@ -671,6 +676,16 @@ def johann_spectrometer_alignment_plan_bundle(
                     yaw_tune_params['step_size'] = kwargs['yaw_tune_step']
                     yaw_tune_params['exposure_time'] = kwargs['yaw_tune_exposure']
 
+                if 'plot_func' in kwargs:
+                    plot_func = kwargs['plot_func']
+                else:
+                    plot_func = None
+
+                if 'liveplot_kwargs' in kwargs:
+                    liveplot_kwargs = kwargs['liveplot_kwargs']
+                else:
+                    liveplot_kwargs = {}
+
                 plans.append({'plan_name': 'tune_johann_piezo_plan',
                               'plan_kwargs': {'property': 'com',
                                               'pil100k_roi_num': kwargs['pil100k_roi_num'],
@@ -678,8 +693,8 @@ def johann_spectrometer_alignment_plan_bundle(
                                               'crystal': crystal,
                                               'axis': 'yaw',
                                               **yaw_tune_params,
-                                              'plot_func': kwargs['plot_func'],
-                                              'liveplot_kwargs': kwargs['liveplot_kwargs']}})
+                                              'plot_func': plot_func,
+                                              'liveplot_kwargs': liveplot_kwargs}})
 
     plans.append({'plan_name': 'print_message_plan',
                   'plan_kwargs': {
