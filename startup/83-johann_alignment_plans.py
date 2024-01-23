@@ -61,15 +61,27 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
         # new_position = np.sum((y - y.min()) * x) / np.sum((y - y.min()))
         _y = y - y.min()
         _y_half = _y >= np.percentile(_y, 50)
-        new_position = np.sum((_y * x)[_y_half]) / np.sum(_y[_y_half])
+        x_use = x[_y_half]
+        y_use = _y[_y_half]
+        new_position = np.sum(y_use * x_use) / np.sum(y_use)
     elif property == 'max':
         new_position = x[np.argmax(y)]
     else:
         raise ValueError('not implemented')
-    print_to_gui(f'Moving motor {motor_description} to position {new_position}', tag='spectrometer', add_timestamp=True)
+    if np.isnan(new_position):
+        print_to_gui(f'New motor position is not defined', tag='spectrometer',
+                     add_timestamp=True)
+    else:
+        print_to_gui(f'Moving motor {motor_description} to position {new_position}', tag='spectrometer', add_timestamp=True)
+        yield from move_motor_plan(motor_attr=motor_description, based_on='description', position=new_position)
+
+
+    # print_to_gui(f'{plot_func=}', tag='DEBUG', add_timestamp=True)
     if plot_func is not None:
-        plot_func(x, y, x_peak=new_position, y_peak=y.max(), x_label=motor_description, scan_motor_description=motor_description)
-    yield from move_motor_plan(motor_attr=motor_description, based_on='description', position=new_position)
+        # print_to_gui('actually plotting epics data', tag='DEBUG', add_timestamp=True)
+        plot_func(x, _y, x_fit=x_use, y_fit=y_use, x_peak=new_position, y_peak=y.max(), x_label=motor_description, scan_motor_description=motor_description)
+        # print_to_gui('actually done plotting epics data', tag='DEBUG', add_timestamp=True)
+
 
 # RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux5', axis='yaw', scan_range=1000, duration=10, md={}))
 # RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux2', axis='yaw', scan_range=500, duration=5, md={}))
