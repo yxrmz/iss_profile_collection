@@ -159,7 +159,7 @@ def johann_analyze_alignment_data_plan(alignment_data=None, scan_scope=None, ali
 #     # do the analysis
 
 
-
+_scan_tag = ''
 def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, scan_range=10.0, duration=5.0, motor_info='', md=None):
     e_velocity = scan_range / duration
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, scan_range, e_velocity)
@@ -170,7 +170,7 @@ def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, sc
           'spectrometer_current_crystal': crystal,
           **md}
 
-    name = f'{crystal} elastic scan at {e_cen: 0.1f} {motor_info}'
+    name = f'{crystal}{_scan_tag} elastic scan at {e_cen: 0.1f} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
                    'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
@@ -189,7 +189,7 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
           'plan_name': 'epics_fly_scan_johann_emission_alignment_plan',
           **md}
 
-    name = f'{crystal} emission scan at {motor_info}'
+    name = f'{crystal}{_scan_tag} emission scan at {motor_info}'
     scan_kwargs = {'name': name, 'comment': '', 'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
                    'mono_energy': mono_energy,
                    'spectrometer_central_energy': None,
@@ -215,7 +215,7 @@ def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge
           'spectrometer_current_crystal': crystal,
           **md}
 
-    name = f'{crystal} herfd scan at {element}-{edge} {motor_info}'
+    name = f'{crystal}{_scan_tag} herfd scan at {element}-{edge} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
                    'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
@@ -443,8 +443,9 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
             alignment_plan_kwargs['e_cen'] = mono_energy
 
         elif alignment_strategy == 'herfd':
-            alignment_plan_kwargs = {'element': herfd_scan_element,
-                                     'edge': herfd_scan_edge}
+            alignment_plan_kwargs['element'] = herfd_scan_element
+            alignment_plan_kwargs['edge'] = herfd_scan_edge
+
         if motor_info is None:
             motor_info = f'{tweak_motor_description}={_pos: 0.2f}'
         plans.append({'plan_name': 'johann_alignment_scan_plan_bundle',
@@ -703,7 +704,22 @@ def johann_spectrometer_alignment_plan_bundle(
                       'tag': 'Spectrometer'}})
 
     return plans
-#
+
+
+
+
+'''
+_motors = [johann_aux2_crystal.motor_cr_aux2_roll,
+           johann_aux3_crystal.motor_cr_aux3_roll,
+           johann_aux4_crystal.motor_cr_aux4_roll,
+           johann_aux5_crystal.motor_cr_aux5_roll]
+for _motor in _motors:
+    _motor.twv.put(3)
+    _motor.twf.put(1)
+
+_scan_tag = '_roll-6'
+'''
+
 '''
 ALIGNMENT_DATA = []
 plans = johann_spectrometer_alignment_plan_bundle(
