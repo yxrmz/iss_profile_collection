@@ -440,8 +440,8 @@ pil100k2.stats4.kind = 'hinted'
 
 def take_pil100k_test_image_plan():
     yield from shutter.open_plan()
-    pil100k.cam.acquire.set(1)
-    yield from bps.sleep(pil100k.cam.acquire_time.value + 0.1)
+    pil100k2.cam.acquire.set(1)
+    yield from bps.sleep(pil100k2.cam.acquire_time.value + 0.1)
     yield from shutter.close_plan()
 
 
