@@ -176,16 +176,61 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from epics_fly_scan_custom_johann_piezo_plan(crystals=crystal_selection, axis='roll', detectors=all_detectors,
                                                 relative_trajectory=relative_trajectory, md=md)
 
-# plan = epics_fly_scan_johann_xes_plan(name='fly_test', comment='', detectors=['Pilatus 100k'],
-#                                    mono_energy=8500, mono_angle_offset=None,
-#                                    spectrometer_central_energy=None, relative_trajectory={'positions': [-500, -495, 395, 400],
-#                                                                      'durations': [0.1, 30, 0.1]},
-#                                    crystal_selection=None,
-#                                    element='Ni', e0=8267, line='Kb1',
-#                                    spectrometer_config_uid=None,
-#                                    metadata={})
-# RE(plan)
+'''
+for _energy in range(8015, 8060, 5):
+# for _energy in [8020, 8035, 8050]:
+# # for _energy in [8035]:
+    for i in range(1):
+        plan = epics_fly_scan_johann_xes_plan(name=f'fly_Cu2O calibration {i+1} {_energy}', comment='', detectors=['Pilatus 100k New'],
+                                           mono_energy=_energy, mono_angle_offset=None,
+                                           spectrometer_central_energy=None, relative_trajectory={'positions': [-900, 900],
+                                                                             'durations': [30]},
+                                           crystal_selection=None,
+                                           element='Cu', e0=8046, line='Ka1',
+                                           spectrometer_config_uid=None,
+                                           metadata={})
+        RE(plan)
 
+
+# for i in range(5):
+#     relative_trajectory = {'positions': [-900, 900],
+#                            'durations': [60]}
+#     plan = epics_fly_scan_johann_xes_plan(name=f'fly_Cu_foil 9000 30s att2 {i+1:04d}', comment='', detectors=['Pilatus 100k New'],
+#                                        mono_energy=9000, mono_angle_offset=None,
+#                                        spectrometer_central_energy=None, relative_trajectory=relative_trajectory,
+#                                        crystal_selection=None,
+#                                        element='Cu', e0=8046, line='Ka1',
+#                                        spectrometer_config_uid=None,
+#                                        metadata={'_relative_trajectory_info': relative_trajectory})
+#     RE(plan)
+plans = []
+
+for i in range(3):
+    relative_trajectory = {'positions': [-900, -600, -300,  210,  510,  900],
+                           'durations': [5/1, 20/1, 8.5/1, 20/1, 6.5/1]}
+    plans.append({'plan_name': 'epics_fly_scan_johann_xes_plan',
+                  'plan_kwargs': {'name': f'fly Cu2O 9000 60s traj {i+1:04d}', 'comment': '', 'detectors': ['Pilatus 100k New'],
+                                       'mono_energy': 9000, 'mono_angle_offset': None,
+                                       'spectrometer_central_energy': None, 'relative_trajectory': relative_trajectory,
+                                       'crystal_selection': None,
+                                       'element': 'Cu', 'e0': 8046, 'line': 'Ka1',
+                                       'spectrometer_config_uid': None,
+                                       'metadata': {'_relative_trajectory_info': relative_trajectory}}})
+
+for i in range(5):
+    relative_trajectory = {'positions': [-900, -600, -300,  210,  510,  900],
+                           'durations': [5/2, 20/2, 8.5/2, 20/2, 6.5/2]}
+    plans.append({'plan_name': 'epics_fly_scan_johann_xes_plan',
+                  'plan_kwargs': {'name': f'fly_Cu_foil 9000 30s traj {i+1:04d}', 'comment': '', 'detectors': ['Pilatus 100k New'],
+                                       'mono_energy': 9000, 'mono_angle_offset': None,
+                                       'spectrometer_central_energy': None, 'relative_trajectory': relative_trajectory,
+                                       'crystal_selection': None,
+                                       'element': 'Cu', 'e0': 8046, 'line': 'Ka1',
+                                       'spectrometer_config_uid': None,
+                                       'metadata': {'_relative_trajectory_info': relative_trajectory}}})
+
+plan_processor.add_plans(plans)
+'''
 
 def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list, name):
     if type(sample_coordinates) == list:
