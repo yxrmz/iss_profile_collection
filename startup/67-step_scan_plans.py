@@ -22,7 +22,7 @@ def step_scan_action_factory(energy_steps, time_steps):
                 # yield from bps.null()
                 yield from bps.abs_set(det.sample_len, samples, wait=True)
                 yield from bps.abs_set(det.wf_len, samples, wait=True)
-            elif det.name == 'pil100k':
+            elif (det.name == 'pil100k') or (det.name == 'pil100k2'):
                 yield from bps.mv(det.cam.acquire_time, time_step)
             elif det.name == 'xs':
                 yield from bps.mv(det.settings.acquire_time, time_step)
