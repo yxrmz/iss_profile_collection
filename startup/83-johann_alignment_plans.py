@@ -713,11 +713,15 @@ _motors = [johann_aux2_crystal.motor_cr_aux2_roll,
            johann_aux3_crystal.motor_cr_aux3_roll,
            johann_aux4_crystal.motor_cr_aux4_roll,
            johann_aux5_crystal.motor_cr_aux5_roll]
-for _motor in _motors:
-    _motor.twv.put(3)
-    _motor.twf.put(1)
-
-_scan_tag = '_roll-6'
+_zero_positions = [495.84000000000003,
+                  1030.998,
+                  1736.188,
+                  426.14300000000003]
+for _motor, _zero_position in zip(_motors, _zero_positions):
+    SHIFT = 3
+    _motor.move(_zero_position + SHIFT)
+    # print(_motor.position)
+_scan_tag = f'_roll={SHIFT}'
 '''
 
 '''

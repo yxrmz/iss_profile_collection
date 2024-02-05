@@ -132,6 +132,10 @@ usermotor3 = Usermotor('XF:08IDB-OP{Misc-Ax:3', name='usermotor3')
 
 attenuator_motor = Usermotor('XF:08IDB-OP{Misc-Ax:4', name='attenuator_motor')
 
+det1_stage_x = Usermotor('XF:08IDB-OP{Analyzer-Ax:Y', name='det1_stage_x')
+det1_stage_y = Usermotor('XF:08IDB-OP{Analyzer-Ax:Z', name='det1_stage_y')
+
+
 det2_stage_x = Usermotor('XF:08IDB-OP{DetStage:2-Ax:X', name='det2_stage_x')
 det2_stage_y = Usermotor('XF:08IDB-OP{DetStage:2-Ax:Y', name='det2_stage_y')
 

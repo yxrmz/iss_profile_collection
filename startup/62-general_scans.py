@@ -176,7 +176,7 @@ def set_detector_exposure_time_plan(detectors, exposure_time):
             samples = np.round(exposure_time * 1005, -1)  # Denis: attempt to improve this?
             yield from bps.abs_set(det.sample_len, samples, wait=True)
             yield from bps.abs_set(det.wf_len, samples, wait=True)
-        elif det.name == 'pil100k':
+        elif (det.name == 'pil100k') or (det.name == 'pil100k2'):
             yield from bps.mv(det.cam.acquire_time, exposure_time)
         elif det.name == 'xs':
             yield from bps.mv(det.settings.acquire_time, exposure_time)
