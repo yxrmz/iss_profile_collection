@@ -159,18 +159,17 @@ def johann_analyze_alignment_data_plan(alignment_data=None, scan_scope=None, ali
 #     # do the analysis
 
 
-_scan_tag = ''
 def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, scan_range=10.0, duration=5.0, motor_info='', md=None):
     e_velocity = scan_range / duration
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, scan_range, e_velocity)
-    if md is None: md = {}
+    if md is None: md = {'scan_tag': ''}
 
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
           'spectrometer_current_crystal': crystal,
           **md}
 
-    name = f'{crystal}{_scan_tag} elastic scan at {e_cen: 0.1f} {motor_info}'
+    name = f'{crystal}{md["scan_tag"]} elastic scan at {e_cen: 0.1f} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
                    'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
@@ -183,13 +182,13 @@ def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, sc
 # plan_processor.add_plans(plans)
 
 def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_energy=None, scan_range=None, duration=None, motor_info='', md=None):
-    if md is None: md = {}
+    if md is None: md = {'scan_tag': ''}
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
           'plan_name': 'epics_fly_scan_johann_emission_alignment_plan',
           **md}
 
-    name = f'{crystal}{_scan_tag} emission scan at {motor_info}'
+    name = f'{crystal}{md["scan_tag"]} emission scan at {motor_info}'
     scan_kwargs = {'name': name, 'comment': '', 'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
                    'mono_energy': mono_energy,
                    'spectrometer_central_energy': None,
@@ -208,14 +207,14 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
 def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge=None, duration=None, scan_range=None, motor_info='', md=None):
     trajectory_filename = scan_manager.quick_herfd_trajectory_filename(element, edge, duration, scan_range)
     e0 = xraydb.xray_edge(element, edge).energy
-    if md is None: md = {}
+    if md is None: md = {'scan_tag': ''}
 
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
           'spectrometer_current_crystal': crystal,
           **md}
 
-    name = f'{crystal}{_scan_tag} herfd scan at {element}-{edge} {motor_info}'
+    name = f'{crystal}{md["scan_tag"]} herfd scan at {element}-{edge} {motor_info}'
     scan_kwargs = {'name': name, 'comment': '',
                    'trajectory_filename': trajectory_filename,
                    'detectors': [JOHANN_DEFAULT_DETECTOR_KEY],
@@ -488,6 +487,7 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
         R_range: float, R_num_steps: int, spectrometer_nominal_energy: float,
         mono_energy: float,
         automatic_mode: bool,
+        scan_tag='',
         automatic_fom: str,
         **kwargs):
     plans = []
@@ -524,7 +524,8 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
                                           'tweak_motor_num_steps': 1,
                                           'md': {'tweak_motor_description': 'Rowland Circle Radius',
                                                  'tweak_motor_position': _R,
-                                                 'scan_scope': 'alignment'},
+                                                 'scan_scope': 'alignment',
+                                                 'scan_tag': scan_tag},
                                           **kwargs}})
 
     if automatic_mode:
@@ -562,6 +563,7 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
         mono_energy: float,
         automatic_mode: bool,
         automatic_fom: str,
+        scan_tag: str='',
         **kwargs):
 
     plans = []
@@ -575,7 +577,7 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
                                       'tweak_motor_axis': 'x',
                                       'tweak_motor_range': x_range,
                                       'tweak_motor_num_steps': x_num_steps,
-                                      'md': {'scan_scope': 'alignment'},
+                                      'md': {'scan_scope': 'alignment', 'scan_tag': scan_tag},
                                       **kwargs}})
 
         # in automatic mode it is important that if main crystal is enabled, it should be optimized first
