@@ -21,6 +21,47 @@ _crystal_alignment_dict = {'main': {'roll': 'Johann Main Crystal Roll',
                                     'y':    'Johann Aux5 Crystal Y'}
                            }
 
+
+def johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200, print_msg=True):
+    if print_msg:
+        print_to_gui(f'Setting the focus on the {crystal} crystal. Moving other crystals from the field of view.',
+                     add_timestamp=True, tag='Spectrometer')
+
+    enabled_crystals = johann_emission.enabled_crystals_list
+    unwanted_crystals = [c for c in enabled_crystals if c != crystal]
+    for cr in unwanted_crystals:
+        yaw_direction = 1 if cr in ['aux3', 'aux5'] else -1
+        yield from move_relative_motor_plan(motor_attr=_crystal_alignment_dict[cr]['yaw'],
+                                            based_on='description',
+                                            rel_position=yaw_shift * yaw_direction)
+
+
+def undo_johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
+    print_to_gui(f'Focus was on the {crystal} crystal. Moving other crystals back into the field of view.',
+                 add_timestamp=True, tag='Spectrometer')
+    yield from johann_focus_on_one_crystal_plan(crystal, yaw_shift=-yaw_shift, print_msg=False)
+
+def move_rowland_circle_R_plan(new_R=None, energy=None, translations_only=True):
+    motors_to_move = copy.deepcopy(johann_emission.real_keys)
+    if translations_only:
+        _motors_to_move = []
+        for motor in motors_to_move:
+            if not (motor.endswith('yaw') or motor.endswith('roll')):
+                _motors_to_move.append(motor)
+        motors_to_move = _motors_to_move
+
+    old_pos_dict = johann_emission._forward({'energy': energy})
+    rowland_circle.R = new_R
+
+    if energy is None:
+        energy = johann_emission.energy.position
+    new_pos_dict = johann_emission._forward({'energy': energy})
+    for motor in motors_to_move:
+        motor_obj = getattr(johann_emission, motor)
+        # print(motor, new_pos_dict[motor], f'delta={new_pos_dict[motor] - old_pos_dict[motor]}')
+        # motor_obj.move(new_pos_dict[motor])
+        yield from bps.mv(motor_obj, new_pos_dict[motor])
+
 def move_johann_spectrometer_energy(energy : float=-1):
     current_energy = johann_emission.energy.position
     energy = float(energy)

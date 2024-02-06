@@ -82,83 +82,6 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
         plot_func(x, _y, x_fit=x_use, y_fit=y_use, x_peak=new_position, y_peak=y.max(), x_label=motor_description, scan_motor_description=motor_description)
         # print_to_gui('actually done plotting epics data', tag='DEBUG', add_timestamp=True)
 
-
-# RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux5', axis='yaw', scan_range=1000, duration=10, md={}))
-# RE(tune_johann_piezo_plan(pil100k_roi_num=1, scan_kind='fly', crystal='aux2', axis='yaw', scan_range=500, duration=5, md={}))
-
-def johann_add_scan_to_alignment_data_plan(alignment_data=None, alignment_plan='', _uid=-1, rois=None):
-    if alignment_data is not None:
-        start = db[_uid].start
-        uid = start.uid
-        alignment_data.append({
-            'crystal': start['alignment_crystal'],
-            'tweak_motor_description': start['tweak_motor_description'],
-            'tweak_motor_position': start['tweak_motor_position'],
-            'scan_scope': start['scan_scope'],
-            'alignment_plan': alignment_plan,
-            'rois': rois,
-            'uid': uid, })
-        if alignment_data is johann_emission.alignment_data:
-            johann_emission.save_alignment_data_to_settings()
-
-    yield from bps.null()
-
-
-
-# def _johann_analyze_alignment_data(alignment_data, scan_scope='alignment', force_analysis=False, plot_func=None):
-
-
-def _johann_analyze_alignment_data_entry(entry):
-    if entry['alignment_plan'] == 'fly_scan_johann_elastic_alignment_plan_bundle':
-        # fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
-        #                                                                    rois=entry['rois'])
-        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
-                                                                             x_key='energy',
-                                                                             rois=entry['rois'])
-    elif entry['alignment_plan'] == 'epics_fly_scan_johann_emission_alignment_plan_bundle':
-        x_key = db[entry['uid']].start['motor_stream_names'][0].replace('_monitor', '')
-        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
-                                                                             x_key=x_key,
-                                                                             rois=entry['rois'])
-    # elif entry['alignment_plan'] == 'fly_scan_johann_herfd_alignment_plan_bundle':
-    #     pass
-    else:
-        raise NotImplementedError('This is not yet implemented')
-    entry['fwhm_value'] = fwhm_value
-    entry['max_value'] = max_value
-    entry['max_loc'] = max_loc
-    entry['com_loc'] = com_loc
-
-def johann_analyze_alignment_data_entry(entry, attempts=5, sleep=3):
-    for i in range(attempts):
-        try:
-            _johann_analyze_alignment_data_entry(entry)
-            break
-        except Exception as e:
-            print(e)
-            ttime.sleep(sleep)
-
-def johann_analyze_alignment_data_plan(alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None, force_analysis=False, plot_func=None, ):
-    if alignment_data is not None:
-        for entry in alignment_data:
-            if ((entry['scan_scope'] == scan_scope) and
-                ((crystal is None) or (entry['crystal']==crystal)) and
-                ((alignment_plan is None) or (entry['alignment_plan'] == alignment_plan))):
-                if force_analysis or any(k not in entry.keys() for k in ['fwhm_value', 'max_value', 'max_loc', 'com_loc']):
-                    johann_analyze_alignment_data_entry(entry)
-        if alignment_data is johann_emission.alignment_data:
-            johann_emission.save_alignment_data_to_settings()
-    yield from bps.null()
-
-
-
-# def johann_analyze_herfd_calibration_data_plan(calibration_data=None, liveplot_kwargs=None):
-#     fom = _scan_fom_dict['herfd']['calibration']['fom']
-#     polarity = _scan_fom_dict['herfd']['calibration']['polarity']
-#     calibration_data = pd.DataFrame(calibration_data)
-#     # do the analysis
-
-
 def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, scan_range=10.0, duration=5.0, motor_info='', md=None):
     e_velocity = scan_range / duration
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, scan_range, e_velocity)
@@ -239,24 +162,108 @@ def johann_alignment_scan_plan_bundle(alignment_plan=None, rois=None,  alignment
     return plans
 
 
-def johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200, print_msg=True):
-    if print_msg:
-        print_to_gui(f'Setting the focus on the {crystal} crystal. Moving other crystals from the field of view.',
-                     add_timestamp=True, tag='Spectrometer')
+def johann_add_scan_to_alignment_data_plan(alignment_data=None, alignment_plan='', _uid=-1, rois=None):
+    if alignment_data is not None:
+        start = db[_uid].start
+        uid = start.uid
+        alignment_data.append({
+            'crystal': start['alignment_crystal'],
+            'tweak_motor_description': start['tweak_motor_description'],
+            'tweak_motor_position': start['tweak_motor_position'],
+            'scan_scope': start['scan_scope'],
+            'alignment_plan': alignment_plan,
+            'rois': rois,
+            'uid': uid, })
+        if alignment_data is johann_emission.alignment_data:
+            johann_emission.save_alignment_data_to_settings()
 
-    enabled_crystals = johann_emission.enabled_crystals_list
-    unwanted_crystals = [c for c in enabled_crystals if c != crystal]
-    for cr in unwanted_crystals:
-        yaw_direction = 1 if cr in ['aux3', 'aux5'] else -1
-        yield from move_relative_motor_plan(motor_attr=_crystal_alignment_dict[cr]['yaw'],
-                                            based_on='description',
-                                            rel_position=yaw_shift * yaw_direction)
+    yield from bps.null()
 
 
-def undo_johann_focus_on_one_crystal_plan(crystal, yaw_shift=1200):
-    print_to_gui(f'Focus was on the {crystal} crystal. Moving other crystals back into the field of view.',
-                 add_timestamp=True, tag='Spectrometer')
-    yield from johann_focus_on_one_crystal_plan(crystal, yaw_shift=-yaw_shift, print_msg=False)
+
+# def _johann_analyze_alignment_data(alignment_data, scan_scope='alignment', force_analysis=False, plot_func=None):
+def _johann_analyze_alignment_data_entry(entry):
+    if entry['alignment_plan'] == 'fly_scan_johann_elastic_alignment_plan_bundle':
+        # fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
+        #                                                                    rois=entry['rois'])
+        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
+                                                                             x_key='energy',
+                                                                             rois=entry['rois'])
+    elif entry['alignment_plan'] == 'epics_fly_scan_johann_emission_alignment_plan_bundle':
+        x_key = db[entry['uid']].start['motor_stream_names'][0].replace('_monitor', '')
+        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
+                                                                             x_key=x_key,
+                                                                             rois=entry['rois'])
+    # elif entry['alignment_plan'] == 'fly_scan_johann_herfd_alignment_plan_bundle':
+    #     pass
+    else:
+        raise NotImplementedError('This is not yet implemented')
+    entry['fwhm_value'] = fwhm_value
+    entry['max_value'] = max_value
+    entry['max_loc'] = max_loc
+    entry['com_loc'] = com_loc
+
+def johann_analyze_alignment_data_entry(entry, attempts=5, sleep=3):
+    for i in range(attempts):
+        try:
+            _johann_analyze_alignment_data_entry(entry)
+            break
+        except Exception as e:
+            print(e)
+            ttime.sleep(sleep)
+
+def johann_analyze_alignment_data(alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None, force_analysis=False, plot_func=None, ):
+    if alignment_data is not None:
+        for entry in alignment_data:
+            if ((entry['scan_scope'] == scan_scope) and
+                ((crystal is None) or (entry['crystal']==crystal)) and
+                ((alignment_plan is None) or (entry['alignment_plan'] == alignment_plan))):
+                if force_analysis or any(k not in entry.keys() for k in ['fwhm_value', 'max_value', 'max_loc', 'com_loc']):
+                    johann_analyze_alignment_data_entry(entry)
+        if alignment_data is johann_emission.alignment_data:
+            johann_emission.save_alignment_data_to_settings()
+def johann_analyze_alignment_data_plan(**kwargs):
+    johann_analyze_alignment_data(**kwargs)
+    yield from bps.null()
+
+
+
+def find_optimal_crystal_alignment_position(alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None, tweak_motor_description=None, fom: str='fwhm_value', plot_func=None):
+    multiplier = -1 if fom=='max_value' else 1
+    key_checklist = {'scan_scope': scan_scope}
+    if alignment_plan is not None: key_checklist['alignment_plan'] = alignment_plan
+    if crystal is not None: key_checklist['crystal'] = crystal
+    if tweak_motor_description is not None: key_checklist['tweak_motor_description'] = tweak_motor_description
+    relevant_entries = [entry for entry in alignment_data if all(entry[k]==v for k, v in key_checklist.items())]
+
+    if tweak_motor_description is None:
+        tweak_motor_descriptions = [entry['tweak_motor_description'] for entry in relevant_entries]
+        if len(set(tweak_motor_descriptions)) == 1:
+            tweak_motor_description = tweak_motor_descriptions[0]
+        else:
+            print_to_gui('Multiple tweak motors found in alignment data. Will use the latest one.', add_timestamp=True, tag='Spectrometer')
+            tweak_motor_description = tweak_motor_descriptions[-1]
+
+    x = [entry['tweak_motor_position'] for entry in relevant_entries]
+    y = [entry[fom] * multiplier for entry in relevant_entries]
+    position = get_optimal_crystal_alignment_position(x, y, plot_func=plot_func)
+    return position, tweak_motor_description
+
+def move_to_optimal_crystal_alignment_position_plan(**kwargs):
+    position, tweak_motor_description = find_optimal_crystal_alignment_position(**kwargs)
+    print_to_gui(f'Best position for {tweak_motor_description} was found to be {position}', add_timestamp=True, tag='Spectrometer')
+    yield from move_motor_plan(motor_attr=tweak_motor_description, based_on='description', position=position)
+
+def move_to_optimal_rowland_circle_radius_plan(crystals: list=None, energy: float=None, **kwargs):
+    positions = []
+    for crystal in crystals:
+        position, _ = find_optimal_crystal_alignment_position(crystal=crystal, **kwargs)
+        positions.append(position)
+    best_position = np.mean(positions)
+    print_to_gui(f'Best position for {kwargs["tweak_motor_description"]} was found to be {best_position}', add_timestamp=True,
+                 tag='Spectrometer')
+    yield from move_rowland_circle_R_plan(new_R=best_position, energy=energy)
+
 
 
 def get_johann_crystal_axis_motor_pos(crystal, axis):
@@ -279,54 +286,11 @@ def get_tweak_motor_positions_for_crystal(crystal, tweak_motor_axis, motor_range
     motor_pos_steps = motor_pos_steps[(motor_pos_steps >= motor_low_lim) & (motor_pos_steps <= motor_high_lim)]
     return motor_pos_init, motor_pos_steps, motor_description
 
-def find_optimal_crystal_alignment_position(alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None, fom=None, plot_func=None):
-    multiplier = 1 if fom=='max_value' else -1
-    key_checklist = [scan_scope, fom]
-    if alignment_plan is not None: key_checklist.append(alignment_plan)
-    if crystal is not None: key_checklist.append(crystal)
-    description = [v['tweak_motor_description'] for v in alignment_data if all(k in v.keys() for k in key_checklist)][0]
-    x = [v['tweak_motor_position'] for v in alignment_data if all(k in v.keys() for k in key_checklist)]
-    y = [v[fom] * multiplier for v in alignment_data if all(k in v.keys() for k in key_checklist)]
-    position = get_optimal_crystal_alignment_position(x, y, plot_func=plot_func)
-    return position, description
-
-def move_to_optimal_crystal_alignment_position_plan(**kwargs):
-    position, tweak_motor_description = find_optimal_crystal_alignment_position(**kwargs)
-    print_to_gui(f'Best position for {tweak_motor_description} was found to be {position}', add_timestamp=True, tag='Spectrometer')
-    yield from move_motor_plan(motor_attr=tweak_motor_description, based_on='description', position=position)
-
-
-
-_scan_fom_dict = {'emission': {'alignment':   {'fom': 'emission_line_fwhm', 'polarity': 'pos'}},
-                  'elastic':  {'alignment':   {'fom': 'elastic_line_fwhm',  'polarity': 'pos'}},
-                  'herfd':    {'alignment':   {'fom': 'herfd_fom', 'polarity': 'pos'},
-                               'calibration': {'fom': 'chisq', 'polarity': 'pos'}}}
-
-
-def move_rowland_circle_R_plan(new_R=None, energy=None, translations_only=True):
-    motors_to_move = copy.deepcopy(johann_emission.real_keys)
-    if translations_only:
-        _motors_to_move = []
-        for motor in motors_to_move:
-            if not (motor.endswith('yaw') or motor.endswith('roll')):
-                _motors_to_move.append(motor)
-        motors_to_move = _motors_to_move
-
-    old_pos_dict = johann_emission._forward({'energy': energy})
-    rowland_circle.R = new_R
-
-    if energy is None:
-        energy = johann_emission.energy.position
-    new_pos_dict = johann_emission._forward({'energy': energy})
-    for motor in motors_to_move:
-        motor_obj = getattr(johann_emission, motor)
-        # print(motor, new_pos_dict[motor], f'delta={new_pos_dict[motor] - old_pos_dict[motor]}')
-        # motor_obj.move(new_pos_dict[motor])
-        yield from bps.mv(motor_obj, new_pos_dict[motor])
 
 _alignment_strategy_to_plan_dict = {'emission': {'fly': 'epics_fly_scan_johann_emission_alignment_plan_bundle'},
                                     'elastic': {'fly': 'fly_scan_johann_elastic_alignment_plan_bundle'},
                                     'herfd': {'fly': 'fly_scan_johann_herfd_alignment_plan_bundle'}}
+
 
 def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment_multiplier=None,
                                               alignment_data=None,
@@ -342,7 +306,8 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                               roll_tune_exposure=0.25,
                                               scan_range=800, scan_duration=10, scan_step=10, scan_exposure=0.25,
                                               herfd_scan_element='', herfd_scan_edge='', md=None,
-                                              plot_func=None, liveplot_kwargs=None):
+                                              plot_func=None, liveplot_kwargs=None,
+                                              extended_msg_printing=True):
     plans = []
 
     plans.append({'plan_name': 'johann_focus_on_one_crystal_plan', 'plan_kwargs': {'crystal': crystal}})
@@ -367,11 +332,12 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
     yaw_init_position = get_johann_crystal_axis_motor_pos(crystal, 'yaw')
 
     for i, _pos in enumerate(tweak_motor_pos):
-        plans.append({'plan_name': 'print_message_plan',
-                      'plan_kwargs': {
-                          'msg': f'Motor {tweak_motor_description} in position={_pos}) (step {i + 1}/{len(tweak_motor_pos)}',
-                          'add_timestamp': True,
-                          'tag': 'Spectrometer'}})
+        if extended_msg_printing:
+            plans.append({'plan_name': 'print_message_plan',
+                          'plan_kwargs': {
+                              'msg': f'Motor {tweak_motor_description} in position={_pos}) (step {i + 1}/{len(tweak_motor_pos)}',
+                              'add_timestamp': True,
+                              'tag': 'Spectrometer'}})
         plans.append({'plan_name': 'move_motor_plan',
                       'plan_kwargs': {'motor_attr': tweak_motor_description,
                                       'based_on': 'description',
@@ -458,12 +424,12 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                       **alignment_plan_kwargs}})
 
     plans.append({'plan_name': 'undo_johann_focus_on_one_crystal_plan', 'plan_kwargs': {'crystal': crystal}})
-
-    plans.append({'plan_name': 'print_message_plan',
-                  'plan_kwargs': {
-                      'msg': f'Returning motor {tweak_motor_description} to initial position={tweak_motor_init_pos})',
-                      'add_timestamp': True,
-                      'tag': 'Spectrometer'}})
+    if extended_msg_printing:
+        plans.append({'plan_name': 'print_message_plan',
+                      'plan_kwargs': {
+                          'msg': f'Returning motor {tweak_motor_description} to initial position={tweak_motor_init_pos})',
+                          'add_timestamp': True,
+                          'tag': 'Spectrometer'}})
     plans.append({'plan_name': 'move_motor_plan',
                   'plan_kwargs': {'motor_attr': tweak_motor_description,
                                   'based_on': 'description',
@@ -487,8 +453,8 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
         R_range: float, R_num_steps: int, spectrometer_nominal_energy: float,
         mono_energy: float,
         automatic_mode: bool,
-        scan_tag='',
         automatic_fom: str,
+        scan_tag: str='',
         **kwargs):
     plans = []
 
@@ -526,10 +492,24 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
                                                  'tweak_motor_position': _R,
                                                  'scan_scope': 'alignment',
                                                  'scan_tag': scan_tag},
+                                          'extended_msg_printing': False,
                                           **kwargs}})
 
     if automatic_mode:
-        pass
+        _alignment_plan = _alignment_strategy_to_plan_dict[kwargs['alignment_strategy']][kwargs['scan_kind']]
+        analysis_kwargs = {'alignment_data': alignment_data,
+                           'scan_scope': 'alignment',
+                           'alignment_plan': _alignment_plan,
+                           'crystal': None}
+        plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
+                      'plan_kwargs': analysis_kwargs})
+        plans.append({'plan_name': 'move_to_optimal_rowland_circle_radius_plan',
+                      'plan_kwargs': {**analysis_kwargs,
+                                      'crystals': crystals,
+                                      'energy': spectrometer_nominal_energy,
+                                      'tweak_motor_description': 'Rowland Circle Radius',
+                                      'fom': automatic_fom}})
+
     else:
         plans.append({'plan_name': 'print_message_plan',
                       'plan_kwargs': {'msg': f'Returning R to initial position={R_init})',
@@ -592,6 +572,7 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
                           'plan_kwargs': analysis_kwargs})
             plans.append({'plan_name': 'move_to_optimal_crystal_alignment_position_plan',
                           'plan_kwargs': {**analysis_kwargs,
+                                          'tweak_motor_description': _crystal_alignment_dict[crystal]['x'],
                                           'fom': automatic_fom}})
 
 

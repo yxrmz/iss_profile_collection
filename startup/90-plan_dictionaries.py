@@ -69,6 +69,7 @@ aux_plan_funcs = {
         'undo_johann_focus_on_one_crystal_plan': undo_johann_focus_on_one_crystal_plan,
         'move_to_optimal_crystal_alignment_position_plan': move_to_optimal_crystal_alignment_position_plan,
         'move_rowland_circle_R_plan': move_rowland_circle_R_plan,
+        'move_to_optimal_rowland_circle_radius_plan': move_to_optimal_rowland_circle_radius_plan,
         'johann_tweak_crystal_and_scan_plan_bundle': {'kind' : 'bundle', 'func' : johann_tweak_crystal_and_scan_plan_bundle},
         'johann_spectrometer_alignment_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_alignment_plan_bundle},
         'johann_add_scan_to_alignment_data_plan': johann_add_scan_to_alignment_data_plan,
