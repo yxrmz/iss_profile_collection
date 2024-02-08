@@ -1025,7 +1025,7 @@ def johann_bender_scan_plan_bundle(
                                   'based_on': 'object_name',
                                   'position': bender_current_position}})
 
-    _alignment_plan = _alignment_strategy_to_plan_dict[kwargs['alignment_strategy']][kwargs['scan_kind']]
+    _alignment_plan = _alignment_strategy_to_plan_dict['elastic'][scan_kind]
     analysis_kwargs = {'alignment_data': alignment_data,
                        'scan_scope': 'alignment',
                        'alignment_plan': _alignment_plan,
