@@ -73,6 +73,13 @@ aux_plan_funcs = {
         'johann_tweak_crystal_and_scan_plan_bundle': {'kind' : 'bundle', 'func' : johann_tweak_crystal_and_scan_plan_bundle},
         'johann_spectrometer_alignment_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_alignment_plan_bundle},
         'johann_add_scan_to_alignment_data_plan': johann_add_scan_to_alignment_data_plan,
+        'find_optimal_crystal_alignment_position_plan': find_optimal_crystal_alignment_position_plan,
+        'move_motor_to_position_from_latest_scan_plan': move_motor_to_position_from_latest_scan_plan,
+        'johann_spectrometer_calibration_plan_bundle': {'kind': 'bundle', 'func': johann_spectrometer_calibration_plan_bundle},
+        'johann_report_spectrometer_resolution_plan': johann_report_spectrometer_resolution_plan,
+        'johann_spectrometer_resolution_plan_bundle': {'kind': 'bundle', 'func': johann_spectrometer_resolution_plan_bundle},
+        'johann_bender_scan_plan_bundle': {'kind': 'bundle', 'func': johann_bender_scan_plan_bundle},
+        'johann_report_bender_results_plan': johann_report_bender_results_plan
         # 'johann_spectrometer_calibration_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_calibration_plan_bundle},
         # 'johann_measure_spectrometer_resolution_plan_bundle': {'kind': 'bundle', 'func': johann_measure_spectrometer_resolution_plan_bundle},
         # 'johann_crystal_alignment_vs_R_plan_bundle': {'kind': 'bundle', 'func': johann_crystal_alignment_vs_R_plan_bundle},

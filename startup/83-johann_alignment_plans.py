@@ -278,15 +278,42 @@ def find_optimal_crystal_alignment_position(alignment_data=None, scan_scope=None
             print_to_gui('Multiple tweak motors found in alignment data. Will use the latest one.', add_timestamp=True, tag='Spectrometer')
             tweak_motor_description = tweak_motor_descriptions[-1]
 
-    multiplier = -1 if fom == 'max_value' else 1
+    optimum = 'maximum' if fom == 'max_value' else 'minimum'
     x = [entry['tweak_motor_position'] for entry in relevant_entries]
-    y = [entry[fom] * multiplier for entry in relevant_entries]
-    position = get_optimal_crystal_alignment_position(x, y, plot_func=plot_analysis_func)
+    y = [entry[fom] for entry in relevant_entries]
+    if plot_analysis_func is not None:
+        plot_kwargs = {'label': crystal,
+                       'x_label': tweak_motor_description,
+                       'y_label': fom,
+                       'scan_motor_description': tweak_motor_description}
+    position = get_optimal_crystal_alignment_position(x, y, optimum=optimum, plot_func=plot_analysis_func, **plot_kwargs)
     return position, tweak_motor_description
 
 def find_optimal_crystal_alignment_position_plan(**kwargs):
     position, tweak_motor_description = find_optimal_crystal_alignment_position(**kwargs)
     yield from bps.null()
+
+# plan_processor.add_plans(
+# {'plan_name': 'johann_analyze_alignment_data_plan',
+#  'plan_kwargs': {'alignment_data': johann_emission.alignment_data,
+#                  'scan_scope': 'alignment',
+#                  'alignment_plan': 'fly_scan_johann_elastic_alignment_plan_bundle',
+#                  'crystal': 'main',
+#                  'liveplot_kwargs': {'tab': 'spectrometer'}},
+#                  'plan_gui_services': ['spectrometer_plot_alignment_scan_data']}
+# )
+#
+# plan_processor.add_plans(
+# {'plan_name': 'find_optimal_crystal_alignment_position_plan',
+#  'plan_kwargs': {'alignment_data': johann_emission.alignment_data,
+#                  'scan_scope': 'alignment',
+#                  'alignment_plan': 'fly_scan_johann_elastic_alignment_plan_bundle',
+#                  'crystal': 'main',
+#                  'tweak_motor_description': 'Johann Crystal Assy X',
+#                  'fom': 'fwhm_value',
+#                  'liveplot_kwargs': {'tab': 'spectrometer', 'figure': 'proc_figure'}},
+#                  'plan_gui_services': ['spectrometer_plot_alignment_analysis_data']}
+# )
 
 def move_motor_to_position_from_latest_scan_plan(motor_description=None, fom=None, alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None):
     relevant_entries = get_relevant_entries_from_alignment_data(alignment_data=alignment_data, scan_scope=scan_scope,
@@ -327,12 +354,22 @@ def johann_report_spectrometer_resolution_plan(crystals=None, alignment_data=Non
     yield from bps.null()
 
 
-def johann_report_bender_results_plan(crystal=None, alignment_data=None, alignment_plan=None):
+def johann_report_bender_results_plan(crystal=None, alignment_data=None, alignment_plan=None, scan_scope=None, liveplot_kwargs=None, plot_data_func=None, plot_analysis_func=None):
     relevant_entries = get_relevant_entries_from_alignment_data(alignment_data=alignment_data,
-                                                                scan_scope='bender_scan',
+                                                                scan_scope=scan_scope,
                                                                 alignment_plan=alignment_plan, crystal=crystal)
     for entry in relevant_entries:
         print_to_gui(f'Bender at {entry["tweak_motor_description"]}: fwhm={entry["fwhm_value"]} eV', tag='Spectrometer', add_timestamp=True)
+
+    find_optimal_crystal_alignment_position(alignment_data=alignment_data,
+                                            scan_scope=scan_scope,
+                                            alignment_plan=alignment_plan,
+                                            crystal=crystal,
+                                            tweak_motor_description='Bender',
+                                            fom='fwhm_value',
+                                            liveplot_kwargs=liveplot_kwargs,
+                                            plot_data_func=plot_data_func,
+                                            plot_analysis_func=plot_analysis_func)
 
     yield from bps.null()
 
@@ -524,6 +561,17 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
     return plans
 
 
+def _deal_with_liveplot_kwargs_for_alignment(liveplot_kwargs):
+    _liveplot_kwargs_data = None
+    _liveplot_kwargs_proc = None
+    if liveplot_kwargs is not None:
+        _liveplot_kwargs_data = {**liveplot_kwargs}
+        _liveplot_kwargs_proc = {**liveplot_kwargs}
+        if 'figure' in liveplot_kwargs:
+            _liveplot_kwargs_data.pop('figure')
+    return _liveplot_kwargs_data, _liveplot_kwargs_proc
+
+
 def johann_spectrometer_run_alignment_scans_vs_R_plans(
         crystals: list,
         alignment_data: list,
@@ -535,6 +583,9 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
         plan_gui_services: list=None,
         liveplot_kwargs: dict=None,
         **kwargs):
+
+    _liveplot_kwargs_data, _liveplot_kwargs_proc = _deal_with_liveplot_kwargs_for_alignment(liveplot_kwargs)
+
     plans = []
 
     R_init = rowland_circle.R
@@ -578,17 +629,18 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
     analysis_kwargs = {'alignment_data': alignment_data,
                        'scan_scope': 'alignment',
                        'alignment_plan': _alignment_plan,
-                       'crystal': None,
-                       'liveplot_kwargs': liveplot_kwargs,}
+                       'crystal': None,}
     plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
-                  'plan_kwargs': analysis_kwargs,
+                  'plan_kwargs': {**analysis_kwargs,
+                                  'liveplot_kwargs': _liveplot_kwargs_data,},
                   'plan_gui_services': plan_gui_services})
 
 
     plans.append({'plan_name': 'find_optimal_crystal_alignment_position_plan',
                   'plan_kwargs': {**analysis_kwargs,
                                   'tweak_motor_description': 'Rowland Circle Radius',
-                                  'fom': automatic_fom},
+                                  'fom': automatic_fom,
+                                  'liveplot_kwargs': _liveplot_kwargs_proc,},
                   'plan_gui_services': plan_gui_services})
 
     if automatic_mode:
@@ -625,6 +677,8 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
 #                                               plot_func=None, liveplot_kwargs=None)
 # plan_processor.add_plans(plans)
 
+
+
 def johann_spectrometer_run_alignment_scans_vs_x_plans(
         crystals: list,
         alignment_data: list,
@@ -637,15 +691,7 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
         liveplot_kwargs: dict=None,
         **kwargs):
 
-    # if 'plot_data_func' in kwargs:
-    #     plot_data_func = kwargs.pop('plot_data_func')
-    # else:
-    #     plot_data_func = None
-    #
-    # if 'plot_analysis_func' in kwargs:
-    #     plot_analysis_func = kwargs.pop('plot_analysis_func')
-    # else:
-    #     plot_analysis_func = None
+    _liveplot_kwargs_data, _liveplot_kwargs_proc = _deal_with_liveplot_kwargs_for_alignment(liveplot_kwargs)
 
     plans = []
     for crystal in crystals:
@@ -667,16 +713,18 @@ def johann_spectrometer_run_alignment_scans_vs_x_plans(
         analysis_kwargs = {'alignment_data': alignment_data,
                            'scan_scope': 'alignment',
                            'alignment_plan': _alignment_plan,
-                           'crystal': crystal,
-                           'liveplot_kwargs': liveplot_kwargs,}
+                           'crystal': crystal,}
         plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
-                      'plan_kwargs': analysis_kwargs,
+                      'plan_kwargs': {**analysis_kwargs,
+                                      'liveplot_kwargs': _liveplot_kwargs_data,},
                       'plan_gui_services': plan_gui_services})
+
 
         plans.append({'plan_name': 'find_optimal_crystal_alignment_position_plan',
                       'plan_kwargs': {**analysis_kwargs,
                                       'tweak_motor_description': _crystal_alignment_dict[crystal]['x'],
-                                      'fom': automatic_fom},
+                                      'fom': automatic_fom,
+                                      'liveplot_kwargs': _liveplot_kwargs_proc,},
                       'plan_gui_services': plan_gui_services})
 
 
@@ -810,7 +858,7 @@ def johann_spectrometer_calibration_plan_bundle(
     pil100k_roi_num=None,
     scan_range=800, scan_duration=10, scan_step=10, scan_exposure=0.25,
     herfd_scan_element='', herfd_scan_edge='', md=None,
-    plot_func=None, liveplot_kwargs=None):
+    plan_gui_services=None, liveplot_kwargs=None):
 
     plans = []
 
@@ -821,6 +869,8 @@ def johann_spectrometer_calibration_plan_bundle(
         crystals = johann_emission.enabled_crystals_list
 
     if mono_energy is None: mono_energy = hhm.energy.position
+
+    _liveplot_kwargs_data, _liveplot_kwargs_proc = _deal_with_liveplot_kwargs_for_alignment(liveplot_kwargs)
 
     if md is None:
         md = {}
@@ -865,7 +915,9 @@ def johann_spectrometer_calibration_plan_bundle(
                            'alignment_plan': _alignment_plan,
                            'crystal': None}
         plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
-                      'plan_kwargs': analysis_kwargs})
+                      'plan_kwargs': {**analysis_kwargs,
+                                      'liveplot_kwargs': _liveplot_kwargs_data,},
+                      'plan_gui_services': plan_gui_services})
 
         for crystal in crystals:
             motor_description = _crystal_alignment_dict[crystal]['roll']
@@ -891,7 +943,7 @@ def johann_spectrometer_calibration_plan_bundle(
                                                              pil100k_roi_num=pil100k_roi_num,
                                                              scan_range=scan_range, scan_duration=scan_duration,
                                                              scan_step=scan_step, scan_exposure=scan_exposure,
-                                                             md=None, plot_func=None, liveplot_kwargs=None)
+                                                             md=None, plan_gui_services=plan_gui_services, liveplot_kwargs=liveplot_kwargs)
         plans.extend(_plans)
 
         plans.append({'plan_name': 'johann_tweak_crystal_and_scan_plan_bundle',
@@ -968,7 +1020,8 @@ def johann_spectrometer_resolution_plan_bundle(
     pil100k_roi_num=None,
     scan_range=15, scan_duration=10, scan_step=0.1, scan_exposure=0.25,
     md=None,
-    plot_func=None, liveplot_kwargs=None):
+    plan_gui_services: list = None,
+    liveplot_kwargs: dict = None,):
 
     plans = []
 
@@ -1009,9 +1062,11 @@ def johann_spectrometer_resolution_plan_bundle(
     analysis_kwargs = {'alignment_data': alignment_data,
                        'scan_scope': 'resolution',
                        'alignment_plan': _alignment_plan,
-                       'crystal': None}
+                       'crystal': None,
+                       'liveplot_kwargs': liveplot_kwargs}
     plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
-                  'plan_kwargs': analysis_kwargs})
+                  'plan_kwargs': analysis_kwargs,
+                  'plan_gui_services': plan_gui_services})
 
     plans.append({'plan_name': 'johann_report_spectrometer_resolution_plan',
                   'plan_kwargs': {'crystals': crystals,
@@ -1029,7 +1084,11 @@ def johann_bender_scan_plan_bundle(
     pil100k_roi_num=None,
     scan_range=15, scan_duration=10, scan_step=0.1, scan_exposure=0.25,
     bender_tweak_range=None, bender_tweak_n_steps=None,
-    md=None, liveplot_kwargs=None):
+    md=None,
+    plan_gui_services: list = None,
+    liveplot_kwargs: dict = None):
+
+    _liveplot_kwargs_data, _liveplot_kwargs_proc = _deal_with_liveplot_kwargs_for_alignment(liveplot_kwargs)
 
     plans = []
 
@@ -1088,17 +1147,19 @@ def johann_bender_scan_plan_bundle(
 
     _alignment_plan = _alignment_strategy_to_plan_dict['elastic'][scan_kind]
     analysis_kwargs = {'alignment_data': alignment_data,
-                       'scan_scope': 'alignment',
+                       'scan_scope': 'bender_scan',
                        'alignment_plan': _alignment_plan,
-                       'crystal': None}
+                       'crystal': crystal}
 
     plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
-                  'plan_kwargs': analysis_kwargs})
+                  'plan_kwargs': {**analysis_kwargs,
+                                      'liveplot_kwargs': _liveplot_kwargs_data,},
+                  'plan_gui_services': plan_gui_services})
 
     plans.append({'plan_name': 'johann_report_bender_results_plan',
-                  'plan_kwargs': {'crystal': crystal,
-                                  'alignment_data': alignment_data,
-                                  'alignment_plan': _alignment_plan}})
+                  'plan_kwargs': {**analysis_kwargs,
+                                  'liveplot_kwargs': _liveplot_kwargs_proc,},
+                  'plan_gui_services': plan_gui_services})
 
     return plans
 
