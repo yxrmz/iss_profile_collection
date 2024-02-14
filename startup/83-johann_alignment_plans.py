@@ -85,8 +85,9 @@ def tune_johann_piezo_plan(property='com', pil100k_roi_num=None, scan_kind=None,
 def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, scan_range=10.0, duration=5.0, motor_info='', md=None):
     e_velocity = scan_range / duration
     trajectory_filename = scan_manager.quick_linear_trajectory_filename(e_cen, scan_range, e_velocity)
-    if md is None: md = {'scan_tag': ''}
-    if not md['scan_tag'].startswith(' '): md['scan_tag'] = ' ' + str(md['scan_tag'])
+    if md is None: md = {}
+    if 'scan_tag' not in md: md['scan_tag'] = ''
+    if (len(md['scan_tag']) > 0) and (not md['scan_tag'].startswith(' ')): md['scan_tag'] = ' ' + str(md['scan_tag'])
 
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
@@ -106,8 +107,10 @@ def fly_scan_johann_elastic_alignment_plan_bundle(crystal=None, e_cen=8000.0, sc
 # plan_processor.add_plans(plans)
 
 def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_energy=None, scan_range=None, duration=None, motor_info='', md=None):
-    if md is None: md = {'scan_tag': ''}
-    if not md['scan_tag'].startswith(' '): md['scan_tag'] = ' ' + str(md['scan_tag'])
+    if md is None: md = {}
+    if 'scan_tag' not in md: md['scan_tag'] = ''
+    if (len(md['scan_tag']) > 0) and (not md['scan_tag'].startswith(' ')): md['scan_tag'] = ' ' + str(md['scan_tag'])
+
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
           'plan_name': 'epics_fly_scan_johann_emission_alignment_plan',
@@ -132,8 +135,9 @@ def epics_fly_scan_johann_emission_alignment_plan_bundle(crystal=None, mono_ener
 def fly_scan_johann_herfd_alignment_plan_bundle(crystal=None, element=None, edge=None, duration=None, scan_range=None, motor_info='', md=None):
     trajectory_filename = scan_manager.quick_herfd_trajectory_filename(element, edge, duration, scan_range)
     e0 = xraydb.xray_edge(element, edge).energy
-    if md is None: md = {'scan_tag': ''}
-    if not md['scan_tag'].startswith(' '): md['scan_tag'] = ' ' + str(md['scan_tag'])
+    if md is None: md = {}
+    if 'scan_tag' not in md: md['scan_tag'] = ''
+    if (len(md['scan_tag']) > 0) and (not md['scan_tag'].startswith(' ')): md['scan_tag'] = ' ' + str(md['scan_tag'])
 
     md = {'sample_name': ALIGNMENT_SAMPLE_NAME,
           'sample_uid': ALIGNMENT_SAMPLE_UID,
@@ -189,7 +193,8 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
     plot_kwargs = {}
     if plot_func is not None:
         plot_kwargs['curve_index'] = index
-        plot_kwargs['label'] = f"{entry['tweak_motor_description']}={entry['tweak_motor_position']}"
+        plot_kwargs['label'] = f"{entry['crystal']} at {entry['tweak_motor_position']}"
+        plot_kwargs['plotting_one_curve'] = False
 
     if entry['alignment_plan'] == 'fly_scan_johann_elastic_alignment_plan_bundle':
         # fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
@@ -255,6 +260,10 @@ def johann_analyze_alignment_data(alignment_data=None, scan_scope=None, alignmen
                     index += 1
         if alignment_data is johann_emission.alignment_data:
             johann_emission.save_alignment_data_to_settings()
+    if index > 0: # meaning that at least one curve was processed
+        if plot_data_func is not None:
+            plot_data_func(None, None, plotting_many_curves_end=True)
+
 def johann_analyze_alignment_data_plan(**kwargs):
     johann_analyze_alignment_data(**kwargs)
     yield from bps.null()
@@ -494,8 +503,8 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                           'liveplot_kwargs': liveplot_kwargs}})
 
         _md = {**md}
-        print('>>> before:', _md)
-        print('>>> condition: ', ('tweak_motor_description' not in md.keys()) and ('tweak_motor_position' not in md.keys()))
+        # print('>>> before:', _md)
+        # print('>>> condition: ', ('tweak_motor_description' not in md.keys()) and ('tweak_motor_position' not in md.keys()))
         if ('tweak_motor_description' not in md.keys()) and ('tweak_motor_position' not in md.keys()):
             _md = {'tweak_motor_description': tweak_motor_description,
                    'tweak_motor_position': _pos,
@@ -503,7 +512,7 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
         if ('alignment_crystal' not in md.keys()):
             _md = {'alignment_crystal': crystal,
                    **_md}
-        print('>>> after:', _md)
+        # print('>>> after:', _md)
 
         alignment_plan_kwargs = {'scan_range': scan_range}
         if scan_kind == 'fly':
@@ -901,7 +910,11 @@ def johann_spectrometer_calibration_plan_bundle(
                           'plan_kwargs': {'rois': [pil100k_roi_num],
                                           'liveplot_kwargs': liveplot_kwargs,
                                           'alignment_data': alignment_data,
-                                          'md': md,
+                                          'md': {**md,
+                                                 'tweak_motor_description': 'A Monochromator Energy',
+                                                 'tweak_motor_position': mono_energy,
+                                                 'alignment_crystal': crystal,
+                                                 },
                                           'motor_info': motor_info,
                                           'alignment_plan': _alignment_strategy_to_plan_dict['emission'][scan_kind],
                                           'crystal': crystal,
@@ -968,46 +981,46 @@ def johann_spectrometer_calibration_plan_bundle(
                                       'extended_msg_printing': False}})
 
 
-    for i, crystal in enumerate(crystals[1:]):
-        plans.append({'plan_name': 'print_message_plan',
-                      'plan_kwargs': {'msg': f'Calibrating {crystal} crystal (step {i + 2}/{len(crystals)}).',
-                                      'add_timestamp': True,
-                                      'tag': 'Spectrometer'}})
+        for i, crystal in enumerate(crystals[1:]):
+            plans.append({'plan_name': 'print_message_plan',
+                          'plan_kwargs': {'msg': f'Calibrating {crystal} crystal (step {i + 2}/{len(crystals)}).',
+                                          'add_timestamp': True,
+                                          'tag': 'Spectrometer'}})
 
-        plans.append({'plan_name': 'johann_tweak_crystal_and_scan_plan_bundle',
-                      'plan_kwargs': {'crystal': crystal,
-                                      'scan_range_alignment_multiplier': 1,
-                                      'alignment_data': alignment_data,
-                                      'motor_info': f'calibration',
-                                      'mono_energy': mono_energy,
-                                      'tweak_motor_axis': 'roll',
-                                      'tweak_motor_range': tweak_roll_range,
-                                      'tweak_motor_num_steps': tweak_roll_num_steps,
-                                      'alignment_strategy': 'herfd', 'scan_kind': scan_kind,
-                                      'pil100k_roi_num': pil100k_roi_num,
-                                      'yaw_tune': False,
-                                      'roll_tune': False,
-                                      'scan_range': scan_range, 'scan_duration': scan_duration,
-                                      'scan_step': scan_step, 'scan_exposure': scan_exposure,
-                                      'md': {'scan_scope': 'calibration',
-                                             'scan_tag': ''},
-                                      'herfd_scan_element': herfd_scan_element,
-                                      'herfd_scan_edge': herfd_scan_edge,
-                                      'extended_msg_printing': False}})
+            plans.append({'plan_name': 'johann_tweak_crystal_and_scan_plan_bundle',
+                          'plan_kwargs': {'crystal': crystal,
+                                          'scan_range_alignment_multiplier': 1,
+                                          'alignment_data': alignment_data,
+                                          'motor_info': f'calibration',
+                                          'mono_energy': mono_energy,
+                                          'tweak_motor_axis': 'roll',
+                                          'tweak_motor_range': tweak_roll_range,
+                                          'tweak_motor_num_steps': tweak_roll_num_steps,
+                                          'alignment_strategy': 'herfd', 'scan_kind': scan_kind,
+                                          'pil100k_roi_num': pil100k_roi_num,
+                                          'yaw_tune': False,
+                                          'roll_tune': False,
+                                          'scan_range': scan_range, 'scan_duration': scan_duration,
+                                          'scan_step': scan_step, 'scan_exposure': scan_exposure,
+                                          'md': {'scan_scope': 'calibration',
+                                                 'scan_tag': ''},
+                                          'herfd_scan_element': herfd_scan_element,
+                                          'herfd_scan_edge': herfd_scan_edge,
+                                          'extended_msg_printing': False}})
 
-    _alignment_plan = _alignment_strategy_to_plan_dict['herfd'][scan_kind]
-    analysis_kwargs = {'alignment_data': alignment_data,
-                       'scan_scope': 'calibration',
-                       'alignment_plan': _alignment_plan}
-    plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
-                  'plan_kwargs': {**analysis_kwargs, 'crystal': None}})
+        _alignment_plan = _alignment_strategy_to_plan_dict['herfd'][scan_kind]
+        analysis_kwargs = {'alignment_data': alignment_data,
+                           'scan_scope': 'calibration',
+                           'alignment_plan': _alignment_plan}
+        plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
+                      'plan_kwargs': {**analysis_kwargs, 'crystal': None}})
 
-    for i, crystal in enumerate(crystals[1:]):
-        plans.append({'plan_name': 'move_to_optimal_crystal_alignment_position_plan',
-                      'plan_kwargs': {**analysis_kwargs,
-                                      'crystal': crystal,
-                                      'tweak_motor_description': _crystal_alignment_dict[crystal]['roll'],
-                                      'fom': 'chisq'}})
+        for i, crystal in enumerate(crystals[1:]):
+            plans.append({'plan_name': 'move_to_optimal_crystal_alignment_position_plan',
+                          'plan_kwargs': {**analysis_kwargs,
+                                          'crystal': crystal,
+                                          'tweak_motor_description': _crystal_alignment_dict[crystal]['roll'],
+                                          'fom': 'chisq'}})
 
     return plans
 
@@ -1053,7 +1066,7 @@ def johann_spectrometer_resolution_plan_bundle(
                                       'roll_tune': False,
                                       'scan_range': scan_range, 'scan_duration': scan_duration,
                                       'scan_step': scan_step, 'scan_exposure': scan_exposure,
-                                      'md': {'tweak_motor_description': 'E',
+                                      'md': {'tweak_motor_description': 'A Monochromator Energy',
                                              'tweak_motor_position': f'{mono_energy}',
                                              **md},
                                       'extended_msg_printing': False}})
@@ -1131,8 +1144,10 @@ def johann_bender_scan_plan_bundle(
                                       'liveplot_kwargs': liveplot_kwargs,
                                       'alignment_data': alignment_data,
                                       'md': {**md,
-                                             'tweak_motor_description': 'Bender',
-                                             'tweak_motor_position': bender_position},
+                                             'tweak_motor_description': 'A CM2 bender',
+                                             'tweak_motor_position': bender_position,
+                                             'alignment_crystal': crystal,
+                                             'scan_tag': '',},
                                       'motor_info': motor_info,
                                       'alignment_plan': _alignment_strategy_to_plan_dict['elastic'][scan_kind],
                                       'crystal': crystal,
@@ -1145,6 +1160,11 @@ def johann_bender_scan_plan_bundle(
                                   'based_on': 'object_name',
                                   'position': bender_current_position}})
 
+    plans.append({'plan_name': 'move_motor_plan',
+                  'plan_kwargs': {'motor_attr': 'A Monochromator Energy',
+                                  'based_on': 'description',
+                                  'position': mono_energy}})
+
     _alignment_plan = _alignment_strategy_to_plan_dict['elastic'][scan_kind]
     analysis_kwargs = {'alignment_data': alignment_data,
                        'scan_scope': 'bender_scan',
@@ -1153,13 +1173,21 @@ def johann_bender_scan_plan_bundle(
 
     plans.append({'plan_name': 'johann_analyze_alignment_data_plan',
                   'plan_kwargs': {**analysis_kwargs,
-                                      'liveplot_kwargs': _liveplot_kwargs_data,},
+                                  'liveplot_kwargs': _liveplot_kwargs_data,},
                   'plan_gui_services': plan_gui_services})
 
-    plans.append({'plan_name': 'johann_report_bender_results_plan',
+
+    plans.append({'plan_name': 'find_optimal_crystal_alignment_position_plan',
                   'plan_kwargs': {**analysis_kwargs,
+                                  'tweak_motor_description': 'A CM2 bender',
+                                  'fom': 'fwhm_value',
                                   'liveplot_kwargs': _liveplot_kwargs_proc,},
                   'plan_gui_services': plan_gui_services})
+
+    # plans.append({'plan_name': 'johann_report_bender_results_plan',
+    #               'plan_kwargs': {**analysis_kwargs,
+    #                               'liveplot_kwargs': _liveplot_kwargs_proc,},
+    #               'plan_gui_services': plan_gui_services})
 
     return plans
 
