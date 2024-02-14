@@ -1905,6 +1905,9 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
     def alignment_data(self):
         return self.rowland_circle.alignment_data
 
+    def reset_alignment_data(self):
+        self.rowland_circle.reset_alignment_data()
+
     def save_alignment_data_to_settings(self):
         self.rowland_circle.save_alignment_data_to_settings()
 
