@@ -173,7 +173,8 @@ def set_detector_exposure_time_plan(detectors, exposure_time):
     for det in detectors:
         if det.name == 'apb_ave':
             # samples = 250*(np.ceil(exposure_time*1005/250)) #hn I forget what that does... let's look into the new PB OPI
-            samples = np.round(exposure_time * 1005, -1)  # Denis: attempt to improve this?
+            samples = 250 * (np.round(exposure_time * 1005 / 250)) # Akhil: Denis suggest to move it back
+            # samples = np.round(exposure_time * 1005, -1)  # Denis: attempt to improve this?
             yield from bps.abs_set(det.sample_len, samples, wait=True)
             yield from bps.abs_set(det.wf_len, samples, wait=True)
         elif (det.name == 'pil100k') or (det.name == 'pil100k2'):
