@@ -720,7 +720,7 @@ class BatchManager(PersistentListInteractingWithGUI):
             element = self.experiments[experiment_index]['element_list'][element_index1]
             element['element_list'].pop(element_index2)
             if len(element['element_list']) == 0:
-                self.delete_element(index_tuple[:-1])
+                self.delete_element(index_tuple[:-1], emit_signal=False)
 
     def get_booked_sample_points_list(self):
         pass
