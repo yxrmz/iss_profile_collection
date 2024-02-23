@@ -6,7 +6,7 @@ import uuid
 import numpy as np
 from PyQt5 import QtGui
 from xas.trajectory import TrajectoryCreator
-from xas.xray import generate_energy_grid_from_dict, generate_emission_energy_grid_from_dict
+from xas.xray import generate_energy_grid_from_dict, generate_emission_energy_grid_from_dict, generate_emission_relative_trajectory_from_dict
 import os
 from xas.xray import e2k
 import logging
@@ -221,12 +221,22 @@ class ScanManager():
     def add_spectrometer_grids_if_needed(self, aux_parameters):
         scan_key = aux_parameters['scan_key']
         if scan_key == 'johann_xes':
-            energy_grid, time_grid = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
-            aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid.tolist()
-            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
+            if aux_parameters['spectrometer']['scan_type'] == 'step scan':
+                energy_grid, time_grid = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
+                aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid.tolist()
+                aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
+            elif aux_parameters['spectrometer']['scan_type'] == 'fly scan':
+                aux_parameters['spectrometer']['relative_trajectory'] = \
+                    generate_emission_relative_trajectory_from_dict(aux_parameters['spectrometer']['scan_parameters'])
+
         elif scan_key == 'johann_rixs':
-            energy_grid, _ = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
-            aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
+            if aux_parameters['spectrometer']['scan_type'] == 'step scan':
+                energy_grid, _ = generate_emission_energy_grid_from_dict(aux_parameters['spectrometer']['scan_parameters'])
+                aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
+
+            elif aux_parameters['spectrometer']['scan_type'] == 'fly scan':
+                aux_parameters['spectrometer']['relative_trajectory'] = \
+                    generate_emission_relative_trajectory_from_dict(aux_parameters['spectrometer']['scan_parameters'])
 
     def create_trajectory_file(self, scan, uid):
         filename = f'{uid}.txt'
@@ -498,16 +508,21 @@ class ScanManager():
                            'spectrometer_config_uid': spectrometer_config_uid}
 
         elif scan_key == 'johann_xes':
-            plan_name = 'step_scan_johann_xes_plan'
-            spectrometer_energy_grid = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
-            spectrometer_time_grid = aux_parameters['spectrometer']['scan_parameters']['time_grid']
+            if aux_parameters['spectrometer']['scan_type'] == 'step scan':
+                plan_name = 'step_scan_johann_xes_plan'
+                _scan_kwargs = {'emission_energy_list': aux_parameters['spectrometer']['scan_parameters']['energy_grid'],
+                               'emission_time_list': aux_parameters['spectrometer']['scan_parameters']['time_grid']}
+            elif aux_parameters['spectrometer']['scan_type'] == 'fly scan':
+                plan_name = 'epics_fly_scan_johann_xes_plan'
+                _scan_kwargs = {'spectrometer_central_energy': aux_parameters['spectrometer']['scan_parameters']['e0'],
+                                'relative_trajectory': aux_parameters['spectrometer']['scan_parameters']['relative_trajectory'],
+                                'trajectory_as_energy': True}
             element = aux_parameters['spectrometer']['scan_parameters']['element']
             line = aux_parameters['spectrometer']['scan_parameters']['line']
             e0 = aux_parameters['spectrometer']['scan_parameters']['e0']
             spectrometer_config_uid = aux_parameters['spectrometer']['spectrometer_config_uid']
             plan_kwargs = {'mono_energy': scan_parameters['energy'],
-                           'emission_energy_list': spectrometer_energy_grid,
-                           'emission_time_list': spectrometer_time_grid,
+                           **_scan_kwargs,
                            'element': element,
                            'line': line,
                            'e0': e0,
@@ -530,14 +545,27 @@ class ScanManager():
             #     plan_kwargs['rixs_file_name'] = rixs_file_name
 
         elif scan_key == 'johann_rixs':
-            if scan_type == 'step scan':
+            if (scan_type == 'step scan') and (aux_parameters['spectrometer']['scan_type'] == 'step scan'):
                 plan_name = 'step_scan_johann_rixs_plan_bundle'
-            elif scan_type == 'fly scan':
+                _scan_kwargs = {'emission_energy_list': aux_parameters['spectrometer']['scan_parameters']['energy_grid']}
+            elif (scan_type == 'step scan') and (aux_parameters['spectrometer']['scan_type'] == 'fly scan'):
+                plan_name = 'fly_spectrometer_scan_johann_rixs_plan_bundle'
+                _scan_kwargs = {'spectrometer_central_energy': aux_parameters['spectrometer']['scan_parameters']['e0'],
+                                'relative_trajectory': aux_parameters['spectrometer']['scan_parameters']['relative_trajectory'],
+                                'trajectory_as_energy': True,
+                                'scan_for_calibration_purpose': aux_parameters['scan_for_calibration_purpose']}
+            elif (scan_type == 'fly scan') and (aux_parameters['spectrometer']['scan_type'] == 'step scan'):
                 plan_name = 'fly_scan_johann_rixs_plan_bundle'
+                _scan_kwargs = {'emission_energy_list': aux_parameters['spectrometer']['scan_parameters']['energy_grid']}
+            elif (scan_type == 'fly scan') and (aux_parameters['spectrometer']['scan_type'] == 'fly scan'):
+                plan_name = ''
+                _scan_kwargs = {}
+                raise NotImplementedError('Such scan is not implemented yet!')
+
             element_line = aux_parameters['spectrometer']['scan_parameters']['element']
             line = aux_parameters['spectrometer']['scan_parameters']['line']
             e0_line = aux_parameters['spectrometer']['scan_parameters']['e0']
-            emission_energy_list = aux_parameters['spectrometer']['scan_parameters']['energy_grid']
+
             spectrometer_config_uid = aux_parameters['spectrometer']['spectrometer_config_uid']
             plan_kwargs = {'trajectory_filename': scan_parameters['filename'],
                            'element': scan_parameters['element'],
@@ -546,7 +574,7 @@ class ScanManager():
                            'element_line' : element_line,
                            'line': line,
                            'e0_line': e0_line,
-                           'emission_energy_list': emission_energy_list,
+                           **_scan_kwargs,
                            'sample_coordinates' : sample_coordinates,
                            'rixs_kwargs' : rixs_kwargs,
                            'spectrometer_config_uid': spectrometer_config_uid}

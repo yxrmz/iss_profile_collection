@@ -533,6 +533,14 @@ class RowlandCircle:
         """
         return self.config['enabled_crystals']
 
+    @property
+    def enabled_crystals_list(self):
+        """
+        List keys for currently enabled crystals. Enabled crystals are active during scans, i.e. move during scans. Disabled
+        crystals do not move at all.
+        """
+        return [k for k, v in self.config['enabled_crystals'].items() if v]
+
     def enable_crystal(self, crystal_key: str, enable: bool):
         """
         Enable or disable one of the spectrometer crystals.
@@ -584,6 +592,20 @@ class RowlandCircle:
         if 'alignment_data' not in self.config.keys():
             self.config['alignment_data'] = []
         return self.config['alignment_data']
+
+    @property
+    def fly_calibration_dict(self):
+        """
+        dictionary with data/conversion coefficients for converting crystal roll positions into energy during fly scanning
+        """
+        if 'fly_calibration_dict' not in self.config.keys():
+            self.config['fly_calibration_dict'] = {'data': [], 'LUT': None}
+        return self.config['fly_calibration_dict']
+
+    def reset_fly_calibration_dict(self):
+        self.fly_calibration_dict['data'] = []
+        self.fly_calibration_dict['LUT'] = None
+        self.save_current_spectrometer_config_to_settings()
 
     def _compute_nominal_trajectory(self, npt=1000):
         """
@@ -1910,6 +1932,12 @@ class JohannEmission(JohannMultiCrystalPseudoPositioner):
 
     def save_alignment_data_to_settings(self):
         self.rowland_circle.save_alignment_data_to_settings()
+
+    @property
+    def alignment_df(self):
+        return pd.DataFrame(self.alignment_data)
+
+
 
     # def move(self, position, step_size=0.5, **kwargs):
     #     old_position = self.energy.position

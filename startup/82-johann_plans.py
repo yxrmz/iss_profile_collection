@@ -118,7 +118,7 @@ def fly_scan_johann_herfd_plan(**kwargs):
     yield from fly_scan_plan(metadata=metadata, **kwargs)
 
 
-def get_johann_xes_step_scan_md(name, comment, detectors_dict, emission_energy_list, emission_time_list, element, e0, line, spectrometer_config_uid, metadata):
+def get_johann_xes_step_scan_md(name, comment, detectors_dict, mono_energy, emission_energy_list, emission_time_list, element, e0, line, spectrometer_config_uid, metadata):
     try:
         full_element_name = getattr(elements, element).name.capitalize()
     except:
@@ -127,6 +127,7 @@ def get_johann_xes_step_scan_md(name, comment, detectors_dict, emission_energy_l
 
     md_scan = {'experiment': 'step_scan',
                'spectrometer': 'johann',
+               'hhm_energy': mono_energy,
                'spectrometer_config': rowland_circle.config,
                'spectrometer_config_uid': spectrometer_config_uid,
                'spectrometer_energy_steps': emission_energy_list,
@@ -142,7 +143,8 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
                               emission_energy_list=None, emission_time_list=None,
                               element='', line='', e0=None,
                               spectrometer_config_uid=None,
-                              metadata={}):
+                              metadata=None):
+    if metadata is None: metadata = {}
 
     default_detectors = [apb_ave, hhm_encoder]
     # default_detectors = []
@@ -154,12 +156,12 @@ def step_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from bps.mv(hhm.energy, mono_energy)
     yield from prepare_johann_scan_plan(detectors, emission_energy_list[0], spectrometer_config_uid)
 
-    md = get_johann_xes_step_scan_md(name, comment, detectors_dict, emission_energy_list, emission_time_list, element,
+    md = get_johann_xes_step_scan_md(name, comment, detectors_dict, mono_energy, emission_energy_list, emission_time_list, element,
                                      e0, line, spectrometer_config_uid, metadata)
     yield from general_energy_step_scan(all_detectors, johann_emission, emission_energy_list, emission_time_list, md=md)
 
 
-def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_central_energy, relative_trajectory, element, e0, line, spectrometer_config_uid, metadata):
+def get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spectrometer_central_energy, relative_trajectory, element, e0, line, spectrometer_config_uid, metadata):
     try:
         full_element_name = getattr(elements, element).name.capitalize()
     except:
@@ -167,6 +169,7 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_centr
     md_general = get_scan_md(name, comment, detectors_dict, '.dat')
 
     md_scan = {'experiment': 'epics_fly_scan',
+               'hhm_energy': mono_energy,
                'spectrometer': 'johann',
                'spectrometer_config': rowland_circle.config,
                'spectrometer_config_uid': spectrometer_config_uid,
@@ -178,7 +181,8 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_centr
                'e0': e0,}
     return {**md_scan, **md_general, **metadata}
 
-def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=[], relative_trajectory=None, md=None):
+def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=[], relative_trajectory=None,
+                                            individual_trajectories=False, md=None):
     motor_dict = {}
     trajectory_dict = {}
     for crystal in crystals:
@@ -186,19 +190,27 @@ def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=
         motor_device = get_motor_device(motor_description, based_on='description')
         motor_pos = motor_device.position
         motor_dict[crystal] = motor_device
-        trajectory_dict[crystal] = {'positions': [(motor_pos + delta) for delta in relative_trajectory['positions']],
-                                    'durations': copy.deepcopy(relative_trajectory['durations'])}
+        if individual_trajectories:
+            trajectory_dict[crystal] = {
+                'positions': [(motor_pos + delta) for delta in relative_trajectory[crystal]['positions']],
+                'durations': copy.deepcopy(relative_trajectory[crystal]['durations'])}
+        else:
+            trajectory_dict[crystal] = {
+                'positions': [(motor_pos + delta) for delta in relative_trajectory['positions']],
+                'durations': copy.deepcopy(relative_trajectory['durations'])}
 
     yield from general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, md=md)
 
 
-def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
+def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
                                    mono_energy=None, mono_angle_offset=None,
-                                   spectrometer_central_energy=None, relative_trajectory=None,
+                                   spectrometer_central_energy=None, relative_trajectory=None, trajectory_as_energy=False,
                                    crystal_selection=None,
                                    element='', e0=0, line='',
                                    spectrometer_config_uid=None,
-                                   metadata={}):
+                                   metadata=None):
+    if detectors is None: detectors = []
+    if metadata is None: metadata = {}
     default_detectors = [apb_stream]
     aux_detectors = get_detector_device_list(detectors, flying=True)
     all_detectors = default_detectors + aux_detectors
@@ -207,7 +219,11 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=[],
     yield from bps.mv(hhm.energy, mono_energy)
     yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy, spectrometer_config_uid)
 
-    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, spectrometer_central_energy, relative_trajectory, element,
+    if trajectory_as_energy:
+        pass
+        # need to deal with conversion
+
+    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spectrometer_central_energy, relative_trajectory, element,
                                      e0, line, spectrometer_config_uid, metadata)
     if crystal_selection is None:
         crystal_selection = [cr for cr, enabled in johann_emission.enabled_crystals.items() if enabled]
@@ -273,16 +289,16 @@ for i in range(5):
 plan_processor.add_plans(plans)
 '''
 
-def deal_with_sample_coordinates_for_rixs(sample_coordinates, emission_energy_list, name):
+def deal_with_sample_coordinates_for_rixs(sample_coordinates, energy_list, name):
     if type(sample_coordinates) == list:
-        assert len(sample_coordinates) == len(emission_energy_list), 'number of positions on the sample must match the number of energy points on emission grid'
+        assert len(sample_coordinates) == len(energy_list), 'number of positions on the sample must match the number of energy points on emission/mono energy grid'
     else:
-        sample_coordinates = [sample_coordinates] * len(emission_energy_list)
+        sample_coordinates = [sample_coordinates] * len(energy_list)
 
     if type(name) == list:
-        assert len(name) == len(emission_energy_list), 'number of positions on the sample must match the number of energy points on emission grid'
+        assert len(name) == len(energy_list), 'number of positions on the sample must match the number of energy points on emission/mono energy grid'
     else:
-        name = [name] * len(emission_energy_list)
+        name = [name] * len(energy_list)
 
     return sample_coordinates, name
 
@@ -330,3 +346,90 @@ def fly_scan_johann_rixs_plan_bundle(**kwargs):
 def step_scan_johann_rixs_plan_bundle(**kwargs):
     return johann_rixs_plan_bundle('step_scan_johann_herfd_plan', **kwargs)
 
+
+def johann_reset_fly_caibration_data_plan():
+    rowland_circle.reset_fly_calibration_dict()
+    yield from bps.null()
+
+def johann_add_scan_to_fly_calibration_data_plan(_uid=-1):
+    start = db[_uid].start
+    uid = start.uid
+    rowland_circle.fly_calibration_dict['data'].append({
+        'mono_energy': start['hhm_energy'],
+        'scan_scope': start['scan_scope'],
+        'alignment_plan': 'epics_fly_scan_johann_emission_alignment_plan_bundle', # this is to recycle the code for analyzing similar scan stacks
+        'uid': uid,
+        'rois': rowland_circle.enabled_crystals_list})
+    rowland_circle.save_current_spectrometer_config_to_settings()
+    yield from bps.null()
+
+def johann_process_fly_calibration_data_plan():
+    johann_analyze_alignment_data(alignment_data=rowland_circle.fly_calibration_dict['data'],
+                                  scan_scope='fly_scan_calibration') # need to do something about ROIs in the analysis
+
+    data = rowland_circle.fly_calibration_dict['data']
+    LUT = {'energy': [entry['mono_energy'] for entry in data]}
+    for crystal in rowland_circle.enabled_crystals_list:
+        LUT[crystal] = [entry['com_loc'][crystal] for entry in data]
+
+    rowland_circle.fly_calibration_dict['LUT'] = LUT
+    rowland_circle.save_current_spectrometer_config_to_settings()
+    yield from bps.null()
+
+def fly_spectrometer_scan_johann_rixs_plan_bundle(name=None, comment=None, detectors=[],
+                                                  mono_angle_offset=None,
+                                                  trajectory_filename = None,
+                                                  element='', edge=None, e0=0,
+                                                  element_line=None, line='', e0_line=0,
+                                                  spectrometer_central_energy=None, relative_trajectory=None,
+                                                  trajectory_as_energy=False, scan_for_calibration_purpose=None,
+                                                  crystal_selection=None,
+                                                  sample_coordinates=None,
+                                                  rixs_kwargs=None,
+                                                  spectrometer_config_uid=None,
+                                                  metadata=None):
+
+    if metadata is None: metadata = {}
+    if rixs_kwargs is not None: metadata = {**metadata, **rixs_kwargs}
+
+    mono_energy_list, _ = read_step_scan_file(trajectory_filename)
+
+    metadata = get_johann_rixs_md(name, element_line, line, e0_line, metadata)
+
+    sample_coordinates, names = deal_with_sample_coordinates_for_rixs(sample_coordinates, mono_energy_list, name)
+
+    plans = []
+
+    if scan_for_calibration_purpose:  # reset previous calibration
+        plans.append({'plan_name': 'johann_reset_fly_caibration_data_plan',
+                      'plan_kwargs': {}})
+        metadata['scan_scope'] = 'fly_scan_calibration'
+
+    for mono_energy, sample_position, name in zip(mono_energy_list, sample_coordinates, names):
+
+        if sample_position is not None:
+            plans.append({'plan_name': 'move_sample_stage_plan',
+                          'plan_kwargs': {'sample_coordinates': sample_position}})
+
+        plans.append({'plan_name': 'epics_fly_scan_johann_xes_plan',
+                      'plan_kwargs': {'name': f'{name} {mono_energy:0.2f}',
+                                      'comment': comment,
+                                      'detectors': detectors,
+                                      'mono_energy': mono_energy,
+                                      'mono_angle_offset': mono_angle_offset,
+                                      'spectrometer_central_energy': spectrometer_central_energy,
+                                      'relative_trajectory': relative_trajectory,
+                                      'trajectory_as_energy': trajectory_as_energy,
+                                      'element': element_line,
+                                      'line': line,
+                                      'e0': e0_line,
+                                      'spectrometer_config_uid': spectrometer_config_uid,
+                                      'metadata': metadata}})
+
+        if scan_for_calibration_purpose: # add a plan to include the last scan into the fly_calibration dict
+            plans.append({'plan_name': 'johann_add_scan_to_fly_calibration_data_plan',
+                          'plan_kwargs': {'_uid': -1}})
+
+    if scan_for_calibration_purpose: # add a plan to process the calibration
+        plans.append({'plan_name': 'johann_process_fly_calibration_data_plan',
+                      'plan_kwargs': {}})
