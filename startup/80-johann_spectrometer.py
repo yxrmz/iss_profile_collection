@@ -1157,6 +1157,21 @@ class RowlandCircle:
         options = np.isclose(bragg_target, offset_braggs, atol=roll_range)
         return offsets[options][0]
 
+    def convert_energy_trajectory_to_bragg(self, central_energy, relative_trajectory):
+        relative_trajectory_roll = {'positions': [],
+                                    'durations': relative_trajectory['durations']}
+        if self.fly_calibration_dict['LUT'] is None:
+            central_bragg = self.e2bragg(central_energy)
+            for position in relative_trajectory['positions']:
+                position_bragg = self.e2bragg(central_energy + position)
+                relative_roll = (position_bragg - central_bragg) * 1000
+                relative_trajectory_roll['positions'].append(relative_roll)
+            return relative_trajectory_roll
+        else:
+            pass
+
+
+
     # def append_energy_converter(self, ec):
     #     self.energy_converter = ec
 

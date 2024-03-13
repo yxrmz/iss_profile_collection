@@ -220,7 +220,7 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
     yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy, spectrometer_config_uid)
 
     if trajectory_as_energy:
-        pass
+        relative_trajectory = rowland_circle.convert_energy_trajectory_to_bragg(relative_trajectory)
         # need to deal with conversion
 
     md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spectrometer_central_energy, relative_trajectory, element,
