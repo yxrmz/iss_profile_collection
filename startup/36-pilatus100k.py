@@ -197,6 +197,7 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         md = {}
         md['device_name'] = self.name
         md['roi'] = self.roi_metadata
+        md['roi_polygon_spectrometer'] = {} # this should read something
         return md
 
     # @property
