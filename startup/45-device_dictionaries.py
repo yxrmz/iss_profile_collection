@@ -160,6 +160,8 @@ motor_dictionary = {
     'fip_spectrometer_crystal_y': {'name': fip_spectrometer_crystal.y.name,  'description': 'B1 FIP crystal Y',              'keyword': 'B1 FIP crystal Y',             'object': fip_spectrometer_crystal.y},
     'fip_spectrometer_detector_x':{'name': fip_spectrometer_detector.x.name, 'description': 'B1 FIP detector X',             'keyword': 'B1 FIP detector X',            'object': fip_spectrometer_detector.x},
     'fip_spectrometer_detector_x':{'name': fip_spectrometer_detector.y.name, 'description': 'B1 FIP detector Y',             'keyword': 'B1 FIP detector Y',            'object': fip_spectrometer_detector.y},
+     # 'sample_stage_x':            {'name': samplexy.x.name,       'description': 'B2 Sample stage X',                        'keyword': 'Sample X',                      'object': samplexy.x,    'user':True},
+     # 'sample_stage_y':            {'name': samplexy.y.name,       'description': 'B2 Sample stage Y',                        'keyword': 'Sample Y',                      'object': samplexy.y,    'user':True},
 }
 
 def get_motor_device(motor_attr, based_on='description'):

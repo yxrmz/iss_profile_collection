@@ -295,6 +295,8 @@ def find_optimal_crystal_alignment_position(alignment_data=None, scan_scope=None
                        'x_label': tweak_motor_description,
                        'y_label': fom,
                        'scan_motor_description': tweak_motor_description}
+    else:
+        plot_kwargs = {}
     position = get_optimal_crystal_alignment_position(x, y, optimum=optimum, plot_func=plot_analysis_func, **plot_kwargs)
     return position, tweak_motor_description
 
@@ -341,8 +343,10 @@ def move_to_optimal_crystal_alignment_position_plan(**kwargs):
 
 def move_to_optimal_rowland_circle_radius_plan(crystals: list=None, energy: float=None, **kwargs):
     positions = []
+    _kwargs = copy.deepcopy(kwargs)
+    _kwargs.pop('crystal')
     for crystal in crystals:
-        position, _ = find_optimal_crystal_alignment_position(crystal=crystal, **kwargs)
+        position, _ = find_optimal_crystal_alignment_position(crystal=crystal, **_kwargs)
         positions.append(position)
     best_position = np.mean(positions)
     print_to_gui(f'Best position for {kwargs["tweak_motor_description"]} was found to be {best_position}', add_timestamp=True,
@@ -658,7 +662,11 @@ def johann_spectrometer_run_alignment_scans_vs_R_plans(
                                       'crystals': crystals,
                                       'energy': spectrometer_nominal_energy,
                                       'tweak_motor_description': 'Rowland Circle Radius',
-                                      'fom': automatic_fom}})
+                                      'fom': automatic_fom,
+                                      # 'liveplot_kwargs': _liveplot_kwargs_proc,
+                                      },
+                      # 'plan_gui_services': plan_gui_services
+                      })
 
     else:
         plans.append({'plan_name': 'print_message_plan',
