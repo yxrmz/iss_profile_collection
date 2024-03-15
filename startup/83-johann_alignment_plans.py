@@ -20,8 +20,8 @@ def step_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None,
 def fly_epics_scan_simple_johann_piezo_plan(crystal=None, axis=None, scan_range=None, duration=None, md=None):
     crystals = [crystal]
     detectors = [JOHANN_DEFAULT_DETECTOR_DICT['flying_device']]
-    relative_trajectory = {'positions': [-scan_range/2, scan_range/2],
-                           'durations': [duration]}
+    relative_trajectory = {crystal: {'positions': [-scan_range/2, scan_range/2],
+                                     'durations': [duration]}}
     if md is None: md = {}
     yield from epics_fly_scan_custom_johann_piezo_plan(crystals=crystals, axis=axis, detectors=detectors,
                                                        relative_trajectory=relative_trajectory, md=md)

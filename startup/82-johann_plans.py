@@ -181,28 +181,23 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spect
                'e0': e0,}
     return {**md_scan, **md_general, **metadata}
 
-def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=[], relative_trajectory: dict=None,
-                                            individual_trajectories: bool=False, md: dict=None):
+def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=[], relative_trajectory: dict=None, md: dict=None):
     motor_dict = {}
     trajectory_dict = {}
 
-    if individual_trajectories:
-        if set(crystals) != set(relative_trajectory):
-            raise KeyError('The crystals in relative_trajectory do not match the requested crystals.')
+    if all([(cr in relative_trajectory) for cr in crystals]):
+        raise KeyError('The crystals in relative_trajectory must match the requested crystals!\n' +
+                       f'{crystals=}\n' +
+                       f'{relative_trajectory.keys()}')
 
     for crystal in crystals:
         motor_description = _crystal_alignment_dict[crystal][axis]
         motor_device = get_motor_device(motor_description, based_on='description')
         motor_pos = motor_device.position
         motor_dict[crystal] = motor_device
-        if individual_trajectories:
-            trajectory_dict[crystal] = {
-                'positions': [(motor_pos + delta) for delta in relative_trajectory[crystal]['positions']],
-                'durations': copy.deepcopy(relative_trajectory[crystal]['durations'])}
-        else:
-            trajectory_dict[crystal] = {
-                'positions': [(motor_pos + delta) for delta in relative_trajectory['positions']],
-                'durations': copy.deepcopy(relative_trajectory['durations'])}
+        trajectory_dict[crystal] = {
+            'positions': [(motor_pos + delta) for delta in relative_trajectory['positions']],
+            'durations': copy.deepcopy(relative_trajectory['durations'])}
 
     yield from general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, md=md)
 
@@ -210,7 +205,7 @@ def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=
 def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
                                    mono_energy=None, mono_angle_offset=None,
                                    spectrometer_central_energy=None,
-                                   relative_trajectory=None, trajectory_as_energy=False, individual_trajectories=False,
+                                   relative_trajectory=None, trajectory_as_energy=False,
                                    crystal_selection=None,
                                    element='', e0=0, line='',
                                    spectrometer_config_uid=None,
@@ -225,19 +220,28 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
     yield from bps.mv(hhm.energy, mono_energy)
     yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy, spectrometer_config_uid)
 
-    if trajectory_as_energy:
-        relative_trajectory, individual_trajectories = rowland_circle.convert_energy_trajectory_to_bragg(relative_trajectory)
-
-    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spectrometer_central_energy, relative_trajectory, element,
-                                     e0, line, spectrometer_config_uid, metadata)
     if crystal_selection is None:
         crystal_selection = [cr for cr, enabled in johann_emission.enabled_crystals.items() if enabled]
     if type(crystal_selection) == str:
         crystal_selection = [crystal_selection]
 
+    if trajectory_as_energy:
+        relative_trajectory = rowland_circle.convert_energy_trajectory_to_bragg(spectrometer_central_energy,
+                                                                                relative_trajectory,
+                                                                                crystal_selection)
+
+    if not all((cr in relative_trajectory) for cr in crystal_selection):
+        print_to_gui('Reformatting the trajectory for each individual crystal.', tag='Spectrometer', add_timestamp=True)
+        _relative_trajectory = copy.deepcopy(relative_trajectory)
+        relative_trajectory = {}
+        for crystal in crystal_selection:
+            relative_trajectory[crystal] = copy.deepcopy(_relative_trajectory)
+
+    md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spectrometer_central_energy, relative_trajectory, element,
+                                     e0, line, spectrometer_config_uid, metadata)
+
     yield from epics_fly_scan_custom_johann_piezo_plan(crystals=crystal_selection, axis='roll', detectors=all_detectors,
-                                                relative_trajectory=relative_trajectory,
-                                                individual_trajectories=individual_trajectories, md=md)
+                                                relative_trajectory=relative_trajectory, md=md)
 
 '''
 for _energy in range(8015, 8060, 5):
