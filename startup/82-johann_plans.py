@@ -181,10 +181,15 @@ def get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spect
                'e0': e0,}
     return {**md_scan, **md_general, **metadata}
 
-def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=[], relative_trajectory=None,
-                                            individual_trajectories=False, md=None):
+def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=[], relative_trajectory: dict=None,
+                                            individual_trajectories: bool=False, md: dict=None):
     motor_dict = {}
     trajectory_dict = {}
+
+    if individual_trajectories:
+        if set(crystals) != set(relative_trajectory):
+            raise KeyError('The crystals in relative_trajectory do not match the requested crystals.')
+
     for crystal in crystals:
         motor_description = _crystal_alignment_dict[crystal][axis]
         motor_device = get_motor_device(motor_description, based_on='description')
@@ -204,7 +209,8 @@ def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=
 
 def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
                                    mono_energy=None, mono_angle_offset=None,
-                                   spectrometer_central_energy=None, relative_trajectory=None, trajectory_as_energy=False,
+                                   spectrometer_central_energy=None,
+                                   relative_trajectory=None, trajectory_as_energy=False, individual_trajectories=False,
                                    crystal_selection=None,
                                    element='', e0=0, line='',
                                    spectrometer_config_uid=None,
@@ -220,8 +226,7 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
     yield from prepare_johann_scan_plan(detectors, spectrometer_central_energy, spectrometer_config_uid)
 
     if trajectory_as_energy:
-        relative_trajectory = rowland_circle.convert_energy_trajectory_to_bragg(relative_trajectory)
-        # need to deal with conversion
+        relative_trajectory, individual_trajectories = rowland_circle.convert_energy_trajectory_to_bragg(relative_trajectory)
 
     md = get_johann_xes_fly_scan_md(name, comment, detectors_dict, mono_energy, spectrometer_central_energy, relative_trajectory, element,
                                      e0, line, spectrometer_config_uid, metadata)
@@ -231,7 +236,8 @@ def epics_fly_scan_johann_xes_plan(name=None, comment=None, detectors=None,
         crystal_selection = [crystal_selection]
 
     yield from epics_fly_scan_custom_johann_piezo_plan(crystals=crystal_selection, axis='roll', detectors=all_detectors,
-                                                relative_trajectory=relative_trajectory, md=md)
+                                                relative_trajectory=relative_trajectory,
+                                                individual_trajectories=individual_trajectories, md=md)
 
 '''
 for _energy in range(8015, 8060, 5):

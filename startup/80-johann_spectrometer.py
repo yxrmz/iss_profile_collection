@@ -1158,17 +1158,33 @@ class RowlandCircle:
         return offsets[options][0]
 
     def convert_energy_trajectory_to_bragg(self, central_energy, relative_trajectory):
-        relative_trajectory_roll = {'positions': [],
-                                    'durations': relative_trajectory['durations']}
         if self.fly_calibration_dict['LUT'] is None:
+            individual_trajectories = False
+            relative_trajectory_roll = {'positions': [],
+                                        'durations': relative_trajectory['durations']}
+
             central_bragg = self.e2bragg(central_energy)
-            for position in relative_trajectory['positions']:
-                position_bragg = self.e2bragg(central_energy + position)
-                relative_roll = (position_bragg - central_bragg) * 1000
-                relative_trajectory_roll['positions'].append(relative_roll)
-            return relative_trajectory_roll
+            for delta_energy in relative_trajectory['positions']:
+                position_bragg = self.e2bragg(central_energy + delta_energy)
+                delta_roll = (position_bragg - central_bragg) * 1000
+                relative_trajectory_roll['positions'].append(delta_roll)
+
         else:
-            pass
+            individual_trajectories = True
+            LUT = self.fly_calibration_dict['LUT']
+            relative_trajectory_roll = {}
+            for crystal, conv_dict in LUT.items():
+                _energy, _roll = conv_dict['energy'], conv_dict['roll']
+                e2roll_converter = Nominal2ActualConverter(_energy, _roll)
+                central_roll = e2roll_converter.nom2act(central_energy)
+                _rel_traj = {'positions': [], 'durations': relative_trajectory['durations']}
+                for delta_energy in relative_trajectory['positions']:
+                    position_roll = e2roll_converter.nom2act(central_energy + delta_energy)
+                    delta_roll = position_roll - central_roll
+                    _rel_traj['positions'].append(delta_roll)
+                relative_trajectory_roll[crystal] = _rel_traj
+
+        return relative_trajectory_roll, individual_trajectories
 
 
 
