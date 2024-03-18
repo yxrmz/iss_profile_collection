@@ -14,6 +14,8 @@ data_collection_plan_funcs = {
         'fly_scan_johann_herfd_plan' : fly_scan_johann_herfd_plan,
         'fly_scan_johann_rixs_plan_bundle' : {'kind' : 'bundle', 'func' : fly_scan_johann_rixs_plan_bundle},
         'step_scan_johann_rixs_plan_bundle' : {'kind' : 'bundle', 'func' : step_scan_johann_rixs_plan_bundle},
+        'fly_spectrometer_scan_johann_rixs_plan_bundle': {'kind' : 'bundle',
+                                                          'func' : fly_spectrometer_scan_johann_rixs_plan_bundle},
     }
 
 service_plan_funcs = {

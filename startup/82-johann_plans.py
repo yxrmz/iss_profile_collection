@@ -420,9 +420,9 @@ def fly_spectrometer_scan_johann_rixs_plan_bundle(name=None, comment=None, detec
         if sample_position is not None:
             plans.append({'plan_name': 'move_sample_stage_plan',
                           'plan_kwargs': {'sample_coordinates': sample_position}})
-
+        energy_str = f'{mono_energy:0.2f}'.replace('.', '_')
         plans.append({'plan_name': 'epics_fly_scan_johann_xes_plan',
-                      'plan_kwargs': {'name': f'{name} {mono_energy:0.2f}',
+                      'plan_kwargs': {'name': f'{name} {energy_str}',
                                       'comment': comment,
                                       'detectors': detectors,
                                       'mono_energy': mono_energy,
@@ -443,3 +443,5 @@ def fly_spectrometer_scan_johann_rixs_plan_bundle(name=None, comment=None, detec
     if scan_for_calibration_purpose: # add a plan to process the calibration
         plans.append({'plan_name': 'johann_process_fly_calibration_data_plan',
                       'plan_kwargs': {}})
+
+    return plans
