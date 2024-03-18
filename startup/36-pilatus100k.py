@@ -123,6 +123,8 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     over1 = Cpt(OverlayPlugin, 'Over1:')
 
+    polygon_roi_path = '/nsls2/data/iss/legacy/xf08id/settings/json/pilatus_polygon_roi.json'
+
     def __init__(self, *args, readout=0.0024, **kwargs):
         super().__init__(*args, **kwargs)
         self.readout = readout  # seconds; for old Pilatus it is 0.0023s; for the new one it is 0.00095s
@@ -197,7 +199,10 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
         md = {}
         md['device_name'] = self.name
         md['roi'] = self.roi_metadata
-        md['roi_polygon_spectrometer'] = {} # this should read something
+
+        with open(self.polygon_roi_path, 'r') as f:
+            md['roi_polygon'] = json.loads(f.read())
+
         return md
 
     # @property
