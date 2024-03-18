@@ -222,7 +222,7 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
     entry['max_loc'] = max_loc
     entry['com_loc'] = com_loc
 
-def johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, attempts=5, sleep=3):
+def johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, attempts=6, sleep=5):
     for i in range(attempts):
         try:
             _johann_analyze_alignment_data_entry(entry, plot_func=plot_func, index=index)
