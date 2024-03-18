@@ -226,7 +226,7 @@ class ScanManager():
                 aux_parameters['spectrometer']['scan_parameters']['time_grid'] = time_grid.tolist()
                 aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
             elif aux_parameters['spectrometer']['scan_type'] == 'fly scan':
-                aux_parameters['spectrometer']['relative_trajectory'] = \
+                aux_parameters['spectrometer']['scan_parameters']['relative_trajectory'] = \
                     generate_emission_relative_trajectory_from_dict(aux_parameters['spectrometer']['scan_parameters'])
 
         elif scan_key == 'johann_rixs':
@@ -235,7 +235,7 @@ class ScanManager():
                 aux_parameters['spectrometer']['scan_parameters']['energy_grid'] = energy_grid.tolist()
 
             elif aux_parameters['spectrometer']['scan_type'] == 'fly scan':
-                aux_parameters['spectrometer']['relative_trajectory'] = \
+                aux_parameters['spectrometer']['scan_parameters']['relative_trajectory'] = \
                     generate_emission_relative_trajectory_from_dict(aux_parameters['spectrometer']['scan_parameters'])
 
     def create_trajectory_file(self, scan, uid):
