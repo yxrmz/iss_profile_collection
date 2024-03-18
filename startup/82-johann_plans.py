@@ -185,7 +185,7 @@ def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=
     motor_dict = {}
     trajectory_dict = {}
 
-    if all([(cr in relative_trajectory) for cr in crystals]):
+    if not all([(cr in relative_trajectory) for cr in crystals]):
         raise KeyError('The crystals in relative_trajectory must match the requested crystals!\n' +
                        f'{crystals=}\n' +
                        f'{relative_trajectory.keys()}')
@@ -196,8 +196,8 @@ def epics_fly_scan_custom_johann_piezo_plan(crystals=None, axis=None, detectors=
         motor_pos = motor_device.position
         motor_dict[crystal] = motor_device
         trajectory_dict[crystal] = {
-            'positions': [(motor_pos + delta) for delta in relative_trajectory['positions']],
-            'durations': copy.deepcopy(relative_trajectory['durations'])}
+            'positions': [(motor_pos + delta) for delta in relative_trajectory[crystal]['positions']],
+            'durations': copy.deepcopy(relative_trajectory[crystal]['durations'])}
 
     yield from general_epics_motor_fly_scan(detectors, motor_dict, trajectory_dict, md=md)
 
