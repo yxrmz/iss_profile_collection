@@ -200,14 +200,14 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
         # fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
         #                                                                    rois=entry['rois'])
 
-        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
+        output = analyze_linewidth_fly_scan(db, entry['uid'],
                                                                              x_key='energy',
                                                                              rois=entry['rois'],
                                                                              plot_func=plot_func,
                                                                              **plot_kwargs)
     elif entry['alignment_plan'] == 'epics_fly_scan_johann_emission_alignment_plan_bundle':
         x_key = db[entry['uid']].start['motor_stream_names'][0].replace('_monitor', '')
-        fwhm_value, max_value, max_loc, com_loc = analyze_linewidth_fly_scan(db, entry['uid'],
+        output = analyze_linewidth_fly_scan(db, entry['uid'],
                                                                              x_key=x_key,
                                                                              rois=entry['rois'],
                                                                              plot_func=plot_func,
@@ -217,12 +217,17 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
 
     else:
         raise NotImplementedError('This is not yet implemented')
-    entry['fwhm_value'] = fwhm_value
-    entry['max_value'] = max_value
-    entry['max_loc'] = max_loc
-    entry['com_loc'] = com_loc
+    if type(output) == dict:
+        for k, v in output.items():
+            entry[k] = v
+    else:
+        fwhm_value, max_value, max_loc, com_loc = output
+        entry['fwhm_value'] = fwhm_value
+        entry['max_value'] = max_value
+        entry['max_loc'] = max_loc
+        entry['com_loc'] = com_loc
 
-def johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, attempts=6, sleep=5):
+def johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, attempts=10, sleep=5):
     for i in range(attempts):
         try:
             _johann_analyze_alignment_data_entry(entry, plot_func=plot_func, index=index)

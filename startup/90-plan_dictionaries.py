@@ -81,7 +81,10 @@ aux_plan_funcs = {
         'johann_report_spectrometer_resolution_plan': johann_report_spectrometer_resolution_plan,
         'johann_spectrometer_resolution_plan_bundle': {'kind': 'bundle', 'func': johann_spectrometer_resolution_plan_bundle},
         'johann_bender_scan_plan_bundle': {'kind': 'bundle', 'func': johann_bender_scan_plan_bundle},
-        'johann_report_bender_results_plan': johann_report_bender_results_plan
+        'johann_report_bender_results_plan': johann_report_bender_results_plan,
+        'johann_reset_fly_caibration_data_plan': johann_reset_fly_caibration_data_plan,
+        'johann_add_scan_to_fly_calibration_data_plan': johann_add_scan_to_fly_calibration_data_plan,
+        'johann_process_fly_calibration_data_plan': johann_process_fly_calibration_data_plan,
         # 'johann_spectrometer_calibration_plan_bundle': {'kind' : 'bundle', 'func' : johann_spectrometer_calibration_plan_bundle},
         # 'johann_measure_spectrometer_resolution_plan_bundle': {'kind': 'bundle', 'func': johann_measure_spectrometer_resolution_plan_bundle},
         # 'johann_crystal_alignment_vs_R_plan_bundle': {'kind': 'bundle', 'func': johann_crystal_alignment_vs_R_plan_bundle},
