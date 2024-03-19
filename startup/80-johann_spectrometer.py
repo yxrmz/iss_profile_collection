@@ -1176,8 +1176,8 @@ class RowlandCircle:
         else:
             LUT = self.fly_calibration_dict['LUT']
             for crystal in crystals:
-                conv_dict = LUT[crystal]
-                _energy, _roll = conv_dict['energy'], conv_dict['roll']
+                _roll = LUT[crystal]
+                _energy = LUT['energy']
                 e2roll_converter = Nominal2ActualConverter(_energy, _roll)
                 central_roll = e2roll_converter.nom2act(central_energy)
                 _rel_traj = {'positions': [], 'durations': relative_trajectory['durations']}

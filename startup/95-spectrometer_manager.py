@@ -58,5 +58,11 @@ class SpectrometerManager(PersistentListInteractingWithGUI):
         config_dict = self.config_from_uid(config_uid)
         return self.generate_config_str(config_dict)
 
+    @emit_list_update_signal_decorator
+    def update_config_at_uid(self, config_uid, new_config):
+        config_dict = self.config_from_uid(config_uid)
+        for k, v in new_config.items():
+            config_dict['config'][k] = v
+
 johann_spectrometer_manager = SpectrometerManager(json_file_path='/nsls2/data/iss/legacy/xf08id/settings/json/johann_spectrometer_manager')
 

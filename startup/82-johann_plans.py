@@ -373,17 +373,19 @@ def johann_add_scan_to_fly_calibration_data_plan(_uid=-1):
     rowland_circle.save_current_spectrometer_config_to_settings()
     yield from bps.null()
 
-def johann_process_fly_calibration_data_plan():
+def johann_process_fly_calibration_data_plan(spectrometer_config_uid=None):
     johann_analyze_alignment_data(alignment_data=rowland_circle.fly_calibration_dict['data'],
                                   scan_scope='fly_scan_calibration') # need to do something about ROIs in the analysis
 
     data = rowland_circle.fly_calibration_dict['data']
     LUT = {'energy': [entry['mono_energy'] for entry in data]}
-    for crystal in rowland_circle.enabled_crystals_list:
-        LUT[crystal] = [entry['com_loc'][crystal] for entry in data]
+    for crystal in rowland_circle.enabled_crystals_list: # may be use crystals in the data
+        LUT[crystal] = [entry[crystal]['com_loc'] for entry in data]
 
     rowland_circle.fly_calibration_dict['LUT'] = LUT
     rowland_circle.save_current_spectrometer_config_to_settings()
+    if spectrometer_config_uid is not None:
+        johann_spectrometer_manager.update_config_at_uid(spectrometer_config_uid, rowland_circle.config)
     yield from bps.null()
 
 def fly_spectrometer_scan_johann_rixs_plan_bundle(name=None, comment=None, detectors=[],
@@ -442,6 +444,6 @@ def fly_spectrometer_scan_johann_rixs_plan_bundle(name=None, comment=None, detec
 
     if scan_for_calibration_purpose: # add a plan to process the calibration
         plans.append({'plan_name': 'johann_process_fly_calibration_data_plan',
-                      'plan_kwargs': {}})
+                      'plan_kwargs': {'spectrometer_config_uid': spectrometer_config_uid}})
 
     return plans
