@@ -201,17 +201,37 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
         #                                                                    rois=entry['rois'])
 
         output = analyze_linewidth_fly_scan(db, entry['uid'],
-                                                                             x_key='energy',
-                                                                             rois=entry['rois'],
-                                                                             plot_func=plot_func,
-                                                                             **plot_kwargs)
+                                             x_key='energy',
+                                             rois=entry['rois'],
+                                             plot_func=plot_func,
+                                             **plot_kwargs)
     elif entry['alignment_plan'] == 'epics_fly_scan_johann_emission_alignment_plan_bundle':
-        x_key = db[entry['uid']].start['motor_stream_names'][0].replace('_monitor', '')
-        output = analyze_linewidth_fly_scan(db, entry['uid'],
-                                                                             x_key=x_key,
-                                                                             rois=entry['rois'],
-                                                                             plot_func=plot_func,
-                                                                             **plot_kwargs)
+        motor_stream_names = db[entry['uid']].start['motor_stream_names']
+        if len(motor_stream_names) == 1: # if only one motor was moving during scan
+            x_key = motor_stream_names[0].replace('_monitor', '')
+            output = analyze_linewidth_fly_scan(db, entry['uid'],
+                                                x_key=x_key,
+                                                rois=entry['rois'],
+                                                plot_func=plot_func,
+                                                **plot_kwargs)
+        else: # if more motors were moving, meaning that it was done for fly_epics_calibration purpose
+            output = {}
+            if entry['scan_scope'] == 'fly_scan_calibration':
+                for motor_stream_name in motor_stream_names:
+                    x_key = motor_stream_name.replace('_monitor', '')
+                    rois = [r for r in entry['rois'] if r in x_key]
+                    for roi in rois:
+                        _output = analyze_linewidth_fly_scan(db, entry['uid'],
+                                                            x_key=x_key,
+                                                            rois=[roi],
+                                                            plot_func=plot_func,
+                                                            **plot_kwargs)
+                        fwhm_value, max_value, max_loc, com_loc = _output
+                        output[roi] = {'fwhm_value': fwhm_value,
+                                       'max_value': max_value,
+                                       'max_loc': max_loc,
+                                       'com_loc': com_loc}
+
     elif entry['alignment_plan'] == 'fly_scan_johann_herfd_alignment_plan_bundle':
         pass
 
