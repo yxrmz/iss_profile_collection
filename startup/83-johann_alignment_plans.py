@@ -189,7 +189,7 @@ def johann_add_scan_to_alignment_data_plan(alignment_data=None, alignment_plan='
 
 
 # def _johann_analyze_alignment_data(alignment_data, scan_scope='alignment', force_analysis=False, plot_func=None):
-def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
+def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, processing_kwargs=None):
     plot_kwargs = {}
     if plot_func is not None:
         plot_kwargs['curve_index'] = index
@@ -204,6 +204,7 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
                                              x_key='energy',
                                              rois=entry['rois'],
                                              plot_func=plot_func,
+                                            processing_kwargs=processing_kwargs,
                                              **plot_kwargs)
     elif entry['alignment_plan'] == 'epics_fly_scan_johann_emission_alignment_plan_bundle':
         motor_stream_names = db[entry['uid']].start['motor_stream_names']
@@ -213,6 +214,7 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
                                                 x_key=x_key,
                                                 rois=entry['rois'],
                                                 plot_func=plot_func,
+                                                processing_kwargs=processing_kwargs,
                                                 **plot_kwargs)
         else: # if more motors were moving, meaning that it was done for fly_epics_calibration purpose
             output = {}
@@ -225,6 +227,7 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0):
                                                             x_key=x_key,
                                                             rois=[roi],
                                                             plot_func=plot_func,
+                                                             processing_kwargs=processing_kwargs,
                                                             **plot_kwargs)
                         fwhm_value, max_value, max_loc, com_loc = _output
                         output[roi] = {'fwhm_value': fwhm_value,
