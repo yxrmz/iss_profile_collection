@@ -15,8 +15,11 @@ elif 'ws3' in machine_name:
 else:
     raise ValueError('This machine does not support local feedback')
 
-
-
+class MockPiezoFeedback:
+    status = False
+    shutters_open = False
+    host = None
+    fb_heartbeat = Signal(name='fb_heartbeat', value=0)
 
 class _PiezoFeedback(PiezoFeedback):
     def __init__(self):
@@ -31,13 +34,9 @@ class PiezoFeedbackThread(QThread, _PiezoFeedback):
     def __init__(self):
         super().__init__()
 
+# use this when # use this when softioc-piE712-02.service is up:
 # hhm_feedback = PiezoFeedbackThread()
 # hhm_feedback.start()
 
-class MockPiezoFeedback:
-    status = False
-    shutters_open = False
-    host = None
-    fb_heartbeat = Signal(name='fb_heartbeat', value=0)
-
+# use this when # use this when softioc-piE712-02.service is down:
 hhm_feedback = MockPiezoFeedback()

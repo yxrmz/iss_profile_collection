@@ -65,6 +65,7 @@ class HHM(Device):
     traj8 = Cpt(HHMTrajDesc, 'MC:06}Traj:8')
     traj9 = Cpt(HHMTrajDesc, 'MC:06}Traj:9')
 
+    # use this when softioc-piE712-02.service is up:
     # fb_status = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Sts')
     # fb_center = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Center')
     # fb_line = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Line')
@@ -76,6 +77,7 @@ class HHM(Device):
     # fb_status_err = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-Err')
     # fb_status_msg = Cpt(EpicsSignal, 'Mono:HHM-Ax:P}FB-StsMsg', string=True)
 
+    # use this when softioc-piE712-02.service is down:
     fb_status = Signal(name='fb_status')
     fb_center = Signal(name='fb_center')
     fb_line = Signal(name='fb_line')
