@@ -66,7 +66,7 @@ bl_prepare_energy_ranges = [
             'HHRM': 5,
             'CM1':0,# 0,
             'Filterbox': -69,
-            'ES BPM exposure': 0.05,
+            'ES BPM exposure': 0.1, #0.05, # Denis 2024-06-02: changed to a higher value because of the beamline state
             'i0_gain': 4,
             'it_gain': 4,
             'ir_gain': 5,
