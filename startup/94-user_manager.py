@@ -23,6 +23,11 @@ class UserManager(PersistentListInteractingWithGUI):
                 return i
         return -1
 
+    def find_user(self, first_name, last_name):
+        idx = self.find_user_index(first_name, last_name)
+        if idx == -1:
+            return None
+        return self.users[idx]
 
     @emit_list_update_signal_decorator
     def set_user(self, first_name, last_name, affiliation, email):
