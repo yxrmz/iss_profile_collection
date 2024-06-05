@@ -283,6 +283,23 @@ class ISSXspress3Detector(XspressTrigger, Xspress3Detector):
             channel.rois.roi04.ev_high.put(emax)
             channel.rois.roi04.ev_low.put(emin)
 
+    @property
+    def roi_metadata(self):
+        md = {}
+        for ch_index, channel in self.channels.items():
+            v = {}
+            for roi_idx in range(1, 5):
+                roi_str = f'roi{roi_idx:02d}'
+                roi_obj = getattr(channel.rois, roi_str)
+                v[roi_str] = [roi_obj.ev_low.get(), roi_obj.ev_high.get()]
+            md[f"ch{ch_index:02d}"] = v
+        return md
+
+    def read_config_metadata(self):
+        md = {'device_name': self.name,
+              'roi': self.roi_metadata}
+        return md
+
 
 # def compose_bulk_datum_xs(*, resource_uid, counter, datum_kwargs, validate=True):
 #     # print_message_now(datum_kwargs)
@@ -437,6 +454,17 @@ class ISSXspress3DetectorStream(ISSXspress3Detector):
         for item in items:
             yield item
         yield from self.ext_trigger_device.collect_asset_docs()
+
+    def read_config_metadata(self):
+        md = super().read_config_metadata()
+        freq = self.ext_trigger_device.freq.get()
+        dc = self.ext_trigger_device.duty_cycle.get()
+        md['frame_rate'] = freq
+        md['duty_cycle'] = dc
+        md['acquire_time'] = 1/freq
+        md['exposure_time'] = 1/freq * dc/100
+        return md
+
 
 
 xs = ISSXspress3Detector('XF:08IDB-ES{Xsp:1}:', name='xs')

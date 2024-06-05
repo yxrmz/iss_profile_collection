@@ -123,7 +123,7 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
 
     over1 = Cpt(OverlayPlugin, 'Over1:')
 
-    polygon_roi_path = '/nsls2/data/iss/legacy/xf08id/settings/json/pilatus_polygon_roi.json'
+    polygon_roi_path = f'{ROOT_PATH_SHARED}/settings/json/pilatus_polygon_roi.json'
 
     def __init__(self, *args, readout=0.0024, **kwargs):
         super().__init__(*args, **kwargs)
@@ -198,6 +198,10 @@ class PilatusBase(SingleTriggerV33, PilatusDetectorCam):
     def read_config_metadata(self):
         md = {}
         md['device_name'] = self.name
+        md['threshold_energy'] = self.cam.threshold_energy.get()
+        md['set_energy'] = self.cam.set_energy.get()
+        md['gain_setting'] = self.cam.gain.get()
+        md['gain_str'] = self.cam.gain_menu.get(as_string=True)
         md['roi'] = self.roi_metadata
 
         with open(self.polygon_roi_path, 'r') as f:
@@ -416,7 +420,15 @@ class PilatusStreamHDF5(PilatusHDF5):
             yield item
         yield from self.ext_trigger_device.collect_asset_docs()
 
-
+    def read_config_metadata(self):
+        md = super().read_config_metadata()
+        freq = self.ext_trigger_device.freq.get()
+        dc = self.ext_trigger_device.duty_cycle.get()
+        md['frame_rate'] = freq
+        md['duty_cycle'] = dc
+        md['acquire_time'] = 1/freq
+        md['exposure_time'] = 1/freq * dc/100
+        return md
 
 
     # def set_expected_number_of_points(self, acq_rate, traj_time):
