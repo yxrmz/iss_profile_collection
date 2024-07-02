@@ -63,7 +63,7 @@ class RowlandCircle:
     5 - offset the computed motor positions according to the parking position. Parking positions for motors
     correspond to nominal motor positions at specific nominal R. They are obtained via crystal prealignment.
     6 - correct the motor positions according to the Bragg registration (configured for the setup)
-    7 - correct the motor positions according to the energy calibration (sample specific)
+    7 - correct the motor positions according to the energy calibration (sample specific) # this is not actually implemented at the moment
 
     main attributes:
     config - main dictionary that defines the Rowland Circle parameters. Saved to settings on every update for
