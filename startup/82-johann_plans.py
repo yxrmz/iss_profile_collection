@@ -63,18 +63,18 @@ def move_rowland_circle_R_plan(new_R=None, energy=None, translations_only=True):
         yield from bps.mv(motor_obj, new_pos_dict[motor])
 
 def move_johann_spectrometer_energy(energy : float=-1):
-    current_energy = johann_emission.energy.position
-    energy = float(energy)
+    # dealing with crystal assembly
+    bragg = rowland_circle.e2bragg(float(energy))
+    print_to_gui(f'Moving crystal analyzer assembly to {energy}')
+    yield from bps.mv(johann_all_crystals, bragg, wait=False)
 
-    current_bragg = rowland_circle.e2bragg(current_energy)
-    bragg = rowland_circle.e2bragg(energy)
-
-    bragg_arr = np.linspace(current_bragg, bragg, int(np.abs(bragg - current_bragg)/0.25) + 2)[1:]
+    # dealing with detector arm
+    current_det_arm_bragg = johann_det_arm.bragg.position
+    bragg_arr = np.linspace(current_det_arm_bragg, bragg, int(np.abs(bragg - current_det_arm_bragg)/0.25) + 2)
     energy_arr = rowland_circle.bragg2e(bragg_arr)
     for _bragg, _energy in zip(bragg_arr, energy_arr):
-        print_to_gui(f'Moving spectrometer to {_energy}')
-        yield from bps.mv(johann_spectrometer, _bragg, wait=True)
-        # yield from move_motor_plan(motor_attr=johann_emission.energy.name, based_on='object_name', position=float(_energy))
+        print_to_gui(f'Moving detector arm to {_energy}')
+        yield from bps.mv(johann_det_arm, _bragg, wait=True)
 
 
 def prepare_johann_scan_plan(detectors, spectrometer_energy, spectrometer_config_uid):
