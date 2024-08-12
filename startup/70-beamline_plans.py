@@ -71,7 +71,7 @@ def bender_scan_plan_bundle(element, edge, error_message_func=None):
     # trajectory_filename = scan_manager.standard_trajectory_filename(element, edge)
 
     bender_current_position = bender.pos.user_readback.get()
-    bender_positions = bender_current_position + np.arange(-15, 20, 5)
+    bender_positions = bender_current_position + np.arange(-25, 30, 5)
 
     plans, trajectory_filename = prepare_foil_scan(element, edge)
 

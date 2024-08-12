@@ -36,7 +36,8 @@ def _compute_hhmy_value(energy):
     coefs = fit_hhmy()
     a = get_matrix_from_energy(np.array(energy))
     # the correction is added following the Toyama visit in April 2023
-    f = interpolate.interp1d([8979, 24350], [1.1, 0.95], kind='linear', fill_value='extrapolate')
+    f = interpolate.interp1d([8979, 24350], [1.12, 0.938], kind='linear', fill_value='extrapolate') #old values 2024-08-04 [1.1, 0.95]
+
     offset = f(energy)# + 0.2 # 0.2 was added in Oct 2023 to correct the offset after August 2023 power shutdown
     return (a @ coefs - offset)
 
