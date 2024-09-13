@@ -34,9 +34,11 @@ class PiezoFeedbackThread(QThread, _PiezoFeedback):
     def __init__(self):
         super().__init__()
 
-# use this when # use this when softioc-piE712-02.service is up:
-#hhm_feedback = PiezoFeedbackThread()
-#hhm_feedback.start()
 
-# use this when # use this when softioc-piE712-02.service is down:
-hhm_feedback = MockPiezoFeedback()
+if shutdown:
+    # use this when # use this when softioc-piE712-02.service is down:
+    hhm_feedback = MockPiezoFeedback()
+else:
+    # use this when # use this when softioc-piE712-02.service is up:
+    hhm_feedback = PiezoFeedbackThread()
+    hhm_feedback.start()

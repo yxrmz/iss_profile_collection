@@ -13,7 +13,7 @@ from bluesky.simulators import summarize_plan
 # Check version of bluesky and act accordingly
 from distutils.version import LooseVersion
 from datetime import datetime
-from xview.spectra_db.db_io import get_spectrum_catalog
+from xview.spectra_db.db_io import get_spectrum_catalog, get_spectrum_catalog_new
 import json
 import time as ttime
 import numpy as np
@@ -101,13 +101,14 @@ from ophyd.signal import EpicsSignalBase
 # if not OLD_BLUESKY:
 EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
-from databroker import Broker
+#from databroker import Broker
 
-db_archive = Broker.named('iss')
-db = Broker.named('iss-local')
+#db_archive = Broker.named('iss')
+#db = Broker.named('iss-local')
 
-db_proc = get_spectrum_catalog()
-nslsii.configure_base(get_ipython().user_ns, db, pbar=False)
+# db_proc = get_spectrum_catalog()
+db_proc = get_spectrum_catalog_new()
+nslsii.configure_base(get_ipython().user_ns, 'iss', pbar=False)
 nslsii.configure_kafka_publisher(RE, "iss")
 
 logger_db = logging.getLogger('databroker')
@@ -192,3 +193,5 @@ def fix_RE_persistent_dict_md():
 # bla = copy.deepcopy(dict(_20))
 # fix_RE_persistent_dict_md(bla)
 # bla
+
+shutdown = False

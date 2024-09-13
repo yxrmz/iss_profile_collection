@@ -47,7 +47,7 @@ bl_prepare_energy_ranges = [
         {
             'energy_start': 4500,
             'energy_end': 6000,
-            'He_flow': 5,
+            'He_flow': 4,  #5 old value 2024-09-06
             'N2_flow': 1,
             'IC_voltage': 1000,
             'HHRM': 4,
@@ -61,41 +61,41 @@ bl_prepare_energy_ranges = [
         {
             'energy_start': 5700,
             'energy_end': 10000,
-            'He_flow': 5,
-            'N2_flow': 3,
+            'He_flow': 0, #5 old value 2024-09-06
+            'N2_flow': 5,
             'IC_voltage': 1650,
             'HHRM': 5,
             'CM1':0,# 0,
             'Filterbox': -69,
-            'ES BPM exposure': 0.1, #0.05, # Denis 2024-06-02: changed to a higher value because of the beamline state
-            'i0_gain': 4,
-            'it_gain': 4,
+            'ES BPM exposure': 0.5, #0.05, # Denis 2024-06-02: changed to a higher value because of the beamline state
+            'i0_gain': 5,
+            'it_gain': 5,
             'ir_gain': 5,
         },
         {
             'energy_start': 10000,
             'energy_end': 13000,
-            'He_flow': 5,
+            'He_flow': 0, #5 old value 2024-09-06
             'N2_flow': 5,
             'IC_voltage': 1650,
             'HHRM': 75, # IS THIS SUPPOSED TO BE 80?
             'CM1':0,# 0,
             'Filterbox': -139,
-            'ES BPM exposure': 0.1,
-            'i0_gain': 4,
-            'it_gain': 4,
+            'ES BPM exposure': 0.5,
+            'i0_gain': 5,
+            'it_gain': 5,
             'ir_gain': 5,
         },
         {
             'energy_start': 13000,
             'energy_end': 17000,
-            'He_flow': 5,
+            'He_flow': 0, #5 old value 2024-09-06
             'N2_flow': 5,
             'IC_voltage': 1650,
             'HHRM': 75,
             'CM1': 40,# 0,
             'Filterbox': -139,
-            'ES BPM exposure': 0.2,
+            'ES BPM exposure': 0.5,
             'i0_gain': 5,
             'it_gain': 5,
             'ir_gain': 5,
@@ -103,13 +103,13 @@ bl_prepare_energy_ranges = [
         {
             'energy_start': 17000,
             'energy_end': 25000,
-            'He_flow': 2,
+            'He_flow': 0, #2 old value 2024-09-06
             'N2_flow': 5,
             'IC_voltage': 1650,
             'HHRM': 75,
             'CM1': 40,# 0,
             'Filterbox': -209,
-            'ES BPM exposure': 0.5,
+            'ES BPM exposure': 1.0,
             'i0_gain': 5,
             'it_gain': 6,
             'ir_gain': 6,
@@ -124,7 +124,7 @@ bl_prepare_energy_ranges = [
             'HHRM': 75,
             'CM1': 40,# 0,
             'Filterbox': -209,
-            'ES BPM exposure': 0.8,
+            'ES BPM exposure': 1.5,
             'i0_gain': 5,
             'it_gain': 6,
             'ir_gain': 6,
@@ -263,7 +263,14 @@ def prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_hhm_y=T
     yield from i0_amp.set_gain_plan(energy_range['i0_gain'], True)
     yield from it_amp.set_gain_plan(energy_range['it_gain'], True)
     yield from ir_amp.set_gain_plan(energy_range['ir_gain'], True)
+    # Additon to account for higher flows
 
+    yield from bps.mv(
+                        He_flow_setter, energy_range['He_flow']/10,
+                        N2_flow_setter, energy_range['N2_flow']/10,
+                      )
+
+    print_to_gui('[Prepare Beamline] Ion chamber gas composition set')
 
     print_to_gui('[Prepare Beamline] Adjusting exposure on the monitor')
     yield from bps.mv(BPM_exposure_setter, energy_range['ES BPM exposure'])
@@ -443,3 +450,95 @@ def simple_prepare_beamline_plan(energy: int = -1, move_cm_mirror = False, move_
 #             yield from bps.mv(shutter_fe_2b, 'Open')
 #         except FailedStatus:
 #             print_to_gui(f'Error: Photon shutter failed to open.',stdout=stdout)
+
+
+# Old beamline prepare parameters
+
+# bl_prepare_energy_ranges = [
+#         {
+#             'energy_start': 4500,
+#             'energy_end': 6000,
+#             'He_flow': 4,  #5 old value 2024-09-06
+#             'N2_flow': 1,
+#             'IC_voltage': 1000,
+#             'HHRM': 4,
+#             'CM1':0,# 0,
+#             'Filterbox': 1,
+#             'ES BPM exposure': 0.05,
+#             'i0_gain': 5,
+#             'it_gain': 5,
+#             'ir_gain': 5,
+#         },
+#         {
+#             'energy_start': 5700,
+#             'energy_end': 10000,
+#             'He_flow': 0, #5 old value 2024-09-06
+#             'N2_flow': 3,
+#             'IC_voltage': 1650,
+#             'HHRM': 5,
+#             'CM1':0,# 0,
+#             'Filterbox': -69,
+#             'ES BPM exposure': 0.1, #0.05, # Denis 2024-06-02: changed to a higher value because of the beamline state
+#             'i0_gain': 4,
+#             'it_gain': 4,
+#             'ir_gain': 5,
+#         },
+#         {
+#             'energy_start': 10000,
+#             'energy_end': 13000,
+#             'He_flow': 0, #5 old value 2024-09-06
+#             'N2_flow': 5,
+#             'IC_voltage': 1650,
+#             'HHRM': 75, # IS THIS SUPPOSED TO BE 80?
+#             'CM1':0,# 0,
+#             'Filterbox': -139,
+#             'ES BPM exposure': 0.1,
+#             'i0_gain': 4,
+#             'it_gain': 4,
+#             'ir_gain': 5,
+#         },
+#         {
+#             'energy_start': 13000,
+#             'energy_end': 17000,
+#             'He_flow': 0, #5 old value 2024-09-06
+#             'N2_flow': 5,
+#             'IC_voltage': 1650,
+#             'HHRM': 75,
+#             'CM1': 40,# 0,
+#             'Filterbox': -139,
+#             'ES BPM exposure': 0.2,
+#             'i0_gain': 5,
+#             'it_gain': 5,
+#             'ir_gain': 5,
+#         },
+#         {
+#             'energy_start': 17000,
+#             'energy_end': 25000,
+#             'He_flow': 0, #2 old value 2024-09-06
+#             'N2_flow': 5,
+#             'IC_voltage': 1650,
+#             'HHRM': 75,
+#             'CM1': 40,# 0,
+#             'Filterbox': -209,
+#             'ES BPM exposure': 0.5,
+#             'i0_gain': 5,
+#             'it_gain': 6,
+#             'ir_gain': 6,
+#
+#         },
+#         {
+#             'energy_start': 25000,
+#             'energy_end': 35000,
+#             'He_flow': 2,
+#             'N2_flow': 5,
+#             'IC_voltage': 1650,
+#             'HHRM': 75,
+#             'CM1': 40,# 0,
+#             'Filterbox': -209,
+#             'ES BPM exposure': 0.8,
+#             'i0_gain': 5,
+#             'it_gain': 6,
+#             'ir_gain': 6,
+#
+#         },
+#     ]

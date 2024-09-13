@@ -229,7 +229,7 @@ t_85_3 = db['b33a284e-a12f-4762-a57d-9a280e874b0f'].table()
 
 t_5000 = db['280aec42-a42c-44fd-9862-bbc3f7339d65'].table()
 
-t_2021 = db_archive['65eb5b76-4598-43f0-bde0-233df7a3a5db'].table()
+t_2021 = db['65eb5b76-4598-43f0-bde0-233df7a3a5db'].table()
 
 plt.figure()
 # plt.plot(t_2021.apb_ave_time_wf[1], np.array(t_2021.apb_ave_ch1_wf[1])/ 1560 * 930)
