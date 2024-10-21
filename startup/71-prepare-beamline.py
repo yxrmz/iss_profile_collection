@@ -7,6 +7,42 @@ from scipy import interpolate
 
 
 
+# def _compute_hhmy_value(energy):
+#     # tabulation is done using data collected on 2021-09-12 and 2021-09-13
+#     # data is stored in two files:
+#     # /nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation.json
+#     # /nsls2/xf08id/Sandbox/Beamline_components/2021_09_09_beamline_tabulation/beamline_hhmy_hhrmy_tabulation_high_energies.json
+#     # energy_tab = np.array([ 4800,  5000,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
+#     # hhmy_tab = np.array([9.71275, 9.62515, 9.3645 , 9.202  , 9.09365, 9.03125, 8.99405, 8.9373 , 8.9378 , 8.86945, 8.8442 , 8.68795, 8.70085, 8.62675, 8.65015, 8.55135, 8.55645])
+#
+#     # tabulation is done using data collected on 2021-09-12 and 2021-09-13
+#     # data is stored in two files:
+#     # /nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2.json
+#     # /nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2_high_energies.json
+#     energy_tab = np.array([ 4900,  5100,  5500,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
+#     hhmy_tab = np.array([10.50305, 10.4034, 10.2787, 10.1834, 10.03375, 9.93225, 9.8564, 9.8066, 9.7828, 9.7352, 9.71385, 9.6686, 9.6497, 9.60675, 9.532, 9.4319, 9.457, 9.2823])
+#
+#     def get_matrix_from_energy(energy_in, offset=0):
+#         theta_deg = energy2angle(energy_in)
+#         V = 1 / np.cos(np.deg2rad(theta_deg - offset))
+#         A = np.vstack((V, energy_in, np.ones(V.size))).T
+#         return A
+#
+#     def fit_hhmy(offset=0):
+#         A = get_matrix_from_energy(energy_tab, offset=offset)
+#         c, _, _, _ = np.linalg.lstsq(A, hhmy_tab, rcond=-1)
+#         return c
+#
+#     coefs = fit_hhmy()
+#     a = get_matrix_from_energy(np.array(energy))
+#     # the correction is added following the Toyama visit in April 2023
+#     f = interpolate.interp1d([4900, 20000], [0.56, 0.79], kind='linear', fill_value='extrapolate') #old values 2024-08-04 [1.1, 0.95]
+#
+#     offset = f(energy)# + 0.2 # 0.2 was added in Oct 2023 to correct the offset after August 2023 power shutdown
+#     return (a @ coefs - offset)
+
+'''
+'''
 def _compute_hhmy_value(energy):
     # tabulation is done using data collected on 2021-09-12 and 2021-09-13
     # data is stored in two files:
@@ -19,29 +55,48 @@ def _compute_hhmy_value(energy):
     # data is stored in two files:
     # /nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2.json
     # /nsls2/xf08id/Sandbox/Beamline_components/2022_02_10_beamline_tabulation/beamline_hhmy_tabulation_att2_high_energies.json
-    energy_tab = np.array([ 4900,  5100,  5500,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000, 22500, 25000, 27500, 30000])
-    hhmy_tab = np.array([10.50305, 10.4034, 10.2787, 10.1834, 10.03375, 9.93225, 9.8564, 9.8066, 9.7828, 9.7352, 9.71385, 9.6686, 9.6497, 9.60675, 9.532, 9.4319, 9.457, 9.2823])
+    energy_tab = np.array([ 4900,  5100,  5500,  6000,  7000,  8000,  9000, 10000, 11000, 12000, 13000, 15000, 17500, 20000])
+    hhmy_tab = np.array([9.937850000000001,
+                         9.57315,
+                         9.467450000000001,
+                         9.3162,
+                         9.177100000000001,
+                         9.08755,
+                         9.025,
+                         8.978050000000001,
+                         8.9411,
+                         8.9000,
+                         8.88475,
+                         8.84365,
+                         8.85205,
+                         8.816450000000001])
 
-    def get_matrix_from_energy(energy_in, offset=0):
-        theta_deg = energy2angle(energy_in)
-        V = 1 / np.cos(np.deg2rad(theta_deg - offset))
-        A = np.vstack((V, energy_in, np.ones(V.size))).T
-        return A
+    f = interpolate.interp1d(energy_tab, hhmy_tab, kind='cubic', fill_value='extrapolate')
 
-    def fit_hhmy(offset=0):
-        A = get_matrix_from_energy(energy_tab, offset=offset)
-        c, _, _, _ = np.linalg.lstsq(A, hhmy_tab, rcond=-1)
-        return c
+    return f(energy)
+    #
+    # def get_matrix_from_energy(energy_in, offset=0):
+    #     theta_deg = energy2angle(energy_in)
+    #     V = 1 / np.cos(np.deg2rad(theta_deg - offset))
+    #     A = np.vstack((V, energy_in, np.ones(V.size))).T
+    #     return A
+    #
+    # def fit_hhmy(offset=0):
+    #     A = get_matrix_from_energy(energy_tab, offset=offset)
+    #     c, _, _, _ = np.linalg.lstsq(A, hhmy_tab, rcond=-1)
+    #     return c
+    #
+    # coefs = fit_hhmy()
+    # a = get_matrix_from_energy(np.array(energy))
+    # # the correction is added following the Toyama visit in April 2023
+    # f = interpolate.interp1d([4900, 20000], [0.56, 0.79], kind='linear', fill_value='extrapolate') #old values 2024-08-04 [1.1, 0.95]
+    #
+    # offset = f(energy)# + 0.2 # 0.2 was added in Oct 2023 to correct the offset after August 2023 power shutdown
+    # return (a @ coefs - offset)
 
-    coefs = fit_hhmy()
-    a = get_matrix_from_energy(np.array(energy))
-    # the correction is added following the Toyama visit in April 2023
-    f = interpolate.interp1d([8979, 24350], [1.12, 0.938], kind='linear', fill_value='extrapolate') #old values 2024-08-04 [1.1, 0.95]
 
-    offset = f(energy)# + 0.2 # 0.2 was added in Oct 2023 to correct the offset after August 2023 power shutdown
-    return (a @ coefs - offset)
-
-
+'''
+'''
 
 bl_prepare_energy_ranges = [
         {

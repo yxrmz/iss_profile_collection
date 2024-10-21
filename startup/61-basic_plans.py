@@ -71,11 +71,15 @@ def move_mono_energy_with_fb(energy : float=-1, step : float=1000, delay : float
     energy_list = np.linspace(current_energy, energy, nsteps).tolist()
 
     for each_step in energy_list:
-        yield from bps.mv(bpm_es.exp_time, _bpm_es_exposure(each_step))
+        print_to_gui(f'Moving to energy {each_step}')
+        # yield from bps.mv(bpm_es.exp_time, _bpm_es_exposure(each_step))
         yield from bps.mv(hhm.energy, each_step)
+        print_to_gui("--------------------exposure to bpm ES is set------------------------")
+        #Removed 9/13/2024 due to low flux
         while True:
+            print_to_gui(f'Correcting')
             current_beam_y_pos, err_msg = hhm_feedback.find_beam_position()
-            # print_to_gui(f'{current_beam_y_pos}, {target_beam_y_pos}', tag='DEBUG')
+            print_to_gui(f'{current_beam_y_pos}, {target_beam_y_pos}', tag='DEBUG')
             if err_msg == '':
                 if np.abs(current_beam_y_pos - target_beam_y_pos) > beampos_tol:
                     yield from bps.sleep(delay)

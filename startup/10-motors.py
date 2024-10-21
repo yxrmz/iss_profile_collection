@@ -108,7 +108,7 @@ class SampleXY(Device):
     x = Cpt(EpicsMotor, '-Ax:X}Mtr')
     y = Cpt(EpicsMotor, '-Ax:Y}Mtr')
 
-# samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy') # this it the sample stage in hutch B2/C
+samplexy = SampleXY('XF:08IDB-OP{SampleXY', name='samplexy') # this it the sample stage in hutch B2/C
 giantxy = SampleXY('XF:08IDB-OP{Stage:Sample', name='giantxy') # this is the important motor
 
 auxxy = SampleXY('XF:08IDB-OP{Stage:Aux1', name='auxxy')

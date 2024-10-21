@@ -104,8 +104,7 @@ def general_set_gains_plan(*args):
         print_to_gui('set amplifier gain for {}: {}, {}'.format(ic_amp.name, val, hs))
 
 
-def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, ir_gain: int = 5, iff_gain: int = 5,
-               hs: bool = False):
+def set_gains_plan(i0_gain: int = 5, it_gain: int = 5, ir_gain: int = 5, iff_gain: int = 5, hs: bool = False):
     i0_gain = int(i0_gain)
     it_gain = int(it_gain)
     iff_gain = int(iff_gain)
@@ -147,12 +146,13 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
 
     e_min, e_max = trajectory_manager.read_trajectory_limits()
     scan_positions = np.arange(e_max + 50, e_min - 50, -200).tolist()
-
+    print_to_gui(f'Starting gain optimization', add_timestamp = True, tag = 'Gain optimization')
     yield from actuate_photon_shutter_plan('Open')
+    print_to_gui(f'Photon shutter open', add_timestamp = True, tag = 'Gain optimization')
     yield from shutter.open_plan()
 
     for jj in range(n_tries):
-
+        print_to_gui(f'Starting try {jj+1}', add_timestamp = True, tag = 'Gain optimization')
         plan = bp.list_scan(detectors, hhm.energy, scan_positions)
         yield from plan
         table = db[-1].table()
@@ -168,20 +168,20 @@ def optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_offset=N
 
             trace_extreme = trace_extreme / 1000
 
-            print_to_gui(f'Extreme value {trace_extreme} for detector {channel.name}')
+            print_to_gui(f'Extreme value {trace_extreme} for detector {channel.name}',add_timestamp = True, tag = 'Gain optimization')
             if abs(trace_extreme) > threshold_hi:
-                print_to_gui(f'Decreasing gain for detector {channel.name}')
+                print_to_gui(f'Decreasing gain for detector {channel.name}',add_timestamp = True, tag = 'Gain optimization')
                 yield from channel.amp.set_gain_plan(current_gain - 1, False)
                 all_gains_are_good = False
             elif abs(trace_extreme) <= threshold_hi and abs(trace_extreme) > threshold_lo:
-                print_to_gui(f'Correct gain for detector {channel.name}')
+                print_to_gui(f'Correct gain for detector {channel.name}', add_timestamp = True, tag = 'Gain optimization')
             elif abs(trace_extreme) <= threshold_lo:
-                print(f'Increasing gain for detector {channel.name}')
+                print_to_gui(f'Increasing gain for detector {channel.name}', add_timestamp = True, tag = 'Gain optimization')
                 yield from channel.amp.set_gain_plan(current_gain + 1, False)
                 all_gains_are_good = False
 
         if all_gains_are_good:
-            print(f'Gains are correct. Taking offsets..')
+            print_to_gui(f'Gains are correct. Taking offsets..', add_timestamp = True, tag = 'Gain optimization')
             break
 
     yield from shutter.close_plan()
@@ -195,6 +195,7 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
     # detectors = [pba1.adc7, pba2.adc6, pba1.adc1, pba1.adc6]
     # detectors = [apb_ave]
     # channels = [ apb_ave.ch1,  apb_ave.ch2,  apb_ave.ch3,  apb_ave.ch4]
+    print_to_gui(f'Starting gain optimization')
     channels = [apb.ch1, apb.ch2, apb.ch3, apb.ch4]
     # offsets = [apb.ch1_offset, apb.ch2_offset, apb.ch3_offset, apb.ch4_offset]
 
@@ -214,12 +215,12 @@ def quick_optimize_gains_plan(n_tries=3, trajectory_filename=None, mono_angle_of
     yield from shutter.open_plan()
 
     for jj in range(n_tries):
-
+        print_to_gui(f'Starting try {jj + 1}')
         # current_energy = hhm.energy.position
         # e1 = np.abs(current_energy - e_min), np.abs(current_energy - e_max)
 
         yield from bps.mv(hhm.energy, e_max)
-
+        print_to_gui(f'Moved to max energy')
         @return_NullStatus_decorator
         def _move_energy_plan():
             yield from move_mono_energy(e_min, step=200, beampos_tol=10)

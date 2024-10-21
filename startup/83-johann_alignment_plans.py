@@ -199,7 +199,7 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, process
     if entry['alignment_plan'] == 'fly_scan_johann_elastic_alignment_plan_bundle':
         # fwhm_value, max_value, max_loc, com_loc = analyze_elastic_fly_scan(db, entry['uid'],
         #                                                                    rois=entry['rois'])
-
+        #Here we will be breaking the thing!
         output = analyze_linewidth_fly_scan(db, entry['uid'],
                                              x_key='energy',
                                              rois=entry['rois'],
@@ -251,13 +251,23 @@ def _johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, process
         entry['com_loc'] = com_loc
 
 def johann_analyze_alignment_data_entry(entry, plot_func=None, index=0, attempts=10, sleep=5):
-    for i in range(attempts):
-        try:
-            _johann_analyze_alignment_data_entry(entry, plot_func=plot_func, index=index)
-            break
-        except Exception as e:
-            print_to_gui(f'Analysis error (attempt={i}): {e}', tag='Spectrometer',add_timestamp=True)
-            ttime.sleep(sleep)
+    # for i in range(attempts):
+    #     try:
+    #         _johann_analyze_alignment_data_entry(entry, plot_func=plot_func, index=index)
+    #         break
+    #     except Exception as e:
+    #         print_to_gui(f'Analysis error (attempt={i}): {e}', tag='Spectrometer',add_timestamp=True)
+    #         ttime.sleep(sleep)
+
+     for i in range(attempts):
+    #     try:
+        _johann_analyze_alignment_data_entry(entry, plot_func=plot_func, index=index)
+    #         break
+    #     except Exception as e:
+    #         print_to_gui(f'Analysis error (attempt={i}): {e}', tag='Spectrometer',add_timestamp=True)
+    #         ttime.sleep(sleep)
+
+
 
 def update_entries_for_herfd_calibration_data(alignment_data=None, alignment_plan=None):
     entries_ref = get_relevant_entries_from_alignment_data(alignment_data=alignment_data,
@@ -327,6 +337,33 @@ def find_optimal_crystal_alignment_position(alignment_data=None, scan_scope=None
         plot_kwargs = {}
     position = get_optimal_crystal_alignment_position(x, y, optimum=optimum, plot_func=plot_analysis_func, **plot_kwargs)
     return position, tweak_motor_description
+
+
+
+
+def find_optimal_crystal_alignment_position_return_xy(alignment_data=None, scan_scope=None, alignment_plan=None, crystal=None, tweak_motor_description=None, fom: str='fwhm_value', liveplot_kwargs=None, plot_data_func=None, plot_analysis_func=None):
+    relevant_entries = get_relevant_entries_from_alignment_data(alignment_data=alignment_data, scan_scope=scan_scope, alignment_plan=alignment_plan, crystal=crystal, tweak_motor_description=tweak_motor_description)
+
+    if tweak_motor_description is None:
+        tweak_motor_descriptions = [entry['tweak_motor_description'] for entry in relevant_entries]
+        if len(set(tweak_motor_descriptions)) == 1:
+            tweak_motor_description = tweak_motor_descriptions[0]
+        else:
+            print_to_gui('Multiple tweak motors found in alignment data. Will use the latest one.', add_timestamp=True, tag='Spectrometer')
+            tweak_motor_description = tweak_motor_descriptions[-1]
+
+    optimum = 'maximum' if fom == 'max_value' else 'minimum'
+    x = [entry['tweak_motor_position'] for entry in relevant_entries]
+    y = [entry[fom] for entry in relevant_entries]
+    if plot_analysis_func is not None:
+        plot_kwargs = {'label': crystal,
+                       'x_label': tweak_motor_description,
+                       'y_label': fom,
+                       'scan_motor_description': tweak_motor_description}
+    else:
+        plot_kwargs = {}
+    position = get_optimal_crystal_alignment_position(x, y, optimum=optimum, plot_func=plot_analysis_func, **plot_kwargs)
+    return position, tweak_motor_description, x, y
 
 def find_optimal_crystal_alignment_position_plan(**kwargs):
     position, tweak_motor_description = find_optimal_crystal_alignment_position(**kwargs)
@@ -473,7 +510,8 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
     tweak_motor_init_pos, tweak_motor_pos, tweak_motor_description = get_tweak_motor_positions_for_crystal(crystal,
                                                                                                            tweak_motor_axis,
                                                                                                            _tweak_motor_range,
-                                                                                                           tweak_motor_num_steps)
+                                                                                                      tweak_motor_num_steps)
+    print(f'Tweak motor positions {tweak_motor_pos=}')
 
     if liveplot_kwargs is None:
         liveplot_kwargs = {}
@@ -481,6 +519,7 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
     yaw_init_position = get_johann_crystal_axis_motor_pos(crystal, 'yaw')
 
     for i, _pos in enumerate(tweak_motor_pos):
+        print(f'....................... step {i=} {_pos=}---------------------------')
         if extended_msg_printing:
             plans.append({'plan_name': 'print_message_plan',
                           'plan_kwargs': {
@@ -577,6 +616,7 @@ def johann_tweak_crystal_and_scan_plan_bundle(crystal=None, scan_range_alignment
                                       'alignment_plan': _alignment_strategy_to_plan_dict[alignment_strategy][scan_kind],
                                       'crystal': crystal,
                                       **alignment_plan_kwargs}})
+
 
     plans.append({'plan_name': 'undo_johann_focus_on_one_crystal_plan', 'plan_kwargs': {'crystal': crystal}})
     if extended_msg_printing:
