@@ -244,7 +244,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
         def callback_saving(value, old_value, **kwargs):
             # if int(round(old_value)) == 1 and int(round(value)) == 0:
             if int(round(old_value)) == 0 and int(round(value)) == 1:
-                print_to_gui('APB FILEWRITING DONE', add_timestamp=True)
+                print_to_gui(f'{self.name} file write complete', add_timestamp=True)
                 return True
             else:
                 return False
@@ -274,7 +274,7 @@ class AnalogPizzaBoxStream(AnalogPizzaBoxAverage):
                    'timestamps': {key: now for key in data},
                    'time': now,
                    'filled': {key: False for key in data}}
-        print_to_gui(f'{self.name} collect done', add_timestamp=True)
+        print_to_gui(f'{self.name} collect complete', add_timestamp=True)
         # print(f'{ttime.ctime()} >>> {self.name} collect complete')
 
     def describe_collect(self):

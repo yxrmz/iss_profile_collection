@@ -63,6 +63,9 @@ def print_debug(msg):
 # Qt config for 4K displays.
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
 
+import sys
+sys.stdout.write('\33]0;XLiive terminal\a')
+sys.stdout.flush()
 
 
 ###############################################################################
