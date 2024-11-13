@@ -350,7 +350,10 @@ apb_ave.ch8.amp = None
 # apb.amp_ch8 = None
 
 
-
+apb_ave.ch1.amp_keithley = k1_amp
+apb_ave.ch2.amp_keithley = k2_amp
+apb_ave.ch3.amp_keithley = k3_amp
+apb_ave.ch4.amp_keithley = k4_amp
 
 
 

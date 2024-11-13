@@ -365,10 +365,41 @@ iff_amp = ICAmplifier('XF:08IDB-CT{', gain_0='Amp-If}GainBit:0-Sel', gain_1='Amp
 
 
 
+class ICAmplifier_Keithley(Device):
+
+    gain = Cpt(EpicsSignal, 'Gain')
+    risetime = Cpt(EpicsSignal, 'RiseTime')
+    supr_mode = Cpt(EpicsSignal, 'SuppressionMode')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def get_gain(self):
+        return self.gain.get() + 3
+
+    def set_gain(self, gain):
+        self.gain.set(gain - 3)
+
+    def set_gain_plan(self, gain):
+        yield from bps.abs_set(self.gain, gain - 3)
+
+
+k1_amp = ICAmplifier_Keithley('XF:08ID-ES:{K428}:A:',name='k1_amp')
+k2_amp = ICAmplifier_Keithley('XF:08ID-ES:{K428}:B:',name='k2_amp')
+k3_amp = ICAmplifier_Keithley('XF:08ID-ES:{K428}:C:',name='k3_amp')
+k4_amp = ICAmplifier_Keithley('XF:08ID-ES:{K428}:D:',name='k4_amp')
 
 
 
+def current_suppression_plan(*args, **kwargs):
 
+    #abp_c must be activated to perfrom current suppression on hutch C ionization chambers
+
+    for i in range(1,5):
+        print(f'Performing current suppression on Keithley{i}')
+        yield from bps.mv(getattr(detector, 'amp_ch' + str(i)).supr_mode, 2)
+        yield from sleep(2)
+        print(f'Current suppression on ch{i} is done')
 
 
 #

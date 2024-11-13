@@ -20,6 +20,8 @@ import numpy as np
 import pandas as pd
 import xraydb
 from bluesky.utils import PersistentDict
+# from bluesky import RunEngine
+
 
 print(ttime.ctime() + ' >>>> ' + __file__)
 
@@ -78,7 +80,7 @@ def wait_for_connection_base(self, timeout=DEFAULT_CONNECTION_TIMEOUT):
     if timeout is DEFAULT_CONNECTION_TIMEOUT:
         timeout = self.connection_timeout
     # print(f'{print_now()}: waiting for {self.name} to connect within {timeout:.4f} s...')
-    start = time.time()
+    start = ttime.time()
     try:
         self._ensure_connected(self._read_pv, timeout=timeout)
         # print(f'{print_now()}: waited for {self.name} to connect for {time.time() - start:.4f} s.')
@@ -92,7 +94,7 @@ def wait_for_connection(self, timeout=DEFAULT_CONNECTION_TIMEOUT):
     if timeout is DEFAULT_CONNECTION_TIMEOUT:
         timeout = self.connection_timeout
     # print(f'{print_now()}: waiting for {self.name} to connect within {timeout:.4f} s...')
-    start = time.time()
+    start = ttime.time()
     self._ensure_connected(self._read_pv, self._write_pv, timeout=timeout)
     # print(f'{print_now()}: waited for {self.name} to connect for {time.time() - start:.4f} s.')
 
@@ -111,6 +113,7 @@ EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
 # db_proc = get_spectrum_catalog()
 db_proc = get_spectrum_catalog_new()
+# RE = RunEngine()
 nslsii.configure_base(get_ipython().user_ns, 'iss', pbar=False)
 nslsii.configure_kafka_publisher(RE, "iss")
 
@@ -133,6 +136,15 @@ runengine_metadata_dir = Path(f'{ROOT_PATH_SHARED}/metadata/') / Path("runengine
 RE.md = PersistentDict(runengine_metadata_dir) # PersistentDict will create the directory if it does not exist
 RE.md._finalizer.atexit = False # added so that when we have stray bsui sessions on other stations, quitting them will not change the md unpredictably.
 
+# Insert for testing new conda environment 2024-11-13
+# import redis
+# from redis_json_dict import RedisJSONDict
+#
+# uri = "info.iss.nsls2.bnl.gov"  # replace TLA as appropriate
+# # Provide an endstation prefix, if needed, with a trailing "-"
+# new_md = RedisJSONDict(redis.Redis(uri), prefix="")
+# #work 11-12-2024 to enable updated conda environment
+# RE.md = new_md
 # Patch to fix Tom's terrible deeds
 # import matplotlib.backends.backend_qt
 from matplotlib.backends.backend_qt import _create_qApp
@@ -156,6 +168,11 @@ RE.md['group'] = 'iss'
 RE.md['Facility'] = 'NSLS-II'
 RE.md['beamline_id'] = 'ISS (8-ID)'
 RE.md['proposal_id'] = None
+
+
+
+
+
 RE.md_validator = ensure_proposal_id
 
 def get_hook():

@@ -137,6 +137,10 @@ motor_dictionary = {
     'sample_stage_th':          {'name': sample_stage.th.name,      'description': 'Sample stage Th',                       'keyword': 'Sample Th',                     'object': sample_stage.th,      'group': 'spectrometer',    'user':True},
     'foil_wheel_wheel1' :       {'name': foil_wheel.wheel1.name,    'description': 'B1 Reference foil wheel 1',             'keyword': 'B1 Reference foil wheel 1',           'object' : foil_wheel.wheel1},
     'foil_wheel_wheel2' :       {'name': foil_wheel.wheel2.name,    'description': 'B1 Reference foil wheel 2',             'keyword': 'B1 Reference foil wheel 2',           'object' : foil_wheel.wheel2},
+
+    'attenuator_wheel' :        {'name': attenuator_motor.name,      'description': 'B1 Attenuator wheel',                     'keyword': 'B1 Attenuator wheel',           'object' : attenuator_motor, 'user':False},
+
+
     'det1_stage_x':             {'name': det1_stage_x.pos.name,     'description': 'B1 Detector stage 1 X',                 'keyword': 'B1 Detector stage 1 X',               'object': det1_stage_x.pos,     'user':True},
     'det1_stage_y':             {'name': det1_stage_y.pos.name,     'description': 'B1 Detector stage 1 Y',                 'keyword': 'B1 Detector stage 1 Y',               'object': det1_stage_y.pos,     'user':True},
     'det2_stage_x':             {'name': det2_stage_x.pos.name,     'description': 'B1 Detector stage 2 X',                 'keyword': 'B1 Detector stage 2 X',               'object': det2_stage_x.pos,     'user':True},
