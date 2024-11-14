@@ -16,7 +16,7 @@ from bluesky.utils import new_uid
 
 class AnalogPizzaBox(Device):
 
-    polarity = 'neg'
+    polarity = 'pos'
 
     ch1 = Cpt(EpicsSignal, 'SA:Ch1:mV-I', kind=Kind.hinted)
     ch2 = Cpt(EpicsSignal, 'SA:Ch2:mV-I', kind=Kind.hinted)
@@ -309,14 +309,20 @@ apb_stream.wait_for_connection(timeout=10)
 _ = apb_stream.read()
 _ = apb_stream.streaming.read()
 
-apb.ch1.polarity = 'neg'
-apb.ch2.polarity = 'neg'
-apb.ch3.polarity = 'neg'
-apb.ch4.polarity = 'neg'
+# apb.ch1.polarity = 'neg'
+# apb.ch2.polarity = 'neg'
+# apb.ch3.polarity = 'neg'
+# apb.ch4.polarity = 'neg'
+apb.ch1.polarity = 'pos'
+apb.ch2.polarity = 'pos'
+apb.ch3.polarity = 'pos'
+apb.ch4.polarity = 'pos'
+
 apb.ch1.amp = i0_amp
 apb.ch2.amp = it_amp
 apb.ch3.amp = ir_amp
 apb.ch4.amp = iff_amp
+
 apb.ch5.amp = None
 apb.ch6.amp = None
 apb.ch7.amp = None
@@ -331,10 +337,16 @@ apb.ch8.amp = None
 # apb.amp_ch7 = None
 # apb.amp_ch8 = None
 
-apb_ave.ch1.polarity = 'neg'
-apb_ave.ch2.polarity = 'neg'
-apb_ave.ch3.polarity = 'neg'
-apb_ave.ch4.polarity = 'neg'
+# apb_ave.ch1.polarity = 'neg'
+# apb_ave.ch2.polarity = 'neg'
+# apb_ave.ch3.polarity = 'neg'
+# apb_ave.ch4.polarity = 'neg'
+
+apb_ave.ch1.polarity = 'pos'
+apb_ave.ch2.polarity = 'pos'
+apb_ave.ch3.polarity = 'pos'
+apb_ave.ch4.polarity = 'pos'
+
 apb_ave.ch1.amp = i0_amp
 apb_ave.ch2.amp = it_amp
 apb_ave.ch3.amp = ir_amp
