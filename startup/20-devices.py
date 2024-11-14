@@ -373,14 +373,15 @@ class ICAmplifier_Keithley(Device):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.polarity = 'pos'
 
     def get_gain(self):
-        return self.gain.get() + 3
+        return [self.gain.get() + 3, 0]
 
-    def set_gain(self, gain):
+    def set_gain(self, gain, *args, **kwargs):
         self.gain.set(gain - 3)
 
-    def set_gain_plan(self, gain):
+    def set_gain_plan(self, gain, *args, **kwargs):
         yield from bps.abs_set(self.gain, gain - 3)
 
 
@@ -397,7 +398,7 @@ def current_suppression_plan(*args, **kwargs):
 
     for i in range(1,5):
         print(f'Performing current suppression on Keithley{i}')
-        yield from bps.mv(getattr(detector, 'amp_ch' + str(i)).supr_mode, 2)
+        yield from bps.mv(getattr(apb_ave, 'ch' + str(i)).amp_keithley.supr_mode, 2)
         yield from sleep(2)
         print(f'Current suppression on ch{i} is done')
 

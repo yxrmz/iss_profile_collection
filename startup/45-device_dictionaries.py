@@ -182,10 +182,16 @@ shutter_dictionary = collections.OrderedDict([(shutter_fe.name, shutter_fe),
                                          (shutter_ph.name, shutter_ph),
                                          (shutter.name, shutter)])
 
-ic_amplifiers = {'i0_amp': i0_amp,
-                 'it_amp': it_amp,
-                 'ir_amp': ir_amp,
-                 'iff_amp': iff_amp}
+# ic_amplifiers = {'i0_amp': i0_amp,
+#                  'it_amp': it_amp,
+#                  'ir_amp': ir_amp,
+#                  'iff_amp': iff_amp}
+
+ic_amplifiers = {'i0_amp': k1_amp,
+                 'it_amp': k2_amp,
+                 'ir_amp': k3_amp,
+                 'iff_amp': k4_amp}
+
 
 camera_dictionary = {'camera_sample1': camera_sp1,
                      'camera_sample2': camera_sp2,

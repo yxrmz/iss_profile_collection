@@ -61,8 +61,8 @@ def prepare_foil_scan(element, edge):
                   'plan_kwargs': {'element': element},
                   'plan_gui_services': ['error_message_box']})
     trajectory_filename = scan_manager.standard_trajectory_filename(element, edge, short=True)
-    plans.append({'plan_name': 'optimize_gains',
-                  'plan_kwargs': {'trajectory_filename': trajectory_filename}})
+    # plans.append({'plan_name': 'optimize_gains',
+    #               'plan_kwargs': {'trajectory_filename': trajectory_filename}}) Removed optimize gain for the moment 2024-11-14
     return plans, trajectory_filename
 
 

@@ -25,11 +25,15 @@ def actuate_photon_shutter_plan(state):
         yield from bps.null()
 
 def get_offsets_plan(time : float = 2):
+
+
     apb_ave.save_current_status()
     prepare_detectors_for_exposure_plan([apb_ave], n_exposures=1)
     set_detector_exposure_time_plan([apb_ave], time)
 
     yield from actuate_photon_shutter_plan('Close')
+
+    yield from current_suppression_plan()  # added for Keithley Amplifier
     uid = (yield from bp.count([apb_ave], 1, md={"plan_name": "get_offsets_plan"}))
     yield from actuate_photon_shutter_plan('Open')
 
