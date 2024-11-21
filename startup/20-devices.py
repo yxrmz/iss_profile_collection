@@ -428,3 +428,14 @@ def current_suppression_plan(*args, **kwargs):
 # pba1.adc1.amp = it_amp
 # pba1.adc6.amp = iff_amp
 # pba2.adc6.amp = i0_amp
+
+
+class Lakeshore331Setpoint(Device):
+    readback = Cpt(EpicsSignalRO, 'SAMPLE_A')
+    setpoint = Cpt(EpicsSignal, 'SP')
+
+lakeshore = Lakeshore331Setpoint('XF:08ID-ES{LS:331-1}:', name = 'lakeshore')
+
+def set_lakeshore_temp(temperature: float= 5, *args, **kwargs):
+    yield from bps.mv(lakeshore.setpoint, float(temperature))
+    yield from bps.sleep(0.1)

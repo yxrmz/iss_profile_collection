@@ -118,7 +118,8 @@ def calibrate_mono_energy_plan_bundle(element='', edge='', propagate_calibration
     run_calibration = True
     run_simple_scan = False
     try:
-        db_proc.validate_foil_edge(element, edge)
+        #validate foil exists
+        db_proc[element][edge]
     except Exception as e:
         e_message = str(e)
         print_to_gui(e_message)

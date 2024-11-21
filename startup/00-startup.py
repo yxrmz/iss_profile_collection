@@ -111,8 +111,13 @@ EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 #db_archive = Broker.named('iss')
 #db = Broker.named('iss-local')
 
-# db_proc = get_spectrum_catalog()
-db_proc = get_spectrum_catalog_new()
+# # db_proc = get_spectrum_catalog()
+# db_proc = get_spectrum_catalog_new()
+
+with open('/nsls2/data/iss/legacy/xf08id/settings/reference_library.json', 'r') as file:
+    db_proc = json.load(file)
+
+
 # RE = RunEngine()
 nslsii.configure_base(get_ipython().user_ns, 'iss', pbar=False)
 nslsii.configure_kafka_publisher(RE, "iss")
@@ -132,21 +137,25 @@ peaks = bec.peaks  # just as alias for less typing
 #         super().__init__(*args, **kwargs)
 #         self._finalizer = None
 
-runengine_metadata_dir = Path(f'{ROOT_PATH_SHARED}/metadata/') / Path("runengine-metadata")
+path_new_env = '/nsls2/data/iss/legacy/xf08id/metadata/runengine-metadata_old/'
+
+# runengine_metadata_dir = Path(f'{ROOT_PATH_SHARED}/metadata/') / Path("runengine-metadata")
+
+runengine_metadata_dir = path_new_env
 RE.md = PersistentDict(runengine_metadata_dir) # PersistentDict will create the directory if it does not exist
 RE.md._finalizer.atexit = False # added so that when we have stray bsui sessions on other stations, quitting them will not change the md unpredictably.
 
 # Insert for testing new conda environment 2024-11-13
-# import redis
-# from redis_json_dict import RedisJSONDict
+#import redis
+#from redis_json_dict import RedisJSONDict
 #
 # uri = "info.iss.nsls2.bnl.gov"  # replace TLA as appropriate
-# # Provide an endstation prefix, if needed, with a trailing "-"
+# # # Provide an endstation prefix, if needed, with a trailing "-"
 # new_md = RedisJSONDict(redis.Redis(uri), prefix="")
-# #work 11-12-2024 to enable updated conda environment
+# # work 11-12-2024 to enable updated conda environment
 # RE.md = new_md
 # Patch to fix Tom's terrible deeds
-# import matplotlib.backends.backend_qt
+import matplotlib.backends.backend_qt
 from matplotlib.backends.backend_qt import _create_qApp
 
 _create_qApp()
@@ -183,6 +192,8 @@ def get_hook():
 
 import faulthandler
 faulthandler.enable()
+
+path_new_env = '/nsls2/data/iss/legacy/xf08id/metadata/runengine-metadata_old/'
 
 
 def handle_pound_keys_in_md_folder(folder=runengine_metadata_dir):

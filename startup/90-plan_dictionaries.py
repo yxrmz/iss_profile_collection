@@ -40,6 +40,7 @@ service_plan_funcs = {
         'move_mono_energy' : move_mono_energy,
         'calibrate_sample_cameras_plan' : calibrate_sample_cameras_plan,
         'move_johann_spectrometer_energy': move_johann_spectrometer_energy,
+        'lakeshore_set_temperature' : set_lakeshore_temp,
         # 'move_mono_pitch' : move_mono_pitch,
         }
 
